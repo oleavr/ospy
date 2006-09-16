@@ -76,6 +76,12 @@ namespace oSpy
                         TransactionNode response = ExtractHttpData(stream, HTTPTransactionType.RESPONSE);
                         transaction.AddChild(response);
 
+                        if (((string)response.Fields["Result"]).StartsWith("100 "))
+                        {
+                            response = ExtractHttpData(stream, HTTPTransactionType.RESPONSE, "Response2");
+                            transaction.AddChild(response);
+                        }
+
                         session.AddNode(transaction);
 
                         stream = session.GetNextStreamDirection();
@@ -100,8 +106,17 @@ namespace oSpy
 
         private TransactionNode ExtractHttpData(PacketStream stream, HTTPTransactionType type)
         {
-            TransactionNode node = new TransactionNode(
-                (type == HTTPTransactionType.REQUEST) ? "Request" : "Response");
+            return ExtractHttpData(stream, type, null);
+        }
+
+        private TransactionNode ExtractHttpData(PacketStream stream, HTTPTransactionType type, string nodeName)
+        {
+            if (nodeName == null)
+            {
+                nodeName = (type == HTTPTransactionType.REQUEST) ? "Request" : "Response";
+            }
+
+            TransactionNode node = new TransactionNode(nodeName);
             List<PacketSlice> slices = new List<PacketSlice>();
 
             string line = stream.PeekLineUTF8();
@@ -155,7 +170,10 @@ namespace oSpy
                 stream.ReadBytes(2);
             } while (line != "");
 
-            node.AddChild(headersNode);
+            if (headersNode.Fields.Count > 0)
+            {
+                node.AddChild(headersNode);
+            }
 
             if (headersNode.Fields.ContainsKey("Content-Length"))
             {
@@ -174,6 +192,13 @@ namespace oSpy
                             contentEncoding = encTokens[1];
                         }
                     }
+                }
+
+                string str = stream.PeekStringASCII(5);
+                if (str == "<?xml")
+                {
+                    contentType = "text/xml";
+                    contentEncoding = "utf-8"; // FIXME
                 }
 
                 int contentLen = Convert.ToInt32(headersNode.Fields["Content-Length"]);
