@@ -1111,6 +1111,14 @@ namespace oSpy
             return val;
         }
 
+        public string PeekStringASCII(int size)
+        {
+            PushState();
+            string str = ReadStringASCII(size);
+            PopState();
+            return str;
+        }
+
         public string PeekStringUTF8(int size)
         {
             PushState();
