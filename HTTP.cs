@@ -44,7 +44,7 @@ namespace oSpy
 
             try
             {
-                line = stream.PeekLineUTF8(4096);
+                line = stream.PeekLineUTF8();
             }
             catch (EndOfStreamException)
             {
@@ -104,7 +104,7 @@ namespace oSpy
                 (type == HTTPTransactionType.REQUEST) ? "Request" : "Response");
             List<PacketSlice> slices = new List<PacketSlice>();
 
-            string line = stream.PeekLineUTF8(4096);
+            string line = stream.PeekLineUTF8();
 
             string[] tokens = line.Split(new char[] { ' ' },
                 (type == HTTPTransactionType.REQUEST) ? 3 : 2);
@@ -144,7 +144,7 @@ namespace oSpy
 
             do
             {
-                line = stream.PeekLineUTF8(4096);
+                line = stream.PeekLineUTF8();
                 if (line.Length > 0)
                 {
                     tokens = line.Split(new char[] { ':' }, 2);
