@@ -1119,6 +1119,17 @@ namespace oSpy
             return str;
         }
 
+        public string ReadStringASCII(int size)
+        {
+            return ReadStringASCII(size, null);
+        }
+
+        public string ReadStringASCII(int size, List<PacketSlice> slices)
+        {
+            byte[] bytes = ReadBytes(size, slices);
+            return Util.DecodeASCII(bytes);
+        }
+
         public string ReadStringUTF8(int size)
         {
             return ReadStringUTF8(size, null);
@@ -1268,54 +1279,58 @@ namespace oSpy
             return buf;
         }
 
-        public string ReadLineUTF8(int maxLineLength)
+        public string ReadLineUTF8()
         {
-            return ReadLineUTF8(maxLineLength, null, null);
+            return ReadLineUTF8(null, null);
         }
 
-        public string ReadLineUTF8(int maxLineLength,
-                                   List<PacketSlice> lineSlicesRead)
+        public string ReadLineUTF8(List<PacketSlice> lineSlicesRead)
         {
-            return ReadLineUTF8(maxLineLength, lineSlicesRead, null);
+            return ReadLineUTF8(lineSlicesRead, null);
         }
 
-        public string ReadLineUTF8(int maxLineLength,
-                                   List<PacketSlice> lineSlicesRead,
+        public string ReadLineUTF8(List<PacketSlice> lineSlicesRead,
                                    List<PacketSlice> crlfSlicesRead)
         {
-            int n = maxLineLength;
-            int available = (int) GetBytesAvailable();
-            if (n > available)
-                n = available;
+            PushState();
 
-            byte[] bytes = PeekBytes(n);
+            string line = "";
+            int pos = -1;
 
-            int i;
-            bool found = false;
-            for (i = 0; i < bytes.Length; i++)
+            try
             {
-                if (bytes[i] == '\n')
+                while (pos < 0)
                 {
-                    found = true;
-                    break;
+                    int n = 128;
+                    int available = (int)GetBytesAvailable();
+                    if (n > available)
+                        n = available;
+
+                    if (n == 0)
+                        throw new EndOfStreamException("newline not found");
+
+                    line += ReadStringASCII(n);
+
+                    pos = line.IndexOf('\n');
                 }
             }
+            finally
+            {
+                PopState();
+            }
 
-            if (!found)
-                throw new EndOfStreamException("newline not found");
+            bool foundCR = (pos > 0 && line[pos - 1] == '\r') ? true : false;
 
-            bool foundCR = (i > 0 && bytes[i - 1] == '\r') ? true : false;
-
-            bytes = ReadBytes((foundCR) ? i - 1 : i, lineSlicesRead);
+            byte[] bytes = ReadBytes((foundCR) ? pos - 1 : pos, lineSlicesRead);
             ReadBytes((foundCR) ? 2 : 1, crlfSlicesRead);
 
             return Util.DecodeUTF8(bytes);
         }
 
-        public string PeekLineUTF8(int maxLineLength)
+        public string PeekLineUTF8()
         {
             PushState();
-            string str = ReadLineUTF8(maxLineLength);
+            string str = ReadLineUTF8();
             PopState();
             return str;
         }

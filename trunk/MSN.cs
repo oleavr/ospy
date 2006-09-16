@@ -516,7 +516,7 @@ namespace oSpy
 
                 try
                 {
-                    string line = stream.PeekLineUTF8(512);
+                    string line = stream.PeekLineUTF8();
 
                     // Split the line up into CMD and the rest (being arguments, if any)
                     string[] tokens = line.Split(new char[] { ' ' }, 2);
