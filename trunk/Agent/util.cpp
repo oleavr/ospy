@@ -100,7 +100,8 @@ get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, cha
     if (EnumProcessModules(process, (HMODULE *) &modules,
                            sizeof(modules), &bytes_needed) == 0)
     {
-        *error = sspy_strdup("EnumProcessModules failed");
+        if (error)
+            *error = sspy_strdup("EnumProcessModules failed");
         return FALSE;
     }
 
@@ -123,7 +124,8 @@ get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, cha
 
             if (GetModuleBaseName(process, modules[i], buf, 32) == 0)
             {
-                *error = sspy_strdup("GetModuleBaseName failed");
+                if (error)
+                    *error = sspy_strdup("GetModuleBaseName failed");
                 return FALSE;
             }
 
@@ -137,7 +139,8 @@ get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, cha
         }
     }
 
-    *error = sspy_strdup("module not found");
+    if (error)
+        *error = sspy_strdup("module not found");
     return FALSE;
 }
 

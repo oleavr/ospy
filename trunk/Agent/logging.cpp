@@ -20,6 +20,7 @@
 #include "logging.h"
 #include "util.h"
 #include <stdio.h>
+#include <strsafe.h>
 
 #pragma warning( disable : 4996 )
 
@@ -410,4 +411,37 @@ log_udp_packet(const char *function_name,
 
   message_logger_log_packet(function_name, return_address, s, direction,
                             &local_addr, &peer_addr, buf, len);
+}
+
+// FIXME: this should be dynamically allocated instead
+#define LOG_BUFFER_SIZE 2048
+
+void
+log_debug_w(const char *source,
+            DWORD ret_addr,
+            const LPWSTR format,
+            va_list args)
+{
+    WCHAR wide_buf[LOG_BUFFER_SIZE];
+    char buf[LOG_BUFFER_SIZE];
+
+    StringCbVPrintfW(wide_buf, sizeof(wide_buf), format, args);
+    wide_buf[LOG_BUFFER_SIZE - 1] = '\0';
+
+    WideCharToMultiByte(CP_ACP, 0, wide_buf, -1, buf, sizeof(buf), NULL, NULL);
+
+    message_logger_log_message(source, ret_addr, MESSAGE_CTX_INFO, buf);
+}
+
+void
+log_debug(const char *source,
+          DWORD ret_addr,
+          const char *format,
+          va_list args)
+{
+    char buf[256];
+
+    vsprintf(buf, format, args);
+
+    message_logger_log_message(source, ret_addr, MESSAGE_CTX_INFO, buf);
 }

@@ -269,7 +269,7 @@ namespace oSpy
                 try
                 {
                     // Empty message queue
-                    Marshal.WriteInt32(numElementsPtr, 0);
+                    //Marshal.WriteInt32(numElementsPtr, 0);
 
                     Marshal.WriteIntPtr(queuePtr, Marshal.OffsetOf(typeof(MessageQueue), "num_softwall_rules").ToInt32(),
                                         (IntPtr) rules.Length);

