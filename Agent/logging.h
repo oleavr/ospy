@@ -105,3 +105,6 @@ void log_tcp_disconnected(const char *function_name, DWORD return_address, SOCKE
 
 void log_tcp_packet(const char *function_name, DWORD return_address, PacketDirection direction, SOCKET s, const char *buf, int len);
 void log_udp_packet(const char *function_name, DWORD return_address, PacketDirection direction, SOCKET s, const struct sockaddr *peer, const char *buf, int len);
+
+void log_debug_w(const char *source, DWORD ret_addr, const LPWSTR format, va_list args);
+void log_debug(const char *source, DWORD ret_addr, const char *format, va_list args);

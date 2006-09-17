@@ -203,6 +203,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\hooks_msn.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\hooks_secur32.cpp"
 				>
 			</File>

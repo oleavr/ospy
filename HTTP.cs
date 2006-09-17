@@ -76,23 +76,19 @@ namespace oSpy
                         TransactionNode response = ExtractHttpData(stream, HTTPTransactionType.RESPONSE);
                         transaction.AddChild(response);
 
-                        if (((string)response.Fields["Result"]).StartsWith("100 "))
+                        if (response.Fields.ContainsKey("Result") &&
+                            ((string)response.Fields["Result"]).StartsWith("100 "))
                         {
                             response = ExtractHttpData(stream, HTTPTransactionType.RESPONSE, "Response2");
                             transaction.AddChild(response);
                         }
-
-                        session.AddNode(transaction);
-
-                        stream = session.GetNextStreamDirection();
-                        if (stream.GetBytesAvailable() == 0)
-                            break;
                     }
-                    else
-                    {
-                        session.AddNode(transaction);
+
+                    session.AddNode(transaction);
+
+                    stream = session.GetNextStreamDirection();
+                    if (stream.GetBytesAvailable() == 0)
                         break;
-                    }
                 }
                 catch (EndOfStreamException)
                 {

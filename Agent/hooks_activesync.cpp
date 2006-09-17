@@ -185,39 +185,6 @@ static FunctionSignature as_signatures[] = {
 
 
 //
-// Convenience logging functions
-//
-
-static void
-log_debug_w(const char *source,
-            DWORD ret_addr,
-            const LPWSTR format,
-            va_list args)
-{
-    WCHAR wide_buf[256];
-    char buf[256];
-
-    wvsprintfW(wide_buf, format, args);
-    WideCharToMultiByte(CP_ACP, 0, wide_buf, -1, buf, sizeof(buf), NULL, NULL);
-
-    message_logger_log_message(source, ret_addr, MESSAGE_CTX_INFO, buf);
-}
-
-static void
-log_debug(const char *source,
-          DWORD ret_addr,
-          const char *format,
-          va_list args)
-{
-    char buf[256];
-
-    vsprintf(buf, format, args);
-
-    message_logger_log_message(source, ret_addr, MESSAGE_CTX_INFO, buf);
-}
-
-
-//
 // WCESMgr.exe
 //
 
