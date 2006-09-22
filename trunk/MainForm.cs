@@ -657,8 +657,6 @@ namespace oSpy
         {
             List<string> tokens = new List<string>(4);
 
-            //debugForm.AddMessage("PropertyGridItemSelected");
-
             while (item != null)
             {
                 tokens.Add(item.Label);
@@ -700,16 +698,24 @@ namespace oSpy
                 dataGridView.FirstDisplayedScrollingRowIndex = pPos.Row.Index;
             }
 
-            // FIXME: this code must be made aware of other display modes like
-            //        ASCII...
-            if (dumpDisplayMode != DisplayMode.HEX)
-                return;
+            int lineStart, lineEnd;
+            if (dumpDisplayMode == DisplayMode.HEX)
+            {
+                lineStart = pPos.LineStart + (slice.Offset / 16);
+                int bytesRemaining = slice.Length - (16 - (slice.Offset % 16));
+                if (bytesRemaining < 0)
+                    bytesRemaining = 0;
+                lineEnd = lineStart + (bytesRemaining / 16);
+            }
+            else
+            {
+                int i = pPos.GetLineOffsetIndexFromPacketOffset(slice.Offset);
+                if (i < 0)
+                    return;
 
-            int lineStart = pPos.LineStart + (slice.Offset / 16);
-            int bytesRemaining = slice.Length - (16 - (slice.Offset % 16));
-            if (bytesRemaining < 0)
-                bytesRemaining = 0;
-            int lineEnd = lineStart + (bytesRemaining / 16);
+                lineStart = pPos.LineStart + i;
+                lineEnd = lineStart + 1; // FIXME
+            }
 
             System.Drawing.Graphics gfx = CreateGraphics();
             int linePixelHeight = (int) Math.Round((gfx.DpiY / 70.0f) * richTextBox.Font.SizeInPoints);
@@ -800,13 +806,7 @@ namespace oSpy
                 {
                     LineOffset[] offsets = viewPos.LineOffsets;
 
-                    int i;
-                    for (i = offsets.Length - 1; i >= 0; i--)
-                    {
-                        if (offset >= offsets[i].Start)
-                            break;
-                    }
-
+                    int i = viewPos.GetLineOffsetIndexFromPacketOffset(offset);
                     if (i < 0)
                         return;
 
@@ -878,6 +878,17 @@ namespace oSpy
                 LineStart = lineStart;
                 LineEnd = lineEnd;
                 LineOffsets = lineOffsets;
+            }
+
+            public int GetLineOffsetIndexFromPacketOffset(int offset)
+            {
+                for (int i = LineOffsets.Length - 1; i >= 0; i--)
+                {
+                    if (offset >= LineOffsets[i].Start)
+                        return i;
+                }
+
+                return -1;
             }
         }
 
@@ -1057,18 +1068,11 @@ namespace oSpy
             if (dataGridView.Rows.GetRowCount(DataGridViewElementStates.Selected) != 1)
                 return;
 
-            // FIXME: all this mapping should use the newer ResourceId to match rows...
-
             DataGridViewRow selRow = dataGridView.SelectedRows[0];
             Rectangle rectRow = dataGridView.GetRowDisplayRectangle(selRow.Index, true);
             Rectangle rectMouse = new Rectangle(e.X, e.Y, 1, 1);
             if (rectRow.IntersectsWith(rectMouse))
             {
-                /*
-                MessageType selMsgType = (MessageType)((UInt32)selRow.Cells[msgTypeDataGridViewTextBoxColumn.Index].Value);
-                if (selMsgType != MessageType.MESSAGE_TYPE_PACKET)
-                    return;*/
-
                 UInt32 selResId;
                 string selLocalAddr, selPeerAddr;
                 UInt16 selLocalPort, selPeerPort;
