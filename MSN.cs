@@ -400,7 +400,7 @@ namespace oSpy
         static MSNTransactionFactory()
         {
             // FIXME: add all of them here
-            payloadCommands = new List<string>(new string[] { "MSG", "UBX", "UUX", "ADL", "FQY", "QRY", "GCF", "FQY", });
+            payloadCommands = new List<string>(new string[] { "MSG", "UBX", "UUX", "ADL", "FQY", "QRY", "GCF", "FQY", "NOT", });
         }
 
         public MSNTransactionFactory(DebugLogger logger)
@@ -494,16 +494,13 @@ namespace oSpy
 
             while (true)
             {
-                logger.AddMessage("switching to next direction");
                 PacketStream stream = session.GetNextStreamDirection();
 
                 if (stream.GetBytesAvailable() == 0)
                 {
-                    logger.AddMessage("no more in this direction, switching to next");
                     stream = session.GetNextStreamDirection();
                     if (stream.GetBytesAvailable() == 0)
                     {
-                        logger.AddMessage("no more data in either direction, which means we're done!");
                         break;
                     }
                 }
@@ -511,9 +508,6 @@ namespace oSpy
                 IPPacket pkt = stream.CurPacket;
                 PacketDirection direction = pkt.Direction;
                 
-                logger.AddMessage(String.Format(
-                    "packet with direction={0}, index={1}", pkt.Direction, pkt.Index));
-
                 try
                 {
                     string line = stream.PeekLineUTF8();
@@ -521,7 +515,9 @@ namespace oSpy
                     // Split the line up into CMD and the rest (being arguments, if any)
                     string[] tokens = line.Split(new char[] { ' ' }, 2);
 
-                    logger.AddMessage(String.Format("parsing command '{0}' (line: {1})", tokens[0], line));
+                    logger.AddMessage(String.Format("{0} parsing command '{1}' (line: {2})",
+                        (direction == PacketDirection.PACKET_DIRECTION_INCOMING) ? "<<" : ">>",
+                        tokens[0], line));
 
                     // Set cmd and create an array of arguments if present
                     string cmd = tokens[0];
@@ -586,8 +582,6 @@ namespace oSpy
                     }
 
                     session.AddNode(node);
-
-                    logger.AddMessage("done with command\r\n");
                 }
                 catch (EndOfStreamException e)
                 {

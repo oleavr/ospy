@@ -426,7 +426,7 @@ log_debug_w(const char *source,
     char buf[LOG_BUFFER_SIZE];
 
     StringCbVPrintfW(wide_buf, sizeof(wide_buf), format, args);
-    wide_buf[LOG_BUFFER_SIZE - 1] = '\0';
+    wide_buf[LOG_BUFFER_SIZE - 1] = L'\0';
 
     WideCharToMultiByte(CP_ACP, 0, wide_buf, -1, buf, sizeof(buf), NULL, NULL);
 
