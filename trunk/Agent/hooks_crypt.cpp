@@ -23,6 +23,322 @@
 #include <psapi.h>
 #include <map>
 
+static MODULEINFO schannel_info;
+
+static BOOL
+called_from_schannel(DWORD ret_addr)
+{
+    return (ret_addr >= (DWORD) schannel_info.lpBaseOfDll &&
+            ret_addr < (DWORD) schannel_info.lpBaseOfDll + schannel_info.SizeOfImage);
+}
+
+static const char *
+alg_id_to_string(ALG_ID alg_id)
+{
+    switch (alg_id)
+    {
+        case CALG_MD2: return "MD2";
+        case CALG_MD4: return "MD4";
+        case CALG_MD5: return "MD5";
+        case CALG_SHA1: return "SHA1";
+        case CALG_MAC: return "MAC";
+        case CALG_RSA_SIGN: return "RSA_SIGN";
+        case CALG_DSS_SIGN: return "DSS_SIGN";
+        case CALG_NO_SIGN: return "NO_SIGN";
+        case CALG_RSA_KEYX: return "RSA_KEYX";
+        case CALG_DES: return "DES";
+        case CALG_3DES_112: return "3DES_112";
+        case CALG_3DES: return "3DES";
+        case CALG_DESX: return "DESX";
+        case CALG_RC2: return "RC2";
+        case CALG_RC4: return "RC4";
+        case CALG_SEAL: return "SEAL";
+        case CALG_DH_SF: return "DH_SF";
+        case CALG_DH_EPHEM: return "DH_EPHEM";
+        case CALG_AGREEDKEY_ANY: return "AGREEDKEY_ANY";
+        case CALG_KEA_KEYX: return "KEA_KEYX";
+        case CALG_HUGHES_MD5: return "HUGHES_MD5";
+        case CALG_SKIPJACK: return "SKIPJACK";
+        case CALG_TEK: return "TEK";
+        case CALG_CYLINK_MEK: return "CYLINK_MEK";
+        case CALG_SSL3_SHAMD5: return "SSL3_SHAMD5";
+        case CALG_SSL3_MASTER: return "SSL3_MASTER";
+        case CALG_SCHANNEL_MASTER_HASH: return "SCHANNEL_MASTER_HASH";
+        case CALG_SCHANNEL_MAC_KEY: return "SCHANNEL_MAC_KEY";
+        case CALG_SCHANNEL_ENC_KEY: return "SCHANNEL_ENC_KEY";
+        case CALG_PCT1_MASTER: return "PCT1_MASTER";
+        case CALG_SSL2_MASTER: return "SSL2_MASTER";
+        case CALG_TLS1_MASTER: return "TLS1_MASTER";
+        case CALG_RC5: return "RC5";
+        case CALG_HMAC: return "HMAC";
+        case CALG_TLS1PRF: return "TLS1PRF";
+        case CALG_HASH_REPLACE_OWF: return "HASH_REPLACE_OWF";
+        case CALG_AES_128: return "AES_128";
+        case CALG_AES_192: return "AES_192";
+        case CALG_AES_256: return "AES_256";
+        case CALG_AES: return "AES";
+        case CALG_SHA_256: return "SHA_256";
+        case CALG_SHA_384: return "SHA_384";
+        case CALG_SHA_512: return "SHA_512";
+        default: break;
+    }
+
+    return "UNKNOWN";
+}
+
+static const char *
+key_param_to_string(DWORD param)
+{
+    switch (param)
+    {
+        case KP_ALGID: return "ALGID";
+        case KP_BLOCKLEN: return "BLOCKLEN";
+        case KP_KEYLEN: return "KEYLEN";
+        case KP_SALT: return "SALT";
+        case KP_PERMISSIONS: return "PERMISSIONS";
+        case KP_P: return "P";
+        case KP_Q: return "Q";
+        case KP_G: return "G";
+        case KP_EFFECTIVE_KEYLEN: return "EFFECTIVE_KEYLEN";
+        case KP_IV: return "IV";
+        case KP_PADDING: return "PADDING";
+        case KP_MODE: return "MODE";
+        case KP_MODE_BITS: return "MODE_BITS";
+        default: break;
+    }
+
+    return "UNKNOWN";
+}
+
+static BOOL __cdecl
+CryptImportKey_called(BOOL carry_on,
+                      DWORD ret_addr,
+                      HCRYPTPROV hProv,
+                      BYTE *pbData,
+                      DWORD dwDataLen,
+                      HCRYPTKEY hPubKey,
+                      DWORD dwFlags,
+                      HCRYPTKEY *phKey)
+{
+    return TRUE;
+}
+
+static BOOL __stdcall
+CryptImportKey_done(BOOL retval,
+                    HCRYPTPROV hProv,
+                    BYTE *pbData,
+                    DWORD dwDataLen,
+                    HCRYPTKEY hPubKey,
+                    DWORD dwFlags,
+                    HCRYPTKEY *phKey)
+{
+    DWORD err = GetLastError();
+    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+
+    if (retval && !called_from_schannel(ret_addr))
+    {
+        message_logger_log("CryptImportKey", ret_addr, (DWORD) *phKey,
+            MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+            NULL, NULL, (const char *) pbData, dwDataLen,
+            "hProv=0x%p, hPubKey=0x%p, dwFlags=0x%08x => *phKey=0x%p",
+            hProv, hPubKey, dwFlags, *phKey);
+    }
+
+    SetLastError(err);
+    return retval;
+}
+
+static BOOL __cdecl
+CryptExportKey_called(BOOL carry_on,
+                      DWORD ret_addr,
+                      HCRYPTKEY hKey,
+                      HCRYPTKEY hExpKey,
+                      DWORD dwBlobType,
+                      DWORD dwFlags,
+                      BYTE *pbData,
+                      DWORD *pdwDataLen)
+{
+    return TRUE;
+}
+
+static BOOL __stdcall
+CryptExportKey_done(BOOL retval,
+                    HCRYPTKEY hKey,
+                    HCRYPTKEY hExpKey,
+                    DWORD dwBlobType,
+                    DWORD dwFlags,
+                    BYTE *pbData,
+                    DWORD *pdwDataLen)
+{
+    DWORD err = GetLastError();
+    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+
+    if (retval && !called_from_schannel(ret_addr))
+    {
+        const char *blob_type_str;
+
+        switch (dwBlobType)
+        {
+            case OPAQUEKEYBLOB:
+                blob_type_str = "OPAQUEKEYBLOB";
+                break;
+            case PRIVATEKEYBLOB:
+                blob_type_str = "PRIVATEKEYBLOB";
+                break;
+            case PUBLICKEYBLOB:
+                blob_type_str = "PUBLICKEYBLOB";
+                break;
+            case SIMPLEBLOB:
+                blob_type_str = "SIMPLEBLOB";
+                break;
+            case PLAINTEXTKEYBLOB:
+                blob_type_str = "PLAINTEXTKEYBLOB";
+                break;
+            case SYMMETRICWRAPKEYBLOB:
+                blob_type_str = "SYMMETRICWRAPKEYBLOB";
+                break;
+            default:
+                blob_type_str = "UNKNOWN";
+                break;
+        }
+
+        message_logger_log("CryptExportKey", ret_addr, (DWORD) hKey,
+            MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+            NULL, NULL, (const char *) pbData, *pdwDataLen,
+            "hKey=0x%p, hExpKey=0x%p, dwBlobType=%s, dwFlags=0x%08x",
+            hKey, hExpKey, blob_type_str, dwFlags);
+    }
+
+    SetLastError(err);
+    return retval;
+}
+
+static BOOL __cdecl
+CryptGenKey_called(BOOL carry_on,
+                   DWORD ret_addr,
+                   HCRYPTPROV hProv,
+                   ALG_ID Algid,
+                   DWORD dwFlags,
+                   HCRYPTKEY *phKey)
+{
+    return TRUE;
+}
+
+static BOOL __stdcall
+CryptGenKey_done(BOOL retval,
+                 HCRYPTPROV hProv,
+                 ALG_ID Algid,
+                 DWORD dwFlags,
+                 HCRYPTKEY *phKey)
+{
+    DWORD err = GetLastError();
+    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+
+    if (retval && !called_from_schannel(ret_addr))
+    {
+        message_logger_log("CryptGenKey", ret_addr, (DWORD) *phKey,
+            MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+            NULL, NULL, NULL, 0,
+            "hProv=0x%p, Algid=%s, dwFlags=0x%08x => *phKey=0x%p",
+            hProv, alg_id_to_string(Algid), dwFlags, *phKey);
+    }
+
+    SetLastError(err);
+    return retval;
+}
+
+static BOOL __cdecl
+CryptGetKeyParam_called(BOOL carry_on,
+                        DWORD ret_addr,
+                        HCRYPTKEY hKey,
+                        DWORD dwParam,
+                        BYTE *pbData,
+                        DWORD *pdwDataLen,
+                        DWORD dwFlags)
+{
+    return TRUE;
+}
+
+static BOOL __stdcall
+CryptGetKeyParam_done(BOOL retval,
+                      HCRYPTKEY hKey,
+                      DWORD dwParam,
+                      BYTE *pbData,
+                      DWORD *pdwDataLen,
+                      DWORD dwFlags)
+{
+    DWORD err = GetLastError();
+    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+
+    if (retval && !called_from_schannel(ret_addr))
+    {
+        message_logger_log("CryptGetKeyParam", ret_addr, (DWORD) hKey,
+            MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+            NULL, NULL, (const char *) pbData, *pdwDataLen,
+            "hKey=0x%p, dwParam=%s", hKey, key_param_to_string(dwParam));
+    }
+
+    SetLastError(err);
+    return retval;
+}
+
+static BOOL __cdecl
+CryptDestroyKey_called(BOOL carry_on,
+                       DWORD ret_addr,
+                       HCRYPTKEY hKey)
+{
+    return TRUE;
+}
+
+static BOOL __stdcall
+CryptDestroyKey_done(BOOL retval,
+                     HCRYPTKEY hKey)
+{
+    DWORD err = GetLastError();
+    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+
+    if (retval && !called_from_schannel(ret_addr))
+    {
+        message_logger_log("CryptDestroyKey", ret_addr, (DWORD) hKey,
+            MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+            NULL, NULL, NULL, 0, "hKey=0x%p", hKey);
+    }
+
+    SetLastError(err);
+    return retval;
+}
+
+static BOOL __cdecl
+CryptGenRandom_called(BOOL carry_on,
+                      DWORD ret_addr,
+                      HCRYPTPROV hProv,
+                      DWORD dwLen,
+                      BYTE *pbBuffer)
+{
+    return TRUE;
+}
+
+static BOOL __stdcall
+CryptGenRandom_done(BOOL retval,
+                    HCRYPTPROV hProv,
+                    DWORD dwLen,
+                    BYTE *pbBuffer)
+{
+    DWORD err = GetLastError();
+    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+
+    if (retval && !called_from_schannel(ret_addr))
+    {
+        message_logger_log("CryptGenRandom", ret_addr, (DWORD) hProv,
+            MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+            NULL, NULL, (const char *) pbBuffer, dwLen,
+            "hProv=0x%p, dwLen=%d", hProv, dwLen);
+    }
+
+    SetLastError(err);
+    return retval;
+}
+
 class HashContext : public BaseObject
 {
 protected:
@@ -46,58 +362,9 @@ public:
         return alg_id;
     }
 
-    const char *
-    get_alg_id_as_string()
+    const char *get_alg_id_as_string()
     {
-        switch (alg_id)
-        {
-            case CALG_MD2: return "MD2";
-            case CALG_MD4: return "MD4";
-            case CALG_MD5: return "MD5";
-            case CALG_SHA1: return "SHA1";
-            case CALG_MAC: return "MAC";
-            case CALG_RSA_SIGN: return "RSA_SIGN";
-            case CALG_DSS_SIGN: return "DSS_SIGN";
-            case CALG_NO_SIGN: return "NO_SIGN";
-            case CALG_RSA_KEYX: return "RSA_KEYX";
-            case CALG_DES: return "DES";
-            case CALG_3DES_112: return "3DES_112";
-            case CALG_3DES: return "3DES";
-            case CALG_DESX: return "DESX";
-            case CALG_RC2: return "RC2";
-            case CALG_RC4: return "RC4";
-            case CALG_SEAL: return "SEAL";
-            case CALG_DH_SF: return "DH_SF";
-            case CALG_DH_EPHEM: return "DH_EPHEM";
-            case CALG_AGREEDKEY_ANY: return "AGREEDKEY_ANY";
-            case CALG_KEA_KEYX: return "KEA_KEYX";
-            case CALG_HUGHES_MD5: return "HUGHES_MD5";
-            case CALG_SKIPJACK: return "SKIPJACK";
-            case CALG_TEK: return "TEK";
-            case CALG_CYLINK_MEK: return "CYLINK_MEK";
-            case CALG_SSL3_SHAMD5: return "SSL3_SHAMD5";
-            case CALG_SSL3_MASTER: return "SSL3_MASTER";
-            case CALG_SCHANNEL_MASTER_HASH: return "SCHANNEL_MASTER_HASH";
-            case CALG_SCHANNEL_MAC_KEY: return "SCHANNEL_MAC_KEY";
-            case CALG_SCHANNEL_ENC_KEY: return "SCHANNEL_ENC_KEY";
-            case CALG_PCT1_MASTER: return "PCT1_MASTER";
-            case CALG_SSL2_MASTER: return "SSL2_MASTER";
-            case CALG_TLS1_MASTER: return "TLS1_MASTER";
-            case CALG_RC5: return "RC5";
-            case CALG_HMAC: return "HMAC";
-            case CALG_TLS1PRF: return "TLS1PRF";
-            case CALG_HASH_REPLACE_OWF: return "HASH_REPLACE_OWF";
-            case CALG_AES_128: return "AES_128";
-            case CALG_AES_192: return "AES_192";
-            case CALG_AES_256: return "AES_256";
-            case CALG_AES: return "AES";
-            case CALG_SHA_256: return "SHA_256";
-            case CALG_SHA_384: return "SHA_384";
-            case CALG_SHA_512: return "SHA_512";
-            default: break;
-        }
-
-        return "UNKNOWN";
+        return alg_id_to_string(alg_id);
     }
 };
 
@@ -108,15 +375,6 @@ static HashMap hash_map;
 
 #define LOCK() EnterCriticalSection(&cs)
 #define UNLOCK() LeaveCriticalSection(&cs)
-
-static MODULEINFO schannel_info;
-
-static BOOL
-called_from_schannel(DWORD ret_addr)
-{
-    return (ret_addr >= (DWORD) schannel_info.lpBaseOfDll &&
-            ret_addr < (DWORD) schannel_info.lpBaseOfDll + schannel_info.SizeOfImage);
-}
 
 static BOOL __cdecl
 CryptCreateHash_called(BOOL carry_on,
@@ -154,7 +412,7 @@ CryptCreateHash_done(BOOL retval,
             message_logger_log("CryptCreateHash", ret_addr, ctx->get_id(),
                 MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
                 NULL, NULL, NULL, 0,
-                "hProv=0x%08x, Algid=%s, hKey=0x%08x => *phHash=0x%08x",
+                "hProv=0x%p, Algid=%s, hKey=0x%p => *phHash=0x%p",
                 hProv, ctx->get_alg_id_as_string(), hKey, *phHash);
         }
 
@@ -318,10 +576,79 @@ CryptGetHashParam_done (BOOL retval,
     return retval;
 }
 
+static BOOL __cdecl
+CryptSetHashParam_called(BOOL carry_on,
+                         DWORD ret_addr,
+                         HCRYPTHASH hHash,
+                         DWORD dwParam,
+                         BYTE *pbData,
+                         DWORD dwFlags)
+{
+    return TRUE;
+}
+
+static BOOL __stdcall
+CryptSetHashParam_done(BOOL retval,
+                       HCRYPTHASH hHash,
+                       DWORD dwParam,
+                       BYTE *pbData,
+                       DWORD dwFlags)
+{
+    DWORD err = GetLastError();
+    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+
+    if (retval && !called_from_schannel(ret_addr))
+    {
+        HashMap::iterator iter;
+
+        LOCK();
+
+        iter = hash_map.find(hHash);
+        if (iter != hash_map.end())
+        {
+            HashContext *ctx = iter->second;
+            const char *param_str;
+
+            switch (dwParam)
+            {
+                case HP_HMAC_INFO:
+                    param_str = "HMAC_INFO";
+                    break;
+                case HP_HASHVAL:
+                    param_str = "HASHVAL";
+                    break;
+                default:
+                    param_str = "UNKNOWN";
+                    break;
+            }
+
+            message_logger_log("CryptSetHashParam", ret_addr, ctx->get_id(),
+                MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+                NULL, NULL, NULL, 0,
+                "hHash=0x%p, Algid=%s, dwParam=%s",
+                hHash, ctx->get_alg_id_as_string(), param_str);
+        }
+
+        UNLOCK();
+    }
+
+    SetLastError(err);
+    return retval;
+}
+
+HOOK_GLUE_SPECIAL(CryptImportKey, (6 * 4))
+HOOK_GLUE_SPECIAL(CryptExportKey, (6 * 4))
+HOOK_GLUE_SPECIAL(CryptGenKey, (4 * 4))
+HOOK_GLUE_SPECIAL(CryptGetKeyParam, (5 * 4))
+HOOK_GLUE_SPECIAL(CryptDestroyKey, (1 * 4))
+
+HOOK_GLUE_SPECIAL(CryptGenRandom, (3 * 4))
+
 HOOK_GLUE_SPECIAL(CryptCreateHash, (5 * 4))
 HOOK_GLUE_SPECIAL(CryptDestroyHash, (1 * 4))
 HOOK_GLUE_SPECIAL(CryptHashData, (4 * 4))
 HOOK_GLUE_SPECIAL(CryptGetHashParam, (5 * 4))
+HOOK_GLUE_SPECIAL(CryptSetHashParam, (4 * 4))
 
 void
 hook_crypt()
@@ -337,10 +664,19 @@ hook_crypt()
         return;
     }
 
+    HOOK_FUNCTION_SPECIAL(h, CryptImportKey);
+    HOOK_FUNCTION_SPECIAL(h, CryptExportKey);
+    HOOK_FUNCTION_SPECIAL(h, CryptGenKey);
+    HOOK_FUNCTION_SPECIAL(h, CryptGetKeyParam);
+    HOOK_FUNCTION_SPECIAL(h, CryptDestroyKey);
+
+    HOOK_FUNCTION_SPECIAL(h, CryptGenRandom);
+
     HOOK_FUNCTION_SPECIAL(h, CryptCreateHash);
     HOOK_FUNCTION_SPECIAL(h, CryptDestroyHash);
     HOOK_FUNCTION_SPECIAL(h, CryptHashData);
     HOOK_FUNCTION_SPECIAL(h, CryptGetHashParam);
+    HOOK_FUNCTION_SPECIAL(h, CryptSetHashParam);
 
     h = LoadLibrary("schannel.dll");
     if (h == NULL)
