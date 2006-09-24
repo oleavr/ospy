@@ -25,3 +25,5 @@ void get_module_name_for_address(LPVOID address, char *buf, int buf_size);
 BOOL get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, char **error);
 BOOL address_has_bytes(LPVOID address, unsigned char *buf, int len);
 bool cur_process_is(const char *name);
+
+DWORD ospy_rand();

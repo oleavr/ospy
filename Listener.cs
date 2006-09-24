@@ -98,7 +98,7 @@ namespace oSpy
             public UInt32 process_id;
             public UInt32 thread_id;
 
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
             public string function_name;
             public UInt32 return_address;
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]

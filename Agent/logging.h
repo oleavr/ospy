@@ -58,7 +58,7 @@ typedef struct {
   DWORD process_id;
   DWORD thread_id;
 
-  char function_name[16];
+  char function_name[32];
   DWORD return_address;
   char caller_module_name[32];
 

@@ -18,6 +18,13 @@
 
 #pragma once
 
+void *sspy_malloc(size_t size);
+void *sspy_realloc(void *ptr, size_t new_size);
+void sspy_free(void *ptr);
+char *sspy_strdup(const char *str);
+
+#include "alloc.h"
+
 #ifndef VC_EXTRALEAN
 #define VC_EXTRALEAN		// Exclude rarely-used stuff from Windows headers
 #endif
@@ -69,45 +76,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <winsock2.h>
-
-#include <map>
-
-template<class TYPE> class safe_allocator : public std::allocator<TYPE>
-
-{
-	typedef std::allocator<TYPE> parent_type;
-
-public:
-	safe_allocator() throw() : parent_type() {}
-	safe_allocator(const allocator &c) throw() : parent_type(c) {}
-
-	pointer allocate(size_type n, const void* hint = 0)
-	{
-		return (pointer)HeapAlloc(GetProcessHeap(), 0, n * sizeof(value_type));
-	}
-
-	void deallocate(pointer p, size_type n)
-	{
-		operator HeapFree(GetProcessHeap(), 0, p);
-	}
-
-	char *_Charalloc(size_type n)
-	{
-		return (char*)HeapAlloc(GetProcessHeap(), 0, n);
-	}
-};
-
-/*
-inline void * operator new(size_t amt)  { return HeapAlloc(GetProcessHeap(), 0, amt); }
-inline void operator delete(void* ptr)  { HeapFree(GetProcessHeap(), 0, ptr); }
-inline void *operator new[](size_t amt)  { return operator new(amt); }
-inline void operator delete[](void* ptr)  { operator delete(ptr); }
-*/
-
-void *sspy_malloc(size_t size);
-void *sspy_realloc(void *ptr, size_t new_size);
-void sspy_free(void *ptr);
-char *sspy_strdup(const char *str);
 
 #define HOOK_ACTIVESYNC   1
 #define FILTERING_ENABLED 0

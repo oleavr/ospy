@@ -179,6 +179,17 @@ BOOL address_has_bytes(LPVOID address, unsigned char *buf, int len)
   return TRUE;
 }
 
+DWORD
+ospy_rand()
+{
+    LARGE_INTEGER seed;
+
+    QueryPerformanceCounter(&seed);
+    srand(seed.LowPart);
+
+    return 1 + rand();
+}
+
 #if 0
 
 static bool filter_google_relay(const char *function_name,

@@ -84,17 +84,17 @@ namespace oSpy
             this.createSwRuleFromEntryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.bindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.dumpContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.saveRawDumpToFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripSeparator();
             this.showAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aSCIIToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.hexToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.saveRawDumpToFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.propertyGridContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.expandAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.collapseAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
             this.autoHighlightMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripSeparator();
             this.splitContainer = new System.Windows.Forms.SplitContainer();
             this.dataGridView = new System.Windows.Forms.DataGridView();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
@@ -536,6 +536,25 @@ namespace oSpy
             this.dumpContextMenuStrip.Name = "dumpContextMenuStrip";
             this.dumpContextMenuStrip.Size = new System.Drawing.Size(202, 76);
             // 
+            // copyToolStripMenuItem
+            // 
+            this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
+            this.copyToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.copyToolStripMenuItem.Text = "&Copy";
+            this.copyToolStripMenuItem.Click += new System.EventHandler(this.copyToolStripMenuItem_Click);
+            // 
+            // saveRawDumpToFileToolStripMenuItem
+            // 
+            this.saveRawDumpToFileToolStripMenuItem.Name = "saveRawDumpToFileToolStripMenuItem";
+            this.saveRawDumpToFileToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.saveRawDumpToFileToolStripMenuItem.Text = "&Save raw dump to file...";
+            this.saveRawDumpToFileToolStripMenuItem.Click += new System.EventHandler(this.saveRawDumpToFileToolStripMenuItem_Click);
+            // 
+            // toolStripMenuItem4
+            // 
+            this.toolStripMenuItem4.Name = "toolStripMenuItem4";
+            this.toolStripMenuItem4.Size = new System.Drawing.Size(198, 6);
+            // 
             // showAsToolStripMenuItem
             // 
             this.showAsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -548,7 +567,7 @@ namespace oSpy
             // aSCIIToolStripMenuItem
             // 
             this.aSCIIToolStripMenuItem.Name = "aSCIIToolStripMenuItem";
-            this.aSCIIToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.aSCIIToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
             this.aSCIIToolStripMenuItem.Text = "&ASCII";
             this.aSCIIToolStripMenuItem.Click += new System.EventHandler(this.aSCIIToolStripMenuItem_Click);
             // 
@@ -557,16 +576,9 @@ namespace oSpy
             this.hexToolStripMenuItem.Checked = true;
             this.hexToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.hexToolStripMenuItem.Name = "hexToolStripMenuItem";
-            this.hexToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.hexToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
             this.hexToolStripMenuItem.Text = "&Hex";
             this.hexToolStripMenuItem.Click += new System.EventHandler(this.hexToolStripMenuItem_Click);
-            // 
-            // saveRawDumpToFileToolStripMenuItem
-            // 
-            this.saveRawDumpToFileToolStripMenuItem.Name = "saveRawDumpToFileToolStripMenuItem";
-            this.saveRawDumpToFileToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.saveRawDumpToFileToolStripMenuItem.Text = "&Save raw dump to file...";
-            this.saveRawDumpToFileToolStripMenuItem.Click += new System.EventHandler(this.saveRawDumpToFileToolStripMenuItem_Click);
             // 
             // propertyGridContextMenuStrip
             // 
@@ -606,18 +618,6 @@ namespace oSpy
             this.autoHighlightMenuItem.Size = new System.Drawing.Size(190, 22);
             this.autoHighlightMenuItem.Text = "&Automatic highlighting";
             this.autoHighlightMenuItem.CheckedChanged += new System.EventHandler(this.autoHighlightMenuItem_CheckedChanged);
-            // 
-            // copyToolStripMenuItem
-            // 
-            this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
-            this.copyToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.copyToolStripMenuItem.Text = "&Copy";
-            this.copyToolStripMenuItem.Click += new System.EventHandler(this.copyToolStripMenuItem_Click);
-            // 
-            // toolStripMenuItem4
-            // 
-            this.toolStripMenuItem4.Name = "toolStripMenuItem4";
-            this.toolStripMenuItem4.Size = new System.Drawing.Size(198, 6);
             // 
             // splitContainer
             // 

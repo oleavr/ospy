@@ -266,13 +266,8 @@ connect_done(int retval,
 static BOOL
 called_from_wsock(DWORD ret_addr)
 {
-  if (ret_addr >= (DWORD) wsock32_info.lpBaseOfDll &&
-      ret_addr < (DWORD) wsock32_info.lpBaseOfDll + wsock32_info.SizeOfImage)
-  {
-    return TRUE;
-  }
-
-  return FALSE;
+    return (ret_addr >= (DWORD) wsock32_info.lpBaseOfDll &&
+            ret_addr < (DWORD) wsock32_info.lpBaseOfDll + wsock32_info.SizeOfImage);
 }
 
 int __cdecl
@@ -545,17 +540,17 @@ hook_winsock()
     h = LoadLibrary("wsock32.dll");
     if (h == NULL)
     {
-      MessageBox(0, "Failed to load 'wsock32.dll'.",
-                    "oSpy", MB_ICONERROR | MB_OK);
-      return;
+        MessageBox(0, "Failed to load 'wsock32.dll'.",
+                   "oSpy", MB_ICONERROR | MB_OK);
+        return;
     }
 
     if (GetModuleInformation(GetCurrentProcess(), h, &wsock32_info,
                              sizeof(wsock32_info)) == 0)
     {
-      message_logger_log_message("DllMain", 0, MESSAGE_CTX_WARNING,
-                                 "GetModuleInformation failed with errno %d",
-                                 GetLastError());
+        message_logger_log_message("DllMain", 0, MESSAGE_CTX_WARNING,
+                                   "GetModuleInformation failed with errno %d",
+                                   GetLastError());
     }
 
     HOOK_FUNCTION_BY_ALIAS(h, recv, wsock32_recv);

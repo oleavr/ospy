@@ -95,6 +95,11 @@ namespace oSpy
                     logger.AddMessage("HTTP premature EOF");
                     break;
                 }
+                catch (ProtocolError)
+                {
+                    logger.AddMessage("HTTP protocol error");
+                    break;
+                }
             }
 
             return true;
@@ -117,8 +122,11 @@ namespace oSpy
 
             string line = stream.PeekLineUTF8();
 
-            string[] tokens = line.Split(new char[] { ' ' },
-                (type == HTTPTransactionType.REQUEST) ? 3 : 2);
+            int fieldCount = (type == HTTPTransactionType.REQUEST) ? 3 : 2;
+
+            string[] tokens = line.Split(new char[] { ' ' }, fieldCount);
+            if (tokens.Length < fieldCount)
+                throw new ProtocolError();
 
             if (type == HTTPTransactionType.REQUEST)
             {
@@ -159,6 +167,9 @@ namespace oSpy
                 if (line.Length > 0)
                 {
                     tokens = line.Split(new char[] { ':' }, 2);
+                    if (tokens.Length < 2)
+                        throw new ProtocolError();
+
                     stream.ReadBytes(Util.GetUTF8ByteCount(line), slices);
                     headersNode.AddField(tokens[0], tokens[1].TrimStart(), "Header field.", slices);
                 }
