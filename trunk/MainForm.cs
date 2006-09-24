@@ -1183,9 +1183,9 @@ namespace oSpy
 
         private void saveRawDumpToFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            if (dumpSaveFileDialog.ShowDialog() == DialogResult.OK)
             {
-                FileStream fs = new FileStream(saveFileDialog.FileName, FileMode.Create);
+                FileStream fs = new FileStream(dumpSaveFileDialog.FileName, FileMode.Create);
 
                 foreach (IPPacket packet in curPacketList)
                 {

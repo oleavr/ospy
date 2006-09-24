@@ -25,11 +25,23 @@
 
 static MODULEINFO schannel_info;
 
+static LPVOID own_base;
+static DWORD own_size;
+
 static BOOL
-called_from_schannel(DWORD ret_addr)
+called_internally(DWORD ret_addr)
 {
-    return (ret_addr >= (DWORD) schannel_info.lpBaseOfDll &&
-            ret_addr < (DWORD) schannel_info.lpBaseOfDll + schannel_info.SizeOfImage);
+    if (ret_addr >= (DWORD) own_base && ret_addr < (DWORD) own_base + own_size)
+    {
+        return TRUE;
+    }
+    else if (ret_addr >= (DWORD) schannel_info.lpBaseOfDll &&
+             ret_addr < (DWORD) schannel_info.lpBaseOfDll + schannel_info.SizeOfImage)
+    {
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 static const char *
@@ -135,7 +147,7 @@ CryptImportKey_done(BOOL retval,
     DWORD err = GetLastError();
     int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
 
-    if (retval && !called_from_schannel(ret_addr))
+    if (retval && !called_internally(ret_addr))
     {
         message_logger_log("CryptImportKey", ret_addr, (DWORD) *phKey,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
@@ -173,7 +185,7 @@ CryptExportKey_done(BOOL retval,
     DWORD err = GetLastError();
     int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
 
-    if (retval && !called_from_schannel(ret_addr))
+    if (retval && !called_internally(ret_addr))
     {
         const char *blob_type_str;
 
@@ -234,13 +246,47 @@ CryptGenKey_done(BOOL retval,
     DWORD err = GetLastError();
     int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
 
-    if (retval && !called_from_schannel(ret_addr))
+    if (retval && !called_internally(ret_addr))
     {
         message_logger_log("CryptGenKey", ret_addr, (DWORD) *phKey,
             MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
             NULL, NULL, NULL, 0,
             "hProv=0x%p, Algid=%s, dwFlags=0x%08x => *phKey=0x%p",
             hProv, alg_id_to_string(Algid), dwFlags, *phKey);
+    }
+
+    SetLastError(err);
+    return retval;
+}
+
+static BOOL __cdecl
+CryptDuplicateKey_called(BOOL carry_on,
+                         DWORD ret_addr,
+                         HCRYPTKEY hKey,
+                         DWORD *pdwReserved,
+                         DWORD dwFlags,
+                         HCRYPTKEY *phKey)
+{
+    return TRUE;
+}
+
+static BOOL __stdcall
+CryptDuplicateKey_done(BOOL retval,
+                       HCRYPTKEY hKey,
+                       DWORD *pdwReserved,
+                       DWORD dwFlags,
+                       HCRYPTKEY *phKey)
+{
+    DWORD err = GetLastError();
+    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+
+    if (retval && !called_internally(ret_addr))
+    {
+        message_logger_log("CryptDuplicateKey", ret_addr, (DWORD) *phKey,
+            MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+            NULL, NULL, NULL, 0,
+            "hKey=0x%p => *phKey=0x%p",
+            hKey, *phKey);
     }
 
     SetLastError(err);
@@ -270,12 +316,71 @@ CryptGetKeyParam_done(BOOL retval,
     DWORD err = GetLastError();
     int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
 
-    if (retval && !called_from_schannel(ret_addr))
+    if (retval && !called_internally(ret_addr))
     {
         message_logger_log("CryptGetKeyParam", ret_addr, (DWORD) hKey,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
             NULL, NULL, (const char *) pbData, *pdwDataLen,
             "hKey=0x%p, dwParam=%s", hKey, key_param_to_string(dwParam));
+    }
+
+    SetLastError(err);
+    return retval;
+}
+
+static BOOL __cdecl
+CryptSetKeyParam_called(BOOL carry_on,
+                        DWORD ret_addr,
+                        HCRYPTKEY hKey,
+                        DWORD dwParam,
+                        BYTE *pbData,
+                        DWORD dwFlags)
+{
+    return TRUE;
+}
+
+static BOOL __stdcall
+CryptSetKeyParam_done(BOOL retval,
+                      HCRYPTKEY hKey,
+                      DWORD dwParam,
+                      BYTE *pbData,
+                      DWORD dwFlags)
+{
+    DWORD err = GetLastError();
+    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+
+    if (retval && !called_internally(ret_addr))
+    {
+        const char *data = NULL;
+        int data_len = 0;
+        DWORD block_len, len = 4;
+
+        switch (dwParam)
+        {
+            case KP_IV:
+                if (CryptGetKeyParam(hKey, KP_BLOCKLEN, (BYTE *) &block_len, &len, 0))
+                {
+                    data = (const char *) pbData;
+                    data_len = block_len / 8;
+                }
+                break;
+            case KP_PERMISSIONS:
+            case KP_ALGID:
+            case KP_PADDING:
+            case KP_MODE:
+            case KP_MODE_BITS:
+                data = (const char *) pbData;
+                data_len = 4;
+                break;
+            default:
+                break;
+        }
+
+        message_logger_log("CryptSetKeyParam", ret_addr, (DWORD) hKey,
+            MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+            NULL, NULL, data, data_len,
+            "hKey=0x%p, dwParam=%s, dwFlags=0x%08x",
+            hKey, key_param_to_string(dwParam), dwFlags);
     }
 
     SetLastError(err);
@@ -297,7 +402,7 @@ CryptDestroyKey_done(BOOL retval,
     DWORD err = GetLastError();
     int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
 
-    if (retval && !called_from_schannel(ret_addr))
+    if (retval && !called_internally(ret_addr))
     {
         message_logger_log("CryptDestroyKey", ret_addr, (DWORD) hKey,
             MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
@@ -327,12 +432,108 @@ CryptGenRandom_done(BOOL retval,
     DWORD err = GetLastError();
     int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
 
-    if (retval && !called_from_schannel(ret_addr))
+    if (retval && !called_internally(ret_addr))
     {
         message_logger_log("CryptGenRandom", ret_addr, (DWORD) hProv,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
             NULL, NULL, (const char *) pbBuffer, dwLen,
             "hProv=0x%p, dwLen=%d", hProv, dwLen);
+    }
+
+    SetLastError(err);
+    return retval;
+}
+
+static BOOL __cdecl
+CryptEncrypt_called(BOOL carry_on,
+                    DWORD ret_addr,
+                    HCRYPTKEY hKey,
+                    HCRYPTHASH hHash,
+                    BOOL Final,
+                    DWORD dwFlags,
+                    BYTE *pbData,
+                    DWORD *pdwDataLen,
+                    DWORD dwBufLen)
+{
+    if (!called_internally(ret_addr))
+    {
+        message_logger_log("CryptEncrypt", ret_addr, (DWORD) hKey,
+            MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_OUTGOING,
+            NULL, NULL, (const char *) pbData, *pdwDataLen,
+            "hKey=0x%p, hHash=0x%p, Final=%s, dwFlags=0x%08x, *pdwDataLen=%d, dwBufLen=%d",
+            hKey, hHash, (Final) ? "TRUE" : "FALSE", dwFlags, *pdwDataLen, dwBufLen);
+    }
+
+    return TRUE;
+}
+
+static BOOL __stdcall
+CryptEncrypt_done(BOOL retval,
+                  HCRYPTKEY hKey,
+                  HCRYPTHASH hHash,
+                  BOOL Final,
+                  DWORD dwFlags,
+                  BYTE *pbData,
+                  DWORD *pdwDataLen,
+                  DWORD dwBufLen)
+{
+    DWORD err = GetLastError();
+    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+
+    if (!called_internally(ret_addr))
+    {
+        message_logger_log("CryptEncrypt", ret_addr, (DWORD) hKey,
+            MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INCOMING,
+            NULL, NULL, (const char *) pbData, *pdwDataLen,
+            "hKey=0x%p, hHash=0x%p, Final=%s, dwFlags=0x%08x, *pdwDataLen=%d, dwBufLen=%d",
+            hKey, hHash, (Final) ? "TRUE" : "FALSE", dwFlags, *pdwDataLen, dwBufLen);
+    }
+
+    SetLastError(err);
+    return retval;
+}
+
+static BOOL __cdecl
+CryptDecrypt_called(BOOL carry_on,
+                    DWORD ret_addr,
+                    HCRYPTKEY hKey,
+                    HCRYPTHASH hHash,
+                    BOOL Final,
+                    DWORD dwFlags,
+                    BYTE *pbData,
+                    DWORD *pdwDataLen)
+{
+    if (!called_internally(ret_addr))
+    {
+        message_logger_log("CryptDecrypt", ret_addr, (DWORD) hKey,
+            MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_OUTGOING,
+            NULL, NULL, (const char *) pbData, *pdwDataLen,
+            "hKey=0x%p, hHash=0x%p, Final=%s, dwFlags=0x%08x, *pdwDataLen=%d",
+            hKey, hHash, (Final) ? "TRUE" : "FALSE", dwFlags, *pdwDataLen);
+    }
+
+    return TRUE;
+}
+
+static BOOL __stdcall
+CryptDecrypt_done(BOOL retval,
+                  HCRYPTKEY hKey,
+                  HCRYPTHASH hHash,
+                  BOOL Final,
+                  DWORD dwFlags,
+                  BYTE *pbData,
+                  DWORD *pdwDataLen)
+{
+    DWORD err = GetLastError();
+    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+
+    if (!called_internally(ret_addr))
+    {
+        message_logger_log("CryptDecrypt", ret_addr, (DWORD) hKey,
+            MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INCOMING,
+            NULL, NULL, (const char *) pbData, *pdwDataLen,
+            "hKey=0x%p, hHash=0x%p, Final=%s, dwFlags=0x%08x, *pdwDataLen=%d",
+            hKey, hHash, (Final) ? "TRUE" : "FALSE", dwFlags, *pdwDataLen);
     }
 
     SetLastError(err);
@@ -407,13 +608,59 @@ CryptCreateHash_done(BOOL retval,
 
         hash_map[*phHash] = ctx;
 
-        if (!called_from_schannel(ret_addr))
+        if (!called_internally(ret_addr))
         {
             message_logger_log("CryptCreateHash", ret_addr, ctx->get_id(),
                 MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
                 NULL, NULL, NULL, 0,
                 "hProv=0x%p, Algid=%s, hKey=0x%p => *phHash=0x%p",
                 hProv, ctx->get_alg_id_as_string(), hKey, *phHash);
+        }
+
+        UNLOCK();
+    }
+
+    SetLastError(err);
+    return retval;
+}
+
+static BOOL __cdecl
+CryptDuplicateHash_called(BOOL carry_on,
+                          DWORD ret_addr,
+                          HCRYPTHASH hHash,
+                          DWORD *pdwReserved,
+                          DWORD dwFlags,
+                          HCRYPTHASH *phHash)
+{
+    return TRUE;
+}
+
+static BOOL __stdcall
+CryptDuplicateHash_done(BOOL retval,
+                        HCRYPTHASH hHash,
+                        DWORD *pdwReserved,
+                        DWORD dwFlags,
+                        HCRYPTHASH *phHash)
+{
+    DWORD err = GetLastError();
+    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+
+    if (retval && !called_internally(ret_addr))
+    {
+        HashMap::iterator iter;
+
+        LOCK();
+
+        iter = hash_map.find(hHash);
+        if (iter != hash_map.end())
+        {
+            HashContext *ctx = iter->second;
+
+            message_logger_log("CryptDuplicateHash", ret_addr, ctx->get_id(),
+                MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+                NULL, NULL, NULL, 0,
+                "hHash=0x%p, Algid=%s => *phHash=0x%p",
+                hHash, ctx->get_alg_id_as_string(), *phHash);
         }
 
         UNLOCK();
@@ -447,12 +694,11 @@ CryptDestroyHash_done(BOOL retval,
         {
             HashContext *ctx = iter->second;
 
-            if (!called_from_schannel(ret_addr))
+            if (!called_internally(ret_addr))
             {
                 message_logger_log("CryptDestroyHash", ret_addr, ctx->get_id(),
                     MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
-                    NULL, NULL, NULL, 0,
-                    "hHash=0x%08x", hHash);
+                    NULL, NULL, NULL, 0, "hHash=0x%p", hHash);
             }
 
             hash_map.erase(iter);
@@ -487,7 +733,7 @@ CryptHashData_done(BOOL retval,
     DWORD err = GetLastError();
     int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
 
-    if (retval && !called_from_schannel(ret_addr))
+    if (retval && !called_internally(ret_addr))
     {
         HashMap::iterator iter;
 
@@ -534,7 +780,7 @@ CryptGetHashParam_done (BOOL retval,
     DWORD err = GetLastError();
     int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
 
-    if (retval && !called_from_schannel(ret_addr))
+    if (retval && !called_internally(ret_addr))
     {
         HashMap::iterator iter;
 
@@ -597,7 +843,7 @@ CryptSetHashParam_done(BOOL retval,
     DWORD err = GetLastError();
     int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
 
-    if (retval && !called_from_schannel(ret_addr))
+    if (retval && !called_internally(ret_addr))
     {
         HashMap::iterator iter;
 
@@ -608,11 +854,32 @@ CryptSetHashParam_done(BOOL retval,
         {
             HashContext *ctx = iter->second;
             const char *param_str;
+            HMAC_INFO *hmi;
+            ByteBuffer *buf = NULL;
+            const char *data = NULL;
+            int data_len = 0;
 
             switch (dwParam)
             {
                 case HP_HMAC_INFO:
                     param_str = "HMAC_INFO";
+                    hmi = (HMAC_INFO *) pbData;
+
+                    buf = byte_buffer_sized_new(4 +
+                                                4 + hmi->cbInnerString +
+                                                4 + hmi->cbOuterString);
+
+                    byte_buffer_append(buf, &hmi->HashAlgid, sizeof(ALG_ID));
+
+                    byte_buffer_append(buf, &hmi->cbInnerString, sizeof(DWORD));
+                    byte_buffer_append(buf, hmi->pbInnerString, hmi->cbInnerString);
+
+                    byte_buffer_append(buf, &hmi->cbOuterString, sizeof(DWORD));
+                    byte_buffer_append(buf, hmi->pbOuterString, hmi->cbOuterString);
+
+                    data = (const char *) buf->buf;
+                    data_len = (int) buf->offset;
+
                     break;
                 case HP_HASHVAL:
                     param_str = "HASHVAL";
@@ -624,9 +891,12 @@ CryptSetHashParam_done(BOOL retval,
 
             message_logger_log("CryptSetHashParam", ret_addr, ctx->get_id(),
                 MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
-                NULL, NULL, NULL, 0,
+                NULL, NULL, data, data_len,
                 "hHash=0x%p, Algid=%s, dwParam=%s",
                 hHash, ctx->get_alg_id_as_string(), param_str);
+
+            if (buf != NULL)
+                byte_buffer_free(buf);
         }
 
         UNLOCK();
@@ -639,12 +909,18 @@ CryptSetHashParam_done(BOOL retval,
 HOOK_GLUE_SPECIAL(CryptImportKey, (6 * 4))
 HOOK_GLUE_SPECIAL(CryptExportKey, (6 * 4))
 HOOK_GLUE_SPECIAL(CryptGenKey, (4 * 4))
+HOOK_GLUE_SPECIAL(CryptDuplicateKey, (4 * 4))
 HOOK_GLUE_SPECIAL(CryptGetKeyParam, (5 * 4))
+HOOK_GLUE_SPECIAL(CryptSetKeyParam, (4 * 4))
 HOOK_GLUE_SPECIAL(CryptDestroyKey, (1 * 4))
 
 HOOK_GLUE_SPECIAL(CryptGenRandom, (3 * 4))
 
+HOOK_GLUE_SPECIAL(CryptEncrypt, (7 * 4))
+HOOK_GLUE_SPECIAL(CryptDecrypt, (6 * 4))
+
 HOOK_GLUE_SPECIAL(CryptCreateHash, (5 * 4))
+HOOK_GLUE_SPECIAL(CryptDuplicateHash, (4 * 4))
 HOOK_GLUE_SPECIAL(CryptDestroyHash, (1 * 4))
 HOOK_GLUE_SPECIAL(CryptHashData, (4 * 4))
 HOOK_GLUE_SPECIAL(CryptGetHashParam, (5 * 4))
@@ -653,32 +929,16 @@ HOOK_GLUE_SPECIAL(CryptSetHashParam, (4 * 4))
 void
 hook_crypt()
 {
+    // Initialize
     InitializeCriticalSection(&cs);
 
-    // Hook the Crypt API
-    HMODULE h = LoadLibrary("advapi32.dll");
-    if (h == NULL)
+    if (!get_module_base_and_size("oSpyAgent.dll", &own_base, &own_size, NULL))
     {
-	    MessageBox(0, "Failed to load 'advapi32.dll'.",
-                   "oSpy", MB_ICONERROR | MB_OK);
-        return;
+        message_logger_log_message("hook_crypt", 0, MESSAGE_CTX_WARNING,
+                                   "get_module_base_and_size for self failed");
     }
 
-    HOOK_FUNCTION_SPECIAL(h, CryptImportKey);
-    HOOK_FUNCTION_SPECIAL(h, CryptExportKey);
-    HOOK_FUNCTION_SPECIAL(h, CryptGenKey);
-    HOOK_FUNCTION_SPECIAL(h, CryptGetKeyParam);
-    HOOK_FUNCTION_SPECIAL(h, CryptDestroyKey);
-
-    HOOK_FUNCTION_SPECIAL(h, CryptGenRandom);
-
-    HOOK_FUNCTION_SPECIAL(h, CryptCreateHash);
-    HOOK_FUNCTION_SPECIAL(h, CryptDestroyHash);
-    HOOK_FUNCTION_SPECIAL(h, CryptHashData);
-    HOOK_FUNCTION_SPECIAL(h, CryptGetHashParam);
-    HOOK_FUNCTION_SPECIAL(h, CryptSetHashParam);
-
-    h = LoadLibrary("schannel.dll");
+    HMODULE h = LoadLibrary("schannel.dll");
     if (h == NULL)
     {
         MessageBox(0, "Failed to load 'schannel.dll'.",
@@ -689,8 +949,37 @@ hook_crypt()
     if (GetModuleInformation(GetCurrentProcess(), h, &schannel_info,
                              sizeof(schannel_info)) == 0)
     {
-        message_logger_log_message("DllMain", 0, MESSAGE_CTX_WARNING,
+        message_logger_log_message("hook_crypt", 0, MESSAGE_CTX_WARNING,
                                    "GetModuleInformation failed with errno %d",
                                    GetLastError());
     }
+
+    // Hook the Crypt API
+    h = LoadLibrary("advapi32.dll");
+    if (h == NULL)
+    {
+	    MessageBox(0, "Failed to load 'advapi32.dll'.",
+                   "oSpy", MB_ICONERROR | MB_OK);
+        return;
+    }
+
+    HOOK_FUNCTION_SPECIAL(h, CryptImportKey);
+    HOOK_FUNCTION_SPECIAL(h, CryptExportKey);
+    HOOK_FUNCTION_SPECIAL(h, CryptGenKey);
+    HOOK_FUNCTION_SPECIAL(h, CryptDuplicateKey);
+    HOOK_FUNCTION_SPECIAL(h, CryptGetKeyParam);
+    HOOK_FUNCTION_SPECIAL(h, CryptSetKeyParam);
+    HOOK_FUNCTION_SPECIAL(h, CryptDestroyKey);
+
+    HOOK_FUNCTION_SPECIAL(h, CryptGenRandom);
+
+    HOOK_FUNCTION_SPECIAL(h, CryptEncrypt);
+    HOOK_FUNCTION_SPECIAL(h, CryptDecrypt);
+
+    HOOK_FUNCTION_SPECIAL(h, CryptCreateHash);
+    HOOK_FUNCTION_SPECIAL(h, CryptDuplicateHash);
+    HOOK_FUNCTION_SPECIAL(h, CryptDestroyHash);
+    HOOK_FUNCTION_SPECIAL(h, CryptHashData);
+    HOOK_FUNCTION_SPECIAL(h, CryptGetHashParam);
+    HOOK_FUNCTION_SPECIAL(h, CryptSetHashParam);
 }

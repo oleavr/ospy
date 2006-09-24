@@ -24,7 +24,7 @@ typedef struct {
     size_t offset;
 } ByteBuffer;
 
-ByteBuffer * byte_buffer_sized_new(size_t size);
+ByteBuffer *byte_buffer_sized_new(size_t size);
 void byte_buffer_free(ByteBuffer *buf);
 
 void byte_buffer_append(ByteBuffer *buf, void *bytes, size_t n);
