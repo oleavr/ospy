@@ -430,9 +430,13 @@ namespace oSpy
                         {
                             e.Value = Properties.Resources.IncomingImg;
                         }
-                        else
+                        else if (direction == PacketDirection.PACKET_DIRECTION_OUTGOING)
                         {
                             e.Value = Properties.Resources.OutgoingImg;
+                        }
+                        else
+                        {
+                            e.Value = Properties.Resources.InfoImg;
                         }
                     }
                     break;
@@ -583,15 +587,22 @@ namespace oSpy
                             remoteEndpoint);
                     }
 
-                    if (direction == PacketDirection.PACKET_DIRECTION_INCOMING)
+                    if (msgPrefix.Length > 0 && msgSuffix.Length > 0)
                     {
-                        e.Row["Description"] = String.Format("{0}Received {1} byte{2}{3}",
-                                                             msgPrefix, data.Length, suffix, msgSuffix);
+                        if (direction == PacketDirection.PACKET_DIRECTION_INCOMING)
+                        {
+                            e.Row["Description"] = String.Format("{0}Received {1} byte{2}{3}",
+                                                                 msgPrefix, data.Length, suffix, msgSuffix);
+                        }
+                        else
+                        {
+                            e.Row["Description"] = String.Format("{0}Sent {1} byte{2}{3}",
+                                                                 msgPrefix, data.Length, suffix, msgSuffix);
+                        }
                     }
                     else
                     {
-                        e.Row["Description"] = String.Format("{0}Sent {1} byte{2}{3}",
-                                                             msgPrefix, data.Length, suffix, msgSuffix);
+                        e.Row["Description"] = e.Row["Message"];
                     }
 
                     IPPacket pkt = new IPPacket(index, timestamp, resourceId, direction, localEndpoint, remoteEndpoint, data);
@@ -954,8 +965,19 @@ namespace oSpy
 
                 int lineStart = lineNo;
 
-                string linePrefix =
-                    (packet.Direction == PacketDirection.PACKET_DIRECTION_INCOMING) ? "<< " : ">> ";
+                string linePrefix;
+                switch (packet.Direction)
+                {
+                    case PacketDirection.PACKET_DIRECTION_INCOMING:
+                        linePrefix = "<< ";
+                        break;
+                    case PacketDirection.PACKET_DIRECTION_OUTGOING:
+                        linePrefix = ">> ";
+                        break;
+                    default:
+                        linePrefix = ">< ";
+                        break;
+                }
 
                 dump.AppendFormat("{0}.¸¸.· #{1}\n", linePrefix, packet.Index);
                 lineNo++;
@@ -1047,6 +1069,15 @@ namespace oSpy
                 else if (lines[i].StartsWith(">>"))
                 {
                     richTextBox.Select(richTextBox.GetFirstCharIndexFromLine(i), 2);
+                    richTextBox.SelectionColor = colorOutgoing;
+                }
+                else if (lines[i].StartsWith("><"))
+                {
+                    int index = richTextBox.GetFirstCharIndexFromLine(i);
+
+                    richTextBox.Select(index, 1);
+                    richTextBox.SelectionColor = colorIncoming;
+                    richTextBox.Select(index + 1, 1);
                     richTextBox.SelectionColor = colorOutgoing;
                 }
             }

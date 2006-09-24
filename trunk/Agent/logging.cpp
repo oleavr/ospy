@@ -94,6 +94,11 @@ message_element_init(MessageQueueElement *el,
                               sizeof(el->caller_module_name));
 
     /* underlying resource id */
+    if (resource_id == 0)
+    {
+        resource_id = ospy_rand();
+    }
+
     el->resource_id = resource_id;
 
     /* message type */
@@ -122,6 +127,9 @@ void message_queue_add(MessageQueueElement *element)
     }
 }
 
+// FIXME: this should be dynamically allocated instead
+#define LOG_BUFFER_SIZE 2048
+
 void
 message_logger_log_message(const char *function_name,
                            DWORD return_address,
@@ -130,10 +138,10 @@ message_logger_log_message(const char *function_name,
                            ...)
 {
     va_list args;
-    char buf[256];
+    char buf[LOG_BUFFER_SIZE];
 
     va_start(args, message);
-    vsprintf(buf, message, args);
+    StringCbVPrintfA(buf, sizeof(buf), message, args);
 
     message_logger_log(function_name, return_address, 0,
                        MESSAGE_TYPE_MESSAGE, context, PACKET_DIRECTION_INVALID,
@@ -222,7 +230,7 @@ message_logger_log(const char *function_name,
     /* fill in the message content */
     if (message != NULL)
     {
-        vsprintf(el.message, message, args);
+        StringCbVPrintfA(el.message, sizeof(el.message), message, args);
     }
 
     /* submit the message */
@@ -396,25 +404,22 @@ log_udp_packet(const char *function_name,
 	struct sockaddr_in local_addr, peer_addr;
 	int sin_len;
 
-  sin_len = sizeof(local_addr);
-  getsockname(s, (struct sockaddr *) &local_addr, &sin_len);
+    sin_len = sizeof(local_addr);
+    getsockname(s, (struct sockaddr *) &local_addr, &sin_len);
 
-  if (peer == NULL)
-  {
-    sin_len = sizeof(peer_addr);
-    getsockname(s, (struct sockaddr *) &peer_addr, &sin_len);    
-  }
-  else
-  {
-    peer_addr = *((const struct sockaddr_in *) peer);
-  }
+    if (peer == NULL)
+    {
+        sin_len = sizeof(peer_addr);
+        getsockname(s, (struct sockaddr *) &peer_addr, &sin_len);    
+    }
+    else
+    {
+        peer_addr = *((const struct sockaddr_in *) peer);
+    }
 
-  message_logger_log_packet(function_name, return_address, s, direction,
+    message_logger_log_packet(function_name, return_address, s, direction,
                             &local_addr, &peer_addr, buf, len);
 }
-
-// FIXME: this should be dynamically allocated instead
-#define LOG_BUFFER_SIZE 2048
 
 void
 log_debug_w(const char *source,
@@ -426,7 +431,6 @@ log_debug_w(const char *source,
     char buf[LOG_BUFFER_SIZE];
 
     StringCbVPrintfW(wide_buf, sizeof(wide_buf), format, args);
-    wide_buf[LOG_BUFFER_SIZE - 1] = L'\0';
 
     WideCharToMultiByte(CP_ACP, 0, wide_buf, -1, buf, sizeof(buf), NULL, NULL);
 
@@ -439,9 +443,9 @@ log_debug(const char *source,
           const char *format,
           va_list args)
 {
-    char buf[256];
+    char buf[LOG_BUFFER_SIZE];
 
-    vsprintf(buf, format, args);
+    StringCbVPrintfA(buf, sizeof(buf), format, args);
 
     message_logger_log_message(source, ret_addr, MESSAGE_CTX_INFO, buf);
 }

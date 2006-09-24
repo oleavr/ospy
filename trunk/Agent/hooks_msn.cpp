@@ -99,17 +99,17 @@ idcrl_debug(void *obj,
 void
 hook_msn()
 {
-    char *error;
+    //char *error;
 
     if (!cur_process_is("msnmsgr.exe"))
         return;
 
     // IDCRL internal debugging function
+    /*
     if (!override_function_by_signature(&msn_signatures[SIGNATURE_IDCRL_DEBUG],
                                         idcrl_debug, NULL, &error))
     {
         LOG_OVERRIDE_ERROR(error);
     }
-
-    message_logger_log_message("hook_msn", 0, MESSAGE_CTX_ERROR, "hooked");
+    */
 }

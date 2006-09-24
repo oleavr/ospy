@@ -158,6 +158,7 @@ namespace oSpy
                     string msg = String.Format("An unhandled exception occured while the parser {0} was parsing session {1}: {2}\n\nBacktrace:\n{3}\n\nPlease submit your trace to oleavr@gmail.com",
                         fac.GetType().Name, session, e.Message, e.StackTrace);
                     MessageBox.Show(msg, "Parsing error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    throw e;
                 }
 
                 session.ResetState();
