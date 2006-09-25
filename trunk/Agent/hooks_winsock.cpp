@@ -24,6 +24,69 @@
 static MODULEINFO wsock32_info;
 
 static int __cdecl
+GetAddrInfoA_called(BOOL carry_on,
+                    DWORD ret_addr,
+                    const char *nodename,
+                    const char *servname,
+                    const struct addrinfo *hints,
+                    struct addrinfo **res)
+{
+    message_logger_log_message("GetAddrInfoA", ret_addr, MESSAGE_CTX_INFO,
+        "nodename=%s, servname=%s", nodename, servname);
+
+    return 0;
+}
+
+static int __stdcall
+GetAddrInfoA_done(int retval,
+                  const char *nodename,
+                  const char *servname,
+                  const struct addrinfo *hints,
+                  struct addrinfo **res)
+{
+    return retval;
+}
+
+static int __cdecl
+GetAddrInfoW_called(BOOL carry_on,
+                    DWORD ret_addr,
+                    const WCHAR *nodename,
+                    const WCHAR *servname,
+                    const struct addrinfo *hints,
+                    struct addrinfo **res)
+{
+    char nodename_a[256], servname_a[256];
+
+    WideCharToMultiByte(CP_ACP, 0, nodename, -1, nodename_a, sizeof(nodename_a),
+                        NULL, NULL);
+
+    if (servname != NULL)
+    {
+        WideCharToMultiByte(CP_ACP, 0, servname, -1, servname_a, sizeof(servname_a),
+                            NULL, NULL);
+    }
+    else
+    {
+        strcpy(servname_a, "NULL");
+    }
+
+    message_logger_log_message("GetAddrInfoW", ret_addr, MESSAGE_CTX_INFO,
+        "nodename=%s, servname=%s", nodename_a, servname_a);
+
+    return 0;
+}
+
+static int __stdcall
+GetAddrInfoW_done(int retval,
+                  const WCHAR *nodename,
+                  const WCHAR *servname,
+                  const struct addrinfo *hints,
+                  struct addrinfo **res)
+{
+    return retval;
+}
+
+static int __cdecl
 recv_called(BOOL carry_on,
             DWORD ret_addr,
             SOCKET s,
@@ -504,6 +567,9 @@ wsock32_recv_done(int retval,
   return retval;
 }
 
+HOOK_GLUE_INTERRUPTIBLE(GetAddrInfoA, (4 * 4))
+HOOK_GLUE_INTERRUPTIBLE(GetAddrInfoW, (4 * 4))
+
 HOOK_GLUE_INTERRUPTIBLE(recv, (4 * 4))
 HOOK_GLUE_INTERRUPTIBLE(send, (4 * 4))
 HOOK_GLUE_INTERRUPTIBLE(recvfrom, (6 * 4))
@@ -526,6 +592,13 @@ hook_winsock()
                    "oSpy", MB_ICONERROR | MB_OK);
       return;
     }
+
+    if (GetProcAddress(h, "GetAddrInfoA") != NULL)
+    {
+        HOOK_FUNCTION(h, GetAddrInfoA);
+    }
+
+    HOOK_FUNCTION(h, GetAddrInfoW);
 
     HOOK_FUNCTION(h, recv);
     HOOK_FUNCTION(h, send);
