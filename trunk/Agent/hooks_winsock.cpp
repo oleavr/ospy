@@ -19,69 +19,258 @@
 #include "stdafx.h"
 #include "hooking.h"
 #include "logging.h"
+#include <Ws2tcpip.h>
 #include <psapi.h>
 
 static MODULEINFO wsock32_info;
 
 static int __cdecl
-GetAddrInfoA_called(BOOL carry_on,
-                    DWORD ret_addr,
-                    const char *nodename,
-                    const char *servname,
-                    const struct addrinfo *hints,
-                    struct addrinfo **res)
+getaddrinfo_called(BOOL carry_on,
+                   DWORD ret_addr,
+                   const char *nodename,
+                   const char *servname,
+                   const struct addrinfo *hints,
+                   struct addrinfo **res)
 {
-    message_logger_log_message("GetAddrInfoA", ret_addr, MESSAGE_CTX_INFO,
-        "nodename=%s, servname=%s", nodename, servname);
-
     return 0;
 }
 
-static int __stdcall
-GetAddrInfoA_done(int retval,
-                  const char *nodename,
-                  const char *servname,
-                  const struct addrinfo *hints,
-                  struct addrinfo **res)
+static void
+dump_addrinfo(const struct addrinfo *first_ai,
+              ByteBuffer *buf)
 {
+    const struct addrinfo *el;
+
+    for (el = first_ai; el; el = el->ai_next)
+    {
+        /*
+         * ai_flags
+         */
+        byte_buffer_append_printf(buf, "\r\n  <flags=");
+
+        if (el->ai_flags != 0)
+        {
+            bool empty = true;
+
+            if (el->ai_flags & AI_PASSIVE)
+            {
+                empty = false;
+                byte_buffer_append_printf(buf, "PASSIVE");
+            }
+
+            if (el->ai_flags & AI_CANONNAME)
+            {
+                if (!empty)  byte_buffer_append_printf(buf, "|");
+                empty = false;
+                byte_buffer_append_printf(buf, "CANONNAME");
+            }
+
+            if (el->ai_flags & AI_NUMERICHOST)
+            {
+                if (!empty)  byte_buffer_append_printf(buf, "|");
+                byte_buffer_append_printf(buf, "NUMERICHOST");
+            }
+        }
+        else
+        {
+            byte_buffer_append_printf(buf, "0");
+        }
+
+        /*
+         * ai_family
+         */
+        byte_buffer_append_printf(buf, ", family=");
+
+        switch (el->ai_family)
+        {
+            case PF_INET:
+                byte_buffer_append_printf(buf, "INET");
+                break;
+            case PF_INET6:
+                byte_buffer_append_printf(buf, "INET6");
+                break;
+            default:
+                byte_buffer_append_printf(buf,
+                    (el->ai_family != 0) ? "0x%08x" : "%d", el->ai_family);
+                break;
+        }
+
+        /*
+         * ai_socktype
+         */
+        byte_buffer_append_printf(buf, ", socktype=");
+
+        switch (el->ai_socktype)
+        {
+            case SOCK_STREAM:
+                byte_buffer_append_printf(buf, "STREAM");
+                break;
+            case SOCK_DGRAM:
+                byte_buffer_append_printf(buf, "DGRAM");
+                break;
+            case SOCK_RAW:
+                byte_buffer_append_printf(buf, "RAW");
+                break;
+            default:
+                byte_buffer_append_printf(buf,
+                    (el->ai_socktype != 0) ? "0x%08x" : "%d", el->ai_socktype);
+                break;
+        }
+
+        /*
+         * ai_protocol
+         */
+        byte_buffer_append_printf(buf, ", protocol=");
+
+        switch (el->ai_protocol)
+        {
+            case IPPROTO_TCP:
+                byte_buffer_append_printf(buf, "TCP");
+                break;
+            case IPPROTO_UDP:
+                byte_buffer_append_printf(buf, "UDP");
+                break;
+            default:
+                byte_buffer_append_printf(buf,
+                    (el->ai_protocol != 0) ? "0x%08x" : "%d", el->ai_protocol);
+                break;
+        }
+
+        /*
+         * ai_canonname
+         */
+        byte_buffer_append_printf(buf, ", canonname=");
+
+        if (el->ai_canonname != NULL)
+        {
+            byte_buffer_append_printf(buf, "\"%s\"", el->ai_canonname);
+        }
+        else
+        {
+            byte_buffer_append_printf(buf, "NULL");
+        }
+
+        /*
+         * ai_addr
+         */
+        byte_buffer_append_printf(buf, ", addr=");
+
+        if (el->ai_addr != NULL)
+        {
+            struct sockaddr_in *sin;
+            int port;
+
+            switch (el->ai_family)
+            {
+                case PF_INET:
+                    sin = (struct sockaddr_in *) el->ai_addr;
+
+                    byte_buffer_append_printf(buf, "%s", inet_ntoa(sin->sin_addr));
+
+                    port = ntohs(sin->sin_port);
+                    if (port != 0)
+                    {
+                        byte_buffer_append_printf(buf, ":%d", port);
+                    }
+
+                    break;
+                default:
+                    byte_buffer_append_printf(buf, "?");
+                    break;
+            }
+        }
+        else
+        {
+            byte_buffer_append_printf(buf, "NULL");
+        }
+
+        byte_buffer_append_printf(buf, ">");
+    }
+}
+
+static int __stdcall
+getaddrinfo_done(int retval,
+                 const char *nodename,
+                 const char *servname,
+                 const struct addrinfo *hints,
+                 struct addrinfo **res)
+{
+    DWORD err = GetLastError();
+    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+    ByteBuffer *msg = byte_buffer_sized_new(64);
+    ByteBuffer *body = byte_buffer_sized_new(256);
+    const char *nn, *sn;
+
+    nn = (nodename != NULL) ? nodename : "NULL";
+    sn = (servname != NULL) ? servname : "NULL";
+
+    byte_buffer_append_printf(msg, "nodename=%s, servname=%s", nn, sn);
+
+    byte_buffer_append_printf(body, "nodename: %s\r\nservname: %s\r\nhints:",
+        nn, sn);
+
+    dump_addrinfo(hints, body);
+
+    byte_buffer_append_printf(body, "\r\nresult:");
+
+    if (retval == 0)
+    {
+        dump_addrinfo(*res, body);
+    }
+    else
+    {
+        char *str = NULL;
+
+        switch (err)
+        {
+            case EAI_AGAIN:    str = "EAI_AGAIN";    break;
+            case EAI_BADFLAGS: str = "EAI_BADFLAGS"; break;
+            case EAI_FAIL:     str = "EAI_FAIL";     break;
+            case EAI_FAMILY:   str = "EAI_FAMILY";   break;
+            case EAI_MEMORY:   str = "EAI_MEMORY";   break;
+            //case EAI_NODATA:   str = "EAI_NODATA";   break;
+            case EAI_NONAME:   str = "EAI_NONAME";   break;
+            case EAI_SERVICE:  str = "EAI_SERVICE";  break;
+            case EAI_SOCKTYPE: str = "EAI_SOCKTYPE"; break;
+            default:                                 break;
+        }
+
+        byte_buffer_append_printf(body, "\r\n  ");
+
+        if (str != NULL)
+        {
+            byte_buffer_append_printf(body, "%s", str);
+        }
+        else
+        {
+            byte_buffer_append_printf(body, "ERROR_0x%08x", err);
+        }
+    }
+
+    message_logger_log("getaddrinfo", ret_addr, 0, MESSAGE_TYPE_PACKET,
+        MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL,
+        (const char *) body->buf, (int) body->offset,
+        (const char *) msg->buf);
+
+    byte_buffer_free(msg);
+    byte_buffer_free(body);
+
+    SetLastError(err);
     return retval;
 }
 
 static int __cdecl
-GetAddrInfoW_called(BOOL carry_on,
-                    DWORD ret_addr,
-                    const WCHAR *nodename,
-                    const WCHAR *servname,
-                    const struct addrinfo *hints,
-                    struct addrinfo **res)
+closesocket_called(BOOL carry_on,
+                   DWORD ret_addr,
+                   SOCKET s)
 {
-    char nodename_a[256], servname_a[256];
-
-    WideCharToMultiByte(CP_ACP, 0, nodename, -1, nodename_a, sizeof(nodename_a),
-                        NULL, NULL);
-
-    if (servname != NULL)
-    {
-        WideCharToMultiByte(CP_ACP, 0, servname, -1, servname_a, sizeof(servname_a),
-                            NULL, NULL);
-    }
-    else
-    {
-        strcpy(servname_a, "NULL");
-    }
-
-    message_logger_log_message("GetAddrInfoW", ret_addr, MESSAGE_CTX_INFO,
-        "nodename=%s, servname=%s", nodename_a, servname_a);
-
+    log_tcp_disconnected("closesocket", ret_addr, s, NULL);
     return 0;
 }
 
 static int __stdcall
-GetAddrInfoW_done(int retval,
-                  const WCHAR *nodename,
-                  const WCHAR *servname,
-                  const struct addrinfo *hints,
-                  struct addrinfo **res)
+closesocket_done(int retval,
+                 SOCKET s)
 {
     return retval;
 }
@@ -567,9 +756,9 @@ wsock32_recv_done(int retval,
   return retval;
 }
 
-HOOK_GLUE_INTERRUPTIBLE(GetAddrInfoA, (4 * 4))
-HOOK_GLUE_INTERRUPTIBLE(GetAddrInfoW, (4 * 4))
+HOOK_GLUE_INTERRUPTIBLE(getaddrinfo, (4 * 4))
 
+HOOK_GLUE_INTERRUPTIBLE(closesocket, (1 * 4))
 HOOK_GLUE_INTERRUPTIBLE(recv, (4 * 4))
 HOOK_GLUE_INTERRUPTIBLE(send, (4 * 4))
 HOOK_GLUE_INTERRUPTIBLE(recvfrom, (6 * 4))
@@ -593,13 +782,9 @@ hook_winsock()
       return;
     }
 
-    if (GetProcAddress(h, "GetAddrInfoA") != NULL)
-    {
-        HOOK_FUNCTION(h, GetAddrInfoA);
-    }
+    HOOK_FUNCTION(h, getaddrinfo);
 
-    HOOK_FUNCTION(h, GetAddrInfoW);
-
+    HOOK_FUNCTION(h, closesocket);
     HOOK_FUNCTION(h, recv);
     HOOK_FUNCTION(h, send);
     HOOK_FUNCTION(h, recvfrom);
