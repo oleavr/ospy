@@ -50,15 +50,17 @@ namespace oSpy {
                 try {
                     TransactionNode transaction = new TransactionNode("OracleTransaction");
                     transaction.Description = transaction.Name;
-                    
+
                     TransactionNode tnsNode = ExtractTNSData(stream, StreamDirection.OUT); 
                     if(tnsNode != null)
                         transaction.AddChild(tnsNode);
                     //response stream
                     stream = session.GetNextStreamDirection();
 
+
                     if (stream.GetBytesAvailable() != 0) {
                         tnsNode = ExtractTNSData(stream, StreamDirection.IN);
+
                         if(tnsNode != null)
                             transaction.AddChild(tnsNode);
                     }
@@ -66,6 +68,7 @@ namespace oSpy {
                         session.AddNode(transaction);
                     //request stream (if exists)
                     stream = session.GetNextStreamDirection();
+
                     if(stream.GetBytesAvailable() == 0)
                         break;
                 } catch (EndOfStreamException) {
@@ -88,6 +91,7 @@ namespace oSpy {
                 stream.ReadBytes(2, slices);
                 stream.ReadBytes(2); //skip checksum
                 packetType = stream.ReadByte();
+                stream.ReadByte(); //skip the reserved byte
                 type = ((packetType == 1) ? OracleTransactionType.CONNECT : ((packetType == 2) ? OracleTransactionType.ACCEPT : ((packetType == 6) ? OracleTransactionType.DATA : ((packetType == 5) ? OracleTransactionType.REDIRECT : OracleTransactionType.UNKNOWN))));
             } catch (Exception e) {
                 logger.AddMessage(e.Message);
@@ -99,7 +103,6 @@ namespace oSpy {
                         node = new TransactionNode("Connect");
                         node.AddField("Packet Size", pLen, "Packet Size", slices);
 
-                        int reservedByte = stream.ReadByte();
                         Int16 headerChecksum = stream.ReadInt16();
                         Int16 version = stream.PeekInt16();
                         stream.ReadBytes(2, slices);
@@ -153,7 +156,6 @@ namespace oSpy {
                     node.AddField("Packet Size", pLen, "Packet Size", slices);
 
                     try {
-                        stream.ReadByte(); //skip the reserved byte
                         Int16 headerChecksum = stream.ReadInt16();
                         Int16 version = stream.PeekInt16();
                         stream.ReadBytes(2, slices);
@@ -169,20 +171,7 @@ namespace oSpy {
                         Int16 valueOfOneInHW = stream.ReadInt16();
                         Int16 acceptDataLength = stream.ReadInt16();
                         Int16 dataOffset = stream.ReadInt16();
-                        int connectFlagsA = (int)stream.PeekBytes(1)[0];
-                        stream.ReadBytes(1, slices);
-                        bool NASvcsWanted = ((connectFlagsA & 0x1) != 0);
-                        bool Ichng = ((connectFlagsA & 0x2) != 0);
-                        bool NASvcsEnabled = ((connectFlagsA & 0x3) != 0);
-                        bool NASvcsLink = ((connectFlagsA & 0x4) != 0);
-                        bool NASvcsReq = ((connectFlagsA & 0x5) != 0);
-                        TransactionNode caFlagNode = new TransactionNode("Connect Flags 0");
-                        caFlagNode.AddField("NA services required", NASvcsReq, "NA services required", slices);
-                        caFlagNode.AddField("NA services linked in", NASvcsLink, "NA services linked in", slices);
-                        caFlagNode.AddField("NA services enabled", NASvcsEnabled, "NA services enabled", slices);
-                        caFlagNode.AddField("Interchange is involved", Ichng, "Interchange is involved", slices);
-                        caFlagNode.AddField("NA services wanted", NASvcsWanted, "NA services wanted", slices);
-                        node.AddChild(caFlagNode);
+                        int connectFlagsA = stream.ReadByte();
                         int connectFlagsB = stream.ReadByte();
                     } catch (Exception e) {
                         logger.AddMessage(e.Message);
@@ -194,7 +183,6 @@ namespace oSpy {
                     node.AddField("Packet Size", pLen, "Packet Size", slices);
 
                     try {
-                        stream.ReadByte();
                         Int16 headerChecksum = stream.ReadInt16();
                         Int16 redirLen = stream.PeekInt16();
                         stream.ReadBytes(2, slices);
@@ -237,9 +225,10 @@ namespace oSpy {
                     node.AddField("Packet Size", pLen, "Packet Size", slices);
 
                     try {
-                        stream.ReadByte();
                         Int16 headerChecksum = stream.ReadInt16();
-                        byte[] payLoad = stream.PeekBytes(pLen - 8);
+                        Int16 dataFlags = stream.ReadInt16();
+                        int payLoadLength = pLen - 10;
+                        byte[] payLoad = stream.PeekBytes(payLoadLength);
                         string sPayload = Util.DecodeASCII(payLoad);
                         stream.ReadBytes(Util.GetUTF8ByteCount(sPayload), slices);
                         node.AddField("Data", sPayload, "Data", slices);
@@ -249,7 +238,7 @@ namespace oSpy {
                     }
                     return node;
                 default:
-                    logger.AddMessage(String.Format("Couldn't identify packet [pLen={0}, packetType={1}]", pLen,packetType));
+                    //logger.AddMessage(String.Format("Couldn't identify packet [pLen={0}, packetType={1}]", pLen,packetType));
                     return null;
             }
         }
