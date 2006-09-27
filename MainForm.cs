@@ -1210,7 +1210,8 @@ namespace oSpy
 
         public delegate bool EnumWindowsHandler(int hWnd, int lParam);
 
-        private const int SW_RESTORE = 9;
+        public const int WM_SYSCOMMAND = 0x0112;
+        public const int SC_RESTORE = 0xF120;
 
         [DllImport("user32.dll")]
         public static extern bool EnumWindows(EnumWindowsHandler lpEnumFunc, int lParam);
@@ -1221,9 +1222,7 @@ namespace oSpy
         [DllImport("user32.dll")]
         public static extern bool IsIconic(int hWnd);
         [DllImport("user32.dll")]
-        static extern bool ShowWindow(int hWnd, int nCmdShow);
-        [DllImport("user32.dll")]
-        static extern int SetActiveWindow(int hWnd);
+        public static extern int SendMessage(int hWnd, uint Msg, int wParam, int lParam);
         [DllImport("user32.DLL")]
         public static extern bool SetForegroundWindow(int hWnd);
 
@@ -1248,8 +1247,7 @@ namespace oSpy
 
             if (IsIconic(idaHWnd))
             {
-                ShowWindow(idaHWnd, SW_RESTORE);
-                SetActiveWindow(idaHWnd);
+                SendMessage(idaHWnd, WM_SYSCOMMAND, SC_RESTORE, 0);
             }
             else
             {
