@@ -31,6 +31,7 @@ namespace oSpy
     public interface DebugLogger
     {
         void AddMessage(string msg);
+        void AddMessage(string msg, params object[] vals);
     }
 
     public delegate void PacketDescriptionReceivedHandler(IPPacket[] packets, string description);
@@ -94,6 +95,9 @@ namespace oSpy
             factories.Add(fac);
 
             fac = new MSNTransactionFactory(logger);
+            factories.Add(fac);
+
+            fac = new OracleTransaction(logger);
             factories.Add(fac);
 
             sessions = new List<IPSession>();
@@ -1038,7 +1042,36 @@ namespace oSpy
             return (UInt16)((UInt16)buf[1] << 8 |
                             (UInt16)buf[0]);
         }
-
+        public Int16 PeekInt16() {
+            PushState();
+            Int16 val = ReadInt16();
+            PopState();
+            return val;
+        }
+        public Int32 PeekInt32() {
+            PushState();
+            Int32 val = ReadInt32();
+            PopState();
+            return val;
+        }
+        public Int16 ReadInt16() {
+            byte[] buf = ReadBytes(2);
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(buf);
+            return BitConverter.ToInt16(buf,0);
+        }
+        public Int32 ReadInt32() {
+            byte[] buf = ReadBytes(4);
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(buf);
+            return BitConverter.ToInt32(buf, 0);
+        }
+        public Int64 ReadInt64() {
+            byte[] buf = ReadBytes(8);
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(buf);
+            return BitConverter.ToInt64(buf, 0);
+        }
         public UInt16 PeekU16LE()
         {
             PushState();

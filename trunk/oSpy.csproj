@@ -53,6 +53,7 @@
     <Compile Include="MultiSessionView.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="Oracle.cs" />
     <Compile Include="SoftwallForm.cs">
       <SubType>Form</SubType>
     </Compile>
