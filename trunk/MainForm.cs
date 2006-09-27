@@ -1210,14 +1210,22 @@ namespace oSpy
 
         public delegate bool EnumWindowsHandler(int hWnd, int lParam);
 
-        [DllImport("User32.dll")]
-        public static extern bool EnumWindows(EnumWindowsHandler lpEnumFunc, int lParam);
-        [DllImport("User32.dll")]
-        public static extern Int32 GetWindowText(int hWnd, StringBuilder s, int nMaxCount);
-        [DllImport("USER32.DLL")]
-        public static extern bool SetForegroundWindow(int hWnd);
+        private const int SW_RESTORE = 9;
+
         [DllImport("user32.dll")]
-        public static extern int SendMessage(int hWnd, uint Msg, int wParam, int lParam);
+        public static extern bool EnumWindows(EnumWindowsHandler lpEnumFunc, int lParam);
+        [DllImport("user32.dll")]
+        public static extern int RealGetWindowClass(int hwnd, StringBuilder pszType, int cchType);
+        [DllImport("user32.dll")]
+        public static extern int GetWindowText(int hWnd, StringBuilder s, int nMaxCount);
+        [DllImport("user32.dll")]
+        public static extern bool IsIconic(int hWnd);
+        [DllImport("user32.dll")]
+        static extern bool ShowWindow(int hWnd, int nCmdShow);
+        [DllImport("user32.dll")]
+        static extern int SetActiveWindow(int hWnd);
+        [DllImport("user32.DLL")]
+        public static extern bool SetForegroundWindow(int hWnd);
 
         private int idaHWnd;
         private string idaCallerModName;
@@ -1238,12 +1246,19 @@ namespace oSpy
                 return;
             }
 
-            SetForegroundWindow(idaHWnd);
+            if (IsIconic(idaHWnd))
+            {
+                ShowWindow(idaHWnd, SW_RESTORE);
+                SetActiveWindow(idaHWnd);
+            }
+            else
+            {
+                SetForegroundWindow(idaHWnd);
+            }
 
             System.Threading.Thread.Sleep(100);
 
             SendKeys.SendWait("g");
-            System.Threading.Thread.Sleep(10);
             SendKeys.SendWait(String.Format("{0:x}", idaReturnAddress));
             SendKeys.SendWait("{ENTER}");
         }
@@ -1251,8 +1266,13 @@ namespace oSpy
         private bool FindIDAWindowCallback(int hWnd, int lParam)
         {
             StringBuilder str = new StringBuilder(256);
-            GetWindowText(hWnd, str, str.Capacity);
 
+            RealGetWindowClass(hWnd, str, str.Capacity);
+            string cls = str.ToString();
+            if (cls != "TApplication")
+                return true;
+
+            GetWindowText(hWnd, str, str.Capacity);
             string title = str.ToString();
             if (!title.StartsWith("IDA - "))
                 return true;
