@@ -25,6 +25,7 @@ using System.Drawing;
 using System.Text;
 using System.IO;
 using ICSharpCode.SharpZipLib.BZip2;
+using System.Text.RegularExpressions;
 
 namespace oSpy
 {
@@ -1207,6 +1208,69 @@ namespace oSpy
             debugForm.Show();
         }
 
+        public delegate bool EnumWindowsHandler(int hWnd, int lParam);
+
+        [DllImport("User32.dll")]
+        public static extern bool EnumWindows(EnumWindowsHandler lpEnumFunc, int lParam);
+        [DllImport("User32.dll")]
+        public static extern Int32 GetWindowText(int hWnd, StringBuilder s, int nMaxCount);
+        [DllImport("USER32.DLL")]
+        public static extern bool SetForegroundWindow(int hWnd);
+        [DllImport("user32.dll")]
+        public static extern int SendMessage(int hWnd, uint Msg, int wParam, int lParam);
+
+        private int idaHWnd;
+        private string idaCallerModName;
+
+        private void goToReturnaddressInIDAToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            DataGridViewRow row = dataGridView.SelectedRows[0];
+
+            idaCallerModName = (string)row.Cells[callerModuleNameDataGridViewTextBoxColumn.Index].Value;
+            UInt32 idaReturnAddress = (UInt32)row.Cells[returnAddressDataGridViewTextBoxColumn.Index].Value;
+
+            idaHWnd = -1;
+            EnumWindows(FindIDAWindowCallback, 0);
+            if (idaHWnd == -1)
+            {
+                MessageBox.Show(String.Format("No IDA window with {0} found.", idaCallerModName),
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            SetForegroundWindow(idaHWnd);
+
+            System.Threading.Thread.Sleep(100);
+
+            SendKeys.SendWait("g");
+            System.Threading.Thread.Sleep(10);
+            SendKeys.SendWait(String.Format("{0:x}", idaReturnAddress));
+            SendKeys.SendWait("{ENTER}");
+        }
+
+        private bool FindIDAWindowCallback(int hWnd, int lParam)
+        {
+            StringBuilder str = new StringBuilder(256);
+            GetWindowText(hWnd, str, str.Capacity);
+
+            string title = str.ToString();
+            if (!title.StartsWith("IDA - "))
+                return true;
+
+            Match match = Regex.Match(title, @"\((?<filename>.*?)\)");
+            if (!match.Success)
+                return true;
+
+            string filename = match.Groups["filename"].Value;
+            if (string.Compare(filename.Trim(), idaCallerModName, true) == 0)
+            {
+                idaHWnd = hWnd;
+                return false;
+            }
+
+            return true;
+        }
+
         private void createSwRuleFromEntryToolStripMenuItem_Click(object sender, EventArgs e)
         {
             DataGridViewRow row = dataGridView.SelectedRows[0];
@@ -1248,7 +1312,10 @@ namespace oSpy
 
         private void dataGridContextMenuStrip_Opening(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            createSwRuleFromEntryToolStripMenuItem.Enabled = (dataGridView.SelectedRows.Count > 0);
+            bool selected = (dataGridView.SelectedRows.Count > 0);
+
+            goToReturnaddressInIDAToolStripMenuItem.Enabled = selected;
+            createSwRuleFromEntryToolStripMenuItem.Enabled = selected;
         }
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)

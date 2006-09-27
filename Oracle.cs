@@ -38,8 +38,11 @@ namespace oSpy {
             OUT
         };
         public OracleTransaction(DebugLogger logger)
-            : base(logger) {
+            : base(logger)
+        {
+            redirPort = -1;
         }
+
         public override bool HandleSession(IPSession session) {
             PacketStream stream = session.GetNextStreamDirection();
             if ((session.RemoteEndpoint.Port == 1521) || (session.RemoteEndpoint.Port == redirPort)) {

@@ -29,8 +29,8 @@ namespace oSpy
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             this.dataSet = new System.Data.DataSet();
             this.messageTbl = new System.Data.DataTable();
             this.indexCol = new System.Data.DataColumn();
@@ -81,6 +81,7 @@ namespace oSpy
             this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.dataGridContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.goToReturnaddressInIDAToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.createSwRuleFromEntryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.bindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.dumpContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -137,6 +138,7 @@ namespace oSpy
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
+            this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).BeginInit();
             this.menuStrip.SuspendLayout();
@@ -509,10 +511,19 @@ namespace oSpy
             // dataGridContextMenuStrip
             // 
             this.dataGridContextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.goToReturnaddressInIDAToolStripMenuItem,
+            this.toolStripMenuItem3,
             this.createSwRuleFromEntryToolStripMenuItem});
             this.dataGridContextMenuStrip.Name = "dataGridContextMenuStrip";
-            this.dataGridContextMenuStrip.Size = new System.Drawing.Size(246, 26);
+            this.dataGridContextMenuStrip.Size = new System.Drawing.Size(246, 76);
             this.dataGridContextMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.dataGridContextMenuStrip_Opening);
+            // 
+            // goToReturnaddressInIDAToolStripMenuItem
+            // 
+            this.goToReturnaddressInIDAToolStripMenuItem.Name = "goToReturnaddressInIDAToolStripMenuItem";
+            this.goToReturnaddressInIDAToolStripMenuItem.Size = new System.Drawing.Size(245, 22);
+            this.goToReturnaddressInIDAToolStripMenuItem.Text = "&Go to return address in IDA";
+            this.goToReturnaddressInIDAToolStripMenuItem.Click += new System.EventHandler(this.goToReturnaddressInIDAToolStripMenuItem_Click);
             // 
             // createSwRuleFromEntryToolStripMenuItem
             // 
@@ -535,7 +546,7 @@ namespace oSpy
             this.toolStripMenuItem4,
             this.showAsToolStripMenuItem});
             this.dumpContextMenuStrip.Name = "dumpContextMenuStrip";
-            this.dumpContextMenuStrip.Size = new System.Drawing.Size(202, 98);
+            this.dumpContextMenuStrip.Size = new System.Drawing.Size(202, 76);
             // 
             // copyToolStripMenuItem
             // 
@@ -712,9 +723,9 @@ namespace oSpy
             // 
             this.timestampDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
             this.timestampDataGridViewTextBoxColumn.DataPropertyName = "Timestamp";
-            dataGridViewCellStyle1.Format = "T";
-            dataGridViewCellStyle1.NullValue = null;
-            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle3.Format = "T";
+            dataGridViewCellStyle3.NullValue = null;
+            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle3;
             this.timestampDataGridViewTextBoxColumn.HeaderText = "Timestamp";
             this.timestampDataGridViewTextBoxColumn.Name = "timestampDataGridViewTextBoxColumn";
             this.timestampDataGridViewTextBoxColumn.ReadOnly = true;
@@ -757,9 +768,9 @@ namespace oSpy
             // 
             this.returnAddressDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
             this.returnAddressDataGridViewTextBoxColumn.DataPropertyName = "ReturnAddress";
-            dataGridViewCellStyle2.Format = "x";
-            dataGridViewCellStyle2.NullValue = null;
-            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle4.Format = "x";
+            dataGridViewCellStyle4.NullValue = null;
+            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle4;
             this.returnAddressDataGridViewTextBoxColumn.HeaderText = "ReturnAddress";
             this.returnAddressDataGridViewTextBoxColumn.Name = "returnAddressDataGridViewTextBoxColumn";
             this.returnAddressDataGridViewTextBoxColumn.ReadOnly = true;
@@ -1055,6 +1066,11 @@ namespace oSpy
             this.dumpSaveFileDialog.DefaultExt = "bin";
             this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
             // 
+            // toolStripMenuItem3
+            // 
+            this.toolStripMenuItem3.Name = "toolStripMenuItem3";
+            this.toolStripMenuItem3.Size = new System.Drawing.Size(242, 6);
+            // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(828, 585);
@@ -1198,6 +1214,8 @@ namespace oSpy
         private System.Windows.Forms.DataGridViewTextBoxColumn Comment;
         private System.Windows.Forms.DataGridViewTextBoxColumn bgColorDataGridViewTextBoxColumn;
         private System.Windows.Forms.SaveFileDialog dumpSaveFileDialog;
+        private System.Windows.Forms.ToolStripMenuItem goToReturnaddressInIDAToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
     }
 }
 
