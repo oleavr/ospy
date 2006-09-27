@@ -58,7 +58,11 @@ namespace oSpy
 
             numLines++;
         }
-
+        public void AddMessage(string msg, params object[] vals) {
+            string newLine = String.Format(msg + "\r\n", vals);
+            textBox.Text += newLine;
+            numLines++;
+        }
         private void clearButton_Click(object sender, EventArgs e)
         {
             textBox.Text = "";
