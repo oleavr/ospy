@@ -53,16 +53,13 @@ namespace oSpy {
                 try {
                     TransactionNode transaction = new TransactionNode("OracleTransaction");
                     transaction.Description = transaction.Name;
-                    long lastSize = stream.GetBytesAvailable();
                     TransactionNode tnsNode = ExtractTNSData(stream, StreamDirection.OUT);
                     if(tnsNode != null)
                         transaction.AddChild(tnsNode);
                     //response stream
                     stream = session.GetNextStreamDirection();
-                    lastSize = stream.GetBytesAvailable();
                     if (stream.GetBytesAvailable() != 0) {
                         tnsNode = ExtractTNSData(stream, StreamDirection.IN);
-                        logger.AddMessage("<-- Data read {0}", lastSize - stream.GetBytesAvailable());
 
                         if(tnsNode != null)
                             transaction.AddChild(tnsNode);
@@ -222,9 +219,9 @@ namespace oSpy {
                 case OracleTransactionType.DATA:
                     string label;
                     if (direction == StreamDirection.IN)
-                        label = "Incoming";
+                        label = "Response";
                     else
-                        label = "Outgoing";
+                        label = "Request";
                     node = new TransactionNode("Data - "+label );
                     node.AddField("Packet Size", pLen, "Packet Size", slices);
 
