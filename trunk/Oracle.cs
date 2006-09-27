@@ -53,16 +53,16 @@ namespace oSpy {
                 try {
                     TransactionNode transaction = new TransactionNode("OracleTransaction");
                     transaction.Description = transaction.Name;
-
-                    TransactionNode tnsNode = ExtractTNSData(stream, StreamDirection.OUT); 
+                    long lastSize = stream.GetBytesAvailable();
+                    TransactionNode tnsNode = ExtractTNSData(stream, StreamDirection.OUT);
                     if(tnsNode != null)
                         transaction.AddChild(tnsNode);
                     //response stream
                     stream = session.GetNextStreamDirection();
-
-
+                    lastSize = stream.GetBytesAvailable();
                     if (stream.GetBytesAvailable() != 0) {
                         tnsNode = ExtractTNSData(stream, StreamDirection.IN);
+                        logger.AddMessage("<-- Data read {0}", lastSize - stream.GetBytesAvailable());
 
                         if(tnsNode != null)
                             transaction.AddChild(tnsNode);
@@ -133,7 +133,7 @@ namespace oSpy {
                         byte[] ctData = stream.PeekBytes(ctDataLen);
                         string connectData = Util.DecodeASCII(ctData);
 
-                        stream.ReadBytes(Util.GetUTF8ByteCount(connectData), slices);
+                        stream.ReadBytes(ctDataLen, slices);
                         node.AddField("Connect data", connectData, "Connect data", slices);
                         try {
                             Match match = Regex.Match(connectData, "\\(PROTOCOL=(?<proto>\\w{2,})\\)\\(HOST=(?<host>[.\\w]{7,})\\)\\(PORT=(?<port>\\d{2,})\\)\\).*SERVICE_NAME=(?<sid>[.\\w]{1,})\\)");
@@ -176,6 +176,7 @@ namespace oSpy {
                         Int16 dataOffset = stream.ReadInt16();
                         int connectFlagsA = stream.ReadByte();
                         int connectFlagsB = stream.ReadByte();
+                        stream.ReadBytes(pLen - 24);
                     } catch (Exception e) {
                         logger.AddMessage(e.Message);
                         return null;
@@ -192,7 +193,7 @@ namespace oSpy {
                         node.AddField("Redirection Data Length", redirLen, "Length of the redirection data string", slices);
                         byte[] redirData = stream.PeekBytes(redirLen);
                         string sRedir = Util.DecodeASCII(redirData);
-                        stream.ReadBytes(Util.GetUTF8ByteCount(sRedir), slices);
+                        stream.ReadBytes(redirLen, slices);
                         node.AddField("Redirection Data", sRedir, "Redirection data", slices);
                         //get the redirected port
                         string newPort = null;
@@ -233,7 +234,7 @@ namespace oSpy {
                         int payLoadLength = pLen - 10;
                         byte[] payLoad = stream.PeekBytes(payLoadLength);
                         string sPayload = Util.DecodeASCII(payLoad);
-                        stream.ReadBytes(Util.GetUTF8ByteCount(sPayload), slices);
+                        stream.ReadBytes(payLoadLength, slices);
                         node.AddField("Data", sPayload, "Data", slices);
                     } catch (Exception e) {
                         logger.AddMessage(e.Message);
@@ -241,7 +242,7 @@ namespace oSpy {
                     }
                     return node;
                 default:
-                    //logger.AddMessage(String.Format("Couldn't identify packet [pLen={0}, packetType={1}]", pLen,packetType));
+                    logger.AddMessage(String.Format("Couldn't identify packet [pLen={0}, packetType={1}]", pLen,packetType));
                     return null;
             }
         }
