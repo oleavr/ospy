@@ -24,7 +24,7 @@ using System.Drawing;
 using System.Drawing.Extended;
 using System.IO;
 using System.Runtime.InteropServices;
-
+using oSpy.Util;
 namespace oSpy
 {
     public delegate void SessionsChangedHandler(VisualSession[] newSessions);
@@ -376,7 +376,7 @@ namespace oSpy
 
         private void timeline_SizeChanged(object sender, EventArgs e)
         {
-            scrollOffset = Util.GetScrollPos(timeline.Handle, Util.SB_HORZ);
+            scrollOffset = StaticUtils.GetScrollPos(timeline.Handle, StaticUtils.SB_HORZ);
             Invalidate();
         }
 

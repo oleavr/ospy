@@ -21,6 +21,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using Flobbster.Windows.Forms;
+using oSpy.Parser;
+using oSpy.Util;
 
 namespace oSpy
 {
@@ -37,6 +39,9 @@ namespace oSpy
         {
         }
 
+        public override string Name() {
+             return "HTTP Transaction Factory";
+        }
         public override bool HandleSession(IPSession session)
         {
             PacketStream stream = session.GetNextStreamDirection();
@@ -130,29 +135,29 @@ namespace oSpy
 
             if (type == HTTPTransactionType.REQUEST)
             {
-                stream.ReadBytes(Util.GetUTF8ByteCount(tokens[0]), slices);
+                stream.ReadBytes(StaticUtils.GetUTF8ByteCount(tokens[0]), slices);
                 node.AddField("Verb", tokens[0], "Request verb.", slices);
 
                 stream.ReadByte();
 
-                stream.ReadBytes(Util.GetUTF8ByteCount(tokens[1]), slices);
+                stream.ReadBytes(StaticUtils.GetUTF8ByteCount(tokens[1]), slices);
                 node.AddField("Argument", tokens[1], "Request argument.", slices);
 
                 stream.ReadByte();
 
-                stream.ReadBytes(Util.GetUTF8ByteCount(tokens[2]), slices);
+                stream.ReadBytes(StaticUtils.GetUTF8ByteCount(tokens[2]), slices);
                 node.AddField("Protocol", tokens[2], "Protocol identifier.", slices);
             }
             else
             {
-                stream.ReadBytes(Util.GetUTF8ByteCount(tokens[0]), slices);
+                stream.ReadBytes(StaticUtils.GetUTF8ByteCount(tokens[0]), slices);
                 node.AddField("Protocol", tokens[0], "Protocol identifier.", slices);
 
                 if (tokens.Length > 1)
                 {
                     stream.ReadByte();
 
-                    stream.ReadBytes(Util.GetUTF8ByteCount(tokens[1]), slices);
+                    stream.ReadBytes(StaticUtils.GetUTF8ByteCount(tokens[1]), slices);
                     node.AddField("Result", tokens[1], "Result.", slices);
                 }
             }
@@ -170,7 +175,7 @@ namespace oSpy
                     if (tokens.Length < 2)
                         throw new ProtocolError();
 
-                    stream.ReadBytes(Util.GetUTF8ByteCount(line), slices);
+                    stream.ReadBytes(StaticUtils.GetUTF8ByteCount(line), slices);
                     headersNode.AddField(tokens[0], tokens[1].TrimStart(), "Header field.", slices);
                 }
 
@@ -261,7 +266,7 @@ namespace oSpy
             }
             else
             {
-                bodyNode.AddField("Raw", Util.FormatByteArray(body),
+                bodyNode.AddField("Raw", StaticUtils.FormatByteArray(body),
                     "Raw body data.", slices);
             }
 

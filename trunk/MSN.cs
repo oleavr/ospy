@@ -23,6 +23,8 @@ using System.IO;
 using Flobbster.Windows.Forms;
 using System.Runtime.Serialization;
 using System.Drawing;
+using oSpy.Parser;
+using oSpy.Util;
 
 namespace oSpy
 {
@@ -177,7 +179,7 @@ namespace oSpy
                 byte[] bytes = PreviewData.ToArray();
                 if (bytes.Length > 0)
                 {
-                    str = Util.DecodeUTF8(bytes);
+                    str = StaticUtils.DecodeUTF8(bytes);
                     if (str[str.Length - 1] == '\0')
                     {
                         str = str.Substring(0, str.Length - 1);
@@ -407,7 +409,9 @@ namespace oSpy
             : base(logger)
         {
         }
-
+        public override string Name() {
+            return "MSN Transaction Factory";
+        }
         public override bool HandleSession(IPSession session)
         {
             logger.AddMessage(String.Format("session.LocalEndpoint.Port={0}, session.RemoteEndpoint.Port={1}",
@@ -532,7 +536,7 @@ namespace oSpy
                     node.Description = cmd;
 
                     // Command field
-                    stream.ReadBytes(Util.GetUTF8ByteCount(tokens[0]), slices);
+                    stream.ReadBytes(StaticUtils.GetUTF8ByteCount(tokens[0]), slices);
                     node.AddField("Command", tokens[0], "Switchboard command.", slices);
 
                     if (arguments.Length > 0)
@@ -540,7 +544,7 @@ namespace oSpy
                         // Skip space between command and arguments
                         stream.ReadByte();
 
-                        stream.ReadBytes(Util.GetUTF8ByteCount(tokens[1]), slices);
+                        stream.ReadBytes(StaticUtils.GetUTF8ByteCount(tokens[1]), slices);
 
                         // Arguments fields
                         node.AddField("Arguments", tokens[1], "Arguments to command.", slices);
@@ -608,7 +612,7 @@ namespace oSpy
             string[] lines = headers.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
             foreach (string line in lines)
             {
-                stream.ReadBytes(Util.GetUTF8ByteCount(line), slices);
+                stream.ReadBytes(StaticUtils.GetUTF8ByteCount(line), slices);
 
                 string[] tokens = line.Split(new char[] { ':' }, 2);
                 tokens[1] = tokens[1].TrimStart(new char[] { ' ' });
@@ -622,7 +626,7 @@ namespace oSpy
             // Skip extra CRLF
             stream.ReadBytes(2);
 
-            int bodyLength = payloadLength - Util.GetUTF8ByteCount(headers) - 4;
+            int bodyLength = payloadLength - StaticUtils.GetUTF8ByteCount(headers) - 4;
 
             if (bodyLength > 0)
             {
@@ -678,7 +682,7 @@ namespace oSpy
             p2pHeaders.AddField("ChunkSize", chunkSize, "Chunk size.", slices);
 
             UInt32 flags = stream.ReadU32LE(slices);
-            p2pHeaders.AddField("Flags", flags, Util.FormatFlags(flags), "Flags.", slices);
+            p2pHeaders.AddField("Flags", flags, StaticUtils.FormatFlags(flags), "Flags.", slices);
 
             UInt32 ackedMsgID = stream.ReadU32LE(slices);
             p2pHeaders.AddField("AckedMsgID", ackedMsgID, "MessageID of the message to be acknowledged.", slices);
@@ -699,11 +703,11 @@ namespace oSpy
 
                 if (sessionID != 0)
                 {
-                    p2pContent.AddField("Raw", bytes, Util.FormatByteArray(bytes), "Raw content.", slices);
+                    p2pContent.AddField("Raw", bytes, StaticUtils.FormatByteArray(bytes), "Raw content.", slices);
                 }
                 else
                 {
-                    p2pContent.AddTextField("MSNSLP", bytes, Util.DecodeUTF8(bytes), "MSNSLP data.", slices);
+                    p2pContent.AddTextField("MSNSLP", bytes, StaticUtils.DecodeUTF8(bytes), "MSNSLP data.", slices);
                 }
             }
         }

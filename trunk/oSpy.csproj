@@ -49,18 +49,40 @@
     <Compile Include="CaptureForm.Designer.cs">
       <DependentUpon>CaptureForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Configuration\ParserConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Configuration\ParserConfigDialog.Designer.cs">
+      <DependentUpon>ParserConfigDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Configuration\ParserConfiguration.cs" />
+    <Compile Include="Event\SocketEventType.cs" />
+    <Compile Include="Event\TCPEvent.cs" />
     <Compile Include="ExtendedGraphics.cs" />
+    <Compile Include="Parser\IPEndpoint.cs" />
+    <Compile Include="Parser\IPPacket.cs" />
+    <Compile Include="Parser\IPSession.cs" />
+    <Compile Include="Parser\ITransactionFactory.cs" />
     <Compile Include="MultiSessionView.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Oracle.cs" />
+    <Compile Include="Parser\PacketParser.cs" />
+    <Compile Include="Parser\PacketSlice.cs" />
+    <Compile Include="Parser\ProtocolError.cs" />
+    <Compile Include="Parser\TransactionFactory.cs" />
+    <Compile Include="Parser\TransactionNode.cs" />
+    <Compile Include="Parser\TransactionNodeConverter.cs" />
+    <Compile Include="Parser\TransactionNodeList.cs" />
     <Compile Include="SoftwallForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="SoftwallForm.Designer.cs">
       <DependentUpon>SoftwallForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Util.cs" />
+    <Compile Include="Util\Util.cs" />
+    <Compile Include="Util\Constants.cs" />
+    <Compile Include="Util\IDebugLogger.cs" />
     <Compile Include="VisualSession.cs">
     </Compile>
     <Compile Include="ConversationsForm.cs">
@@ -101,6 +123,10 @@
     <EmbeddedResource Include="CaptureForm.resx">
       <SubType>Designer</SubType>
       <DependentUpon>CaptureForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Configuration\ParserConfigDialog.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ParserConfigDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ConversationsForm.resx">
       <SubType>Designer</SubType>

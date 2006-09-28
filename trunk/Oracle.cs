@@ -22,16 +22,27 @@ using System.Text;
 using System.IO;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-
+using oSpy.Parser;
+using oSpy.Util;
 namespace oSpy {
     public class OracleTransaction : TransactionFactory {
         private int redirPort;
+        
         public enum OracleTransactionType {
-            CONNECT,
-            ACCEPT,
-            DATA,
-            REDIRECT,
-            UNKNOWN
+            CONNECT = 1,
+            ACCEPT = 2,
+            ACK = 3,
+            REFUSE = 4,
+            NULL = 7,
+            ABORT = 9,
+            DATA = 6,
+            REDIRECT = 5,
+            RESEND = 11,
+            MARKER = 12,
+            ATTENTION = 13,
+            CONTROL = 14,
+            MAX = 19,
+            UNKNOWN = 0
         };
         public enum StreamDirection{
             IN,
@@ -42,8 +53,13 @@ namespace oSpy {
         {
             redirPort = -1;
         }
-
+        public override string Name() {
+            return "Oracle Transaction Factory";
+        }
         public override bool HandleSession(IPSession session) {
+            //List<Configuration.Setting> settings = Configuration.ParserConfiguration.Settings[Name()];
+            //foreach(Configuration.Setting setting in settings)
+            //    logger.AddMessage("Using property {0} with value {1}", setting.Property, setting.Value);
             PacketStream stream = session.GetNextStreamDirection();
             if ((session.RemoteEndpoint.Port == 1521) || (session.RemoteEndpoint.Port == redirPort)) {
                 //we're either connected to the standard Oracle port or the redirected port
@@ -91,8 +107,8 @@ namespace oSpy {
                 stream.ReadBytes(2, slices);
                 stream.ReadBytes(2); //skip checksum
                 packetType = stream.ReadByte();
+                type = (OracleTransactionType)packetType;
                 stream.ReadByte(); //skip the reserved byte
-                type = ((packetType == 1) ? OracleTransactionType.CONNECT : ((packetType == 2) ? OracleTransactionType.ACCEPT : ((packetType == 6) ? OracleTransactionType.DATA : ((packetType == 5) ? OracleTransactionType.REDIRECT : OracleTransactionType.UNKNOWN))));
             } catch (Exception e) {
                 logger.AddMessage(e.Message);
                 return null;
@@ -128,7 +144,7 @@ namespace oSpy {
                         Int64 traceID = stream.ReadInt64();
                         stream.ReadInt64();
                         byte[] ctData = stream.PeekBytes(ctDataLen);
-                        string connectData = Util.DecodeASCII(ctData);
+                        string connectData = StaticUtils.DecodeASCII(ctData);
 
                         stream.ReadBytes(ctDataLen, slices);
                         node.AddField("Connect data", connectData, "Connect data", slices);
@@ -189,7 +205,7 @@ namespace oSpy {
                         stream.ReadBytes(2, slices);
                         node.AddField("Redirection Data Length", redirLen, "Length of the redirection data string", slices);
                         byte[] redirData = stream.PeekBytes(redirLen);
-                        string sRedir = Util.DecodeASCII(redirData);
+                        string sRedir = StaticUtils.DecodeASCII(redirData);
                         stream.ReadBytes(redirLen, slices);
                         node.AddField("Redirection Data", sRedir, "Redirection data", slices);
                         //get the redirected port
@@ -230,7 +246,7 @@ namespace oSpy {
                         Int16 dataFlags = stream.ReadInt16();
                         int payLoadLength = pLen - 10;
                         byte[] payLoad = stream.PeekBytes(payLoadLength);
-                        string sPayload = Util.DecodeASCII(payLoad);
+                        string sPayload = StaticUtils.DecodeASCII(payLoad);
                         stream.ReadBytes(payLoadLength, slices);
                         node.AddField("Data", sPayload, "Data", slices);
                     } catch (Exception e) {
@@ -239,7 +255,7 @@ namespace oSpy {
                     }
                     return node;
                 default:
-                    logger.AddMessage(String.Format("Couldn't identify packet [pLen={0}, packetType={1}]", pLen,packetType));
+                    logger.AddMessage(String.Format("Packet dissection not implemented [TransactionType={0}]", type));
                     return null;
             }
         }
