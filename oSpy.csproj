@@ -67,7 +67,7 @@
     <Compile Include="MultiSessionView.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Oracle.cs" />
+    <Compile Include="Parser\Oracle.cs" />
     <Compile Include="Net\PacketParser.cs" />
     <Compile Include="Net\PacketSlice.cs" />
     <Compile Include="Net\ProtocolError.cs" />
