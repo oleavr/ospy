@@ -62,6 +62,7 @@
     <Compile Include="Net\IPEndpoint.cs" />
     <Compile Include="Net\IPPacket.cs" />
     <Compile Include="Net\IPSession.cs" />
+    <Compile Include="Net\PacketStream.cs" />
     <Compile Include="Parser\ITransactionFactory.cs" />
     <Compile Include="MultiSessionView.cs">
       <SubType>UserControl</SubType>
@@ -97,7 +98,7 @@
     <Compile Include="DebugForm.Designer.cs">
       <DependentUpon>DebugForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="HTTP.cs" />
+    <Compile Include="Parser\HTTP.cs" />
     <Compile Include="InjectForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -110,7 +111,7 @@
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="MSN.cs">
+    <Compile Include="Parser\MSN.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Parser.cs" />

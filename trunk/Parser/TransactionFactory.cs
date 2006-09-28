@@ -36,9 +36,9 @@ namespace oSpy.Parser
         }
 
         public abstract bool HandleSession(IPSession session);
-        /*
-         * Used to identify this factory for configuration purposes
-         */
+        ///<summary>
+        ///Used to identify this factory for configuration purposes
+        ///</summary>
         public abstract string Name();
     }
 }

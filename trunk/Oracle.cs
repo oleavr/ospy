@@ -72,7 +72,7 @@ namespace oSpy {
                     transaction.Description = transaction.Name;
                     TransactionNode tnsNode = ExtractTNSData(stream, StreamDirection.OUT);
                     if(tnsNode != null)
-                        transaction.AddChild(tnsNode);
+                        transaction.AddChild(tnsNode);  
                     //response stream
                     stream = session.GetNextStreamDirection();
                     if (stream.GetBytesAvailable() != 0) {
@@ -190,7 +190,7 @@ namespace oSpy {
                         Int16 dataOffset = stream.ReadInt16();
                         int connectFlagsA = stream.ReadByte();
                         int connectFlagsB = stream.ReadByte();
-                        stream.ReadBytes(pLen - 24);
+                        stream.ReadBytes(pLen - 24); //read out empty bytes
                     } catch (Exception e) {
                         logger.AddMessage(e.Message);
                         return null;
