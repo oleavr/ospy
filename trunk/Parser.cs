@@ -32,8 +32,4 @@ namespace oSpy
     public delegate void PacketDescriptionReceivedHandler(IPPacket[] packets, string description);
 
     public delegate void NewTransactionNodeHandler(TransactionNode node);
-    public class test
-    {
-        
-    }
 }
