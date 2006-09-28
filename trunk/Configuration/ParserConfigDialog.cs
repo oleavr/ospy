@@ -7,6 +7,7 @@ using System.Text;
 using System.Windows.Forms;
 using oSpy;
 using oSpy.Parser;
+using oSpy.Net;
 namespace oSpy.Configuration
 {
     public partial class ParserConfigDialog : Form

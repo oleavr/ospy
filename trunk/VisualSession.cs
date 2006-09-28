@@ -22,6 +22,7 @@ using System.Text;
 using System.IO;
 using oSpy.Parser;
 using oSpy.Event;
+using oSpy.Net;
 namespace oSpy
 {
     [Serializable()]

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using oSpy.Parser;
+using oSpy.Net;
 namespace oSpy.Event
 {
     [Serializable()]

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Flobbster.Windows.Forms;
 using System.ComponentModel;
+using oSpy.Net;
 namespace oSpy.Parser
 {
     [Serializable()]

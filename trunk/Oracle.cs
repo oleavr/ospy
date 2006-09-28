@@ -24,6 +24,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using oSpy.Parser;
 using oSpy.Util;
+using oSpy.Net;
 namespace oSpy {
     public class OracleTransaction : TransactionFactory {
         private int redirPort;

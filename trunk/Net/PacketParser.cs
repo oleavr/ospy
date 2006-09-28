@@ -7,7 +7,8 @@ using oSpy.Util;
 using System.Runtime.Serialization;
 using System.ComponentModel;
 using System.Windows.Forms;
-namespace oSpy.Parser
+using oSpy.Parser;
+namespace oSpy.Net
 {
     //
     // Class that parses packets into transactions by using transaction

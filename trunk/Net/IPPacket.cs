@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace oSpy.Parser
+namespace oSpy.Net
 {
     [Serializable()]
     public class IPPacket : IComparable

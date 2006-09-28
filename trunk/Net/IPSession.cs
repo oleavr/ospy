@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using oSpy.Event;
-namespace oSpy.Parser
+using oSpy.Parser;
+namespace oSpy.Net
 {
     [Serializable()]
     public class IPSession

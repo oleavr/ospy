@@ -5,6 +5,7 @@ using oSpy;
 using System.IO;
 using System.Diagnostics;
 using oSpy.Parser;
+using oSpy.Net;
 namespace TestPacketStream
 {
     class Program
