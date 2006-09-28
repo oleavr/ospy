@@ -1275,12 +1275,18 @@ namespace oSpy
             if (!title.StartsWith("IDA - "))
                 return true;
 
-            Match match = Regex.Match(title, @"\((?<filename>.*?)\)");
+            Match match = Regex.Match(title, @"^IDA - (?<path>.*?)( \((?<srcfile>.*?)\))?$");
             if (!match.Success)
                 return true;
 
-            string filename = match.Groups["filename"].Value;
-            if (string.Compare(filename.Trim(), idaCallerModName, true) == 0)
+            string path = match.Groups["path"].Value;
+            string srcfile = match.Groups["srcfile"].Value;
+            if (srcfile == "")
+            {
+                srcfile = System.IO.Path.GetFileName(path);
+            }
+
+            if (string.Compare(srcfile, idaCallerModName, true) == 0)
             {
                 idaHWnd = hWnd;
                 return false;
