@@ -23,10 +23,9 @@ using System.IO;
 using Flobbster.Windows.Forms;
 using System.Runtime.Serialization;
 using System.Drawing;
-using oSpy.Parser;
 using oSpy.Util;
 using oSpy.Net;
-namespace oSpy
+namespace oSpy.Parser
 {
     [Serializable()]
     public class MSNP2PMessage : VisualTransaction

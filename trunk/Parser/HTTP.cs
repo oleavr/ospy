@@ -21,10 +21,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using Flobbster.Windows.Forms;
-using oSpy.Parser;
 using oSpy.Util;
 using oSpy.Net;
-namespace oSpy
+namespace oSpy.Parser
 {
     public class HTTPTransactionFactory : TransactionFactory
     {
