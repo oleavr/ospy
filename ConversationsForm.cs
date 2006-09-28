@@ -26,7 +26,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using oSpy.Parser;
-
+using oSpy.Net;
 namespace oSpy
 {
     public partial class ConversationsForm : Form

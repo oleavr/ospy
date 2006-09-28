@@ -26,6 +26,7 @@ using Microsoft.Win32;
 using System.Runtime.Serialization;
 using System.Windows.Forms;
 using oSpy.Parser;
+using oSpy.Net;
 namespace oSpy
 {
     public delegate void PacketDescriptionReceivedHandler(IPPacket[] packets, string description);

@@ -59,17 +59,17 @@
     <Compile Include="Event\SocketEventType.cs" />
     <Compile Include="Event\TCPEvent.cs" />
     <Compile Include="ExtendedGraphics.cs" />
-    <Compile Include="Parser\IPEndpoint.cs" />
-    <Compile Include="Parser\IPPacket.cs" />
-    <Compile Include="Parser\IPSession.cs" />
+    <Compile Include="Net\IPEndpoint.cs" />
+    <Compile Include="Net\IPPacket.cs" />
+    <Compile Include="Net\IPSession.cs" />
     <Compile Include="Parser\ITransactionFactory.cs" />
     <Compile Include="MultiSessionView.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Oracle.cs" />
-    <Compile Include="Parser\PacketParser.cs" />
-    <Compile Include="Parser\PacketSlice.cs" />
-    <Compile Include="Parser\ProtocolError.cs" />
+    <Compile Include="Net\PacketParser.cs" />
+    <Compile Include="Net\PacketSlice.cs" />
+    <Compile Include="Net\ProtocolError.cs" />
     <Compile Include="Parser\TransactionFactory.cs" />
     <Compile Include="Parser\TransactionNode.cs" />
     <Compile Include="Parser\TransactionNodeConverter.cs" />

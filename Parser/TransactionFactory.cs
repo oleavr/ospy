@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using oSpy.Util;
+using oSpy.Net;
 namespace oSpy.Parser
 {
     public abstract class TransactionFactory : ITransactionFactory

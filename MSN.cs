@@ -25,7 +25,7 @@ using System.Runtime.Serialization;
 using System.Drawing;
 using oSpy.Parser;
 using oSpy.Util;
-
+using oSpy.Net;
 namespace oSpy
 {
     [Serializable()]

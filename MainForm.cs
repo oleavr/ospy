@@ -29,6 +29,7 @@ using System.Text.RegularExpressions;
 using oSpy.Event;
 using oSpy.Parser;
 using oSpy.Util;
+using oSpy.Net;
 namespace oSpy
 {
     public partial class MainForm : Form
