@@ -26,7 +26,9 @@ using System.Text;
 using System.IO;
 using ICSharpCode.SharpZipLib.BZip2;
 using System.Text.RegularExpressions;
-
+using oSpy.Event;
+using oSpy.Parser;
+using oSpy.Util;
 namespace oSpy
 {
     public partial class MainForm : Form
@@ -732,7 +734,7 @@ namespace oSpy
             System.Drawing.Graphics gfx = CreateGraphics();
             int linePixelHeight = (int) Math.Round((gfx.DpiY / 70.0f) * richTextBox.Font.SizeInPoints);
 
-            int displayedLineFirst = Util.GetScrollPos(richTextBox.Handle, Util.SB_VERT) / linePixelHeight;
+            int displayedLineFirst = StaticUtils.GetScrollPos(richTextBox.Handle, StaticUtils.SB_VERT) / linePixelHeight;
             int displayedLineLast = displayedLineFirst + (richTextBox.Height / linePixelHeight);
             if (lineStart < displayedLineFirst || lineEnd > displayedLineLast)
             {
@@ -987,12 +989,12 @@ namespace oSpy
                 LineOffset[] lineOffsets = new LineOffset[0];
                 if (dumpDisplayMode == DisplayMode.HEX)
                 {
-                    dump.Append(Util.ByteArrayToHexDump(packet.Bytes, linePrefix, out nLines));
+                    dump.Append(StaticUtils.ByteArrayToHexDump(packet.Bytes, linePrefix, out nLines));
                     dump.Append("\n");
                 }
                 else
                 {
-                    string str = Util.DecodeASCII(packet.Bytes);
+                    string str = StaticUtils.DecodeASCII(packet.Bytes);
 
                     /*
                     if (str.EndsWith("\r\n"))
@@ -1535,6 +1537,14 @@ namespace oSpy
         private void findComboBox_Leave(object sender, EventArgs e)
         {
             statusBarLabel.Text = "";
+        }
+
+        private void parserConfigToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Configuration.ParserConfigDialog pcDialog = new oSpy.Configuration.ParserConfigDialog(packetParser);
+            if (pcDialog.ShowDialog() == DialogResult.OK) {
+            
+            }
         }
     }
 }

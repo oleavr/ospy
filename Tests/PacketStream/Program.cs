@@ -4,7 +4,7 @@ using System.Text;
 using oSpy;
 using System.IO;
 using System.Diagnostics;
-
+using oSpy.Parser;
 namespace TestPacketStream
 {
     class Program

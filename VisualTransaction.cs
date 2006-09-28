@@ -23,7 +23,7 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.Drawing.Extended;
 using System.Runtime.Serialization;
-
+using oSpy.Util;
 namespace oSpy
 {    
     [Serializable()]
@@ -601,14 +601,14 @@ namespace oSpy
         {
             int lineCount;
 
-            BodyText = Util.ByteArrayToHexDump(data, maxSize, "", out lineCount);
+            BodyText = StaticUtils.ByteArrayToHexDump(data, maxSize, "", out lineCount);
         }
 
         public void SetBodyFromTruncatedPreviewData(byte[] data, int bytesRemaining)
         {
             int lineCount;
 
-            BodyText = Util.ByteArrayToHexDump(data, -1, "", out lineCount, bytesRemaining);
+            BodyText = StaticUtils.ByteArrayToHexDump(data, -1, "", out lineCount, bytesRemaining);
         }
 
         public virtual void TransactionsCreated()

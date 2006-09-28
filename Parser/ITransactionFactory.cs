@@ -1,4 +1,6 @@
 ﻿using System;
+using oSpy.Parser;
+using oSpy.Util;
 namespace oSpy
 {
     interface ITransactionFactory

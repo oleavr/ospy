@@ -23,15 +23,15 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
 
-namespace oSpy
+namespace oSpy.Util
 {
-    public class Util
+    public class StaticUtils
     {
         protected static Decoder asciiDecoder;
         protected static Encoder utf8Encoder;
         protected static Decoder utf8Decoder;
 
-        static Util()
+        static StaticUtils()
         {
             asciiDecoder = Encoding.ASCII.GetDecoder();
 
