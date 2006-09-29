@@ -164,6 +164,7 @@ namespace oSpy.Parser
             stream.ReadBytes(2);
 
             TransactionNode headersNode = new TransactionNode("Headers");
+            Dictionary<string, string> headerFields = new Dictionary<string, string>();
 
             do
             {
@@ -174,8 +175,13 @@ namespace oSpy.Parser
                     if (tokens.Length < 2)
                         throw new ProtocolError();
 
+                    string key = tokens[0];
+                    string value = tokens[1].TrimStart();
+
                     stream.ReadBytes(StaticUtils.GetUTF8ByteCount(line), slices);
-                    headersNode.AddField(tokens[0], tokens[1].TrimStart(), "Header field.", slices);
+                    headersNode.AddField(key, value, "Header field.", slices);
+
+                    headerFields[key.ToLower()] = value;
                 }
 
                 stream.ReadBytes(2);
@@ -186,13 +192,13 @@ namespace oSpy.Parser
                 node.AddChild(headersNode);
             }
 
-            if (headersNode.Fields.ContainsKey("Content-Length"))
+            if (headerFields.ContainsKey("content-length"))
             {
                 string contentType = null, contentEncoding = null;
 
-                if (headersNode.Fields.ContainsKey("Content-Type"))
+                if (headerFields.ContainsKey("content-type"))
                 {
-                    contentType = ((string)headersNode.Fields["Content-Type"]).ToLower();
+                    contentType = headerFields["content-type"].ToLower();
                     tokens = contentType.Split(new char[] { ';' });
                     contentType = tokens[0].Trim();
                     if (tokens.Length > 1)
@@ -212,7 +218,7 @@ namespace oSpy.Parser
                     contentEncoding = "utf-8"; // FIXME
                 }
 
-                int contentLen = Convert.ToInt32(headersNode.Fields["Content-Length"]);
+                int contentLen = Convert.ToInt32(headerFields["content-length"]);
                 if (contentLen > 0)
                 {
                     AddBodyNode(stream, node, contentType, contentEncoding, contentLen);
