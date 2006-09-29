@@ -546,51 +546,47 @@ WSARecv_done(int retval,
              LPWSAOVERLAPPED lpOverlapped,
              LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine)
 {
-  DWORD err = GetLastError();
-  DWORD wsa_err = WSAGetLastError();
-  DWORD ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+    DWORD err = GetLastError();
+    DWORD wsa_err = WSAGetLastError();
+    DWORD ret_addr = *((DWORD *) ((DWORD) &retval - 4));
 
-  if (called_from_wsock(ret_addr))
-	  return retval;
+    if (called_from_wsock(ret_addr))
+        return retval;
 
-  if (lpOverlapped != NULL)
-  {
-    message_logger_log_message("WSARecv", ret_addr, MESSAGE_CTX_WARNING,
-                               "overlapped I/O not supported");
-  }
-
-  if (retval == 0)
-  {
-    if (dwBufferCount >= 1)
+    if (lpOverlapped != NULL)
     {
-      if (dwBufferCount > 1)
-      {
         message_logger_log_message("WSARecv", ret_addr, MESSAGE_CTX_WARNING,
-                                   "only dwBufferCount == 1 supported for now");
-      }
-
-      log_tcp_packet("WSARecv", ret_addr, PACKET_DIRECTION_INCOMING, s,
-                     lpBuffers[0].buf, *lpNumberOfBytesRecvd);
+                                   "overlapped I/O not yet supported");
     }
-  }
-  else if (retval == SOCKET_ERROR)
-  {
-	if (wsa_err == WSAEWOULDBLOCK)
-	{
-		message_logger_log_message("WSARecv", ret_addr, MESSAGE_CTX_WARNING,
-								   "non-blocking mode not supported");
-	}
 
-	if (wsa_err != WSAEWOULDBLOCK && wsa_err != WSA_IO_PENDING)
+    if (retval == 0)
     {
-      log_tcp_disconnected("WSARecv", ret_addr, s,
-        (err == WSAECONNRESET) ? NULL : &err);
-    }
-  }
+        for (DWORD i = 0; i < dwBufferCount; i++)
+        {
+            WSABUF *buf = &lpBuffers[i];
 
-  WSASetLastError(wsa_err);
-  SetLastError(err);
-  return retval;
+            log_tcp_packet("WSARecv", ret_addr, PACKET_DIRECTION_INCOMING, s,
+                           buf->buf, buf->len);
+        }
+    }
+    else if (retval == SOCKET_ERROR)
+    {
+        if (wsa_err == WSAEWOULDBLOCK)
+        {
+            message_logger_log_message("WSARecv", ret_addr, MESSAGE_CTX_WARNING,
+						               "non-blocking mode not yet supported");
+        }
+
+        if (wsa_err != WSAEWOULDBLOCK && wsa_err != WSA_IO_PENDING)
+        {
+            log_tcp_disconnected("WSARecv", ret_addr, s,
+                                 (err == WSAECONNRESET) ? NULL : &err);
+        }
+    }
+
+    WSASetLastError(wsa_err);
+    SetLastError(err);
+    return retval;
 }
 
 static int __cdecl
@@ -617,51 +613,47 @@ WSASend_done(int retval,
              LPWSAOVERLAPPED lpOverlapped,
              LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine)
 {
-  DWORD err = GetLastError();
-  DWORD wsa_err = WSAGetLastError();
-  DWORD ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+    DWORD err = GetLastError();
+    DWORD wsa_err = WSAGetLastError();
+    DWORD ret_addr = *((DWORD *) ((DWORD) &retval - 4));
 
-  if (called_from_wsock(ret_addr))
-	  return retval;
+    if (called_from_wsock(ret_addr))
+        return retval;
 
-  if (lpOverlapped != NULL)
-  {
-    message_logger_log_message("WSASend", ret_addr, MESSAGE_CTX_WARNING,
-                               "overlapped I/O not supported");
-  }
-
-  if (retval == 0)
-  {
-    if (dwBufferCount >= 1)
+    if (lpOverlapped != NULL)
     {
-      if (dwBufferCount > 1)
-      {
         message_logger_log_message("WSASend", ret_addr, MESSAGE_CTX_WARNING,
-                                   "only dwBufferCount == 1 supported for now");
-      }
-
-      log_tcp_packet("WSASend", ret_addr, PACKET_DIRECTION_OUTGOING, s,
-                     lpBuffers[0].buf, *lpNumberOfBytesSent);
+                                   "overlapped I/O not yet supported");
     }
-  }
-  else if (retval == SOCKET_ERROR)
-  {
-	if (wsa_err == WSAEWOULDBLOCK)
-	{
-		message_logger_log_message("WSASend", ret_addr, MESSAGE_CTX_WARNING,
-								   "non-blocking mode not supported");
-	}
 
-    if (wsa_err != WSAEWOULDBLOCK && wsa_err != WSA_IO_PENDING)
+    if (retval == 0)
     {
-      log_tcp_disconnected("WSASend", ret_addr, s,
-        (err == WSAECONNRESET) ? NULL : &err);
-    }
-  }
+        for (DWORD i = 0; i < dwBufferCount; i++)
+        {
+            WSABUF *buf = &lpBuffers[i];
 
-  WSASetLastError(wsa_err);
-  SetLastError(err);
-  return retval;
+            log_tcp_packet("WSASend", ret_addr, PACKET_DIRECTION_OUTGOING, s,
+                           buf->buf, buf->len);
+        }
+    }
+    else if (retval == SOCKET_ERROR)
+    {
+        if (wsa_err == WSAEWOULDBLOCK)
+        {
+	        message_logger_log_message("WSASend", ret_addr, MESSAGE_CTX_WARNING,
+							           "non-blocking mode not yet supported");
+        }
+
+        if (wsa_err != WSAEWOULDBLOCK && wsa_err != WSA_IO_PENDING)
+        {
+            log_tcp_disconnected("WSASend", ret_addr, s,
+                                 (err == WSAECONNRESET) ? NULL : &err);
+        }
+    }
+
+    WSASetLastError(wsa_err);
+    SetLastError(err);
+    return retval;
 }
 
 static SOCKET __cdecl
