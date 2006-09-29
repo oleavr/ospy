@@ -19,6 +19,62 @@
 #pragma once
 
 #include "byte_buffer.h"
+#include <map>
+
+template <class T>
+class ContextTracker
+{
+public:
+    ContextTracker()
+    {
+        InitializeCriticalSection(&cs);
+    }
+
+    ~ContextTracker()
+    {
+    }
+
+    DWORD GetContextID(T handle)
+    {
+        DWORD id;
+
+        EnterCriticalSection(&cs);
+
+        ContextMap::iterator iter = contexts.find(handle);
+        if (iter != contexts.end())
+        {
+            id = iter->second;
+        }
+        else
+        {
+            id = ospy_rand();
+            contexts[handle] = id;
+        }
+
+        LeaveCriticalSection(&cs);
+
+        return id;
+    }
+
+    void RemoveContextID(T handle)
+    {
+        EnterCriticalSection(&cs);
+
+        ContextMap::iterator iter = contexts.find(handle);
+        if (iter != contexts.end())
+        {
+            contexts.erase(iter);
+        }
+
+        LeaveCriticalSection(&cs);
+    }
+
+private:
+    CRITICAL_SECTION cs;
+
+    typedef map<T, DWORD, less<T>, MyAlloc<pair<T, DWORD>>> ContextMap;
+    ContextMap contexts;
+};
 
 void get_process_name(char *name, int len);
 void get_module_name_for_address(LPVOID address, char *buf, int buf_size);

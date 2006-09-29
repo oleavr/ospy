@@ -22,6 +22,24 @@
 #define SECURITY_WIN32
 #include <security.h>
 
+static ContextTracker<PCtxtHandle> tracker;
+
+static SECURITY_STATUS __cdecl
+DeleteSecurityContext_called(BOOL carry_on,
+                             DWORD ret_addr,
+                             PCtxtHandle phContext)
+{
+    tracker.RemoveContextID(phContext);
+    return 0;
+}
+
+static SECURITY_STATUS __stdcall
+DeleteSecurityContext_done(SECURITY_STATUS retval,
+                           PCtxtHandle phContext)
+{
+    return retval;
+}
+
 static SECURITY_STATUS __cdecl
 EncryptMessage_called(BOOL carry_on,
                       DWORD ret_addr,
@@ -38,7 +56,8 @@ EncryptMessage_called(BOOL carry_on,
 
         if (buffer->BufferType == SECBUFFER_DATA)
         {
-            message_logger_log_packet("EncryptMessage", ret_addr, (DWORD) phContext,
+            message_logger_log_packet("EncryptMessage", ret_addr,
+                                      tracker.GetContextID(phContext),
                                       PACKET_DIRECTION_OUTGOING, NULL, NULL,
                                       (const char *) buffer->pvBuffer,
                                       buffer->cbBuffer);
@@ -86,7 +105,8 @@ DecryptMessage_done(SECURITY_STATUS retval,
 
         if (buffer->BufferType == SECBUFFER_DATA)
         {
-            message_logger_log_packet("DecryptMessage", ret_addr, (DWORD) phContext,
+            message_logger_log_packet("DecryptMessage", ret_addr,
+                                      tracker.GetContextID(phContext),
                                       PACKET_DIRECTION_INCOMING, NULL, NULL,
                                       (const char *) buffer->pvBuffer,
                                       buffer->cbBuffer);
@@ -96,6 +116,8 @@ DecryptMessage_done(SECURITY_STATUS retval,
     SetLastError(err);
     return retval;
 }
+
+HOOK_GLUE_INTERRUPTIBLE(DeleteSecurityContext, (1 * 4))
 
 HOOK_GLUE_INTERRUPTIBLE(EncryptMessage, (4 * 4))
 HOOK_GLUE_INTERRUPTIBLE(DecryptMessage, (4 * 4))
@@ -111,6 +133,8 @@ hook_secur32()
                    "oSpy", MB_ICONERROR | MB_OK);
         return;
     }
+
+    HOOK_FUNCTION(h, DeleteSecurityContext);
 
     HOOK_FUNCTION(h, EncryptMessage);
     HOOK_FUNCTION(h, DecryptMessage);
