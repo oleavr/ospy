@@ -54,35 +54,26 @@ sspy_strdup(const char *str)
     return s;
 }
 
-class CAgentApp : public CWinApp
+
+BOOL APIENTRY
+DllMain(HMODULE hModule,
+        DWORD  ul_reason_for_call,
+        LPVOID lpReserved)
 {
-// Overrides
-public:
-	virtual BOOL InitInstance();
+    if (ul_reason_for_call == DLL_PROCESS_ATTACH)
+    {
+        // Initialize SHM logger
+        message_logger_init();
 
-	DECLARE_MESSAGE_MAP()
-};
+        hook_winsock();
+        hook_secur32();
+        hook_crypt();
+        //hook_httpapi();
+        hook_activesync();
+        hook_msn();
+    }
 
-BEGIN_MESSAGE_MAP(CAgentApp, CWinApp)
-END_MESSAGE_MAP()
-
-CAgentApp app;
-
-BOOL CAgentApp::InitInstance()
-{
-  CWinApp::InitInstance();
-
-  // Initialize SHM logger
-  message_logger_init();
-
-  hook_winsock();
-  hook_secur32();
-  hook_crypt();
-  //hook_httpapi();
-  hook_activesync();
-  hook_msn();
-
-  return TRUE;
+    return TRUE;
 }
 
 #ifdef _MANAGED
