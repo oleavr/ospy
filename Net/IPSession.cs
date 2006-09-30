@@ -20,12 +20,14 @@ using System.Collections.Generic;
 using System.Text;
 using oSpy.Event;
 using oSpy.Parser;
+
+
 namespace oSpy.Net
 {
     [Serializable()]
     public class IPSession
     {
-        public event NewTransactionNodeHandler NewTransactionNode;
+        public event PacketParser.NewTransactionNodeHandler NewTransactionNode;
 
         protected List<TCPEvent> events;
         public List<TCPEvent> Events

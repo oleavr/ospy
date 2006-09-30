@@ -30,6 +30,7 @@ using oSpy.Event;
 using oSpy.Parser;
 using oSpy.Util;
 using oSpy.Net;
+
 namespace oSpy
 {
     public partial class MainForm : Form
@@ -99,7 +100,7 @@ namespace oSpy
             swForm = new SoftwallForm();
 
             packetParser = new PacketParser(debugForm);
-            packetParser.PacketDescriptionReceived += new PacketDescriptionReceivedHandler(packetParser_PacketDescriptionReceived);
+            packetParser.PacketDescriptionReceived += new PacketParser.PacketDescriptionReceivedHandler(packetParser_PacketDescriptionReceived);
 
             dumpDisplayMode = DisplayMode.HEX;
 
@@ -1545,6 +1546,49 @@ namespace oSpy
             Configuration.ParserConfigDialog pcDialog = new oSpy.Configuration.ParserConfigDialog(packetParser);
             if (pcDialog.ShowDialog() == DialogResult.OK) {
             
+            }
+        }
+
+        private void selectAlltransactionsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            updatingSelections = true;
+
+            // Gotta be a more elegant way to do this...
+            foreach (DataGridViewRow row in dataGridView.SelectedRows)
+            {
+                row.Selected = false;
+            }
+
+            // Select the visible rows with these indexes
+            Dictionary<int, List<TransactionNode>> allIndexes = packetParser.GetAllTransactionPacketIndexes();
+
+            foreach (DataGridViewRow row in dataGridView.Rows)
+            {
+                int index = (int) row.Cells[indexDataGridViewTextBoxColumn.Index].Value;
+
+                if (allIndexes.ContainsKey(index))
+                {
+                    row.Selected = true;
+                }
+            }
+
+            // Refresh
+            updatingSelections = false;
+            DataGridViewRow selRow = null;
+
+            if (dataGridView.SelectedRows.Count > 0)
+            {
+                selRow = dataGridView.SelectedRows[0];
+            }
+            else if (dataGridView.Rows.Count > 0)
+            {
+                selRow = dataGridView.Rows[0];
+            }
+
+            if (selRow != null)
+            {
+                selRow.Selected = false;
+                selRow.Selected = true;
             }
         }
     }

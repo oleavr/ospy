@@ -27,6 +27,7 @@ using System.Runtime.Serialization;
 using System.ComponentModel;
 using System.Windows.Forms;
 using oSpy.Parser;
+
 namespace oSpy.Net
 {
     //
@@ -45,6 +46,9 @@ namespace oSpy.Net
         protected Dictionary<int, IPPacket> packets;
         protected Dictionary<int, List<TransactionNode>> packetIndexToNodes;
         protected List<TransactionNode> nodes;
+
+        public delegate void PacketDescriptionReceivedHandler(IPPacket[] packets, string description);
+        public delegate void NewTransactionNodeHandler(TransactionNode node);
 
         public PacketParser(DebugLogger logger)
         {
@@ -227,7 +231,11 @@ namespace oSpy.Net
             return list;
         }
 
+        public Dictionary<int, List<TransactionNode>> GetAllTransactionPacketIndexes()
+        {
+            return packetIndexToNodes;
+        }
+
         public event PacketDescriptionReceivedHandler PacketDescriptionReceived;
     }
-
 }
