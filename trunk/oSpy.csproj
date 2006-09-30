@@ -114,7 +114,6 @@
     <Compile Include="Parser\MSN.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Parser.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="AboutBoxForm.resx">
@@ -173,10 +172,10 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="PropertyBag.cs" />
-    <Compile Include="RAPI.cs" />
+    <Compile Include="Parser\RAPI.cs" />
     <Compile Include="Listener.cs" />
-    <Compile Include="RemSync.cs" />
-    <Compile Include="RRAC.cs" />
+    <Compile Include="Parser\RemSync.cs" />
+    <Compile Include="Parser\RRAC.cs" />
     <Compile Include="VisualTransaction.cs">
       <SubType>UserControl</SubType>
     </Compile>
