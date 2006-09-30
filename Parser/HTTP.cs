@@ -27,6 +27,9 @@ namespace oSpy.Parser
 {
     public class HTTPTransactionFactory : TransactionFactory
     {
+        protected const string ellipsis = "(..)";
+        protected const int MAX_DESCRIPTION_LENGTH = 40;
+
         private enum HTTPTransactionType
         {
             REQUEST,
@@ -69,10 +72,11 @@ namespace oSpy.Parser
                 try
                 {
                     TransactionNode transaction = new TransactionNode("HTTPTransaction");
-                    transaction.Description = transaction.Name;
 
                     TransactionNode request = ExtractHttpData(stream, HTTPTransactionType.REQUEST);
                     transaction.AddChild(request);
+
+                    string desc = request.Description;
 
                     stream = session.GetNextStreamDirection();
                     if (stream.GetBytesAvailable() != 0)
@@ -86,7 +90,11 @@ namespace oSpy.Parser
                             response = ExtractHttpData(stream, HTTPTransactionType.RESPONSE, "Response2");
                             transaction.AddChild(response);
                         }
+
+                        desc += " => " + response.Description;
                     }
+
+                    transaction.Description = desc;
 
                     session.AddNode(transaction);
 
@@ -146,6 +154,16 @@ namespace oSpy.Parser
 
                 stream.ReadBytes(StaticUtils.GetUTF8ByteCount(tokens[2]), slices);
                 node.AddField("Protocol", tokens[2], "Protocol identifier.", slices);
+
+                // Set a description
+                string arg = tokens[1];
+                if (tokens[0].Length + 1 + arg.Length > MAX_DESCRIPTION_LENGTH)
+                {
+                    arg = arg.Substring(0, MAX_DESCRIPTION_LENGTH - tokens[0].Length - 1 - ellipsis.Length)
+                        + ellipsis;
+                }
+
+                node.Description = String.Format("{0} {1}", tokens[0], arg);                
             }
             else
             {
@@ -159,6 +177,15 @@ namespace oSpy.Parser
                     stream.ReadBytes(StaticUtils.GetUTF8ByteCount(tokens[1]), slices);
                     node.AddField("Result", tokens[1], "Result.", slices);
                 }
+
+                // Set a description
+                string result = tokens[1];
+                if (result.Length > MAX_DESCRIPTION_LENGTH)
+                {
+                    result = result.Substring(0, MAX_DESCRIPTION_LENGTH - ellipsis.Length) + ellipsis;
+                }
+
+                node.Description = result;
             }
 
             stream.ReadBytes(2);
