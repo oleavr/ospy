@@ -30,6 +30,7 @@ using oSpy.Event;
 using oSpy.Parser;
 using oSpy.Util;
 using oSpy.Net;
+using System.Threading;
 
 namespace oSpy
 {
@@ -238,32 +239,55 @@ namespace oSpy
         {
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
+                ProgressForm progFrm = new ProgressForm("Opening");
+
                 ClearState();
 
-                object source = dataGridView.DataSource;
                 dataGridView.DataSource = null;
                 dataSet.Tables[0].BeginLoadData();
 
                 clearMenuItem.PerformClick();
 
-                FileStream fs = new FileStream(openFileDialog.FileName, FileMode.Open);
-                BZip2InputStream stream = new BZip2InputStream(fs);
+                Thread th = new Thread(new ParameterizedThreadStart(OpenFile));
+                th.Start(progFrm);
 
-                dataSet.ReadXml(stream);
-
-                stream.Close();
-                fs.Close();
-
-                dataSet.Tables[0].EndLoadData();
-
-                AnalyzePackets();
-
-                dataGridView.DataSource = source;
+                progFrm.ShowDialog(this);
             }
         }
 
-        private void AnalyzePackets()
+        private void OpenFile(object param)
         {
+            IProgressFeedback progress = param as IProgressFeedback;
+
+            FileStream fs = new FileStream(openFileDialog.FileName, FileMode.Open);
+            BZip2InputStream stream = new BZip2InputStream(fs);
+
+            dataSet.ReadXml(stream);
+
+            stream.Close();
+            fs.Close();
+
+            dataSet.Tables[0].EndLoadData();
+
+            progress.ProgressUpdate("Opened", 100);
+
+            AnalyzePackets(progress);
+
+            progress.ProgressUpdate("Finishing", 100);
+            Invoke(new ThreadStart(RestoreDataSource));
+
+            progress.OperationComplete();
+        }
+
+        private void RestoreDataSource()
+        {
+            dataGridView.DataSource = bindingSource;
+        }
+
+        private void AnalyzePackets(object param)
+        {
+            IProgressFeedback progress = param as IProgressFeedback;
+
             //
             // Find all the sessions and create a PacketStream for each
             //
@@ -271,6 +295,9 @@ namespace oSpy
             List<UInt32> sessionList = new List<UInt32>();
             IPSession session;
 
+            progress.ProgressUpdate("Identifying sessions", 0);
+
+            int i = 0;
             foreach (IPPacket p in tmpPacketList)
             {
                 UInt32 id = (UInt32) (p.ResourceId + p.RemoteEndpoint.Port);
@@ -285,6 +312,10 @@ namespace oSpy
                 }
 
                 session.AddPacket(p);
+                i++;
+
+                progress.ProgressUpdate("Identifying sessions",
+                    (int) ((i / (float) tmpPacketList.Count) * 100.0f));
             }
 
             //
@@ -308,10 +339,16 @@ namespace oSpy
             //
             // Iterate over them, in sequence, and hand each over to the parser.
             //
+            i = 0;
             foreach (UInt32 id in sessionList)
             {
                 session = sessions[id];
                 packetParser.AddSession(session);
+
+                i++;
+
+                progress.ProgressUpdate("Parsing sessions",
+                    (int)((i / (float)sessionList.Count) * 100.0f));
             }
         }
 
@@ -340,9 +377,26 @@ namespace oSpy
             CaptureForm frm = new CaptureForm(listener, swForm.GetRules());
             frm.ShowDialog(this);
 
-            AnalyzePackets();
+            dataGridView.DataSource = null;
 
-            dataGridView.DataSource = source;
+            ProgressForm progFrm = new ProgressForm("Analyzing data");
+
+            Thread th = new Thread(new ParameterizedThreadStart(DoPostAnalysis));
+            th.Start(progFrm);
+
+            progFrm.ShowDialog(this);
+        }
+
+        private void DoPostAnalysis(object param)
+        {
+            IProgressFeedback progress = param as IProgressFeedback;
+
+            AnalyzePackets(progress);
+
+            progress.ProgressUpdate("Finishing", 100);
+            Invoke(new ThreadStart(RestoreDataSource));
+
+            progress.OperationComplete();
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
