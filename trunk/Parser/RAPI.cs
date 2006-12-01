@@ -16,36 +16,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-// FIXME: port to new API
-#if false
-
 using System;
+using oSpy.Util;
+using oSpy.Net;
 using System.Collections.Generic;
-using System.Text;
-using Flobbster.Windows.Forms;
-using System.ComponentModel;
-using System.IO;
 
-namespace oSpy
+namespace oSpy.Parser
 {
-    public class RAPITransactionFactory : StreamTransactionFactory
+    public class RAPITransactionFactory : TransactionFactory
     {
-        public const int RAPI_PORT = 990;
+        private const int NOTIFY_INITIAL_HANDSHAKE = 0;
+        private const int NOTIFY_CONNECTION_READY = 1;
 
-        public RAPITransactionFactory(DebugLogger logger)
-            : base(new int[] { RAPI_PORT }, null, logger)
+        private const int MAX_DEVICE_INFO_LENGTH = 1024;
+
+        private enum RAPIConnectionState
         {
-        }
+            HANDSHAKE,
+            AUTH,
+            SESSION,
+        };
 
-        protected override StreamSession CreateSession(Packet firstPacket)
-        {
-            return new RAPISession(logger);
-        }
-    }
-
-    public class RAPISession : StreamSession
-    {
-        public static string[] RapiCallNames = new string[] {
+        private static string[] rapiCallNames = new string[] {
             "RAPI_EXP_11", // 0x00
             "CeSyncTimeToPc", // 0x01 / RAPI_EXP_12
             "CeStartReplication", // 0x02 / RAPI_EXP_13
@@ -141,6 +133,241 @@ namespace oSpy
             "CeGetDiskFreeSpaceEx", // 0x5c
         };
 
+        public RAPITransactionFactory(DebugLogger logger)
+            : base(logger)
+        {
+        }
+
+        public override string Name()
+        {
+            return "RAPI Transaction Factory";
+        }
+
+        public override bool HandleSession(IPSession session)
+        {
+            if (session.LocalEndpoint.Port != 990)
+                return false;
+
+            RAPIConnectionState state = RAPIConnectionState.HANDSHAKE;
+
+            PacketStream stream = session.GetNextStreamDirection();
+            List<PacketSlice> slices = new List<PacketSlice>();
+            TransactionNode parentNode, node;
+            string str;
+            UInt32 val;
+
+            // The device should send the first DWORD of the handshake
+            if (stream.CurPacket.Direction != PacketDirection.PACKET_DIRECTION_INCOMING)
+            {
+                logger.AddMessage("RAPI protocol error, device wasn't the initiator");
+                return true;
+            }
+
+            // Read and verify the initial request
+            UInt32 initialRequest = stream.ReadU32LE(slices);
+            if (initialRequest != NOTIFY_INITIAL_HANDSHAKE && initialRequest != NOTIFY_CONNECTION_READY)
+            {
+                logger.AddMessage("RAPI protocol error, unknown initial request {0}", initialRequest);
+                return true;
+            }
+
+            node = new TransactionNode((initialRequest == 0) ? "RAPIInitialHandshake" : "RAPIConnectionStart");
+            node.Description = node.Name;
+
+            node.AddField("InitialRequest", (initialRequest == NOTIFY_INITIAL_HANDSHAKE) ? "NOTIFY_INITIAL_HANDSHAKE" : "NOTIFY_CONNECTION_READY", "Initial request.", slices);
+
+            // Now it's our turn
+            stream = session.GetNextStreamDirection();
+
+            if (initialRequest == NOTIFY_INITIAL_HANDSHAKE)
+            {
+                UInt32 firstPing = stream.ReadU32LE(slices);
+                node.AddField("FirstPing", firstPing, "First ping, should be 3.", slices);
+
+                // And the first pong
+                stream = session.GetNextStreamDirection();
+
+                UInt32 firstPong = stream.ReadU32LE(slices);
+                node.AddField("FirstPong", firstPong, "First pong, should be 4 for older WM5, 6 for newer versions.", slices);
+
+                if (firstPong == 6)
+                {
+                    // Now we're supposed to send 4 DWORDs
+                    UInt32 secondPing = stream.ReadU32LE(slices);
+                    node.AddField("SecondPingValue1", secondPing, "Second ping value #1, should be 7.", slices);
+
+                    secondPing = stream.ReadU32LE(slices);
+                    node.AddField("SecondPingValue2", secondPing, "Second ping value #2, should be 8.", slices);
+
+                    secondPing = stream.ReadU32LE(slices);
+                    node.AddField("SecondPingValue3", secondPing, "Second ping value #3, should be 4.", slices);
+
+                    secondPing = stream.ReadU32LE(slices);
+                    node.AddField("SecondPingValue4", secondPing, "Second ping value #4, should be 1.", slices);
+
+                    // And the device should reply
+                    stream = session.GetNextStreamDirection();
+
+                    UInt32 secondPong = stream.ReadU32LE(slices);
+                    node.AddField("SecondPong", secondPong, "Second pong, should be 4.", slices);
+                }
+
+                // Got it
+                session.AddNode(node);
+
+                parentNode = new TransactionNode("RAPIDeviceInfo");
+                parentNode.Description = parentNode.Name;
+
+                UInt32 deviceInfoLen = stream.ReadU32LE(slices);
+                UInt32 remainingDevInfoLen = deviceInfoLen;
+                parentNode.AddField("Length", deviceInfoLen, "Device info length.", slices);
+
+                if (deviceInfoLen > MAX_DEVICE_INFO_LENGTH)
+                {
+                    logger.AddMessage("RAPI protocol error, length of the device info package should be below {0}, was {1}", MAX_DEVICE_INFO_LENGTH, deviceInfoLen);
+                    return true;
+                }
+
+                node = new TransactionNode(parentNode, "DeviceInfo");
+
+                Guid guid = new Guid(stream.ReadBytes(16, slices));
+                str = String.Format("{{0}}", guid.ToString());
+                node.AddField("DeviceGUID", str, "Device GUID.", slices);
+                remainingDevInfoLen -= 16;
+
+                val = stream.ReadU32LE(slices);
+                node.AddField("OsVersionMajor", val, "OS version, major.", slices);
+                remainingDevInfoLen -= 4;
+
+                val = stream.ReadU32LE(slices);
+                node.AddField("OsVersionMinor", val, "OS version, minor.", slices);
+                remainingDevInfoLen -= 4;
+
+                val = stream.ReadU32LE(slices);
+                node.AddField("DeviceNameLength", val, "Device name length (in characters, not bytes).", slices);
+                remainingDevInfoLen -= 4;
+
+                // calculate the string size in unicode, with terminating NUL word
+                val = (val + 1) * 2;
+                str = stream.ReadCStringUnicode((int) val, slices);
+                node.AddField("DeviceName", str, "Device name.", slices);
+                remainingDevInfoLen -= val;
+
+                val = stream.ReadU32LE(slices);
+                node.AddField("DeviceVersion", StaticUtils.FormatFlags(val), "Device version.", slices);
+                remainingDevInfoLen -= 4;
+
+                val = stream.ReadU32LE(slices);
+                node.AddField("DeviceProcessorType", StaticUtils.FormatFlags(val), "Device processor type.", slices);
+                remainingDevInfoLen -= 4;
+
+                val = stream.ReadU32LE(slices);
+                node.AddField("Unknown1", StaticUtils.FormatFlags(val), "Counter or a flag? ANDed with 0xFFFFFFFE in the code (should take a closer look at this).", slices);
+                remainingDevInfoLen -= 4;
+
+                val = stream.ReadU32LE(slices);
+                node.AddField("CurrentPartnerId", StaticUtils.FormatFlags(val), "Current partner id.", slices);
+                remainingDevInfoLen -= 4;
+
+                val = stream.ReadU32LE(slices);
+                node.AddField("DeviceId", StaticUtils.FormatFlags(val), "Current device id. Lives in HKCU\\Software\\Microsoft\\Windows CE Services\\Partners\\<DeviceIdentifier>.", slices);
+                remainingDevInfoLen -= 4;
+
+                /*
+                dw = stream.ReadU32LE(slices);
+                node.AddField("PlatformNameLength", dw, "Platform name length.", slices);
+                remainingDevInfoLen -= 4;*/
+
+                // Don't swallow the 4 last
+                remainingDevInfoLen -= 4;
+
+                byte[] bytes = stream.ReadBytes((int) remainingDevInfoLen, slices);
+                node.AddField("UnknownData1", StaticUtils.FormatByteArray(bytes), "Unknown device info data.", slices);
+
+                val = stream.ReadU32LE(slices);
+                node.AddField("PasswordMask", StaticUtils.FormatFlags(val), "Password mask. Non-zero if a password is set.", slices);
+                remainingDevInfoLen -= 4;
+
+                state = (val != 0) ? RAPIConnectionState.AUTH : RAPIConnectionState.SESSION;
+
+                // Now it's our turn
+                stream = session.GetNextStreamDirection();
+
+                node = parentNode;
+            }
+            else
+            {
+                state = RAPIConnectionState.SESSION;
+            }
+
+            // Add the last node for each case
+            session.AddNode(node);
+
+            while (state == RAPIConnectionState.AUTH)
+            {
+                parentNode = new TransactionNode("RAPIAuthAttempt");
+                parentNode.Description = parentNode.Name;
+
+                node = new TransactionNode(parentNode, "Request");
+
+                val = stream.ReadU16LE(slices);
+                node.AddField("Length", val, "Authentication data length.", slices);
+
+                byte[] bytes = stream.ReadBytes((int) val, slices);
+                node.AddField("Data", StaticUtils.FormatByteArray(bytes), "Authentication data.", slices);
+
+                stream = session.GetNextStreamDirection();
+
+                node = new TransactionNode(parentNode, "Response");
+
+                val = stream.ReadU16LE(slices);
+                node.AddField("Success", (val != 0) ? "TRUE" : "FALSE", "Whether the authentication attempt was successful.", slices);
+
+                session.AddNode(parentNode);
+
+                stream = session.GetNextStreamDirection();
+
+                if (val != 0)
+                    state = RAPIConnectionState.SESSION;
+            }
+
+            while (false)
+            {
+                // FIXME: port this to the new API
+            }
+
+            return true;
+        }
+    }
+}
+
+#if false
+using System;
+using System.Collections.Generic;
+using System.Text;
+using Flobbster.Windows.Forms;
+using System.ComponentModel;
+using System.IO;
+
+namespace oSpy
+{
+    public class RAPITransactionFactory : StreamTransactionFactory
+    {
+        public const int RAPI_PORT = 990;
+
+        public RAPITransactionFactory(DebugLogger logger)
+            : base(new int[] { RAPI_PORT }, null, logger)
+        {
+        }
+
+        protected override StreamSession CreateSession(Packet firstPacket)
+        {
+            return new RAPISession(logger);
+        }
+    }
+
+    public class RAPISession : StreamSession
+    {
         protected PacketStream.State requestState;
         protected PacketStream.State responseState;
 

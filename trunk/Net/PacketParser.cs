@@ -79,9 +79,10 @@ namespace oSpy.Net
         {
             factories = new List<TransactionFactory>(3);
 
-            TransactionFactory fac;/* = new RAPITransactionFactory(logger);
+            TransactionFactory fac = new RAPITransactionFactory(logger);
             factories.Add(fac);
 
+            /*
             fac = new RRACTransactionFactory(logger);
             factories.Add(fac);
 
