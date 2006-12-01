@@ -23,6 +23,7 @@ using System.IO;
 using Flobbster.Windows.Forms;
 using oSpy.Util;
 using oSpy.Net;
+
 namespace oSpy.Parser
 {
     public class HTTPTransactionFactory : TransactionFactory
