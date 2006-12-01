@@ -331,9 +331,79 @@ namespace oSpy.Parser
                     state = RAPIConnectionState.SESSION;
             }
 
-            while (false)
+            while (true)
             {
-                // FIXME: port this to the new API
+                UInt32 msgLen, msgType;
+                List<PacketSlice> msgLenSlices = new List<PacketSlice>(1);
+                List<PacketSlice> msgTypeSlices = new List<PacketSlice>(1);
+
+                // Message length
+                msgLen = stream.ReadU32LE(msgLenSlices);
+
+                if (msgLen == 5)
+                {
+                    node = new TransactionNode("RAPINotification");
+                    node.Description = node.Name;
+
+                    node.AddField("MessageType", "RAPI_NOTIFICATION", "Message type.", msgLenSlices);
+
+                    val = stream.ReadU32LE(slices);
+                    node.AddField("NotificationType", val, "Notification type.", slices);
+
+                    val = stream.ReadU32LE(slices);
+                    node.AddField("Argument", val, "Argument.", slices);
+
+                    if (stream.GetBytesAvailable() == 0)
+                        break;
+                    else
+                        continue;
+                }
+
+                // Message type
+                msgType = stream.ReadU32LE(msgTypeSlices);
+                if (msgType >= rapiCallNames.Length)
+                {
+                    logger.AddMessage("Unknown call name: {0:x8}", msgType);
+                    return true;
+                }
+
+                string name = rapiCallNames[msgType];
+
+                TransactionNode call = new TransactionNode(name);
+                call.Description = call.Name;
+
+                TransactionNode req = new TransactionNode(call, "Request");
+                TransactionNode resp = new TransactionNode(call, "Response");
+
+                req.AddField("MessageLength", msgLen, "Length of the RAPI request.", msgLenSlices);
+                req.AddField("MessageType", String.Format("{0} (0x{1:x2})", name, msgType), "Type of the RAPI request.", msgTypeSlices);
+
+                byte[] bytes = stream.ReadBytes((int) msgLen - 4, slices);
+                req.AddField("UnparsedData", StaticUtils.FormatByteArray(bytes), "Unparsed data.", slices);
+
+                stream = session.GetNextStreamDirection();
+
+                msgLen = stream.ReadU32LE(slices);
+                resp.AddField("MessageLength", msgLen, "Length of the RAPI response.", slices);
+
+                UInt32 lastError = stream.ReadU32LE(slices);
+                resp.AddField("LastError", String.Format("0x{0:x8}", lastError), "Last error on the CE device.", slices);
+
+                bool formatRetVal = true;
+
+                UInt32 retVal = stream.ReadU32LE(slices);
+                resp.AddField("ReturnValue", (formatRetVal) ? StaticUtils.FormatRetVal(retVal) : StaticUtils.FormatValue(retVal), "Return value.", slices);
+
+                msgLen -= 8;
+                if (msgLen > 0)
+                {
+                    bytes = stream.ReadBytes((int) msgLen, slices);
+                    resp.AddField("UnparsedData", StaticUtils.FormatByteArray(bytes), "Unparsed data.", slices);
+                }
+
+                stream = session.GetNextStreamDirection();
+                if (stream.GetBytesAvailable() == 0)
+                    break;
             }
 
             return true;
