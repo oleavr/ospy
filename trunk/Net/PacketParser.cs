@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#define PRODUCTION
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -157,10 +159,13 @@ namespace oSpy.Net
 
             foreach (TransactionFactory fac in factories)
             {
+#if PRODUCTION
                 try
                 {
+#endif
                     if (fac.HandleSession(session))
                         break;
+#if PRODUCTION
                 }
                 catch (Exception e)
                 {
@@ -169,8 +174,9 @@ namespace oSpy.Net
                     MessageBox.Show(msg, "Parsing error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     throw e;
                 }
+#endif
 
-                session.ResetState();
+                    session.ResetState();
             }
 
             session.AllNodesAdded();

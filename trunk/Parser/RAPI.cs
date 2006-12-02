@@ -133,6 +133,9 @@ namespace oSpy.Parser
             "CeGetDiskFreeSpaceEx", // 0x5c
         };
 
+        private IPSession session;
+        private PacketStream stream;
+
         public RAPITransactionFactory(DebugLogger logger)
             : base(logger)
         {
@@ -148,27 +151,35 @@ namespace oSpy.Parser
             if (session.LocalEndpoint.Port != 990)
                 return false;
 
+            this.session = session;
+            stream = session.GetNextStreamDirection();
+
+            // The device should send the first DWORD of the handshake
+            if (stream.CurPacket.Direction == PacketDirection.PACKET_DIRECTION_INCOMING)
+            {
+                HandleRapiHandshake();
+            }
+
+            HandleRapiSession();
+
+            return true;
+        }
+
+        private void HandleRapiHandshake()
+        {
             RAPIConnectionState state = RAPIConnectionState.HANDSHAKE;
 
-            PacketStream stream = session.GetNextStreamDirection();
             List<PacketSlice> slices = new List<PacketSlice>();
             TransactionNode parentNode, node;
             string str;
             UInt32 val;
-
-            // The device should send the first DWORD of the handshake
-            if (stream.CurPacket.Direction != PacketDirection.PACKET_DIRECTION_INCOMING)
-            {
-                logger.AddMessage("RAPI protocol error, device wasn't the initiator");
-                return true;
-            }
 
             // Read and verify the initial request
             UInt32 initialRequest = stream.ReadU32LE(slices);
             if (initialRequest != NOTIFY_INITIAL_HANDSHAKE && initialRequest != NOTIFY_CONNECTION_READY)
             {
                 logger.AddMessage("RAPI protocol error, unknown initial request {0}", initialRequest);
-                return true;
+                return;
             }
 
             node = new TransactionNode((initialRequest == 0) ? "RAPIInitialHandshake" : "RAPIConnectionStart");
@@ -225,7 +236,7 @@ namespace oSpy.Parser
                 if (deviceInfoLen > MAX_DEVICE_INFO_LENGTH)
                 {
                     logger.AddMessage("RAPI protocol error, length of the device info package should be below {0}, was {1}", MAX_DEVICE_INFO_LENGTH, deviceInfoLen);
-                    return true;
+                    return;
                 }
 
                 node = new TransactionNode(parentNode, "DeviceInfo");
@@ -249,7 +260,7 @@ namespace oSpy.Parser
 
                 // calculate the string size in unicode, with terminating NUL word
                 val = (val + 1) * 2;
-                str = stream.ReadCStringUnicode((int) val, slices);
+                str = stream.ReadCStringUnicode((int)val, slices);
                 node.AddField("DeviceName", str, "Device name.", slices);
                 remainingDevInfoLen -= val;
 
@@ -281,7 +292,7 @@ namespace oSpy.Parser
                 // Don't swallow the 4 last
                 remainingDevInfoLen -= 4;
 
-                byte[] bytes = stream.ReadBytes((int) remainingDevInfoLen, slices);
+                byte[] bytes = stream.ReadBytes((int)remainingDevInfoLen, slices);
                 node.AddField("UnknownData1", StaticUtils.FormatByteArray(bytes), "Unknown device info data.", slices);
 
                 val = stream.ReadU32LE(slices);
@@ -313,7 +324,7 @@ namespace oSpy.Parser
                 val = stream.ReadU16LE(slices);
                 node.AddField("Length", val, "Authentication data length.", slices);
 
-                byte[] bytes = stream.ReadBytes((int) val, slices);
+                byte[] bytes = stream.ReadBytes((int)val, slices);
                 node.AddField("Data", StaticUtils.FormatByteArray(bytes), "Authentication data.", slices);
 
                 stream = session.GetNextStreamDirection();
@@ -330,15 +341,26 @@ namespace oSpy.Parser
                 if (val != 0)
                     state = RAPIConnectionState.SESSION;
             }
+        }
 
-            while (true)
+        private void HandleRapiSession()
+        {
+            List<PacketSlice> slices = new List<PacketSlice>();
+            TransactionNode node;
+            string str;
+            UInt32 val, retVal, lastError;
+
+            while (stream.GetBytesAvailable() > 0)
             {
                 UInt32 msgLen, msgType;
                 List<PacketSlice> msgLenSlices = new List<PacketSlice>(1);
                 List<PacketSlice> msgTypeSlices = new List<PacketSlice>(1);
 
+                logger.AddMessage("direction={0}", stream.CurPacket.Direction);
+
                 // Message length
                 msgLen = stream.ReadU32LE(msgLenSlices);
+                logger.AddMessage("msgLen={0}", msgLen);
 
                 if (msgLen == 5)
                 {
@@ -348,10 +370,12 @@ namespace oSpy.Parser
                     node.AddField("MessageType", "RAPI_NOTIFICATION", "Message type.", msgLenSlices);
 
                     val = stream.ReadU32LE(slices);
-                    node.AddField("NotificationType", val, "Notification type.", slices);
+                    node.AddField("NotificationType", (val == 4) ? "REQUEST_NEW_CONNECTION" : StaticUtils.FormatFlags(val), "Notification type.", slices);
 
                     val = stream.ReadU32LE(slices);
                     node.AddField("Argument", val, "Argument.", slices);
+
+                    session.AddNode(node);
 
                     if (stream.GetBytesAvailable() == 0)
                         break;
@@ -364,7 +388,7 @@ namespace oSpy.Parser
                 if (msgType >= rapiCallNames.Length)
                 {
                     logger.AddMessage("Unknown call name: {0:x8}", msgType);
-                    return true;
+                    return;
                 }
 
                 string name = rapiCallNames[msgType];
@@ -378,171 +402,10 @@ namespace oSpy.Parser
                 req.AddField("MessageLength", msgLen, "Length of the RAPI request.", msgLenSlices);
                 req.AddField("MessageType", String.Format("{0} (0x{1:x2})", name, msgType), "Type of the RAPI request.", msgTypeSlices);
 
-                byte[] bytes = stream.ReadBytes((int) msgLen - 4, slices);
-                req.AddField("UnparsedData", StaticUtils.FormatByteArray(bytes), "Unparsed data.", slices);
-
-                stream = session.GetNextStreamDirection();
-
-                msgLen = stream.ReadU32LE(slices);
-                resp.AddField("MessageLength", msgLen, "Length of the RAPI response.", slices);
-
-                UInt32 lastError = stream.ReadU32LE(slices);
-                resp.AddField("LastError", String.Format("0x{0:x8}", lastError), "Last error on the CE device.", slices);
-
-                bool formatRetVal = true;
-
-                UInt32 retVal = stream.ReadU32LE(slices);
-                resp.AddField("ReturnValue", (formatRetVal) ? StaticUtils.FormatRetVal(retVal) : StaticUtils.FormatValue(retVal), "Return value.", slices);
-
-                msgLen -= 8;
-                if (msgLen > 0)
-                {
-                    bytes = stream.ReadBytes((int) msgLen, slices);
-                    resp.AddField("UnparsedData", StaticUtils.FormatByteArray(bytes), "Unparsed data.", slices);
-                }
-
-                stream = session.GetNextStreamDirection();
-                if (stream.GetBytesAvailable() == 0)
-                    break;
-            }
-
-            return true;
-        }
-    }
-}
-
-#if false
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Flobbster.Windows.Forms;
-using System.ComponentModel;
-using System.IO;
-
-namespace oSpy
-{
-    public class RAPITransactionFactory : StreamTransactionFactory
-    {
-        public const int RAPI_PORT = 990;
-
-        public RAPITransactionFactory(DebugLogger logger)
-            : base(new int[] { RAPI_PORT }, null, logger)
-        {
-        }
-
-        protected override StreamSession CreateSession(Packet firstPacket)
-        {
-            return new RAPISession(logger);
-        }
-    }
-
-    public class RAPISession : StreamSession
-    {
-        protected PacketStream.State requestState;
-        protected PacketStream.State responseState;
-
-        public RAPISession(DebugLogger logger)
-            : base(logger)
-        {
-        }
-
-        public override void HandlePacket(Packet packet)
-        {
-            base.HandlePacket(packet);
-
-            PacketDirection desiredDirection;
-
-            if (requestState == null)
-                desiredDirection = PacketDirection.PACKET_DIRECTION_OUTGOING;
-            else
-                desiredDirection = PacketDirection.PACKET_DIRECTION_INCOMING;
-
-            if (stream.Direction != desiredDirection)
-            {
-                try
-                {
-                    stream.NextDirection();
-                }
-                catch (EndOfStreamException)
-                {
-                    return;
-                }
-            }
-
-            try
-            {
-                UInt32 len = stream.PeekU32();
-
-                if (stream.Length >= len + 4)
-                {
-                    if (requestState == null)
-                    {
-                        requestState = stream.CurrentState;
-                    }
-                    else if (responseState == null)
-                    {
-                        responseState = stream.CurrentState;
-
-                        PacketStream.State prevState = stream.CurrentState;
-                        try
-                        {
-                            ParseRAPICall();
-                        }
-                        catch (StreamSessionParseError e)
-                        {
-                            Logger.AddMessage(String.Format("Failed to parse RAPI call: {0}", e.Message));
-                        }
-
-                        stream.CurrentState = prevState;
-
-                        requestState = null;
-                        responseState = null;
-                    }
-                }
-            }
-            catch (EndOfStreamException)
-            {
-                return;
-            }
-        }
-
-        private void ParseRAPICall()
-        {
-            UInt32 val, retVal, lastError;
-            string str;
-
-            try
-            {
-                stream.CurrentState = requestState;
-
-                List<PacketSlice> slices = new List<PacketSlice>(2);
-
-                UInt32 msgLen, msgType;
-                List<PacketSlice> msgLenSlices = new List<PacketSlice>(1);
-                List<PacketSlice> msgTypeSlices = new List<PacketSlice>(1);
-
-                // Message length
-                msgLen = stream.ReadU32(msgLenSlices);
-
-                // Message type
-                msgType = stream.ReadU32(msgTypeSlices);
-                if (msgType >= RapiCallNames.Length)
-                    throw new StreamSessionParseError(String.Format("Unknown call name: {0:x8}", msgType));
-
-                string name = RapiCallNames[msgType];
-                RAPICallNode call = new RAPICallNode(name);
-                TransactionNode req = call.Request;
-                TransactionNode resp = call.Response;
-
-                req.AddField("MessageLength", Convert.ToString(msgLen),
-                    "Length of the RAPI request.", msgLenSlices);
-                req.AddField("MessageType", String.Format("{0} (0x{1:x2})", name, msgType),
-                    "Type of the RAPI request.", msgTypeSlices);
-
                 if (name == "CeRegOpenKeyEx")
                 {
-                    val = stream.ReadU32(slices);
-                    req.AddField("hKey", Util.FormatRegKey(val),
+                    val = stream.ReadU32LE(slices);
+                    req.AddField("hKey", StaticUtils.FormatRegKey(val),
                         "Handle to a currently open key or one of the following predefined reserved handle values:\n" +
                         "HKEY_CLASSES_ROOT\nHKEY_CURRENT_USER\nHKEY_LOCAL_MACHINE\nHKEY_USERS",
                         slices);
@@ -552,23 +415,23 @@ namespace oSpy
                         "A null-terminated string containing the name of the subkey to open.",
                         slices);
 
-                    req.Summary = String.Format("{0}, \"{1}\"", Util.FormatRegKey(val, true), str);
+                    req.Summary = String.Format("{0}, \"{1}\"", StaticUtils.FormatRegKey(val, true), str);
 
                     SwitchToResponseAndParseResult(resp, slices, out retVal, out lastError);
 
-                    val = stream.ReadU32(slices);
+                    val = stream.ReadU32LE(slices);
                     string result = String.Format("0x{0:x8}", val);
                     resp.AddField("hkResult", result, "Handle to the opened key.", slices);
 
                     if (retVal == Constants.ERROR_SUCCESS)
-                        resp.Summary = String.Format("{0}, {1}", Util.FormatRetVal(retVal, true), result);
+                        resp.Summary = String.Format("{0}, {1}", StaticUtils.FormatRetVal(retVal, true), result);
                     else
-                        resp.Summary = Util.FormatRetVal(retVal, true);
+                        resp.Summary = StaticUtils.FormatRetVal(retVal, true);
                 }
                 else if (name == "CeRegCreateKeyEx")
                 {
-                    val = stream.ReadU32(slices);
-                    req.AddField("hKey", Util.FormatRegKey(val),
+                    val = stream.ReadU32LE(slices);
+                    req.AddField("hKey", StaticUtils.FormatRegKey(val),
                         "Handle to a currently open key or one of the following predefined reserved handle values:\n" +
                         "HKEY_CLASSES_ROOT\nHKEY_CURRENT_USER\nHKEY_LOCAL_MACHINE\nHKEY_USERS", slices);
 
@@ -585,43 +448,43 @@ namespace oSpy
                         "ignored if the key already exists.", slices);
 
                     req.Summary = String.Format("{0}, {1}, {2}",
-                        Util.FormatRegKey(val, true),
-                        Util.FormatStringArgument(szSubKey),
-                        Util.FormatStringArgument(szClass));
+                        StaticUtils.FormatRegKey(val, true),
+                        StaticUtils.FormatStringArgument(szSubKey),
+                        StaticUtils.FormatStringArgument(szClass));
 
                     SwitchToResponseAndParseResult(resp, slices, out retVal, out lastError);
 
-                    string result = String.Format("0x{0:x8}", stream.ReadU32(slices));
+                    string result = String.Format("0x{0:x8}", stream.ReadU32LE(slices));
                     resp.AddField("hkResult", result, "Handle to the opened key.", slices);
 
-                    UInt32 disposition = stream.ReadU32(slices);
-                    resp.AddField("dwDisposition", Util.FormatRegDisposition(disposition),
+                    UInt32 disposition = stream.ReadU32LE(slices);
+                    resp.AddField("dwDisposition", StaticUtils.FormatRegDisposition(disposition),
                         "Receives one of REG_CREATED_NEW_KEY and REG_OPENED_EXISTING_KEY.",
                         slices);
 
                     if (retVal == Constants.ERROR_SUCCESS)
                         resp.Summary = String.Format("{0}, {1}, {2}",
-                            Util.FormatRetVal(retVal, true), result, Util.FormatRegDisposition(disposition, true));
+                            StaticUtils.FormatRetVal(retVal, true), result, StaticUtils.FormatRegDisposition(disposition, true));
                     else
-                        resp.Summary = Util.FormatRetVal(retVal, true);
+                        resp.Summary = StaticUtils.FormatRetVal(retVal, true);
 
                 }
                 else if (name == "CeRegCloseKey")
                 {
-                    val = stream.ReadU32(slices);
-                    req.AddField("hKey", Util.FormatRegKey(val),
+                    val = stream.ReadU32LE(slices);
+                    req.AddField("hKey", StaticUtils.FormatRegKey(val),
                         "Handle to the open key to close.", slices);
 
-                    req.Summary = Util.FormatRegKey(val, true);
+                    req.Summary = StaticUtils.FormatRegKey(val, true);
 
                     SwitchToResponseAndParseResult(resp, slices, out retVal, out lastError);
 
-                    resp.Summary = Util.FormatRetVal(retVal, true);
+                    resp.Summary = StaticUtils.FormatRetVal(retVal, true);
                 }
                 else if (name == "CeRegQueryValueEx")
                 {
-                    val = stream.ReadU32(slices);
-                    req.AddField("hKey", Util.FormatRegKey(val),
+                    val = stream.ReadU32LE(slices);
+                    req.AddField("hKey", StaticUtils.FormatRegKey(val),
                         "Handle to a currently open key or any of the following predefined reserved handle values:\n" +
                         "HKEY_CLASSES_ROOT\nHKEY_CURRENT_USER\nHKEY_LOCAL_MACHINE\nHKEY_USERS", slices);
 
@@ -629,23 +492,23 @@ namespace oSpy
                     req.AddField("szValueName", szValueName,
                         "A string containing the name of the value to query.", slices);
 
-                    UInt32 cbData = stream.ReadU32(slices);
+                    UInt32 cbData = stream.ReadU32LE(slices);
                     req.AddField("cbData", cbData,
                         "A variable that specifies the maximum number of bytes to return.", slices);
 
                     req.Summary = String.Format("{0}, {1}, {2}",
-                        Util.FormatRegKey(val, true),
-                        Util.FormatStringArgument(szValueName),
+                        StaticUtils.FormatRegKey(val, true),
+                        StaticUtils.FormatStringArgument(szValueName),
                         cbData);
 
                     SwitchToResponseAndParseResult(resp, slices, out retVal, out lastError);
 
-                    UInt32 dwType = stream.ReadU32(slices);
-                    resp.AddField("dwType", Util.FormatRegType(dwType),
+                    UInt32 dwType = stream.ReadU32LE(slices);
+                    resp.AddField("dwType", StaticUtils.FormatRegType(dwType),
                         "The type of data associated with the specified value.",
                         slices);
 
-                    cbData = stream.ReadU32(slices);
+                    cbData = stream.ReadU32LE(slices);
                     resp.AddField("cbData", Convert.ToString(cbData),
                         "The size of the data returned.", slices);
 
@@ -654,12 +517,12 @@ namespace oSpy
                         str = "NULL";
                     resp.AddField("Data", str, "The data returned.", slices);
 
-                    resp.Summary = Util.FormatRetVal(retVal, true);
+                    resp.Summary = StaticUtils.FormatRetVal(retVal, true);
                 }
                 else if (name == "CeRegSetValueEx")
                 {
-                    UInt32 key = stream.ReadU32(slices);
-                    req.AddField("hKey", Util.FormatRegKey(key),
+                    UInt32 key = stream.ReadU32LE(slices);
+                    req.AddField("hKey", StaticUtils.FormatRegKey(key),
                         "Handle to a currently open key or any of the following predefined reserved handle values:\n" +
                         "HKEY_CLASSES_ROOT\nHKEY_CURRENT_USER\nHKEY_LOCAL_MACHINE\nHKEY_USERS", slices);
 
@@ -671,12 +534,12 @@ namespace oSpy
                         "not have default values, but they can have one unnamed value, which can be of any type.",
                         slices);
 
-                    UInt32 dwType = stream.ReadU32(slices);
-                    req.AddField("dwType", Util.FormatRegType(dwType),
+                    UInt32 dwType = stream.ReadU32LE(slices);
+                    req.AddField("dwType", StaticUtils.FormatRegType(dwType),
                         "Type of information to be stored as the value's data.",
                         slices);
 
-                    UInt32 cbData = stream.ReadU32(slices);
+                    UInt32 cbData = stream.ReadU32LE(slices);
                     req.AddField("cbData", Convert.ToString(cbData),
                         "Specifies the size, in bytes, of the information passed in the the Data field.",
                         slices);
@@ -696,11 +559,11 @@ namespace oSpy
                         dataSummary = String.Format("[{0} bytes]", cbData);
 
                     req.Summary = String.Format("{0}, {1}, {2}, {3}",
-                        Util.FormatRegKey(key), Util.FormatStringArgument(szValueName), Util.FormatRegType(dwType), dataSummary);
+                        StaticUtils.FormatRegKey(key), StaticUtils.FormatStringArgument(szValueName), StaticUtils.FormatRegType(dwType), dataSummary);
 
                     SwitchToResponseAndParseResult(resp, slices, out retVal, out lastError);
 
-                    resp.Summary = Util.FormatRetVal(retVal, true);
+                    resp.Summary = StaticUtils.FormatRetVal(retVal, true);
 
                 }
                 else if (name == "CeProcessConfig")
@@ -708,8 +571,8 @@ namespace oSpy
                     str = stream.ReadRAPIString(slices);
                     req.AddXMLField("szRequest", str, "Config request.", slices);
 
-                    UInt32 flags = stream.ReadU32(slices);
-                    req.AddField("dwFlags", Util.FormatFlags(flags), "Flags.", slices);
+                    UInt32 flags = stream.ReadU32LE(slices);
+                    req.AddField("dwFlags", StaticUtils.FormatFlags(flags), "Flags.", slices);
 
                     req.Summary = String.Format("[{0} bytes], 0x{1:x8}",
                         str.Length, flags);
@@ -721,21 +584,21 @@ namespace oSpy
 
                     if (retVal == Constants.ERROR_SUCCESS)
                         resp.Summary = String.Format("{0}, [{1} bytes]",
-                            Util.FormatRetVal(retVal, true), (str != null) ? str.Length : 0);
+                            StaticUtils.FormatRetVal(retVal, true), (str != null) ? str.Length : 0);
                     else
-                        resp.Summary = Util.FormatRetVal(retVal, true);
+                        resp.Summary = StaticUtils.FormatRetVal(retVal, true);
 
                 }
                 else if (name == "CeGetDesktopDeviceCaps")
                 {
-                    string caps = FormatDeviceCaps(stream.ReadU32(slices));
+                    string caps = FormatDeviceCaps(stream.ReadU32LE(slices));
                     req.AddField("nIndex", caps, "The item to return.", slices);
 
                     req.Summary = caps;
 
                     SwitchToResponseAndParseResult(resp, slices, out retVal, out lastError, false);
 
-                    resp.Summary = Util.FormatValue(retVal);
+                    resp.Summary = StaticUtils.FormatValue(retVal);
                 }
                 else if (name == "CeSyncStart")
                 {
@@ -750,15 +613,15 @@ namespace oSpy
 
                     SwitchToResponseAndParseResult(resp, slices, out retVal, out lastError);
 
-                    resp.Summary = Util.FormatRetVal(retVal, true);
+                    resp.Summary = StaticUtils.FormatRetVal(retVal, true);
                 }
                 else if (name == "CeSyncResume" || name == "CeSyncPause")
                 {
                     req.Summary = "";
-                    
+
                     SwitchToResponseAndParseResult(resp, slices, out retVal, out lastError, false);
 
-                    resp.Summary = Util.FormatRetVal(retVal, true);
+                    resp.Summary = StaticUtils.FormatRetVal(retVal, true);
                 }
                 else if (name == "CeStartReplication")
                 {
@@ -766,7 +629,7 @@ namespace oSpy
 
                     SwitchToResponseAndParseResult(resp, slices, out retVal, out lastError, false);
 
-                    resp.Summary = Util.FormatBool(retVal);
+                    resp.Summary = StaticUtils.FormatBool(retVal);
                 }
                 else if (name == "CeGetFileAttributes")
                 {
@@ -779,14 +642,14 @@ namespace oSpy
 
                     SwitchToResponseAndParseResult(resp, slices, out retVal, out lastError, false);
 
-                    resp.Summary = Util.FormatValue(retVal);
+                    resp.Summary = StaticUtils.FormatValue(retVal);
                 }
                 else
                 {
-                    if (msgLen - 4 > 0)
+                    if (msgLen > 4)
                     {
                         byte[] bytes = stream.ReadBytes((int)msgLen - 4, slices);
-                        req.AddField("UnknownData", Util.FormatByteArray(bytes), "Unknown data.", slices);
+                        req.AddField("UnparsedData", StaticUtils.FormatByteArray(bytes), "Unparsed data.", slices);
                     }
 
                     req.Summary = "[not yet parsed]";
@@ -796,11 +659,11 @@ namespace oSpy
                     resp.Summary = "[not yet parsed]";
                 }
 
-                AddTransactionNode(call);
-            }
-            catch (EndOfStreamException e)
-            {
-                throw new StreamSessionParseError(e.Message);
+                session.AddNode(call);
+
+                stream = session.GetNextStreamDirection();
+                if (stream.GetBytesAvailable() == 0)
+                    break;
             }
         }
 
@@ -814,18 +677,18 @@ namespace oSpy
                                                     out UInt32 retVal, out UInt32 lastError,
                                                     bool formatRetVal)
         {
-            stream.CurrentState = responseState;
+            stream = session.GetNextStreamDirection();
 
-            UInt32 msgLen = stream.ReadU32(slices);
+            UInt32 msgLen = stream.ReadU32LE(slices);
             resp.AddField("MessageLength", Convert.ToString(msgLen),
                 "Length of the RAPI response.", slices);
 
-            lastError = stream.ReadU32(slices);
+            lastError = stream.ReadU32LE(slices);
             resp.AddField("LastError", String.Format("0x{0:x8}", lastError),
                 "Last error on the CE device.", slices);
 
-            retVal = stream.ReadU32(slices);
-            resp.AddField("ReturnValue", (formatRetVal) ? Util.FormatRetVal(retVal) : Util.FormatValue(retVal),
+            retVal = stream.ReadU32LE(slices);
+            resp.AddField("ReturnValue", (formatRetVal) ? StaticUtils.FormatRetVal(retVal) : StaticUtils.FormatValue(retVal),
                 "Return value.", slices);
         }
 
@@ -839,14 +702,14 @@ namespace oSpy
             switch (dataType)
             {
                 case Constants.REG_DWORD:
-                    str = String.Format("0x{0:x8}", stream.ReadU32(slices));
+                    str = String.Format("0x{0:x8}", stream.ReadU32LE(slices));
                     break;
                 case Constants.REG_SZ:
-                    str = stream.ReadCString((int) dataLength, slices);
+                    str = stream.ReadCStringUnicode((int)dataLength, slices);
                     break;
                 default:
                     byte[] bytes = stream.ReadBytes((int)dataLength, slices);
-                    str = Util.FormatByteArray(bytes);
+                    str = StaticUtils.FormatByteArray(bytes);
                     break;
             }
 
@@ -921,30 +784,9 @@ namespace oSpy
             }
         }
     }
+}
 
-    [TypeConverterAttribute(typeof(RAPICallNodeConverter))]
-    public class RAPICallNode : TransactionNode
-    {
-        protected TransactionNode req;
-        public TransactionNode Request
-        {
-            get { return req; }
-        }
-
-        protected TransactionNode resp;
-        public TransactionNode Response
-        {
-            get { return resp; }
-        }
-
-        public RAPICallNode(string name)
-            : base(name)
-        {
-            req = new TransactionNode("Request", this);
-            resp = new TransactionNode("Response", this);
-        }
-    }
-
+#if false
     class RAPICallNodeConverter : ExpandableObjectConverter
     {
         public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
