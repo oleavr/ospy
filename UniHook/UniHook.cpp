@@ -61,6 +61,78 @@ CHooker::HookModule(TCHAR *name)
 	cout << hookedAddrToName.size() << " out of " << expDir->NumberOfNames << " functions hooked" << endl;
 }
 
+#if false
+bool
+CHooker::HookFunction(const string &name, LPVOID address)
+{
+	unsigned char sig[] = {
+		0x8B, 0xFF, // mov edi, edi
+		0x55,       // push ebp
+		0x8B, 0xEC, // mov ebp, esp
+	};
+
+	if (memcmp(address, sig, sizeof(sig)) != 0)
+	{
+		cout << "failed to hook function " << name << " at " << address << endl;
+		return false;
+	}
+
+	hookedAddrToName[address] = name;
+
+	unsigned char *proxy = new unsigned char[1 + 5 + 5 + 6 + 1 + sizeof(sig) + 5];
+
+	int offset = 0;
+
+	// PUSHAD
+	proxy[offset++] = 0x60;
+
+	// PUSH <absolute address of the hooked function>
+	proxy[offset++] = 0x68;
+	*((DWORD *) (proxy + offset)) = (DWORD) address;
+	offset += 4;
+
+	// CALL near, relative to the common proxy
+	proxy[offset++] = 0xE8;
+	*((DWORD *) (proxy + offset)) = (DWORD) &ProxyFunction - (DWORD) (proxy + offset + 4);
+	offset += 4;
+
+	// Clean up after the call (cdecl)
+	proxy[offset++] = 0x81;			   // ADD
+	proxy[offset++] = 0xC4;			   // ESP
+	*((DWORD *) (proxy + offset)) = 4; // 4
+	offset += 4;
+
+	// POPAD
+	proxy[offset++] = 0x61;
+
+	// Do what the original function did where we overwrote it
+	memcpy(proxy + offset, sig, sizeof(sig));
+	offset += sizeof(sig);
+
+	// JMP to after that part
+	proxy[offset++] = 0xE9;
+	*((DWORD *) (proxy + offset)) = ((DWORD) address + sizeof(sig)) - (DWORD) (proxy + offset + 4);
+	offset += 4;
+
+	// Time to patch
+	unsigned char buf[5];
+	buf[0] = 0xE9;
+	*((DWORD *) (buf + 1)) = (DWORD) proxy - (DWORD) address - sizeof(buf);
+
+	HANDLE process;
+	DWORD oldProtect, nWritten;
+
+	process = GetCurrentProcess();
+	VirtualProtect(address, sizeof(buf), PAGE_EXECUTE_WRITECOPY, &oldProtect);
+	WriteProcessMemory(process, address, buf, sizeof(buf), &nWritten);
+	FlushInstructionCache(process, NULL, 0);
+
+	return true;
+}
+#endif
+
+#define MAX_STACK_SIZE 16384
+
 bool
 CHooker::HookFunction(const string &name, LPVOID address)
 {
