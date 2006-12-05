@@ -1,3 +1,3 @@
 BITS 32
 
-mov esi, dword 1
+mov ecx, dword 1
