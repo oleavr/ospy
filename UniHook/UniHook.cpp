@@ -51,7 +51,7 @@ private:
 	void PreExecProxy(void *callerAddress, void *retAddr, void *args, DWORD lastError);
 	void PostExecProxy(void *callerAddress, void *retAddr, void *args, DWORD argsSize, DWORD &retval, DWORD &lastError);
 
-	map<LPVOID, string> m_hookedAddrToName;
+	HashTable<LPVOID, string>::Type m_hookedAddrToName;
 };
 
 CHooker *

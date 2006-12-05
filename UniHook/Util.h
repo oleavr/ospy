@@ -1,13 +1,15 @@
 #pragma once
 
+#include <map>
 #include <string>
-
-void *ospy_malloc(size_t size);
-void *ospy_realloc(void *ptr, size_t new_size);
-void ospy_free(void *ptr);
-char *ospy_strdup(const char *str);
 
 void get_module_name_for_address(LPVOID address, char *buf, int buf_size);
 BOOL get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, char **error);
 
 std::string hexdump(void *x, unsigned long len, unsigned int w);
+
+template <class kT, class vT>
+struct HashTable
+{
+	typedef std::map<kT, vT, std::less<kT>, MyAlloc<std::pair<kT, vT>>> Type;
+};
