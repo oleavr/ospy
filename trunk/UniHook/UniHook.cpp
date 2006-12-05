@@ -18,19 +18,139 @@ using std::string;
 class CHooker {
 public:
 	static CHooker *self();
+
 	void HookModule(TCHAR *name);
-private:
 	bool HookFunction(const string &name, LPVOID address);
 
-	static void Stage2Proxy();
-
-	static void PreExecRedirProxy(LPVOID caller_address);
 	void PreExecProxy(LPVOID caller_address);
 
-	static void Stage3Proxy();
-
+private:
 	map<LPVOID, string> hookedAddrToName;
 };
+
+void
+PreExecRedirProxy(LPVOID caller_address)
+{
+	CHooker::self()->PreExecProxy(caller_address);
+}
+
+void
+Stage3Proxy()
+{
+}
+
+#define MAX_FRAME_SIZE  4096
+#define SAVED_REGS_SIZE   32
+
+__declspec (naked) void
+Stage2Proxy()
+{
+	__asm {
+		//
+		// STEP 1: Save all registers and store the dynamic proxy's address
+		//         somewhere safe.
+		//
+
+		pushad;
+
+		mov esi, ecx;
+
+
+		//
+		// STEP 2: We need to make a copy of the stack frame.
+		//
+		// At this point the stack looks like this:
+		//
+		//    [  .....  ]  |
+		//    [  arg_n  ]  |
+		//    [  .....  ]  |
+		//    [  arg_0  ]  |
+		//    [ retaddr ] \|/
+		//    [  sregs  ]  V
+		//
+		// And we want to make it look like this:
+		//
+		//    [  .....  ]  |
+		//    [  arg_n  ]  |
+		//    [  .....  ]  |
+		//    [  arg_0  ]  |
+		//    [ retaddr ]  |
+		//    [  sregs  ]  |
+		//    [  .....  ]  |
+		//    [  arg_n  ]  |
+		//    [  .....  ]  |
+		//    [  arg_0  ] \|/
+		//    [ retaddr ]  V
+		//
+		// Why are we doing this?
+		//   1) Because the API function might use any of the arguments' stack
+		//      space for temporary storage when it's done with them, we make
+		//      a copy of the whole thing so that the function won't clobber
+		//      the original arguments.
+		//   2) We want to conveniently trap the return.
+		//
+		//      This is also the perfect time to figure out how many bytes of
+		//      arguments the function actually consumed as API functions in
+		//      general are stdcall (diff == 0 => cdecl).  We figure this out
+		//      by taking ESP_before, which we save in ESI prior to calling
+		//      the function, and compare it to ESP_now. The size of the
+		//      arguments will be ESP_now - ESP_before - sizeof(LPVOID),
+		//      where the latter is the return address.
+		//
+		// NOTE:
+		// The number of bytes to copy could be determined heuristically
+		// by walking up the stack looking for valid pointers and finding
+		// one pointing to an instruction following a CALL (to find the
+		// previous stack frame), but this is kind of risky so we'll instead
+		// copy a "safe" number of bytes and hope we got it all (and leave
+		// the number of bytes tuneable).
+		//
+
+		mov ecx, (MAX_FRAME_SIZE / 4);
+		sub esp, MAX_FRAME_SIZE;
+		push esi;
+		cld;
+		lea edi, [esp + 4];
+		lea esi, [edi + MAX_FRAME_SIZE + SAVED_REGS_SIZE];
+		rep movsd;
+		pop esi;
+
+
+		//
+		// STEP 3: Call the pre-execution proxy
+		//
+
+		push [esi]; // proxy.data -- the absolute address of the intercepted function
+		call PreExecRedirProxy;
+		add esp, 4; // because it's cdecl we have to clean up the stack
+
+
+		//
+		// STEP 4: Overwrite the return address on the copy so that the API
+		//         function returns to our stage 3 proxy instead of the
+		//         caller.
+		//
+		
+		mov dword ptr [esp], offset Stage3Proxy;
+
+
+		//
+		// STEP 5: Save ESP + 4 in EDI.
+		//
+
+		lea edi, [esp + 4];
+
+
+		//
+		// STEP 6: JMP to proxy.code2 to do what the original function did
+		//         where we overwrote it and then bounce to the next
+		//         instruction thereafter.
+		//
+
+		lea ecx, [esi + 4];
+		jmp ecx;
+   }
+}
 
 CHooker *
 CHooker::self()
@@ -343,7 +463,7 @@ CHooker::HookFunction(const string &name, LPVOID address)
 
 	// jmp stage 2
 	proxy[offset++] = 0xe9;
-	*((DWORD *) (proxy + offset)) = ((DWORD) CHooker::Stage2Proxy) - (DWORD) (proxy + offset + 4);
+	*((DWORD *) (proxy + offset)) = ((DWORD) Stage2Proxy) - (DWORD) (proxy + offset + 4);
 	offset += sizeof(DWORD);
 
 	//
@@ -386,133 +506,6 @@ CHooker::HookFunction(const string &name, LPVOID address)
 	FlushInstructionCache(process, NULL, 0);
 
 	return true;
-}
-
-#define MAX_FRAME_SIZE  4096
-#define SAVED_REGS_SIZE   32
-
-__declspec (naked) void
-CHooker::Stage2Proxy()
-{
-	__asm {
-		//
-		// STEP 1: Save all registers and store the dynamic proxy's address
-		//         somewhere safe.
-		//
-
-		pushad;
-
-		mov esi, ecx;
-
-
-		//
-		// STEP 2: We need to make a copy of the stack frame.
-		//
-		// At this point the stack looks like this:
-		//
-		//    [  .....  ]  |
-		//    [  arg_n  ]  |
-		//    [  .....  ]  |
-		//    [  arg_0  ]  |
-		//    [ retaddr ] \|/
-		//    [  sregs  ]  V
-		//
-		// And we want to make it look like this:
-		//
-		//    [  .....  ]  |
-		//    [  arg_n  ]  |
-		//    [  .....  ]  |
-		//    [  arg_0  ]  |
-		//    [ retaddr ]  |
-		//    [  sregs  ]  |
-		//    [  .....  ]  |
-		//    [  arg_n  ]  |
-		//    [  .....  ]  |
-		//    [  arg_0  ] \|/
-		//    [ retaddr ]  V
-		//
-		// Why are we doing this?
-		//   1) Because the API function might use any of the arguments' stack
-		//      space for temporary storage when it's done with them, we make
-		//      a copy of the whole thing so that the function won't clobber
-		//      the original arguments.
-		//   2) We want to conveniently trap the return.
-		//
-		//      This is also the perfect time to figure out how many bytes of
-		//      arguments the function actually consumed as API functions in
-		//      general are stdcall (diff == 0 => cdecl).  We figure this out
-		//      by taking ESP_before, which we save in ESI prior to calling
-		//      the function, and compare it to ESP_now. The size of the
-		//      arguments will be ESP_now - ESP_before - sizeof(LPVOID),
-		//      where the latter is the return address.
-		//
-		// NOTE:
-		// The number of bytes to copy could be determined heuristically
-		// by walking up the stack looking for valid pointers and finding
-		// one pointing to an instruction following a CALL (to find the
-		// previous stack frame), but this is kind of risky so we'll instead
-		// copy a "safe" number of bytes and hope we got it all (and leave
-		// the number of bytes tuneable).
-		//
-
-		mov ecx, (MAX_FRAME_SIZE / 4);
-		sub esp, MAX_FRAME_SIZE;
-		push esi;
-		cld;
-		lea edi, [esp + 4];
-		lea esi, [edi + MAX_FRAME_SIZE + SAVED_REGS_SIZE];
-		rep movsd;
-		pop esi;
-
-
-		//
-		// STEP 3: Call the pre-execution proxy
-		//
-
-		push [esi]; // proxy.data -- the absolute address of the intercepted function
-		call CHooker::PreExecRedirProxy;
-		add esp, 4; // because it's cdecl we have to clean up the stack
-
-
-		//
-		// STEP 4: Overwrite the return address on the copy so that the API
-		//         function returns to our stage 3 proxy instead of the
-		//         caller.
-		//
-		
-		mov [esp], offset CHooker::Stage3Proxy;
-
-
-		//
-		// STEP 5: Save ESP + 4 in EDI.
-		//
-
-		lea edi, [esp + 4];
-
-
-		//
-		// STEP 6: JMP to proxy.code2 to do what the original function did
-		//         where we overwrote it and then bounce to the next
-		//         instruction thereafter.
-		//
-
-		lea ecx, [esi + 4];
-		jmp ecx;
-   }
-}
-
-__declspec (naked) void
-CHooker::Stage3Proxy()
-{
-	__asm {
-		// ok...
-	}
-}
-
-void
-CHooker::PreExecRedirProxy(LPVOID caller_address)
-{
-	CHooker::self()->PreExecProxy(caller_address);
 }
 
 void
