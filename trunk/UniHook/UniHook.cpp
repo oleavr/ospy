@@ -48,8 +48,6 @@ private:
 
 	void PostExecProxy(LPVOID callerAddress, DWORD retAddr, LPVOID args, DWORD argsSize, DWORD &retval);
 
-
-
 	map<LPVOID, string> hookedAddrToName;
 };
 
@@ -118,7 +116,7 @@ CHooker::HookFunction(const string &name, LPVOID address)
 	//   2) JMP to the stage2 proxy.
 	//
 
-	unsigned char *proxy = new unsigned char[1 + sizeof(DWORD) + 1 + sizeof(DWORD) +
+	unsigned char *proxy = new unsigned char[1 + sizeof(DWORD) +
 											 sizeof(DWORD) +
 											 sizeof(sig) + 1 + sizeof(DWORD)];
 	int offset = 0;
@@ -127,13 +125,10 @@ CHooker::HookFunction(const string &name, LPVOID address)
 	// code1
 	//
 
-	// mov ecx, <proxy.data's address>
-	proxy[offset++] = 0xb9;
-	*((DWORD *) (proxy + offset)) = (DWORD) (proxy + 10);
-	offset += sizeof(DWORD);
-
-	// jmp stage 2
-	proxy[offset++] = 0xe9;
+	// call stage 2
+	// we use call here so that we get the address of proxy.data onto the top
+	// of the stack, to make the per-function proxy as small as possible.
+	proxy[offset++] = 0xe8;
 	*((DWORD *) (proxy + offset)) = ((DWORD) CHooker::Stage2Proxy) - (DWORD) (proxy + offset + 4);
 	offset += sizeof(DWORD);
 
@@ -187,9 +182,12 @@ CHooker::Stage2Proxy()
 {
 	__asm {
 		//
-		// STEP 1: Save all registers that have to be left unclobbered, and
-		//         store the dynamic proxy's address somewhere safe.
+		// STEP 1: store the proxy.data's address somewhere safe and save all
+		// registers that have to be left unclobbered.
 		//
+
+		mov ecx, [esp];
+		add esp, 4;
 
 		push ebx;
 		push ebp;
@@ -197,7 +195,6 @@ CHooker::Stage2Proxy()
 		push edi;
 
 		mov esi, ecx;
-
 
 		//
 		// STEP 2: We need to make a copy of the stack frame.
