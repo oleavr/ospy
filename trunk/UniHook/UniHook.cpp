@@ -39,17 +39,17 @@ public:
 	static CHooker *self();
 
 	void HookModule(TCHAR *name);
-	bool HookFunction(const string &name, LPVOID address);
+	bool HookFunction(const string &name, void *address);
 
 private:
+	// Glue code
 	static void Stage2Proxy();
-
-	static void PreExecRedirProxy(LPVOID callerAddress) { CHooker::self()->PreExecProxy(callerAddress); }
-	void PreExecProxy(LPVOID callerAddress);
-
+	static void PreExecRedirProxy(void *callerAddress);
 	static void Stage3Proxy();
 
-	void PostExecProxy(LPVOID callerAddress, DWORD retAddr, LPVOID args, DWORD argsSize, DWORD &retval, DWORD &lastError);
+	// Handlers
+	void PreExecProxy(void *callerAddress, void *retAddr, void *args, DWORD lastError);
+	void PostExecProxy(void *callerAddress, void *retAddr, void *args, DWORD argsSize, DWORD &retval, DWORD &lastError);
 
 	map<LPVOID, string> m_hookedAddrToName;
 };
@@ -76,12 +76,12 @@ CHooker::HookModule(TCHAR *name)
 	WORD *ordinals = (WORD *) ((char *) h + expDir->AddressOfNameOrdinals);
 	DWORD *functions = (DWORD *) ((char *) h + expDir->AddressOfFunctions);
 
-	int hookCountBefore = m_hookedAddrToName.size();
+	size_t hookCountBefore = m_hookedAddrToName.size();
 
 	for (unsigned int i = 0; i < expDir->NumberOfNames; i++)
 	{
 		char *name = (char *) h + names[i];
-		LPVOID addr = (unsigned char *) h + functions[ordinals[i]];
+		void *addr = (unsigned char *) h + functions[ordinals[i]];
 
 		if (m_hookedAddrToName.find(addr) == m_hookedAddrToName.end())
 			HookFunction(name, addr);
@@ -159,14 +159,14 @@ static const PrologSignature prologSignatures[] = {
 };
 
 bool
-CHooker::HookFunction(const string &name, LPVOID address)
+CHooker::HookFunction(const string &name, void *address)
 {
 	const PrologSignature *prologSig = NULL;
 
 	for (int i = 0; i < sizeof(prologSignatures) / sizeof(PrologSignature); i++)
 	{
 		const PrologSignature *ps = &prologSignatures[i];
-		LPVOID match_address;
+		void *match_address;
 		DWORD numMatches;
 		char *error;
 
@@ -287,6 +287,7 @@ CHooker::Stage2Proxy()
 
 		mov esi, ecx;
 
+
 		//
 		// STEP 2: We need to make a copy of the stack frame.
 		//
@@ -315,9 +316,10 @@ CHooker::Stage2Proxy()
 		//
 		// Why are we doing this?
 		//   1) Because the API function might use any of the arguments' stack
-		//      space for temporary storage when it's done with them, we make
-		//      a copy of the whole thing so that the function won't clobber
-		//      the original arguments.
+		//      space for temporary storage when it's done with them (or, the
+		//      code might intentionally alter them, ie. incrementing pointers),
+		//      so we make a copy of the whole thing so that the function won't
+		//      clobber the original arguments.
 		//   2) We want to conveniently trap the return.
 		//
 		//      This is also the perfect time to figure out how many bytes of
@@ -383,17 +385,52 @@ CHooker::Stage2Proxy()
    }
 }
 
-void
-CHooker::PreExecProxy(LPVOID callerAddress)
+__declspec (naked) void
+CHooker::PreExecRedirProxy(void *callerAddress)
 {
-	cout << "PreExecProxy: called from " << this->m_hookedAddrToName[callerAddress] << " (" <<  callerAddress << ")" << endl;
+	void *args, *retAddr;
+	DWORD lastError;
+
+	__asm {
+		// Do the prolog dance
+		push ebp;
+		mov ebp, esp;
+		sub esp, __LOCAL_SIZE;
+
+		// Return address
+		lea ecx, [ebp + 4 + 4 + 4];
+		mov edx, [ecx];
+		mov [retAddr], edx;
+
+		// Arguments
+		add ecx, 4;
+		mov [args], ecx;
+
+		pushad;
+	}
+
+	lastError = GetLastError();
+
+	self()->PreExecProxy(callerAddress, retAddr, args, lastError);
+
+	SetLastError(lastError);
+
+	__asm {
+		popad;
+
+		// And the epilog dance
+		mov esp, ebp;
+		pop ebp;
+
+		ret;
+	}
 }
 
 __declspec (naked) void
 CHooker::Stage3Proxy()
 {
-	LPVOID callerAddress, args;
-	DWORD retAddr, argsSize, retval, lastError;
+	void *callerAddress, *retAddr, *args;
+	DWORD argsSize, retval, lastError;
 
 	__asm {
 		// Calculate the number of bytes of arguments consumed
@@ -463,7 +500,17 @@ CHooker::Stage3Proxy()
 }
 
 void
-CHooker::PostExecProxy(LPVOID callerAddress, DWORD retAddr, LPVOID args, DWORD argsSize, DWORD &retval, DWORD &lastError)
+CHooker::PreExecProxy(void *callerAddress, void *retAddr, void *args, DWORD lastError)
+{
+	cout << "PreExecProxy: " << m_hookedAddrToName[callerAddress]
+		<< " (" <<  callerAddress << ") called with retAddr=" << retAddr
+		<< " and lastError=" << lastError << endl;
+
+	cout << "PreExecProxy: 16 first bytes of args:" << endl << hexdump(args, 16, 16) << endl;
+}
+
+void
+CHooker::PostExecProxy(void *callerAddress, void *retAddr, void *args, DWORD argsSize, DWORD &retval, DWORD &lastError)
 {
 	cout << "PostExecProxy: " << m_hookedAddrToName[callerAddress]
 		<< " (" <<  callerAddress << ") called with retAddr=" << retAddr
@@ -471,7 +518,7 @@ CHooker::PostExecProxy(LPVOID callerAddress, DWORD retAddr, LPVOID args, DWORD a
 		<< " and lastError=" << lastError << endl;
 
 	if (argsSize > 0)
-		cout << "PostExecProxy:" << endl << hexdump(args, argsSize, 16);
+		cout << "PostExecProxy: the arguments (" << argsSize << " bytes)" << endl << hexdump(args, argsSize, 16) << endl;
 }
 
 typedef SOCKET (__stdcall *SocketFunc) (int af, int type, int protocol);
