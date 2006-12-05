@@ -17,7 +17,9 @@
  */
 
 #include "stdafx.h"
+#include "SigMatch.h"
 #include "Util.h"
+
 #include <Imagehlp.h>
 #include <winsock2.h>
 #include <iostream>
@@ -27,6 +29,7 @@
 #pragma warning(disable: 4244 4311)
 
 using std::cout;
+using std::cerr;
 using std::endl;
 using std::map;
 using std::string;
@@ -48,7 +51,7 @@ private:
 
 	void PostExecProxy(LPVOID callerAddress, DWORD retAddr, LPVOID args, DWORD argsSize, DWORD &retval, DWORD &lastError);
 
-	map<LPVOID, string> hookedAddrToName;
+	map<LPVOID, string> m_hookedAddrToName;
 };
 
 CHooker *
@@ -73,33 +76,123 @@ CHooker::HookModule(TCHAR *name)
 	WORD *ordinals = (WORD *) ((char *) h + expDir->AddressOfNameOrdinals);
 	DWORD *functions = (DWORD *) ((char *) h + expDir->AddressOfFunctions);
 
+	int hookCountBefore = m_hookedAddrToName.size();
+
 	for (unsigned int i = 0; i < expDir->NumberOfNames; i++)
 	{
 		char *name = (char *) h + names[i];
 		LPVOID addr = (unsigned char *) h + functions[ordinals[i]];
 
-		HookFunction(name, addr);
+		if (m_hookedAddrToName.find(addr) == m_hookedAddrToName.end())
+			HookFunction(name, addr);
 	}
 
-	cout << hookedAddrToName.size() << " out of " << expDir->NumberOfNames << " functions hooked" << endl;
+	cout << "CHooker::HookModule: <" << name << "> hooked " << m_hookedAddrToName.size() - hookCountBefore << " functions" << endl;
 }
+
+typedef struct {
+	FunctionSignature sig;
+	int sigSize;
+	int numBytesToCopy;
+} PrologSignature;
+
+static const PrologSignature prologSignatures[] = {
+	{
+		{
+			NULL,
+
+			"8B FF"					// mov edi, edi
+			"55"					// push ebp
+			"8B EC",				// mov ebp, esp
+		},
+
+		5,
+		5,
+	},
+	{
+		{
+			NULL,
+
+			"6A ??"					// push ??h
+			"68 ?? ?? ?? ??"		// push offset dword_????????
+			"E8 ?? ?? ?? ??",		// call __SEH_prolog
+		},
+
+		12,
+		7,
+	},
+	{
+		{
+			NULL,
+
+			"68 ?? ?? ?? ??"		// push ???h
+			"68 ?? ?? ?? ??"		// push offset dword_????????
+			"E8 ?? ?? ?? ??",		// call __SEH_prolog
+		},
+
+		15,
+		5,
+	},
+	{
+		{
+			NULL,
+
+			"FF 25 ?? ?? ?? ??"		// jmp ds:__imp__*
+		},
+
+		6,
+		6,
+	},
+	{
+		{
+			NULL,
+
+			"33 C0"		// xor eax, eax
+			"50"		// push eax
+			"50"		// push eax
+			"6A ??"		// push ??
+		},
+
+		6,
+		6,
+	},
+};
 
 bool
 CHooker::HookFunction(const string &name, LPVOID address)
 {
-	unsigned char sig[] = {
-		0x8B, 0xFF, // mov edi, edi
-		0x55,       // push ebp
-		0x8B, 0xEC, // mov ebp, esp
-	};
+	const PrologSignature *prologSig = NULL;
 
-	if (memcmp(address, sig, sizeof(sig)) != 0)
+	for (int i = 0; i < sizeof(prologSignatures) / sizeof(PrologSignature); i++)
 	{
-		cout << "failed to hook function " << name << " at " << address << endl;
+		const PrologSignature *ps = &prologSignatures[i];
+		LPVOID match_address;
+		DWORD numMatches;
+		char *error;
+
+		if (!find_signature_in_range(&ps->sig, address, ps->sigSize,
+									 &match_address, &numMatches, &error))
+		{
+			cerr << "failed to hook function " << name << " at " << address
+				 << " because find_signature_in_range failed: " << error << endl;
+			return false;
+		}
+
+		if (numMatches == 1)
+		{
+			prologSig = ps;
+			break;
+		}
+	}
+
+	if (prologSig == NULL)
+	{
+		cerr << "failed to hook function " << name << " at " << address
+			 << " because its signature didn't match any of the supported ones" << endl;
 		return false;
 	}
 
-	hookedAddrToName[address] = name;
+	m_hookedAddrToName[address] = name;
 
 
 	//
@@ -116,7 +209,7 @@ CHooker::HookFunction(const string &name, LPVOID address)
 
 	unsigned char *proxy = new unsigned char[1 + sizeof(DWORD) +
 											 sizeof(DWORD) +
-											 sizeof(sig) + 1 + sizeof(DWORD)];
+											 prologSig->numBytesToCopy + 1 + sizeof(DWORD)];
 	int offset = 0;
 
 	//
@@ -143,12 +236,12 @@ CHooker::HookFunction(const string &name, LPVOID address)
 	//
 
 	// the overwritten prolog code of the intercepted function
-	memcpy(proxy + offset, sig, sizeof(sig));
-	offset += sizeof(sig);
+	memcpy(proxy + offset, address, prologSig->numBytesToCopy);
+	offset += prologSig->numBytesToCopy;
 
 	// and finally a JMP to the next instruction in the original
 	proxy[offset++] = 0xe9;
-	*((DWORD *) (proxy + offset)) = ((DWORD) address + sizeof(sig)) - (DWORD) (proxy + offset + 4);
+	*((DWORD *) (proxy + offset)) = ((DWORD) address + prologSig->numBytesToCopy) - (DWORD) (proxy + offset + 4);
 	offset += sizeof(DWORD);
 
 
@@ -293,7 +386,7 @@ CHooker::Stage2Proxy()
 void
 CHooker::PreExecProxy(LPVOID callerAddress)
 {
-	cout << "PreExecProxy: called from " << this->hookedAddrToName[callerAddress] << " (" <<  callerAddress << ")" << endl;
+	cout << "PreExecProxy: called from " << this->m_hookedAddrToName[callerAddress] << " (" <<  callerAddress << ")" << endl;
 }
 
 __declspec (naked) void
@@ -333,6 +426,8 @@ CHooker::Stage3Proxy()
 
 		add ecx, 4;
 		mov [args], ecx;
+
+		pushad;
 	}
 
 	lastError = GetLastError();
@@ -342,6 +437,8 @@ CHooker::Stage3Proxy()
 	SetLastError(lastError);
 
 	__asm {
+		popad;
+
 		// Just in case we want to change the return value
 		mov eax, [retval];
 
@@ -368,7 +465,7 @@ CHooker::Stage3Proxy()
 void
 CHooker::PostExecProxy(LPVOID callerAddress, DWORD retAddr, LPVOID args, DWORD argsSize, DWORD &retval, DWORD &lastError)
 {
-	cout << "PostExecProxy: " << this->hookedAddrToName[callerAddress]
+	cout << "PostExecProxy: " << m_hookedAddrToName[callerAddress]
 		<< " (" <<  callerAddress << ") called with retAddr=" << retAddr
 		<< ", argsSize=" << argsSize << ", retval=" << (int) retval
 		<< " and lastError=" << lastError << endl;
