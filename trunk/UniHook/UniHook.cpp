@@ -46,7 +46,7 @@ private:
 
 	static void Stage3Proxy();
 
-	void PostExecProxy(LPVOID callerAddress, DWORD retAddr, LPVOID args, DWORD argsSize, DWORD &retval);
+	void PostExecProxy(LPVOID callerAddress, DWORD retAddr, LPVOID args, DWORD argsSize, DWORD &retval, DWORD &lastError);
 
 	map<LPVOID, string> hookedAddrToName;
 };
@@ -111,9 +111,7 @@ CHooker::HookFunction(const string &name, LPVOID address)
 	// [code2]   <-- variable size (depending on function)
 	//
 	// Where code1 is where it all starts.  The intercepted function will JMP
-	// to it and it will:
-	//   1) Set ecx to point to <data>.
-	//   2) JMP to the stage2 proxy.
+	// to it and it will "call" stage 2 -- see comment below for more info.
 	//
 
 	unsigned char *proxy = new unsigned char[1 + sizeof(DWORD) +
@@ -302,7 +300,7 @@ __declspec (naked) void
 CHooker::Stage3Proxy()
 {
 	LPVOID callerAddress, args;
-	DWORD retAddr, argsSize, retval;
+	DWORD retAddr, argsSize, retval, lastError;
 
 	__asm {
 		// Calculate the number of bytes of arguments consumed
@@ -337,7 +335,11 @@ CHooker::Stage3Proxy()
 		mov [args], ecx;
 	}
 
-	CHooker::self()->PostExecProxy(callerAddress, retAddr, args, argsSize, retval);
+	lastError = GetLastError();
+
+	CHooker::self()->PostExecProxy(callerAddress, retAddr, args, argsSize, retval, lastError);
+
+	SetLastError(lastError);
 
 	__asm {
 		// Just in case we want to change the return value
@@ -364,9 +366,12 @@ CHooker::Stage3Proxy()
 }
 
 void
-CHooker::PostExecProxy(LPVOID callerAddress, DWORD retAddr, LPVOID args, DWORD argsSize, DWORD &retval)
+CHooker::PostExecProxy(LPVOID callerAddress, DWORD retAddr, LPVOID args, DWORD argsSize, DWORD &retval, DWORD &lastError)
 {
-	cout << "PostExecProxy: " << this->hookedAddrToName[callerAddress] << " (" <<  callerAddress << ") called with retAddr=" << retAddr << ", argsSize=" << argsSize << " and retval=" << (int) retval << endl;
+	cout << "PostExecProxy: " << this->hookedAddrToName[callerAddress]
+		<< " (" <<  callerAddress << ") called with retAddr=" << retAddr
+		<< ", argsSize=" << argsSize << ", retval=" << (int) retval
+		<< " and lastError=" << lastError << endl;
 
 	if (argsSize > 0)
 		cout << "PostExecProxy:" << endl << hexdump(args, argsSize, 16);
