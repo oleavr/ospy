@@ -207,9 +207,9 @@ CHooker::HookFunction(const string &name, void *address)
 	// to it and it will "call" stage 2 -- see comment below for more info.
 	//
 
-	unsigned char *proxy = new unsigned char[1 + sizeof(DWORD) +
-											 sizeof(DWORD) +
-											 prologSig->numBytesToCopy + 1 + sizeof(DWORD)];
+	unsigned char *proxy = (unsigned char *) ospy_malloc(1 + sizeof(DWORD) +
+														 sizeof(DWORD) +
+													     prologSig->numBytesToCopy + 1 + sizeof(DWORD));
 	int offset = 0;
 
 	//
