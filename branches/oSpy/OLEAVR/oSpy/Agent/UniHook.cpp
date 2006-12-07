@@ -19,6 +19,7 @@
 #include "stdafx.h"
 #include "UniHook.h"
 #include "SigMatch.h"
+#include "Logger.h"
 #include "logging.h"
 
 #include <Psapi.h>
@@ -549,11 +550,12 @@ CHooker::Stage3Proxy()
 void
 CHooker::PreExecProxy(void *callerAddress, void *retAddr, void *args, DWORD lastError)
 {
-	message_logger_log_message("PreExecProxy", 0, MESSAGE_CTX_INFO, m_hookedAddrToName[callerAddress].c_str());
+	//message_logger_log_message("PreExecProxy", 0, MESSAGE_CTX_INFO, m_hookedAddrToName[callerAddress].c_str());
 }
 
 void
 CHooker::PostExecProxy(void *callerAddress, void *retAddr, void *args, DWORD argsSize, DWORD &retval, DWORD &lastError)
 {
-	message_logger_log_message("PostExecProxy", 0, MESSAGE_CTX_INFO, m_hookedAddrToName[callerAddress].c_str());
+	CLogger::Self()->LogFunctionCall(m_hookedAddrToName[callerAddress], retAddr, args, argsSize, retval, lastError);
+	//message_logger_log_message("PostExecProxy", 0, MESSAGE_CTX_INFO, m_hookedAddrToName[callerAddress].c_str());
 }

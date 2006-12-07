@@ -22,7 +22,7 @@ void *ospy_realloc(void *ptr, size_t new_size);
 void ospy_free(void *ptr);
 char *ospy_strdup(const char *str);
 
-class BaseObject
+class CObject
 {
 public:
     void *operator new(size_t, void *an_address)
@@ -43,7 +43,7 @@ public:
 };
 
 template <class T>
-class MyAlloc : BaseObject
+class MyAlloc : CObject
 {
 public:
     // type definitions
