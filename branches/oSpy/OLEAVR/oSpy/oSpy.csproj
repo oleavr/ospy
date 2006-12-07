@@ -59,6 +59,7 @@
     <Compile Include="Event\SocketEventType.cs" />
     <Compile Include="Event\TCPEvent.cs" />
     <Compile Include="ExtendedGraphics.cs" />
+    <Compile Include="IPCServer.cs" />
     <Compile Include="Net\IPEndpoint.cs" />
     <Compile Include="Net\IPPacket.cs" />
     <Compile Include="Net\IPSession.cs" />

@@ -2,6 +2,12 @@
 
 #include "Util.h"
 
+typedef struct {
+	OICString name;
+	void *startAddress;
+	void *endAddress;
+} OModuleInfo;
+
 class CHooker {
 public:
 	CHooker();
@@ -14,6 +20,8 @@ public:
 	void HookModule(const OString &name);
 	bool HookFunction(const OString &name, void *address);
 
+	static void *m_ourStartAddress;
+	static void *m_ourEndAddress;
 private:
 	// Glue code
 	static void Stage2Proxy();
@@ -24,6 +32,6 @@ private:
 	void PreExecProxy(void *callerAddress, void *retAddr, void *args, DWORD lastError);
 	void PostExecProxy(void *callerAddress, void *retAddr, void *args, DWORD argsSize, DWORD &retval, DWORD &lastError);
 
-	OVector<OICString>::Type m_modules;
+	OMap<OICString, OModuleInfo>::Type m_modules;
 	OMap<LPVOID, OString>::Type m_hookedAddrToName;
 };
