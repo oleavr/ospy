@@ -19,7 +19,9 @@
 #pragma once
 
 #include "byte_buffer.h"
+#include <vector>
 #include <map>
+#include <string>
 
 template <class T>
 class ContextTracker
@@ -74,6 +76,57 @@ private:
 
     typedef map<T, DWORD, less<T>, MyAlloc<pair<T, DWORD>>> ContextMap;
     ContextMap contexts;
+};
+
+struct ci_char_traits : public char_traits<char>
+            // just inherit all the other functions
+            //  that we don't need to override
+{
+	static bool eq(char c1, char c2)
+	{
+		return toupper(c1) == toupper(c2);
+	}
+
+	static bool ne(char c1, char c2)
+	{
+		return toupper(c1) != toupper(c2);
+	}
+
+	static bool lt(char c1, char c2)
+	{
+		return toupper(c1) <  toupper(c2);
+	}
+
+	static int compare(const char *s1, const char *s2, size_t n)
+	{
+		return memicmp(s1, s2, n);
+	}
+
+	static const char *find(const char *s, int n, char a)
+	{
+		while(n-- > 0 && toupper(*s) != toupper(a)) {
+			++s;
+		}
+
+		return s;
+	}
+};
+
+typedef basic_string<char, char_traits<char>, MyAlloc<char>> OString;
+typedef basic_string<wchar_t, char_traits<wchar_t>, MyAlloc<wchar_t>> OWString;
+
+typedef basic_string<char, ci_char_traits, MyAlloc<char>> OICString;
+
+template <class eT>
+struct OVector
+{
+	typedef std::vector<eT, MyAlloc<eT>> Type;
+};
+
+template <class kT, class vT>
+struct OMap
+{
+	typedef std::map<kT, vT, std::less<kT>, MyAlloc<std::pair<kT, vT>>> Type;
 };
 
 void get_process_name(char *name, int len);

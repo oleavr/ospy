@@ -19,6 +19,7 @@
 #include "stdafx.h"
 #include "logging.h"
 #include "hooks.h"
+#include "UniHook.h"
 
 #ifdef _MANAGED
 #pragma managed(push, off)
@@ -65,12 +66,16 @@ DllMain(HMODULE hModule,
         // Initialize SHM logger
         message_logger_init();
 
+		/*
         hook_winsock();
         hook_secur32();
         hook_crypt();
         //hook_httpapi();
         hook_activesync();
-        hook_msn();
+        hook_msn();*/
+
+		CHooker *hooker = CHooker::Self();
+		hooker->HookAllModules();
     }
 
     return TRUE;

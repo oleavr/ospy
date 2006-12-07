@@ -11,10 +11,16 @@
 // Adapted to oSpy by Ole André Vadla Ravnås
 // ########################################################
 
-#include "stdafx.h"
+#pragma once
+
 #include <limits>
 
 using namespace std;
+
+void *ospy_malloc(size_t size);
+void *ospy_realloc(void *ptr, size_t new_size);
+void ospy_free(void *ptr);
+char *ospy_strdup(const char *str);
 
 class BaseObject
 {
@@ -26,13 +32,13 @@ public:
 
     void *operator new(size_t size)
     {
-        return sspy_malloc(size);
+        return ospy_malloc(size);
     }
 
     void operator delete(void *an_address)
     {
         if (an_address)
-            sspy_free(an_address);
+            ospy_free(an_address);
     }
 };
 

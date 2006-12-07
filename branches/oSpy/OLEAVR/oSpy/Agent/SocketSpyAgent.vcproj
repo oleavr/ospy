@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_WINDOWS;_USRDLL;SocketSpyAgent_EXPORTS"
+				PreprocessorDefinitions="WIN32;_WINDOWS;_USRDLL;SocketSpyAgent_EXPORTS;CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -187,6 +187,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Alloc.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\byte_buffer.cpp"
 				>
 			</File>
@@ -227,6 +231,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SigMatch.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\softwall.cpp"
 				>
 			</File>
@@ -249,6 +257,10 @@
 						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\UniHook.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\util.cpp"
@@ -285,11 +297,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SigMatch.h"
+				>
+			</File>
+			<File
 				RelativePath=".\softwall.h"
 				>
 			</File>
 			<File
 				RelativePath=".\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\UniHook.h"
 				>
 			</File>
 			<File
