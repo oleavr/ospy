@@ -540,7 +540,7 @@ CryptDecrypt_done(BOOL retval,
     return retval;
 }
 
-class HashContext : public BaseObject
+class HashContext : public CObject
 {
 protected:
     DWORD id;

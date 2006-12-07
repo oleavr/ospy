@@ -8,7 +8,7 @@ typedef struct {
 	void *endAddress;
 } OModuleInfo;
 
-class CHooker {
+class CHooker : public CObject {
 public:
 	CHooker();
 	~CHooker() {}
