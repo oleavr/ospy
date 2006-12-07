@@ -227,6 +227,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\IPCClient.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\logging.cpp"
 				>
 			</File>
@@ -290,6 +294,10 @@
 			</File>
 			<File
 				RelativePath=".\httpapi_util.h"
+				>
+			</File>
+			<File
+				RelativePath=".\IPCClient.h"
 				>
 			</File>
 			<File

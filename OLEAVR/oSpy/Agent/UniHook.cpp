@@ -24,12 +24,20 @@
 #include <Psapi.h>
 #include <Imagehlp.h>
 #include <winsock2.h>
+#include <winnt.h>
 
 #pragma warning(disable: 4244 4311)
+
+void *CHooker::m_ourStartAddress = 0;
+void *CHooker::m_ourEndAddress = 0;
 
 CHooker::CHooker()
 {
 	UpdateModuleList();
+
+	OModuleInfo modInfo = m_modules["oSpyAgent.dll"];
+	CHooker::m_ourStartAddress = modInfo.startAddress;
+	CHooker::m_ourEndAddress = modInfo.endAddress;
 }
 
 CHooker *
@@ -64,7 +72,15 @@ CHooker::UpdateModuleList()
 
 		if (GetModuleBaseNameA(process, modules[i], buf, sizeof(buf)) != 0)
 		{
-			m_modules.push_back(buf);
+			MODULEINFO mi;
+			if (GetModuleInformation(process, modules[i], &mi, sizeof(mi)) != 0)
+			{
+				OModuleInfo modInfo;
+				modInfo.name = buf;
+				modInfo.startAddress = mi.lpBaseOfDll;
+				modInfo.endAddress = (void *) ((DWORD) mi.lpBaseOfDll + mi.SizeOfImage - 1);
+				m_modules[buf] = modInfo;
+			}
 		}
     }
 }
@@ -72,10 +88,10 @@ CHooker::UpdateModuleList()
 void
 CHooker::HookAllModules()
 {
-	OVector<OICString>::Type::iterator it;
+	OMap<OICString, OModuleInfo>::Type::iterator it;
 	for (it = m_modules.begin(); it != m_modules.end(); it++)
 	{
-		OICString modName = *it;
+		OICString modName = (*it).first;
 
 		if (modName == "ws2_32.dll")
 		{
@@ -283,7 +299,7 @@ CHooker::HookFunction(const OString &name, void *address)
 	return true;
 }
 
-#define MAX_FRAME_SIZE  4096
+#define MAX_FRAME_SIZE   132
 #define SAVED_REGS_SIZE   16
 
 __declspec (naked) void
@@ -298,6 +314,19 @@ CHooker::Stage2Proxy()
 		mov ecx, [esp];
 		add esp, 4;
 
+		//
+		// STEP 2: Were we called from within one of our own callbacks?
+		//
+		mov edx, [esp];
+		cmp edx, [CHooker::m_ourStartAddress];
+		jb CARRY_ON;
+		cmp edx, [CHooker::m_ourEndAddress];
+		ja CARRY_ON;
+
+		add ecx, 4;
+		jmp ecx;
+
+CARRY_ON:
 		push ebx;
 		push ebp;
 		push esi;
@@ -307,7 +336,7 @@ CHooker::Stage2Proxy()
 
 
 		//
-		// STEP 2: We need to make a copy of the stack frame.
+		// STEP 3: We need to make a copy of the stack frame.
 		//
 		// At this point the stack looks like this:
 		//
@@ -368,7 +397,7 @@ CHooker::Stage2Proxy()
 
 
 		//
-		// STEP 3: Call the pre-execution proxy
+		// STEP 4: Call the pre-execution proxy
 		//
 
 		push [esi]; // proxy.data -- the absolute address of the intercepted function
@@ -377,7 +406,7 @@ CHooker::Stage2Proxy()
 
 
 		//
-		// STEP 4: Overwrite the return address on the copy so that the API
+		// STEP 5: Overwrite the return address on the copy so that the API
 		//         function returns to our stage 3 proxy instead of the
 		//         caller.
 		//
@@ -386,14 +415,14 @@ CHooker::Stage2Proxy()
 
 
 		//
-		// STEP 5: Save ESP + 4 in EDI.
+		// STEP 6: Save ESP + 4 in EDI.
 		//
 
 		lea edi, [esp + 4];
 
 
 		//
-		// STEP 6: JMP to proxy.code2 to do what the original function did
+		// STEP 7: JMP to proxy.code2 to do what the original function did
 		//         where we overwrote it and then bounce to the next
 		//         instruction thereafter.
 		//
