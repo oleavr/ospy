@@ -10,7 +10,7 @@ IPCClient::IPCClient(void)
 	m_pBuf = NULL;
 };
 
-IPCClient::IPCClient(char *connectAddr)
+IPCClient::IPCClient(const char *name)
 {
 	// Set default params
 	m_hMapFile = 0;
@@ -21,7 +21,7 @@ IPCClient::IPCClient(char *connectAddr)
 	// Determine the name of the memory
 	m_sAddr = (char*)malloc(IPC_MAX_ADDR);
 	if (!m_sAddr) return;
-	strcpy_s(m_sAddr, IPC_MAX_ADDR, connectAddr);
+	sprintf_s(m_sAddr, IPC_MAX_ADDR, "oSpy_%s", name);
 	
 	char *m_sEvtAvail = (char*)malloc(IPC_MAX_ADDR);
 	if (!m_sEvtAvail) return;
@@ -138,6 +138,9 @@ DWORD IPCClient::write(void *pBuff, DWORD amount, DWORD dwTimeout)
 	// Grab a block
 	Block *pBlock = getBlock(dwTimeout);
 	if (!pBlock) return 0;
+
+	if (amount == 0)
+		__asm int 3;
 
 	// Copy the data
 	DWORD dwAmount = min(amount, IPC_BLOCK_SIZE);

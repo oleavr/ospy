@@ -36,6 +36,7 @@ namespace oSpy
 {
     public partial class MainForm : Form
     {
+        private OldAgentListener oldListener;
         private AgentListener listener;
 
         private DataTable tblMessages;
@@ -79,8 +80,10 @@ namespace oSpy
         private string subStatusLabel;
         private string wizStatusLabel;
 
-        private AgentListener.ElementsReceivedHandler receivedHandler;
         private AgentListener.StoppedHandler stoppedHandler;
+
+        private OldAgentListener.ElementsReceivedHandler oldReceivedHandler;
+        private OldAgentListener.StoppedHandler oldStoppedHandler;
 
         public MainForm()
         {
@@ -89,10 +92,14 @@ namespace oSpy
             colorPool = new ColorPool();
 
             listener = new AgentListener();
-            receivedHandler = new AgentListener.ElementsReceivedHandler(listener_ElementsReceived);
-            listener.MessageElementsReceived += receivedHandler;
             stoppedHandler = new AgentListener.StoppedHandler(listener_Stopped);
             listener.Stopped += stoppedHandler;
+
+            oldListener = new OldAgentListener();
+            oldReceivedHandler = new OldAgentListener.ElementsReceivedHandler(oldListener_ElementsReceived);
+            oldListener.MessageElementsReceived += oldReceivedHandler;
+            oldStoppedHandler = new OldAgentListener.StoppedHandler(oldListener_Stopped);
+            oldListener.Stopped += oldStoppedHandler;
 
             tblMessages = dataSet.Tables["messages"];
 
@@ -145,11 +152,11 @@ namespace oSpy
             }
         }
 
-        private void listener_ElementsReceived(AgentListener.MessageQueueElement[] elements)
+        private void oldListener_ElementsReceived(OldAgentListener.MessageQueueElement[] elements)
         {
             if (InvokeRequired)
             {
-                Invoke(receivedHandler, new object[] { elements });
+                Invoke(oldReceivedHandler, new object[] { elements });
                 return;
             }
 
@@ -157,7 +164,7 @@ namespace oSpy
             dataGridView.DataSource = null;
             dataSet.Tables[0].BeginLoadData();
 
-            foreach (AgentListener.MessageQueueElement msg in elements)
+            foreach (OldAgentListener.MessageQueueElement msg in elements)
             {
                 DataTable tbl = dataSet.Tables["messages"];
 
@@ -224,6 +231,17 @@ namespace oSpy
             if (InvokeRequired)
             {
                 Invoke(stoppedHandler);
+                return;
+            }
+
+            captureStartMenuItem.Enabled = true;
+        }
+
+        void oldListener_Stopped()
+        {
+            if (InvokeRequired)
+            {
+                Invoke(oldStoppedHandler);
                 return;
             }
 
@@ -371,20 +389,21 @@ namespace oSpy
 
             captureStartMenuItem.Enabled = false;
 
-            object source = dataGridView.DataSource;
-            dataGridView.DataSource = null;
+            //object source = dataGridView.DataSource;
+            //dataGridView.DataSource = null;
 
-            CaptureForm frm = new CaptureForm(listener, swForm.GetRules());
+            CaptureForm frm = new CaptureForm(listener);
             frm.ShowDialog(this);
 
-            dataGridView.DataSource = null;
+            //dataGridView.DataSource = null;
 
+            /*
             ProgressForm progFrm = new ProgressForm("Analyzing data");
 
             Thread th = new Thread(new ParameterizedThreadStart(DoPostAnalysis));
             th.Start(progFrm);
 
-            progFrm.ShowDialog(this);
+            progFrm.ShowDialog(this);*/
         }
 
         private void DoPostAnalysis(object param)
@@ -401,7 +420,7 @@ namespace oSpy
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
-            listener.Stop();
+            oldListener.Stop();
         }
 
         private void injectToolStripMenuItem_Click(object sender, EventArgs e)

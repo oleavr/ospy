@@ -30,51 +30,35 @@ namespace oSpy
     {
         private AgentListener listener;
 
-        private uint msgCount, msgBytes;
-        private uint pktCount, pktBytes;
+        //private int pktCount, pktBytes;
 
-        private AgentListener.ElementsReceivedHandler receivedHandler;
+        private AgentListener.BlocksReceivedHandler receivedHandler;
 
-        public CaptureForm(AgentListener listener, AgentListener.SoftwallRule[] rules)
+        public CaptureForm(AgentListener listener)
         {
             InitializeComponent();
 
             this.listener = listener;
-            msgCount = msgBytes = 0;
-            pktCount = pktBytes = 0;
+            //pktCount = pktBytes = 0;
 
-            receivedHandler = new AgentListener.ElementsReceivedHandler(listener_MessageElementsReceived);
-            listener.MessageElementsReceived += receivedHandler;
+            receivedHandler = new AgentListener.BlocksReceivedHandler(listener_BlocksReceived);
+            listener.BlocksReceived += receivedHandler;
 
-            listener.Start(rules);
+            listener.Start();
         }
 
-        private void listener_MessageElementsReceived(AgentListener.MessageQueueElement[] elements)
+        private void listener_BlocksReceived(int newBlockCount, int newBlockSize)
         {
             if (InvokeRequired)
             {
-                Invoke(receivedHandler, new object[] { elements });
+                Invoke(receivedHandler, new object[] { newBlockCount, newBlockSize });
                 return;
             }
 
-            foreach (AgentListener.MessageQueueElement el in elements)
-            {
-                if (el.msg_type == MessageType.MESSAGE_TYPE_MESSAGE)
-                {
-                    msgCount++;
-                    msgBytes += (uint) el.message.Length;
-                }
-                else
-                {
-                    pktCount++;
-                    pktBytes += el.len;
-                }
-            }
-
-            msgCountLabel.Text = Convert.ToString(msgCount);
-            msgBytesLabel.Text = Convert.ToString(msgBytes);
-            pktCountLabel.Text = Convert.ToString(pktCount);
-            pktBytesLabel.Text = Convert.ToString(pktBytes);
+            msgCountLabel.Text = Convert.ToString(newBlockCount);
+            msgBytesLabel.Text = Convert.ToString(newBlockSize);
+            //pktCountLabel.Text = Convert.ToString(pktCount);
+            //pktBytesLabel.Text = Convert.ToString(pktBytes);
         }
 
         private void stopButton_Click(object sender, EventArgs e)

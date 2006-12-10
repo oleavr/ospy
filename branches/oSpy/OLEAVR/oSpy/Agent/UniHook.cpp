@@ -29,70 +29,37 @@
 
 #pragma warning(disable: 4244 4311)
 
+static CHooker *g_hooker = NULL;
+
 void *CHooker::m_ourStartAddress = 0;
 void *CHooker::m_ourEndAddress = 0;
 
 CHooker::CHooker()
 {
-	UpdateModuleList();
-
-	OModuleInfo modInfo = m_modules["oSpyAgent.dll"];
+	OModuleInfo modInfo = CUtil::GetModuleInfo("oSpyAgent.dll");
 	CHooker::m_ourStartAddress = modInfo.startAddress;
 	CHooker::m_ourEndAddress = modInfo.endAddress;
+}
+
+void
+CHooker::Init()
+{
+	g_hooker = new CHooker();
 }
 
 CHooker *
 CHooker::Self()
 {
-	static CHooker *hooker = new CHooker();
-	return hooker;
-}
-
-void
-CHooker::UpdateModuleList()
-{
-	m_modules.clear();
-
-    HANDLE process = GetCurrentProcess();
-
-    HMODULE modules[256];
-    DWORD bytes_needed;
-
-    if (EnumProcessModules(process, (HMODULE *) &modules,
-                           sizeof(modules), &bytes_needed) == 0)
-    {
-        return;
-    }
-
-    if (bytes_needed > sizeof(modules))
-        bytes_needed = sizeof(modules);
-
-    for (unsigned int i = 0; i < bytes_needed / sizeof(HMODULE); i++)
-    {
-		char buf[128];
-
-		if (GetModuleBaseNameA(process, modules[i], buf, sizeof(buf)) != 0)
-		{
-			MODULEINFO mi;
-			if (GetModuleInformation(process, modules[i], &mi, sizeof(mi)) != 0)
-			{
-				OModuleInfo modInfo;
-				modInfo.name = buf;
-				modInfo.startAddress = mi.lpBaseOfDll;
-				modInfo.endAddress = (void *) ((DWORD) mi.lpBaseOfDll + mi.SizeOfImage - 1);
-				m_modules[buf] = modInfo;
-			}
-		}
-    }
+	return g_hooker;
 }
 
 void
 CHooker::HookAllModules()
 {
-	OMap<OICString, OModuleInfo>::Type::iterator it;
-	for (it = m_modules.begin(); it != m_modules.end(); it++)
+	OVector<OModuleInfo>::Type modules = CUtil::GetAllModules();
+	for (unsigned int i = 0; i < modules.size(); i++)
 	{
-		OICString modName = (*it).first;
+		OICString &modName = modules[i].name;
 
 		if (modName == "ws2_32.dll")
 		{

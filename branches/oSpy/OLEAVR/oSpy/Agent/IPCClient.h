@@ -10,14 +10,14 @@
 // ---------------------------------------
 // -- Inter-Process Communication class --
 // ---------------------------------------------------------------
-// Provides intercommunication between processes and there threads
+// Provides intercommunication between processes and their threads
 // ---------------------------------------------------------------
 class IPCClient
 {
 public:
 	// Construct / Destruct
 	IPCClient(void);
-	IPCClient(char *connectAddr);
+	IPCClient(const char *name);
 	~IPCClient();
 
 	// Block that represents a piece of data to transmit between the
