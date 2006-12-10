@@ -26,9 +26,9 @@ using System.Data;
 
 namespace oSpy
 {
-    public class AgentListener
+    public class OldAgentListener
     {
-        public delegate void ElementsReceivedHandler(AgentListener.MessageQueueElement[] elements);
+        public delegate void ElementsReceivedHandler(OldAgentListener.MessageQueueElement[] elements);
         public event ElementsReceivedHandler MessageElementsReceived;
 
         public delegate void StoppedHandler();
@@ -38,7 +38,7 @@ namespace oSpy
 
         private SoftwallRule[] rules;
 
-        public AgentListener()
+        public OldAgentListener()
         {
             running = false;
 
@@ -123,7 +123,7 @@ namespace oSpy
             public string peer_address;
             public UInt32 peer_port;
 
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = AgentListener.PACKET_BUFSIZE)]
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = OldAgentListener.PACKET_BUFSIZE)]
             public byte[] buf;
             public UInt32 len;
         };

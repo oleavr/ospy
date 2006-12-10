@@ -19,6 +19,7 @@
 #include "stdafx.h"
 #include "logging.h"
 #include "hooks.h"
+#include "Logger.h"
 #include "UniHook.h"
 
 #ifdef _MANAGED
@@ -74,8 +75,11 @@ DllMain(HMODULE hModule,
         hook_activesync();
         hook_msn();*/
 
-		CHooker *hooker = CHooker::Self();
-		hooker->HookAllModules();
+		CUtil::Init();
+		CLogger::Init();
+		CHooker::Init();
+
+		CHooker::Self()->HookAllModules();
     }
 
     return TRUE;

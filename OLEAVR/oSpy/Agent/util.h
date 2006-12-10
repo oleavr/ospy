@@ -129,7 +129,37 @@ struct OMap
 	typedef std::map<kT, vT, std::less<kT>, MyAlloc<std::pair<kT, vT>>> Type;
 };
 
-void get_process_name(char *name, int len);
+class ORPCBuffer : public OString
+{
+public:
+	void AppendString(const OString &str);
+	void AppendData(void *data, unsigned short len);
+	void AppendDWORD(DWORD dw);
+};
+
+typedef struct {
+	OICString name;
+	void *startAddress;
+	void *endAddress;
+} OModuleInfo;
+
+class CUtil
+{
+public:
+	static void Init();
+
+	static const OString &GetProcessName() { return m_processName; }
+	static OString GetModuleNameForAddress(LPVOID address);
+	static OModuleInfo GetModuleInfo(const OICString &name) { return m_modules[name]; }
+	static OVector<OModuleInfo>::Type GetAllModules();
+
+private:
+	static void UpdateModuleList();
+
+	static OString m_processName;
+	static OMap<OICString, OModuleInfo>::Type m_modules;
+};
+
 void get_module_name_for_address(LPVOID address, char *buf, int buf_size);
 BOOL get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, char **error);
 BOOL address_has_bytes(LPVOID address, unsigned char *buf, int len);

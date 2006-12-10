@@ -17,6 +17,7 @@
  */
 
 #include "stdafx.h"
+#include "util.h"
 #include "logging.h"
 #include <psapi.h>
 
@@ -144,22 +145,6 @@ get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, cha
     return FALSE;
 }
 
-void get_process_name(char *name, int len)
-{
-  WCHAR path_buffer[_MAX_PATH];
-  WCHAR drive[_MAX_DRIVE];
-  WCHAR dir[_MAX_DIR];
-  WCHAR fname[_MAX_FNAME];
-  WCHAR ext[_MAX_EXT];
-
-  GetModuleFileNameW(NULL, path_buffer, _MAX_PATH);
-
-  _wsplitpath_s(path_buffer, drive, _MAX_DRIVE, dir, _MAX_DIR,
-                fname, _MAX_FNAME, ext, _MAX_EXT);
-
-  wsprintf(name, "%S%S", fname, ext);
-}
-
 BOOL address_has_bytes(LPVOID address, unsigned char *buf, int len)
 {
   unsigned char *func_bytes = (unsigned char *) address;
@@ -190,42 +175,107 @@ ospy_rand()
     return 1 + rand();
 }
 
-#if 0
-
-static bool filter_google_relay(const char *function_name,
-                                DWORD ret_addr,
-                                const struct sockaddr *dest_addr,
-                                int *retval)
+void
+ORPCBuffer::AppendString(const OString &str)
 {
-  const struct sockaddr_in *sin = (const struct sockaddr_in *) dest_addr;
-  const char *addr_str = inet_ntoa(sin->sin_addr);
-  int port = ntohs(sin->sin_port);
-
-  if (ret_addr == 0x47eb7f || ret_addr == 0x47eacd)
-  {
-    message_logger_log_message(function_name, ret_addr, MESSAGE_CTX_WARNING,
-                               "rejecting GTalk UDP candidate traffic with %s",
-                               addr_str);
-
-    SetLastError(WSAEHOSTUNREACH);
-    *retval = SOCKET_ERROR;
-
-    return true;
-  }
-
-  return false;
+	unsigned short val = (unsigned short) str.size();
+	append((char *) &val, sizeof(val));
+	append(str.c_str(), str.size());
 }
 
-/*
+void
+ORPCBuffer::AppendData(void *data, unsigned short len)
+{
+	append((char *) &len, sizeof(len));
+	append((char *) data, len);
+}
 
-  if (port != 5222
-      &&
-      (
-         (strcmp(addr_str, "64.233.167.126") == 0 ||
-          strcmp(addr_str, "216.239.37.125") == 0 ||
-          strcmp(addr_str, "216.239.37.126") == 0)
-       ||
-      ))
-*/
+void
+ORPCBuffer::AppendDWORD(DWORD dw)
+{
+	append((char *) &dw, sizeof(dw));
+}
 
-#endif
+OString CUtil::m_processName = "";
+OMap<OICString, OModuleInfo>::Type CUtil::m_modules;
+
+void
+CUtil::Init()
+{
+	char buf[_MAX_PATH];
+	if (GetModuleBaseNameA(NULL, NULL, buf, sizeof(buf)) > 0)
+	{
+		m_processName = buf;
+	}
+
+	UpdateModuleList();
+}
+
+void
+CUtil::UpdateModuleList()
+{
+	m_modules.clear();
+
+    HANDLE process = GetCurrentProcess();
+
+    HMODULE modules[256];
+    DWORD bytes_needed;
+
+    if (EnumProcessModules(process, (HMODULE *) &modules,
+                           sizeof(modules), &bytes_needed) == 0)
+    {
+        return;
+    }
+
+    if (bytes_needed > sizeof(modules))
+        bytes_needed = sizeof(modules);
+
+    for (unsigned int i = 0; i < bytes_needed / sizeof(HMODULE); i++)
+    {
+		char buf[128];
+
+		if (GetModuleBaseNameA(process, modules[i], buf, sizeof(buf)) != 0)
+		{
+			MODULEINFO mi;
+			if (GetModuleInformation(process, modules[i], &mi, sizeof(mi)) != 0)
+			{
+				OModuleInfo modInfo;
+				modInfo.name = buf;
+				modInfo.startAddress = mi.lpBaseOfDll;
+				modInfo.endAddress = (void *) ((DWORD) mi.lpBaseOfDll + mi.SizeOfImage - 1);
+				m_modules[buf] = modInfo;
+			}
+		}
+    }
+}
+
+OString
+CUtil::GetModuleNameForAddress(LPVOID address)
+{
+	OMap<OICString, OModuleInfo>::Type::iterator it;
+	for (it = m_modules.begin(); it != m_modules.end(); it++)
+	{
+		OModuleInfo &mi = (*it).second;
+
+		if (address >= mi.startAddress && address <= mi.endAddress)
+		{
+			return mi.name.c_str();
+		}
+	}
+
+	return "";
+}
+
+OVector<OModuleInfo>::Type
+CUtil::GetAllModules()
+{
+	OVector<OModuleInfo>::Type ret;
+
+	OMap<OICString, OModuleInfo>::Type::iterator it;
+	for (it = m_modules.begin(); it != m_modules.end(); it++)
+	{
+		ret.push_back((*it).second);
+	}
+
+	return ret;
+}

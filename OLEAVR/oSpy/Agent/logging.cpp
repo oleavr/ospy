@@ -81,7 +81,8 @@ message_element_init(MessageQueueElement *el,
     GetLocalTime(&el->time);
 
     /* process name, id and thread id */
-    get_process_name(el->process_name, sizeof(el->process_name));
+	const OString &s = CUtil::GetProcessName();
+	strncpy(el->process_name, s.c_str(), sizeof(el->process_name));
     el->process_id = GetCurrentProcessId();      
     el->thread_id = GetCurrentThreadId();
 
