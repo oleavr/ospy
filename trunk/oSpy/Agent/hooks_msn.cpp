@@ -35,13 +35,13 @@ static FunctionSignature msn_signatures[] = {
         "msnmsgr.exe",
 
         "6A 08"                 // push    8
-        "B8 ?? ?? ?? 00"        // mov     eax, 846D06h
-        "E8 ?? ?? ?? 00"        // call    __EH_prolog3
+        "B8 ?? ?? ?? ??"        // mov     eax, 846D06h
+        "E8 ?? ?? ?? ??"        // call    __EH_prolog3
         "83 65 F0 00"           // and     dword ptr [ebp-10h], 0
         "80 7D 0C 00"           // cmp     byte ptr [ebp+0Ch], 0
         "68 B7 00 00 00"        // push    183
         "74 BF"                 // jz      short loc_4F8319
-        "E8 ?? ?? ?? 00"        // call    loc_538EF6
+        "E8 ?? ?? ?? ??"        // call    loc_538EF6
     },
 
     // SIGNATURE_IDCRL_DEBUG
