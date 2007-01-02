@@ -307,6 +307,7 @@
 
 typedef struct {
     char *module_name;
+	int start_offset;
     char *signature;
 } FunctionSignature;
 

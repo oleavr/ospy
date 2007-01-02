@@ -40,9 +40,9 @@ namespace oSpy
 
         public void ProgressUpdate(string operation, int progress)
         {
-            if (curOperationLabel.InvokeRequired)
+            if (InvokeRequired)
             {
-                curOperationLabel.Invoke(new ProgressUpdateHandler(ProgressUpdate), operation, progress);
+                Invoke(new ProgressUpdateHandler(ProgressUpdate), operation, progress);
             }
             else
             {

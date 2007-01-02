@@ -451,6 +451,8 @@ override_function_by_signature_in_module(FunctionSignature *sig,
     if (!find_signature_in_module(sig, module_name, &address, error))
         return FALSE;
 
+	address = (char *) address - sig->start_offset;
+
     if (!write_jmp_instruction_to_addr(address, replacement))
     {
         *error = sspy_strdup("write_jmp_instruction_to_addr failed");

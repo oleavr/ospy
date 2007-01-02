@@ -35,14 +35,16 @@ typedef enum {
     SIGNATURE_WCESMGR_DEBUG3,
     SIGNATURE_WCESMGR_CCH_ADDOUTGOING_DEBUG_RET,
     SIGNATURE_WCESCOMM_DEBUG2,
+    SIGNATURE_WCESCOMM_DEBUG2_ALTERNATE,
     SIGNATURE_WCESCOMM_DEBUG3,
+    SIGNATURE_WCESCOMM_DEBUG3_ALTERNATE,
 };
 
 static FunctionSignature as_signatures[] = {
     // SIGNATURE_UI_STATUS_LABEL_SET
     {
         "wcesmgr.exe",
-
+		0,
         "56"                    // push    esi
         "FF 74 24 08"           // push    [esp+text]
         "8B F1"                 // mov     esi, ecx
@@ -65,7 +67,7 @@ static FunctionSignature as_signatures[] = {
     // SIGNATURE_WIZ_STATUS_LABEL_SET
     {
         "wcesmgr.exe",
-
+		0,
         "83 C1 74"              // add     ecx, 74h
         "51"                    // push    ecx
         "68 27 02 00 00"        // push    227h
@@ -77,12 +79,11 @@ static FunctionSignature as_signatures[] = {
     // SIGNATURE_HTTP_REQUEST_FETCHED
     {
         "httpsys.dll",
-
+		0,
         "8B 06"                 // mov     eax, [esi]
         "8B CE"                 // mov     ecx, esi
         "FF 10"                 // call    dword ptr [eax]
         "89 45 FC"              // mov     [ebp+var_4], eax
-        "E9 ?? ?? 00 00",       // jmp     loc_1000DD16
     },
 
     //
@@ -93,7 +94,7 @@ static FunctionSignature as_signatures[] = {
     //
     {
         "<NULL>",
-
+		0,
         "8B 44 24 08"           // mov     eax, [esp+arg_4]
         "57"                    // push    edi
         "33 FF"                 // xor     edi, edi
@@ -106,7 +107,7 @@ static FunctionSignature as_signatures[] = {
     // SIGNATURE_WCESMGR_DEBUG2
     {
         "wcesmgr.exe",
-
+		0,
         "55"                    // push    ebp
         "8B EC"                 // mov     ebp, esp
         "8B 45 08"              // mov     eax, [ebp+arg_0]
@@ -119,20 +120,19 @@ static FunctionSignature as_signatures[] = {
     // SIGNATURE_WCESMGR_DEBUG3
     {
         "wcesmgr.exe",
-
+		0,
         "55"                    // push    ebp
         "8B EC"                 // mov     ebp, esp
         "8B 45 08"              // mov     eax, [ebp+arg_0]
         "57"                    // push    edi
         "33 FF"                 // xor     edi, edi
         "39 B8 08 01 00 00"     // cmp     [eax+108h], edi
-        "74 39",                // jz      short loc_573034
     },
 
     // SIGNATURE_WCESMGR_CCH_ADDOUTGOING_DEBUG_RET
     {
         "wcesmgr.exe",
-
+		0,
         "8B 46 08"              // mov     eax, [esi+CControlChannel.obj2]
         "83 C4 28"              // add     esp, 28h
         "85 C0"                 // test    eax, eax
@@ -143,7 +143,7 @@ static FunctionSignature as_signatures[] = {
     // SIGNATURE_WCESCOMM_DEBUG2
     {
         "wcescomm.exe",
-
+		0,
         "55"                    // push    ebp
         "8D AC 24 6C FC FF FF"  // lea     ebp, [esp-394h]
         "81 EC 14 04 00 00"     // sub     esp, 414h
@@ -161,10 +161,18 @@ static FunctionSignature as_signatures[] = {
         "0F 84 CE 00 00 00"     // jz      loc_40ECCC
     },
 
+    // SIGNATURE_WCESCOMM_DEBUG2_ALTERNATE
+    {
+        "wcescomm.exe",
+		50,
+		"83 3D ?? ?? ?? ?? 00"  // cmp     dword_430BB4, 0
+		"0F 84 D0 00 00 00"		// jz      loc_410BB4
+	},
+
     // SIGNATURE_WCESCOMM_DEBUG3
     {
         "wcescomm.exe",
-
+		0,
         "55"                    // push    ebp
         "8D AC 24 6C FC FF FF"  // lea     ebp, [esp-394h]
         "81 EC 14 04 00 00"     // sub     esp, 414h
@@ -181,6 +189,14 @@ static FunctionSignature as_signatures[] = {
         "AA"                    // stosb
         "0F 84 E1 00 00 00"     // jz      loc_40EDFB
     },
+
+	// SIGNATURE_WCESCOMM_DEBUG3_ALTERNATE
+    {
+        "wcescomm.exe",
+		50,
+		"83 3D ?? ?? ?? ?? 00"	// cmp     dword_430BB4, 0
+		"0F 84 E3 00 00 00"		// jz      loc_410CEB
+	},
 };
 
 
@@ -343,11 +359,16 @@ HttpSendResponseEntityBody_done(ULONG retval,
 HOOK_GLUE_INTERRUPTIBLE(HttpSendHttpResponse, ((9 * 4) + (1 * 8)))
 HOOK_GLUE_INTERRUPTIBLE(HttpSendResponseEntityBody, ((9 * 4) + (1 * 8)))
 
-#if 0
+typedef struct {
+	int padding[8];
+	HWND m_hWnd;
+} CWnd;
+
 static __declspec(naked) void
 ui_status_label_set(char *text)
 {
     CWnd *self;
+	HWND parent_hwnd;
     char *p;
     RECT parent_rect, label_rect;
     int x, y;
@@ -360,8 +381,8 @@ ui_status_label_set(char *text)
         mov		[self], ecx;
     }
 
-    self->GetParent()->GetWindowRect(&parent_rect);
-    self->GetWindowRect(&label_rect);
+	GetWindowRect(GetParent(self->m_hWnd), &parent_rect);
+	GetWindowRect(self->m_hWnd, &label_rect);
 
     x = label_rect.left - parent_rect.left;
     y = label_rect.top - parent_rect.top;
@@ -388,7 +409,7 @@ ui_status_label_set(char *text)
             text);
     }
 
-    self->SetWindowTextA(text);
+	SetWindowTextA(self->m_hWnd, text);
 
     p = (char *) self + 0x54;
     lstrcpynA(p, text, 200);
@@ -407,7 +428,7 @@ ui_status_label_set(char *text)
 static LPVOID wiz_status_label_set_impl = NULL;
 
 static __declspec(naked) void
-wiz_status_label_set(CDataExchange *pDX)
+wiz_status_label_set(void *pDX /* CDataExchange * */ )
 {
     char *status;
 
@@ -441,7 +462,6 @@ wiz_status_label_set(CDataExchange *pDX)
         jmp		eax
     }
 }
-#endif
 
 static void __cdecl
 wcesmgr_debug_1(void *obj,
@@ -568,9 +588,9 @@ rapistub_debug(void *obj,
 }
 
 
-#define LOG_OVERRIDE_ERROR(e) \
+#define LOG_OVERRIDE_ERROR(sig, e) \
             message_logger_log_message("hook_activesync", 0, MESSAGE_CTX_ERROR,\
-                "override_function_by_signature failed: %s", e);\
+                "override_function_by_signature for " sig " failed: %s", e);\
             sspy_free(e)
 
 void
@@ -641,7 +661,7 @@ hook_activesync()
                                                 http_request_fetched, &http_request_fetched_impl,
                                                 &error))
             {
-                LOG_OVERRIDE_ERROR(error);
+                LOG_OVERRIDE_ERROR("SIGNATURE_HTTP_REQUEST_FETCHED", error);
             }
         }
         else
@@ -670,19 +690,19 @@ hook_activesync()
             &as_signatures[SIGNATURE_ACTIVESYNC_DEBUG], "wcesmgr.exe",
             wcesmgr_debug_1, NULL, &error))
         {
-            LOG_OVERRIDE_ERROR(error);
+            LOG_OVERRIDE_ERROR("SIGNATURE_ACTIVESYNC_DEBUG", error);
         }
 
         if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESMGR_DEBUG2],
                                             wcesmgr_debug_2, NULL, &error))
         {
-            LOG_OVERRIDE_ERROR(error);
+            LOG_OVERRIDE_ERROR("SIGNATURE_WCESMGR_DEBUG2", error);
         }
 
         if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESMGR_DEBUG3],
                                             wcesmgr_debug_3, NULL, &error))
         {
-            LOG_OVERRIDE_ERROR(error);
+            LOG_OVERRIDE_ERROR("SIGNATURE_WCESMGR_DEBUG3", error);
         }
 
         // And we need to know what this return address is so that we can
@@ -703,7 +723,7 @@ hook_activesync()
             &as_signatures[SIGNATURE_ACTIVESYNC_DEBUG], "rapimgr.exe",
             rapimgr_debug, NULL, &error))
         {
-            LOG_OVERRIDE_ERROR(error);
+            LOG_OVERRIDE_ERROR("SIGNATURE_ACTIVESYNC_DEBUG", error);
         }
     }
     else if (cur_process_is("wcescomm.exe"))
@@ -713,19 +733,31 @@ hook_activesync()
             &as_signatures[SIGNATURE_ACTIVESYNC_DEBUG], "wcescomm.exe",
             wcescomm_debug_1, NULL, &error))
         {
-            LOG_OVERRIDE_ERROR(error);
+            LOG_OVERRIDE_ERROR("SIGNATURE_ACTIVESYNC_DEBUG", error);
         }
 
         if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESCOMM_DEBUG2],
                                             wcescomm_debug_2, NULL, &error))
         {
-            LOG_OVERRIDE_ERROR(error);
+			sspy_free(error);
+
+			if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESCOMM_DEBUG2_ALTERNATE],
+												wcescomm_debug_2, NULL, &error))
+			{
+	            LOG_OVERRIDE_ERROR("SIGNATURE_WCESCOMM_DEBUG2", error);
+			}
         }
 
         if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESCOMM_DEBUG3],
                                             wcescomm_debug_3, NULL, &error))
         {
-            LOG_OVERRIDE_ERROR(error);
+			sspy_free(error);
+
+			if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESCOMM_DEBUG3_ALTERNATE],
+												wcescomm_debug_3, NULL, &error))
+			{
+	            LOG_OVERRIDE_ERROR("SIGNATURE_WCESCOMM_DEBUG3", error);
+			}
         }
     }
 
@@ -740,7 +772,7 @@ hook_activesync()
             &as_signatures[SIGNATURE_ACTIVESYNC_DEBUG], "rapistub.dll",
             rapistub_debug, NULL, &error))
         {
-            LOG_OVERRIDE_ERROR(error);
+            LOG_OVERRIDE_ERROR("SIGNATURE_ACTIVESYNC_DEBUG", error);
         }
     }
     else
