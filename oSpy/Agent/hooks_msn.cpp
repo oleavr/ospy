@@ -33,7 +33,7 @@ static FunctionSignature msn_signatures[] = {
     // SIGNATURE_GET_CHALLENGE_SECRET
     {
         "msnmsgr.exe",
-
+		0,
         "6A 08"                 // push    8
         "B8 ?? ?? ?? ??"        // mov     eax, 846D06h
         "E8 ?? ?? ?? ??"        // call    __EH_prolog3
@@ -47,7 +47,7 @@ static FunctionSignature msn_signatures[] = {
     // SIGNATURE_IDCRL_DEBUG
     {
         "msidcrl40.dll",
-
+		0,
         "55"                    // push    ebp
         "8B EC"                 // mov     ebp, esp
         "81 EC 08 08 00 00"     // sub     esp, 808h
