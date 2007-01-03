@@ -35,19 +35,21 @@ namespace oSpy
         public event StoppedHandler Stopped;
 
         private bool running;
+        private ManualResetEvent stoppedEvent;
 
         private SoftwallRule[] rules;
 
         public AgentListener()
         {
             running = false;
+            stoppedEvent = new ManualResetEvent(false);
 
             Stopped += new StoppedHandler(AgentListener_Stopped);
         }
 
         private void AgentListener_Stopped()
         {
-            running = false;
+            stoppedEvent.Set();
         }
 
         public void Start(SoftwallRule[] rules)
@@ -59,13 +61,20 @@ namespace oSpy
 
             this.rules = rules;
 
+            stoppedEvent.Reset();
+
             Thread thread = new Thread(ListenerThread);
             thread.Start();
         }
 
         public void Stop()
         {
+            if (!running)
+                return;
+
             running = false;
+
+            stoppedEvent.WaitOne();
         }
 
         public const int MAX_ELEMENTS = 2048;
