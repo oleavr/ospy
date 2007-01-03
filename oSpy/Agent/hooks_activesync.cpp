@@ -633,12 +633,11 @@ hook_activesync()
 
     if (cur_process_is("wcesmgr.exe"))
     {
-#if 0
         // UI status labels
         if (!override_function_by_signature(&as_signatures[SIGNATURE_UI_STATUS_LABEL_SET],
                                             ui_status_label_set, NULL, &error))
         {
-            LOG_OVERRIDE_ERROR(error);
+            LOG_OVERRIDE_ERROR("SIGNATURE_UI_STATUS_LABEL_SET", error);
         }
 
         // Wizard status label
@@ -646,9 +645,8 @@ hook_activesync()
                                             wiz_status_label_set, &wiz_status_label_set_impl,
                                             &error))
         {
-            LOG_OVERRIDE_ERROR(error);
+            LOG_OVERRIDE_ERROR("SIGNATURE_WIZ_STATUS_LABEL_SET", error);
         }
-#endif
 
         // Hook httpsys.dll for catching incoming requests (since httpapi.dll
         // is used asynchronously for this so this is the quickest path) */

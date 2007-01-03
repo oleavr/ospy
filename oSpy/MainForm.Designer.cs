@@ -31,6 +31,7 @@ namespace oSpy
             this.components = new System.ComponentModel.Container();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.dataSet = new System.Data.DataSet();
             this.messageTbl = new System.Data.DataTable();
             this.indexCol = new System.Data.DataColumn();
@@ -69,6 +70,8 @@ namespace oSpy
             this.clearMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.exitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.selectAlltransactionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.captureToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.injectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.captureStartMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -140,8 +143,6 @@ namespace oSpy
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
-            this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.selectAlltransactionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).BeginInit();
             this.menuStrip.SuspendLayout();
@@ -429,6 +430,21 @@ namespace oSpy
             this.exitMenuItem.Size = new System.Drawing.Size(123, 22);
             this.exitMenuItem.Text = "E&xit";
             this.exitMenuItem.Click += new System.EventHandler(this.exitMenuItem_Click);
+            // 
+            // editToolStripMenuItem
+            // 
+            this.editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.selectAlltransactionsToolStripMenuItem});
+            this.editToolStripMenuItem.Name = "editToolStripMenuItem";
+            this.editToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
+            this.editToolStripMenuItem.Text = "&Edit";
+            // 
+            // selectAlltransactionsToolStripMenuItem
+            // 
+            this.selectAlltransactionsToolStripMenuItem.Name = "selectAlltransactionsToolStripMenuItem";
+            this.selectAlltransactionsToolStripMenuItem.Size = new System.Drawing.Size(189, 22);
+            this.selectAlltransactionsToolStripMenuItem.Text = "Select all &transactions";
+            this.selectAlltransactionsToolStripMenuItem.Click += new System.EventHandler(this.selectAlltransactionsToolStripMenuItem_Click);
             // 
             // captureToolStripMenuItem
             // 
@@ -1014,12 +1030,8 @@ namespace oSpy
             // filterComboBox
             // 
             this.filterComboBox.Items.AddRange(new object[] {
-            "NOT FunctionName = \'ActiveSyncDebug\'",
-            "(NOT FunctionName = \'ActiveSyncDebug\') AND (AS_WizStatus = \'Retrieving settings.." +
-                ".\')",
-            "(NOT FunctionName = \'ActiveSyncDebug\') AND ((NOT Comment = \'\') OR (MsgType <= 1))" +
-                "",
             "(NOT FunctionName = \'RAPIStubDebug\') AND (NOT FunctionName = \'RAPIMgrDebug\')",
+            resources.GetString("filterComboBox.Items"),
             "LocalPort = 990",
             "LocalPort = 999",
             "LocalPort = 5678",
@@ -1082,21 +1094,6 @@ namespace oSpy
             // 
             this.dumpSaveFileDialog.DefaultExt = "bin";
             this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
-            // 
-            // editToolStripMenuItem
-            // 
-            this.editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.selectAlltransactionsToolStripMenuItem});
-            this.editToolStripMenuItem.Name = "editToolStripMenuItem";
-            this.editToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
-            this.editToolStripMenuItem.Text = "&Edit";
-            // 
-            // selectAlltransactionsToolStripMenuItem
-            // 
-            this.selectAlltransactionsToolStripMenuItem.Name = "selectAlltransactionsToolStripMenuItem";
-            this.selectAlltransactionsToolStripMenuItem.Size = new System.Drawing.Size(189, 22);
-            this.selectAlltransactionsToolStripMenuItem.Text = "Select all &transactions";
-            this.selectAlltransactionsToolStripMenuItem.Click += new System.EventHandler(this.selectAlltransactionsToolStripMenuItem_Click);
             // 
             // MainForm
             // 

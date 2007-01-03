@@ -159,6 +159,9 @@
   <metadata name="toolStrip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 56</value>
   </metadata>
+  <data name="filterComboBox.Items" xml:space="preserve">
+    <value>(NOT FunctionName = 'RAPIStubDebug') AND (NOT FunctionName = 'RAPIMgrDebug') AND (NOT FunctionName = 'WCESMgrDebug') AND (NOT FunctionName = 'WCESMgrDebug2') AND (NOT FunctionName = 'WCESMgrDebug3') AND (NOT FunctionName = 'WCESCommDebug2') AND (NOT FunctionName = 'WCESCommDebug3')</value>
+  </data>
   <metadata name="statusStrip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>116, 56</value>
   </metadata>
