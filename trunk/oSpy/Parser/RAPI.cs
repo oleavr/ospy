@@ -20,6 +20,7 @@ using System;
 using oSpy.Util;
 using oSpy.Net;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace oSpy.Parser
 {
@@ -160,7 +161,8 @@ namespace oSpy.Parser
                 HandleRapiHandshake();
             }
 
-            HandleRapiSession();
+            if (stream.GetBytesAvailable() >= 4)
+                HandleRapiSession();
 
             return true;
         }
@@ -204,6 +206,8 @@ namespace oSpy.Parser
                 if (firstPong == 6)
                 {
                     // Now we're supposed to send 4 DWORDs
+                    stream = session.GetNextStreamDirection();
+
                     UInt32 secondPing = stream.ReadU32LE(slices);
                     node.AddField("SecondPingValue1", secondPing, "Second ping value #1, should be 7.", slices);
 
@@ -393,11 +397,11 @@ namespace oSpy.Parser
 
                 string name = rapiCallNames[msgType];
 
-                TransactionNode call = new TransactionNode(name);
+                RAPICallNode call = new RAPICallNode(name);
                 call.Description = call.Name;
 
-                TransactionNode req = new TransactionNode(call, "Request");
-                TransactionNode resp = new TransactionNode(call, "Response");
+                TransactionNode req = call.Request;
+                TransactionNode resp = call.Response;
 
                 req.AddField("MessageLength", msgLen, "Length of the RAPI request.", msgLenSlices);
                 req.AddField("MessageType", String.Format("{0} (0x{1:x2})", name, msgType), "Type of the RAPI request.", msgTypeSlices);
@@ -784,9 +788,30 @@ namespace oSpy.Parser
             }
         }
     }
-}
 
-#if false
+    [TypeConverterAttribute(typeof(RAPICallNodeConverter))]
+    public class RAPICallNode : TransactionNode
+    {
+        protected TransactionNode req;
+        public TransactionNode Request
+        {
+            get { return req; }
+        }
+
+        protected TransactionNode resp;
+        public TransactionNode Response
+        {
+            get { return resp; }
+        }
+
+        public RAPICallNode(string name)
+            : base(name)
+        {
+            req = new TransactionNode(this, "Request");
+            resp = new TransactionNode(this, "Response");
+        }
+    }
+
     class RAPICallNodeConverter : ExpandableObjectConverter
     {
         public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
@@ -812,5 +837,3 @@ namespace oSpy.Parser
         }
     }
 }
-
-#endif

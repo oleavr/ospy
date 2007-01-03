@@ -157,14 +157,12 @@ namespace oSpy.Parser
                 node.AddField("Protocol", tokens[2], "Protocol identifier.", slices);
 
                 // Set a description
-                string arg = tokens[1];
-                if (tokens[0].Length + 1 + arg.Length > MAX_DESCRIPTION_LENGTH)
+                node.Description = String.Format("{0} {1}", tokens[0], tokens[1]);
+                if (node.Description.Length > MAX_DESCRIPTION_LENGTH)
                 {
-                    arg = arg.Substring(0, MAX_DESCRIPTION_LENGTH - tokens[0].Length - 1 - ellipsis.Length)
-                        + ellipsis;
+                    node.Description = node.Description.Substring(0, MAX_DESCRIPTION_LENGTH - ellipsis.Length);
+                    node.Description += ellipsis;
                 }
-
-                node.Description = String.Format("{0} {1}", tokens[0], arg);                
             }
             else
             {
@@ -220,13 +218,26 @@ namespace oSpy.Parser
                 node.AddChild(headersNode);
             }
 
+            int contentLen = -1;
+
             if (headerFields.ContainsKey("content-length"))
+                contentLen = Convert.ToInt32(headerFields["content-length"]);
+            else if (headerFields.ContainsKey("contentlength"))
+                contentLen = Convert.ToInt32(headerFields["contentlength"]);
+
+            if (contentLen != -1)
             {
                 string contentType = null, contentEncoding = null;
 
                 if (headerFields.ContainsKey("content-type"))
+                    contentType = headerFields["content-type"];
+                else if (headerFields.ContainsKey("contenttype"))
+                    contentType = headerFields["contenttype"];
+ 
+                if (contentType != null)
                 {
-                    contentType = headerFields["content-type"].ToLower();
+                    contentType = contentType.ToLower();
+
                     tokens = contentType.Split(new char[] { ';' });
                     contentType = tokens[0].Trim();
                     if (tokens.Length > 1)
@@ -246,7 +257,6 @@ namespace oSpy.Parser
                     contentEncoding = "utf-8"; // FIXME
                 }
 
-                int contentLen = Convert.ToInt32(headerFields["content-length"]);
                 if (contentLen > 0)
                 {
                     AddBodyNode(stream, node, contentType, contentEncoding, contentLen);
