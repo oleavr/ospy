@@ -350,7 +350,7 @@ namespace oSpy.Parser
         private void HandleRapiSession()
         {
             List<PacketSlice> slices = new List<PacketSlice>();
-            TransactionNode node;
+            TransactionNode node, req, resp;
             string str;
             UInt32 val, retVal, lastError;
 
@@ -360,11 +360,8 @@ namespace oSpy.Parser
                 List<PacketSlice> msgLenSlices = new List<PacketSlice>(1);
                 List<PacketSlice> msgTypeSlices = new List<PacketSlice>(1);
 
-                logger.AddMessage("direction={0}", stream.CurPacket.Direction);
-
                 // Message length
                 msgLen = stream.ReadU32LE(msgLenSlices);
-                logger.AddMessage("msgLen={0}", msgLen);
 
                 if (msgLen == 5)
                 {
@@ -381,7 +378,33 @@ namespace oSpy.Parser
 
                     session.AddNode(node);
 
-                    if (stream.GetBytesAvailable() == 0)
+                    if (stream.GetBytesAvailable() < 4)
+                        break;
+                    else
+                        continue;
+                }
+                else if (msgLen == 1)
+                {
+                    node = new TransactionNode("RAPIKeepalive");
+                    node.Description = node.Name;
+
+                    req = new TransactionNode(node, "Request");
+                    req.AddField("MessageType", "RAPI_PING", "Message type.", msgLenSlices);
+
+                    stream = session.GetNextStreamDirection();
+                    if (stream.GetBytesAvailable() < 4)
+                        break;
+
+                    stream.ReadU32LE(slices);
+
+                    resp = new TransactionNode(node, "Response");
+                    resp.AddField("MessageType", "RAPI_PONG", "Message type.", slices);
+
+                    session.AddNode(node);
+
+                    stream = session.GetNextStreamDirection();
+
+                    if (stream.GetBytesAvailable() < 4)
                         break;
                     else
                         continue;
@@ -400,8 +423,8 @@ namespace oSpy.Parser
                 RAPICallNode call = new RAPICallNode(name);
                 call.Description = call.Name;
 
-                TransactionNode req = call.Request;
-                TransactionNode resp = call.Response;
+                req = call.Request;
+                resp = call.Response;
 
                 req.AddField("MessageLength", msgLen, "Length of the RAPI request.", msgLenSlices);
                 req.AddField("MessageType", String.Format("{0} (0x{1:x2})", name, msgType), "Type of the RAPI request.", msgTypeSlices);
