@@ -891,6 +891,7 @@ namespace oSpy
             // 
             // timestampDataGridViewTextBoxColumn
             // 
+            this.timestampDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
             this.timestampDataGridViewTextBoxColumn.DataPropertyName = "Timestamp";
             dataGridViewCellStyle1.Format = "T";
             dataGridViewCellStyle1.NullValue = null;
@@ -898,6 +899,7 @@ namespace oSpy
             this.timestampDataGridViewTextBoxColumn.HeaderText = "Timestamp";
             this.timestampDataGridViewTextBoxColumn.Name = "timestampDataGridViewTextBoxColumn";
             this.timestampDataGridViewTextBoxColumn.ReadOnly = true;
+            this.timestampDataGridViewTextBoxColumn.Width = 83;
             // 
             // processNameDataGridViewTextBoxColumn
             // 
