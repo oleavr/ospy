@@ -401,7 +401,10 @@ namespace oSpy.Parser
         static MSNTransactionFactory()
         {
             // FIXME: add all of them here
-            payloadCommands = new List<string>(new string[] { "MSG", "UBX", "UUX", "ADL", "FQY", "QRY", "GCF", "FQY", "NOT", });
+            payloadCommands = new List<string>(new string[] {
+                "MSG", "UBX", "UUX", "ADL", "FQY", "QRY", "GCF", "FQY", "NOT",
+                "UUN", "UBN",
+            });
         }
 
         public MSNTransactionFactory(DebugLogger logger)
