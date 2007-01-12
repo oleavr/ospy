@@ -580,9 +580,16 @@ namespace oSpy.Parser
                             }
                             else
                             {
-                                string xml = stream.ReadStringUTF8(payloadLength, slices);
+                                string body = stream.ReadStringUTF8(payloadLength, slices);
 
-                                payloadNode.AddXMLField("XML", xml, "XML data.", slices);
+                                if (cmd == "UUN" || cmd == "UBN")
+                                {
+                                    payloadNode.AddTextField("MSNSLP", body, "MSNSLP data.", slices);
+                                }
+                                else
+                                {
+                                    payloadNode.AddXMLField("XML", body, "XML data.", slices);
+                                }
                             }
                         }
                     }
