@@ -26,7 +26,8 @@
 
 typedef enum {
     SIGNATURE_GET_CHALLENGE_SECRET = 0,
-    SIGNATURE_IDCRL_DEBUG          = 1,
+	SIGNATURE_MSNMSGR_DEBUG        = 1,
+    SIGNATURE_IDCRL_DEBUG          = 2,
 };
 
 static FunctionSignature msn_signatures[] = {
@@ -43,6 +44,20 @@ static FunctionSignature msn_signatures[] = {
         "74 BF"                 // jz      short loc_4F8319
         "E8 ?? ?? ?? ??"        // call    loc_538EF6
     },
+
+	// SIGNATURE_MSNMSGR_DEBUG
+	{
+		"msnmsgr.exe",
+		11,
+		"84 C0"					// test    al, al
+		"74 14"					// jz      short loc_448B51
+		"83 7D 0C 02"			// cmp     [ebp+arg_4], 2
+		"77 0E"					// ja      short loc_448B51
+		"FF 75 14"				// push    [ebp+arg_C]     ; va_list
+		"FF 75 10"				// push    [ebp+arg_8]     ; wchar_t *
+		"FF 75 08"				// push    [ebp+arg_0]     ; int
+		"E8"					// call    ...
+	},
 
     // SIGNATURE_IDCRL_DEBUG
     {
@@ -106,6 +121,21 @@ idcrl_debug(void *obj,
     sspy_free(buf);
 }
 
+static void __stdcall
+msnmsgr_debug(int foo, int bar,
+			  LPWSTR fmt_str,
+			  va_list args)
+{
+    DWORD ret_addr = *((DWORD *) ((DWORD) &foo - 4));
+	WCHAR bad_str[] = L"	spServiceOut = 0x%p {%ls, ls%}";
+	WCHAR good_str[] = L"	spServiceOut = 0x%p {%ls, %ls}";
+
+	if (memcmp(fmt_str, bad_str, sizeof(bad_str)) == 0)
+		fmt_str = good_str;
+
+	log_debug_w("MsnmsgrDebug", ret_addr, fmt_str, args);
+}
+
 #define LOG_OVERRIDE_ERROR(e) \
             message_logger_log_message("hook_msn", 0, MESSAGE_CTX_ERROR,\
                 "override_function_by_signature failed: %s", e);\
@@ -152,6 +182,12 @@ hook_msn()
             "failed to find SIGNATURE_GET_CHALLENGE_SECRET: %s", error);
         sspy_free(error);
     }
+
+	if (!override_function_by_signature(&msn_signatures[SIGNATURE_MSNMSGR_DEBUG],
+									    msnmsgr_debug, NULL, &error))
+	{
+		LOG_OVERRIDE_ERROR(error);
+	}
 
     // IDCRL internal debugging function
     /*
