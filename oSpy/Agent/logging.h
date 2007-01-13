@@ -94,7 +94,9 @@ void message_logger_init();
 void message_logger_get_queue(MessageQueue **queue, HANDLE *queue_mutex);
 
 void message_logger_log(const char *function_name, DWORD return_address, DWORD resource_id, MessageType msg_type, MessageContext context, PacketDirection direction, const sockaddr_in *local_addr, const sockaddr_in *peer_addr, const char *buf, int len, const char *message, ...);
+void message_logger_log_raw(const char *function_name, DWORD return_address, DWORD resource_id, MessageType msg_type, MessageContext context, PacketDirection direction, const sockaddr_in *local_addr, const sockaddr_in *peer_addr, const char *buf, int len, const char *message);
 void message_logger_log_message(const char *function_name, DWORD return_address, MessageContext context, const char *message, ...);
+void message_logger_log_message_raw(const char *function_name, DWORD return_address, MessageContext context, const char *message);
 void message_logger_log_packet(const char *function_name, DWORD return_address, DWORD resource_id, PacketDirection direction, const sockaddr_in *local_addr, const sockaddr_in *peer_addr, const char *buf, int len);
 
 void log_tcp_listening(const char *function_name, DWORD return_address, SOCKET server_socket);

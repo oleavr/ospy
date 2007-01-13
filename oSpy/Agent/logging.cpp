@@ -143,9 +143,18 @@ message_logger_log_message(const char *function_name,
     va_start(args, message);
     StringCbVPrintfA(buf, sizeof(buf), message, args);
 
-    message_logger_log(function_name, return_address, 0,
-                       MESSAGE_TYPE_MESSAGE, context, PACKET_DIRECTION_INVALID,
-                       NULL, NULL, NULL, 0, buf);
+	message_logger_log_message_raw(function_name, return_address, context, buf);
+}
+
+void
+message_logger_log_message_raw(const char *function_name,
+							   DWORD return_address,
+							   MessageContext context,
+							   const char *message)
+{
+    message_logger_log_raw(function_name, return_address, 0,
+                           MESSAGE_TYPE_MESSAGE, context, PACKET_DIRECTION_INVALID,
+						   NULL, NULL, NULL, 0, message);
 }
 
 void
@@ -177,11 +186,38 @@ message_logger_log(const char *function_name,
                    const char *message,
                    ...)
 {
+    va_list args;
+	char tmp[256];
+	const char *expanded_msg = message;
+
+    /* fill in the message content */
+    if (message != NULL)
+    {
+		va_start(args, message);
+        StringCbVPrintfA(tmp, sizeof(tmp), message, args);
+		expanded_msg = tmp;
+    }
+
+	message_logger_log_raw(function_name, return_address, resource_id, msg_type,
+						   context, direction, local_addr, peer_addr, buf, len,
+						   expanded_msg);
+}
+
+void
+message_logger_log_raw(const char *function_name,
+					   DWORD return_address,
+					   DWORD resource_id,
+					   MessageType msg_type,
+					   MessageContext context,
+					   PacketDirection direction,
+					   const sockaddr_in *local_addr,
+					   const sockaddr_in *peer_addr,
+					   const char *buf,
+					   int len,
+					   const char *message)
+{
     MessageQueueElement el;
     int read_len;
-    va_list args;
-
-    va_start(args, message);
 
     memset(&el, 0, sizeof(MessageQueueElement));
 
@@ -227,11 +263,11 @@ message_logger_log(const char *function_name,
         el.len = read_len;
     }
 
-    /* fill in the message content */
-    if (message != NULL)
-    {
-        StringCbVPrintfA(el.message, sizeof(el.message), message, args);
-    }
+	if (message != NULL)
+	{
+		strncpy(el.message, message, sizeof(el.message));
+		el.message[sizeof(el.message) - 1] = '\0';
+	}
 
     /* submit the message */
     message_queue_add(&el);
@@ -434,7 +470,7 @@ log_debug_w(const char *source,
 
     WideCharToMultiByte(CP_ACP, 0, wide_buf, -1, buf, sizeof(buf), NULL, NULL);
 
-    message_logger_log_message(source, ret_addr, MESSAGE_CTX_INFO, buf);
+    message_logger_log_message_raw(source, ret_addr, MESSAGE_CTX_INFO, buf);
 }
 
 void
@@ -447,5 +483,5 @@ log_debug(const char *source,
 
     StringCbVPrintfA(buf, sizeof(buf), format, args);
 
-    message_logger_log_message(source, ret_addr, MESSAGE_CTX_INFO, buf);
+    message_logger_log_message_raw(source, ret_addr, MESSAGE_CTX_INFO, buf);
 }
