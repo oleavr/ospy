@@ -24,6 +24,11 @@
 
 static MODULEINFO wsock32_info;
 
+#define CLOSESOCKET_ARGS_SIZE (1 * 4)
+#define ACCEPT_ARGS_SIZE (3 * 4)
+#define CONNECT_ARGS_SIZE (3 * 4)
+#define WSA_ACCEPT_ARGS_SIZE (5 * 4)
+
 static int __cdecl
 getaddrinfo_called(BOOL carry_on,
                    DWORD ret_addr,
@@ -247,9 +252,9 @@ getaddrinfo_done(int retval,
         }
     }
 
-    message_logger_log("getaddrinfo", ret_addr, 0, MESSAGE_TYPE_PACKET,
-        MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL,
-        (const char *) body->buf, (int) body->offset,
+    message_logger_log("getaddrinfo", (char *) &retval - 4, 0,
+		MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+		NULL, NULL, (const char *) body->buf, (int) body->offset,
         (const char *) msg->buf);
 
     byte_buffer_free(msg);
@@ -264,7 +269,9 @@ closesocket_called(BOOL carry_on,
                    DWORD ret_addr,
                    SOCKET s)
 {
-    log_tcp_disconnected("closesocket", ret_addr, s, NULL);
+	void *bt_address = (char *) &carry_on + 8 + CLOSESOCKET_ARGS_SIZE;
+
+    log_tcp_disconnected("closesocket", bt_address, s, NULL);
     return 0;
 }
 
@@ -295,20 +302,21 @@ recv_done(int retval,
 {
     DWORD err = GetLastError();
     int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+	void *bt_address = (char *) &retval - 4;
 
     if (retval > 0)
     {
-        log_tcp_packet("recv", ret_addr, PACKET_DIRECTION_INCOMING, s, buf, retval);
+        log_tcp_packet("recv", bt_address, PACKET_DIRECTION_INCOMING, s, buf, retval);
     }
     else if (retval == 0)
     {
-        log_tcp_disconnected("recv", ret_addr, s, NULL);
+        log_tcp_disconnected("recv", bt_address, s, NULL);
     }
     else if (retval == SOCKET_ERROR)
     {
         if (err != WSAEWOULDBLOCK)
         {
-            log_tcp_disconnected("recv", ret_addr, s, &err);
+            log_tcp_disconnected("recv", bt_address, s, &err);
         }
     }
 
@@ -336,16 +344,17 @@ send_done(int retval,
 {
   DWORD err = GetLastError();
   int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+  void *bt_address = (char *) &retval - 4;
 
   if (retval > 0)
   {
-    log_tcp_packet("send", ret_addr, PACKET_DIRECTION_OUTGOING, s, buf, retval);
+    log_tcp_packet("send", bt_address, PACKET_DIRECTION_OUTGOING, s, buf, retval);
   }
   else if (retval == SOCKET_ERROR)
   {
     if (err != WSAEWOULDBLOCK)
     {
-      log_tcp_disconnected("send", ret_addr, s, &err);
+      log_tcp_disconnected("send", bt_address, s, &err);
     }
   }
 
@@ -377,7 +386,7 @@ recvfrom_done(int retval,
 {
     DWORD err = GetLastError();
     int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
-    int overridden_retval;
+	int overridden_retval;
     BOOL carry_on;
 
     overridden_retval =
@@ -389,7 +398,9 @@ recvfrom_done(int retval,
         return overridden_retval;
 
     if (retval > 0)
-        log_udp_packet("recvfrom", ret_addr, PACKET_DIRECTION_INCOMING, s, from, buf, retval);
+	{
+        log_udp_packet("recvfrom", (char *) &retval - 4, PACKET_DIRECTION_INCOMING, s, from, buf, retval);
+	}
 
     SetLastError(err);
     return retval;
@@ -431,7 +442,9 @@ sendto_done(int retval,
         return overridden_retval;
 
     if (retval > 0)
-        log_udp_packet("sendto", ret_addr, PACKET_DIRECTION_OUTGOING, s, to, buf, retval);
+	{
+        log_udp_packet("sendto", (char *) &retval - 4, PACKET_DIRECTION_OUTGOING, s, to, buf, retval);
+	}
 
     SetLastError(err);
     return retval;
@@ -448,7 +461,10 @@ accept_called(BOOL carry_on,
         softwall_decide_from_socket_and_remote_address("accept", ret_addr, s, NULL, &carry_on);
 
     if (carry_on)
-        log_tcp_listening("accept", ret_addr, s);
+	{
+		void *bt_address = (char *) &carry_on + 8 + ACCEPT_ARGS_SIZE;
+        log_tcp_listening("accept", bt_address, s);
+	}
 
     return retval;
 }
@@ -473,7 +489,7 @@ accept_done(SOCKET retval,
         return overridden_retval;
 
     if (retval != INVALID_SOCKET)
-        log_tcp_client_connected("accept", ret_addr, s, retval);
+        log_tcp_client_connected("accept", (char *) &retval - 4, s, retval);
 
     SetLastError(err);
     return retval;
@@ -492,7 +508,10 @@ connect_called(BOOL carry_on,
                                                        &carry_on);
 
     if (carry_on)
-        log_tcp_connecting("connect", ret_addr, s, name);
+	{
+		void *bt_address = (char *) &carry_on + 8 + CONNECT_ARGS_SIZE;
+        log_tcp_connecting("connect", bt_address, s, name);
+	}
 
     return retval;
 }
@@ -508,7 +527,7 @@ connect_done(int retval,
 
     if (retval != SOCKET_ERROR)
     {
-        log_tcp_connected("connect", ret_addr, s, name);
+        log_tcp_connected("connect", (char *) &retval - 4, s, name);
     }
 
     SetLastError(err);
@@ -549,13 +568,14 @@ WSARecv_done(int retval,
     DWORD err = GetLastError();
     DWORD wsa_err = WSAGetLastError();
     DWORD ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+	void *bt_address = (char *) &retval - 4;
 
     if (called_from_wsock(ret_addr))
         return retval;
 
     if (lpOverlapped != NULL)
     {
-        message_logger_log_message("WSARecv", ret_addr, MESSAGE_CTX_WARNING,
+        message_logger_log_message("WSARecv", bt_address, MESSAGE_CTX_WARNING,
                                    "overlapped I/O not yet supported");
     }
 
@@ -565,7 +585,7 @@ WSARecv_done(int retval,
         {
             WSABUF *buf = &lpBuffers[i];
 
-            log_tcp_packet("WSARecv", ret_addr, PACKET_DIRECTION_INCOMING, s,
+            log_tcp_packet("WSARecv", bt_address, PACKET_DIRECTION_INCOMING, s,
                            buf->buf, buf->len);
         }
     }
@@ -573,13 +593,13 @@ WSARecv_done(int retval,
     {
         if (wsa_err == WSAEWOULDBLOCK)
         {
-            message_logger_log_message("WSARecv", ret_addr, MESSAGE_CTX_WARNING,
+            message_logger_log_message("WSARecv", bt_address, MESSAGE_CTX_WARNING,
 						               "non-blocking mode not yet supported");
         }
 
         if (wsa_err != WSAEWOULDBLOCK && wsa_err != WSA_IO_PENDING)
         {
-            log_tcp_disconnected("WSARecv", ret_addr, s,
+            log_tcp_disconnected("WSARecv", bt_address, s,
                                  (err == WSAECONNRESET) ? NULL : &err);
         }
     }
@@ -616,13 +636,14 @@ WSASend_done(int retval,
     DWORD err = GetLastError();
     DWORD wsa_err = WSAGetLastError();
     DWORD ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+	void *bt_address = (char *) &retval - 4;
 
     if (called_from_wsock(ret_addr))
         return retval;
 
     if (lpOverlapped != NULL)
     {
-        message_logger_log_message("WSASend", ret_addr, MESSAGE_CTX_WARNING,
+        message_logger_log_message("WSASend", bt_address, MESSAGE_CTX_WARNING,
                                    "overlapped I/O not yet supported");
     }
 
@@ -632,7 +653,7 @@ WSASend_done(int retval,
         {
             WSABUF *buf = &lpBuffers[i];
 
-            log_tcp_packet("WSASend", ret_addr, PACKET_DIRECTION_OUTGOING, s,
+            log_tcp_packet("WSASend", bt_address, PACKET_DIRECTION_OUTGOING, s,
                            buf->buf, buf->len);
         }
     }
@@ -640,13 +661,13 @@ WSASend_done(int retval,
     {
         if (wsa_err == WSAEWOULDBLOCK)
         {
-	        message_logger_log_message("WSASend", ret_addr, MESSAGE_CTX_WARNING,
+	        message_logger_log_message("WSASend", bt_address, MESSAGE_CTX_WARNING,
 							           "non-blocking mode not yet supported");
         }
 
         if (wsa_err != WSAEWOULDBLOCK && wsa_err != WSA_IO_PENDING)
         {
-            log_tcp_disconnected("WSASend", ret_addr, s,
+            log_tcp_disconnected("WSASend", bt_address, s,
                                  (err == WSAECONNRESET) ? NULL : &err);
         }
     }
@@ -670,8 +691,10 @@ WSAAccept_called(BOOL carry_on,
 
     if (carry_on)
     {
+		void *bt_address = (char *) &carry_on + 8 + WSA_ACCEPT_ARGS_SIZE;
+
         /* FIXME: only issue this once for non-blocking sockets */
-        log_tcp_listening("WSAAccept", ret_addr, s);
+        log_tcp_listening("WSAAccept", bt_address, s);
     }
 
     return retval;
@@ -700,7 +723,7 @@ WSAAccept_done(SOCKET retval,
 
     if (retval != INVALID_SOCKET)
     {
-        log_tcp_client_connected("WSAAccept", ret_addr, s, retval);
+        log_tcp_client_connected("WSAAccept", (char *) &retval - 4, s, retval);
     }
 
     SetLastError(err);
@@ -727,20 +750,21 @@ wsock32_recv_done(int retval,
 {
   DWORD err = GetLastError();
   int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+  void *bt_address = (char *) &retval - 4;
 
   if (retval > 0)
   {
-    log_tcp_packet("wsock32_recv", ret_addr, PACKET_DIRECTION_INCOMING, s, buf, retval);
+    log_tcp_packet("wsock32_recv", bt_address, PACKET_DIRECTION_INCOMING, s, buf, retval);
   }
   else if (retval == 0)
   {
-    log_tcp_disconnected("wsock32_recv", ret_addr, s, NULL);
+    log_tcp_disconnected("wsock32_recv", bt_address, s, NULL);
   }
   else if (retval == SOCKET_ERROR)
   {
     if (err != WSAEWOULDBLOCK)
     {
-      log_tcp_disconnected("wsock32_recv", ret_addr, s, &err);
+      log_tcp_disconnected("wsock32_recv", bt_address, s, &err);
     }
   }
 
@@ -750,16 +774,17 @@ wsock32_recv_done(int retval,
 
 HOOK_GLUE_INTERRUPTIBLE(getaddrinfo, (4 * 4))
 
-HOOK_GLUE_INTERRUPTIBLE(closesocket, (1 * 4))
+HOOK_GLUE_INTERRUPTIBLE(closesocket, CLOSESOCKET_ARGS_SIZE)
+
 HOOK_GLUE_INTERRUPTIBLE(recv, (4 * 4))
 HOOK_GLUE_INTERRUPTIBLE(send, (4 * 4))
 HOOK_GLUE_INTERRUPTIBLE(recvfrom, (6 * 4))
 HOOK_GLUE_INTERRUPTIBLE(sendto, (6 * 4))
-HOOK_GLUE_INTERRUPTIBLE(accept, (3 * 4))
-HOOK_GLUE_INTERRUPTIBLE(connect, (3 * 4))
+HOOK_GLUE_INTERRUPTIBLE(accept, ACCEPT_ARGS_SIZE)
+HOOK_GLUE_INTERRUPTIBLE(connect, CONNECT_ARGS_SIZE)
 HOOK_GLUE_INTERRUPTIBLE(WSARecv, (7 * 4))
 HOOK_GLUE_INTERRUPTIBLE(WSASend, (7 * 4))
-HOOK_GLUE_INTERRUPTIBLE(WSAAccept, (5 * 4))
+HOOK_GLUE_INTERRUPTIBLE(WSAAccept, WSA_ACCEPT_ARGS_SIZE)
 HOOK_GLUE_INTERRUPTIBLE(wsock32_recv, (4 * 4))
 
 void

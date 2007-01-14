@@ -28,6 +28,9 @@ static MODULEINFO schannel_info;
 static LPVOID own_base;
 static DWORD own_size;
 
+#define CRYPT_ENCRYPT_ARGS_SIZE (7 * 4)
+#define CRYPT_DECRYPT_ARGS_SIZE (6 * 4)
+
 static BOOL
 called_internally(DWORD ret_addr)
 {
@@ -149,7 +152,7 @@ CryptImportKey_done(BOOL retval,
 
     if (retval && !called_internally(ret_addr))
     {
-        message_logger_log("CryptImportKey", ret_addr, (DWORD) *phKey,
+        message_logger_log("CryptImportKey", (char *) &retval - 4, (DWORD) *phKey,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
             NULL, NULL, (const char *) pbData, dwDataLen,
             "hProv=0x%p, hPubKey=0x%p, dwFlags=0x%08x => *phKey=0x%p",
@@ -214,7 +217,7 @@ CryptExportKey_done(BOOL retval,
                 break;
         }
 
-        message_logger_log("CryptExportKey", ret_addr, (DWORD) hKey,
+        message_logger_log("CryptExportKey", (char *) &retval - 4, (DWORD) hKey,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
             NULL, NULL, (const char *) pbData, *pdwDataLen,
             "hKey=0x%p, hExpKey=0x%p, dwBlobType=%s, dwFlags=0x%08x",
@@ -248,7 +251,7 @@ CryptGenKey_done(BOOL retval,
 
     if (retval && !called_internally(ret_addr))
     {
-        message_logger_log("CryptGenKey", ret_addr, (DWORD) *phKey,
+        message_logger_log("CryptGenKey", (char *) &retval - 4, (DWORD) *phKey,
             MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
             NULL, NULL, NULL, 0,
             "hProv=0x%p, Algid=%s, dwFlags=0x%08x => *phKey=0x%p",
@@ -282,7 +285,7 @@ CryptDuplicateKey_done(BOOL retval,
 
     if (retval && !called_internally(ret_addr))
     {
-        message_logger_log("CryptDuplicateKey", ret_addr, (DWORD) *phKey,
+        message_logger_log("CryptDuplicateKey", (char *) &retval - 4, (DWORD) *phKey,
             MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
             NULL, NULL, NULL, 0,
             "hKey=0x%p => *phKey=0x%p",
@@ -318,7 +321,7 @@ CryptGetKeyParam_done(BOOL retval,
 
     if (retval && !called_internally(ret_addr))
     {
-        message_logger_log("CryptGetKeyParam", ret_addr, (DWORD) hKey,
+        message_logger_log("CryptGetKeyParam", (char *) &retval - 4, (DWORD) hKey,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
             NULL, NULL, (const char *) pbData, *pdwDataLen,
             "hKey=0x%p, dwParam=%s", hKey, key_param_to_string(dwParam));
@@ -376,7 +379,7 @@ CryptSetKeyParam_done(BOOL retval,
                 break;
         }
 
-        message_logger_log("CryptSetKeyParam", ret_addr, (DWORD) hKey,
+        message_logger_log("CryptSetKeyParam", (char *) &retval - 4, (DWORD) hKey,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
             NULL, NULL, data, data_len,
             "hKey=0x%p, dwParam=%s, dwFlags=0x%08x",
@@ -404,7 +407,7 @@ CryptDestroyKey_done(BOOL retval,
 
     if (retval && !called_internally(ret_addr))
     {
-        message_logger_log("CryptDestroyKey", ret_addr, (DWORD) hKey,
+        message_logger_log("CryptDestroyKey", (char *) &retval - 4, (DWORD) hKey,
             MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
             NULL, NULL, NULL, 0, "hKey=0x%p", hKey);
     }
@@ -434,7 +437,7 @@ CryptGenRandom_done(BOOL retval,
 
     if (retval && !called_internally(ret_addr))
     {
-        message_logger_log("CryptGenRandom", ret_addr, (DWORD) hProv,
+        message_logger_log("CryptGenRandom", (char *) &retval - 4, (DWORD) hProv,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
             NULL, NULL, (const char *) pbBuffer, dwLen,
             "hProv=0x%p, dwLen=%d", hProv, dwLen);
@@ -457,7 +460,9 @@ CryptEncrypt_called(BOOL carry_on,
 {
     if (!called_internally(ret_addr))
     {
-        message_logger_log("CryptEncrypt", ret_addr, (DWORD) hKey,
+		void *bt_address = (char *) &carry_on + 8 + CRYPT_ENCRYPT_ARGS_SIZE;
+
+        message_logger_log("CryptEncrypt", bt_address, (DWORD) hKey,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_OUTGOING,
             NULL, NULL, (const char *) pbData, *pdwDataLen,
             "hKey=0x%p, hHash=0x%p, Final=%s, dwFlags=0x%08x, *pdwDataLen=%d, dwBufLen=%d",
@@ -482,7 +487,7 @@ CryptEncrypt_done(BOOL retval,
 
     if (!called_internally(ret_addr))
     {
-        message_logger_log("CryptEncrypt", ret_addr, (DWORD) hKey,
+        message_logger_log("CryptEncrypt", (char *) &retval - 4, (DWORD) hKey,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INCOMING,
             NULL, NULL, (const char *) pbData, *pdwDataLen,
             "hKey=0x%p, hHash=0x%p, Final=%s, dwFlags=0x%08x, *pdwDataLen=%d, dwBufLen=%d",
@@ -505,7 +510,9 @@ CryptDecrypt_called(BOOL carry_on,
 {
     if (!called_internally(ret_addr))
     {
-        message_logger_log("CryptDecrypt", ret_addr, (DWORD) hKey,
+		void *bt_address = (char *) &carry_on + 8 + CRYPT_DECRYPT_ARGS_SIZE;
+
+        message_logger_log("CryptDecrypt", bt_address, (DWORD) hKey,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_OUTGOING,
             NULL, NULL, (const char *) pbData, *pdwDataLen,
             "hKey=0x%p, hHash=0x%p, Final=%s, dwFlags=0x%08x, *pdwDataLen=%d",
@@ -529,7 +536,7 @@ CryptDecrypt_done(BOOL retval,
 
     if (!called_internally(ret_addr))
     {
-        message_logger_log("CryptDecrypt", ret_addr, (DWORD) hKey,
+        message_logger_log("CryptDecrypt", (char *) &retval - 4, (DWORD) hKey,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INCOMING,
             NULL, NULL, (const char *) pbData, *pdwDataLen,
             "hKey=0x%p, hHash=0x%p, Final=%s, dwFlags=0x%08x, *pdwDataLen=%d",
@@ -610,7 +617,7 @@ CryptCreateHash_done(BOOL retval,
 
         if (!called_internally(ret_addr))
         {
-            message_logger_log("CryptCreateHash", ret_addr, ctx->get_id(),
+            message_logger_log("CryptCreateHash", (char *) &retval - 4, ctx->get_id(),
                 MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
                 NULL, NULL, NULL, 0,
                 "hProv=0x%p, Algid=%s, hKey=0x%p => *phHash=0x%p",
@@ -656,7 +663,7 @@ CryptDuplicateHash_done(BOOL retval,
         {
             HashContext *ctx = iter->second;
 
-            message_logger_log("CryptDuplicateHash", ret_addr, ctx->get_id(),
+            message_logger_log("CryptDuplicateHash", (char *) &retval - 4, ctx->get_id(),
                 MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
                 NULL, NULL, NULL, 0,
                 "hHash=0x%p, Algid=%s => *phHash=0x%p",
@@ -696,7 +703,7 @@ CryptDestroyHash_done(BOOL retval,
 
             if (!called_internally(ret_addr))
             {
-                message_logger_log("CryptDestroyHash", ret_addr, ctx->get_id(),
+                message_logger_log("CryptDestroyHash", (char *) &retval - 4, ctx->get_id(),
                     MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
                     NULL, NULL, NULL, 0, "hHash=0x%p", hHash);
             }
@@ -744,7 +751,7 @@ CryptHashData_done(BOOL retval,
         {
             HashContext *ctx = iter->second;
 
-            message_logger_log("CryptHashData", ret_addr, ctx->get_id(),
+            message_logger_log("CryptHashData", (char *) &retval - 4, ctx->get_id(),
                 MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
                 NULL, NULL, (const char *) pbData, dwDataLen,
                 "hHash=0x%p, Algid=%s", hHash, ctx->get_alg_id_as_string());
@@ -808,7 +815,7 @@ CryptGetHashParam_done (BOOL retval,
                     break;
             }
 
-            message_logger_log("CryptGetHashParam", ret_addr, ctx->get_id(),
+            message_logger_log("CryptGetHashParam", (char *) &retval - 4, ctx->get_id(),
                 MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
                 NULL, NULL, (const char *) pbData, *pdwDataLen,
                 "hHash=0x%p, Algid=%s, dwParam=%s",
@@ -889,7 +896,7 @@ CryptSetHashParam_done(BOOL retval,
                     break;
             }
 
-            message_logger_log("CryptSetHashParam", ret_addr, ctx->get_id(),
+            message_logger_log("CryptSetHashParam", (char *) &retval - 4, ctx->get_id(),
                 MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
                 NULL, NULL, data, data_len,
                 "hHash=0x%p, Algid=%s, dwParam=%s",
@@ -916,8 +923,8 @@ HOOK_GLUE_SPECIAL(CryptDestroyKey, (1 * 4))
 
 HOOK_GLUE_SPECIAL(CryptGenRandom, (3 * 4))
 
-HOOK_GLUE_SPECIAL(CryptEncrypt, (7 * 4))
-HOOK_GLUE_SPECIAL(CryptDecrypt, (6 * 4))
+HOOK_GLUE_SPECIAL(CryptEncrypt, CRYPT_ENCRYPT_ARGS_SIZE)
+HOOK_GLUE_SPECIAL(CryptDecrypt, CRYPT_DECRYPT_ARGS_SIZE)
 
 HOOK_GLUE_SPECIAL(CryptCreateHash, (5 * 4))
 HOOK_GLUE_SPECIAL(CryptDuplicateHash, (4 * 4))

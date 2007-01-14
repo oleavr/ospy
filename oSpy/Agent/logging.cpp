@@ -73,7 +73,7 @@ message_logger_get_queue(MessageQueue **ret_queue, HANDLE *ret_queue_mutex)
 static void
 message_element_init(MessageQueueElement *el,
                      const char *function_name,
-                     DWORD return_address,
+                     void *bt_address,
                      DWORD resource_id,
                      MessageType msg_type)
 {
@@ -87,11 +87,12 @@ message_element_init(MessageQueueElement *el,
 
     /* function name and return address */
     strcpy(el->function_name, function_name);
-    el->return_address = return_address;
-
-    get_module_name_for_address((LPVOID) return_address,
-                              el->caller_module_name,
-                              sizeof(el->caller_module_name));
+	if (bt_address != NULL)
+	{
+		OString backtrace = CUtil::CreateBackTrace(bt_address);
+		strncpy(el->backtrace, backtrace.c_str(), sizeof(el->backtrace));
+		el->backtrace[sizeof(el->backtrace) - 1] = '\0';
+	}
 
     /* underlying resource id */
     if (resource_id == 0)
@@ -132,7 +133,7 @@ void message_queue_add(MessageQueueElement *element)
 
 void
 message_logger_log_message(const char *function_name,
-                           DWORD return_address,
+                           void *bt_address,
                            MessageContext context,
                            const char *message,
                            ...)
@@ -143,23 +144,14 @@ message_logger_log_message(const char *function_name,
     va_start(args, message);
     StringCbVPrintfA(buf, sizeof(buf), message, args);
 
-	message_logger_log_message_raw(function_name, return_address, context, buf);
-}
-
-void
-message_logger_log_message_raw(const char *function_name,
-							   DWORD return_address,
-							   MessageContext context,
-							   const char *message)
-{
-    message_logger_log_raw(function_name, return_address, 0,
-                           MESSAGE_TYPE_MESSAGE, context, PACKET_DIRECTION_INVALID,
-						   NULL, NULL, NULL, 0, message);
+	message_logger_log_full(function_name, bt_address, 0,
+		MESSAGE_TYPE_MESSAGE, context, PACKET_DIRECTION_INVALID,
+		NULL, NULL, NULL, 0, buf, 0, 0);
 }
 
 void
 message_logger_log_packet(const char *function_name,
-                          DWORD return_address,
+                          void *bt_address,
                           DWORD resource_id,
                           PacketDirection direction,
                           const sockaddr_in *local_addr,
@@ -167,54 +159,25 @@ message_logger_log_packet(const char *function_name,
                           const char *buf,
                           int len)
 {
-    message_logger_log(function_name, return_address, resource_id,
+    message_logger_log(function_name, bt_address, resource_id,
                        MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, direction,
                        local_addr, peer_addr, buf, len, NULL);
 }
 
 void
-message_logger_log(const char *function_name,
-                   DWORD return_address,
-                   DWORD resource_id,
-                   MessageType msg_type,
-                   MessageContext context,
-                   PacketDirection direction,
-                   const sockaddr_in *local_addr,
-                   const sockaddr_in *peer_addr,
-                   const char *buf,
-                   int len,
-                   const char *message,
-                   ...)
-{
-    va_list args;
-	char tmp[256];
-	const char *expanded_msg = message;
-
-    /* fill in the message content */
-    if (message != NULL)
-    {
-		va_start(args, message);
-        StringCbVPrintfA(tmp, sizeof(tmp), message, args);
-		expanded_msg = tmp;
-    }
-
-	message_logger_log_raw(function_name, return_address, resource_id, msg_type,
-						   context, direction, local_addr, peer_addr, buf, len,
-						   expanded_msg);
-}
-
-void
-message_logger_log_raw(const char *function_name,
-					   DWORD return_address,
-					   DWORD resource_id,
-					   MessageType msg_type,
-					   MessageContext context,
-					   PacketDirection direction,
-					   const sockaddr_in *local_addr,
-					   const sockaddr_in *peer_addr,
-					   const char *buf,
-					   int len,
-					   const char *message)
+message_logger_log_full(const char *function_name,
+						void *bt_address,
+						DWORD resource_id,
+						MessageType msg_type,
+						MessageContext context,
+						PacketDirection direction,
+						const sockaddr_in *local_addr,
+						const sockaddr_in *peer_addr,
+						const char *buf,
+						int len,
+						const char *message,
+					    DWORD domain,
+					    DWORD severity)
 {
     MessageQueueElement el;
     int read_len;
@@ -222,7 +185,10 @@ message_logger_log_raw(const char *function_name,
     memset(&el, 0, sizeof(MessageQueueElement));
 
     /* fill in basic fields */
-    message_element_init(&el, function_name, return_address, resource_id, msg_type);
+    message_element_init(&el, function_name, bt_address, resource_id, msg_type);
+
+	el.domain = domain;
+	el.severity = severity;
 
     /* context */
     el.context = context;
@@ -273,13 +239,44 @@ message_logger_log_raw(const char *function_name,
     message_queue_add(&el);
 }
 
+void
+message_logger_log(const char *function_name,
+                   void *bt_address,
+                   DWORD resource_id,
+                   MessageType msg_type,
+                   MessageContext context,
+                   PacketDirection direction,
+                   const sockaddr_in *local_addr,
+                   const sockaddr_in *peer_addr,
+                   const char *buf,
+                   int len,
+                   const char *message,
+				   ...)
+{
+    va_list args;
+    char msg_buf[LOG_BUFFER_SIZE];
+
+	if (message != NULL)
+	{
+		va_start(args, message);
+		StringCbVPrintfA(msg_buf, sizeof(msg_buf), message, args);
+
+		message = msg_buf;
+	}
+
+	message_logger_log_full(function_name, bt_address, resource_id,
+		msg_type, context, direction, local_addr, peer_addr, buf, len,
+		message, 0, 0);
+}
+
+
 /****************************************************************************
  * Logging utility functions                                                *
  ****************************************************************************/
 
 void
 log_tcp_listening(const char *function_name,
-                  DWORD return_address,
+                  void *bt_address,
                   SOCKET server_socket)
 {
 	struct sockaddr_in sin;
@@ -289,7 +286,7 @@ log_tcp_listening(const char *function_name,
     sin_len = sizeof(sin);
     getsockname(server_socket, (struct sockaddr *) &sin, &sin_len);
 
-    message_logger_log(function_name, return_address, server_socket,
+    message_logger_log(function_name, bt_address, server_socket,
                        MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_SOCKET_LISTENING,
                        PACKET_DIRECTION_INCOMING, &sin, NULL, NULL, 0,
                        "%s:%d: listening for connections",
@@ -298,7 +295,7 @@ log_tcp_listening(const char *function_name,
 
 void
 log_tcp_connecting(const char *function_name,
-                   DWORD return_address,
+                   void *bt_address,
                    SOCKET socket,
                    const struct sockaddr *name)
 {
@@ -314,7 +311,7 @@ log_tcp_connecting(const char *function_name,
     strcpy(local_addr_str, inet_ntoa(sin.sin_addr));
     strcpy(peer_addr_str, inet_ntoa(peer_addr->sin_addr));
 
-    message_logger_log(function_name, return_address, socket,
+    message_logger_log(function_name, bt_address, socket,
                        MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_SOCKET_CONNECTING,
                        PACKET_DIRECTION_OUTGOING, &sin, peer_addr, NULL, 0,
                        "%s:%d: connecting to %s:%d",
@@ -324,7 +321,7 @@ log_tcp_connecting(const char *function_name,
 
 void
 log_tcp_connected(const char *function_name,
-                  DWORD return_address,
+                  void *bt_address,
                   SOCKET socket,
                   const struct sockaddr *name)
 {
@@ -340,7 +337,7 @@ log_tcp_connected(const char *function_name,
     strcpy(local_addr_str, inet_ntoa(sin.sin_addr));
     strcpy(peer_addr_str, inet_ntoa(peer_addr->sin_addr));
 
-    message_logger_log(function_name, return_address, socket,
+    message_logger_log(function_name, bt_address, socket,
                        MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_SOCKET_CONNECTED,
                        PACKET_DIRECTION_OUTGOING, &sin, peer_addr, NULL, 0,
                        "%s:%d: connected to %s:%d",
@@ -350,7 +347,7 @@ log_tcp_connected(const char *function_name,
 
 void
 log_tcp_client_connected(const char *function_name,
-                         DWORD return_address,
+                         void *bt_address,
                          SOCKET server_socket,
                          SOCKET client_socket)
 {
@@ -371,7 +368,7 @@ log_tcp_client_connected(const char *function_name,
     getpeername(client_socket, (struct sockaddr *) &sin_peer, &sin_len);
     strcpy(peer_addr_str, inet_ntoa(sin_peer.sin_addr));
 
-    message_logger_log(function_name, return_address, client_socket,
+    message_logger_log(function_name, bt_address, client_socket,
                        MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_SOCKET_CONNECTED,
                        PACKET_DIRECTION_INCOMING, &sin_local, &sin_peer, NULL,
                        0, "%s:%d: client connected from %s:%d",
@@ -381,7 +378,7 @@ log_tcp_client_connected(const char *function_name,
 
 void
 log_tcp_disconnected(const char *function_name,
-                     DWORD return_address,
+                     void *bt_address,
                      SOCKET s,
                      DWORD *last_error)
 {
@@ -399,7 +396,7 @@ log_tcp_disconnected(const char *function_name,
     getpeername(s, (struct sockaddr *) &sin_peer, &sin_len);
     strcpy(peer_addr_str, inet_ntoa(sin_peer.sin_addr));
 
-    message_logger_log(function_name, return_address, s, MESSAGE_TYPE_MESSAGE,
+    message_logger_log(function_name, bt_address, s, MESSAGE_TYPE_MESSAGE,
                        (last_error == NULL) ? MESSAGE_CTX_SOCKET_DISCONNECTED : MESSAGE_CTX_SOCKET_RESET,
                        PACKET_DIRECTION_INVALID, &sin_local, &sin_peer, (const char *) last_error,
                        (last_error == NULL) ? 0 : 4, "%s:%d: connection to %s:%d %s",
@@ -410,7 +407,7 @@ log_tcp_disconnected(const char *function_name,
 
 void
 log_tcp_packet(const char *function_name,
-               DWORD return_address,
+               void *bt_address,
                PacketDirection direction,
                SOCKET s, const char *buf,
                int len)
@@ -424,13 +421,13 @@ log_tcp_packet(const char *function_name,
     sin_len = sizeof(peer_addr);
     getpeername(s, (struct sockaddr *) &peer_addr, &sin_len);
 
-    message_logger_log_packet(function_name, return_address, s, direction,
+    message_logger_log_packet(function_name, bt_address, s, direction,
                               &local_addr, &peer_addr, buf, len);
 }
 
 void
 log_udp_packet(const char *function_name,
-               DWORD return_address,
+               void *bt_address,
                PacketDirection direction,
                SOCKET s,
                const struct sockaddr *peer,
@@ -453,15 +450,17 @@ log_udp_packet(const char *function_name,
         peer_addr = *((const struct sockaddr_in *) peer);
     }
 
-    message_logger_log_packet(function_name, return_address, s, direction,
-                            &local_addr, &peer_addr, buf, len);
+    message_logger_log_packet(function_name, bt_address, s, direction,
+                              &local_addr, &peer_addr, buf, len);
 }
 
 void
 log_debug_w(const char *source,
-            DWORD ret_addr,
+            void *bt_address,
             const LPWSTR format,
-            va_list args)
+            va_list args,
+			DWORD domain,
+			DWORD severity)
 {
     WCHAR wide_buf[LOG_BUFFER_SIZE];
     char buf[LOG_BUFFER_SIZE];
@@ -470,18 +469,24 @@ log_debug_w(const char *source,
 
     WideCharToMultiByte(CP_ACP, 0, wide_buf, -1, buf, sizeof(buf), NULL, NULL);
 
-    message_logger_log_message_raw(source, ret_addr, MESSAGE_CTX_INFO, buf);
+	message_logger_log_full(source, bt_address, 0, MESSAGE_TYPE_MESSAGE,
+		MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL, NULL, 0, buf,
+		domain, severity);
 }
 
 void
 log_debug(const char *source,
-          DWORD ret_addr,
+          void *bt_address,
           const char *format,
-          va_list args)
+          va_list args,
+		  DWORD domain,
+		  DWORD severity)
 {
     char buf[LOG_BUFFER_SIZE];
 
     StringCbVPrintfA(buf, sizeof(buf), format, args);
 
-    message_logger_log_message_raw(source, ret_addr, MESSAGE_CTX_INFO, buf);
+	message_logger_log_full(source, bt_address, 0, MESSAGE_TYPE_MESSAGE,
+		MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL, NULL, 0, buf,
+		domain, severity);
 }
