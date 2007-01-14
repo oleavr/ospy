@@ -29,9 +29,9 @@ namespace oSpy
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.dataSet = new System.Data.DataSet();
             this.messageTbl = new System.Data.DataTable();
             this.indexCol = new System.Data.DataColumn();
@@ -103,19 +103,6 @@ namespace oSpy
             this.autoHighlightMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer = new System.Windows.Forms.SplitContainer();
             this.dataGridView = new System.Windows.Forms.DataGridView();
-            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.richTextBox = new System.Windows.Forms.RichTextBox();
-            this.propertyGrid = new System.Windows.Forms.PropertyGrid();
-            this.toolStrip1 = new System.Windows.Forms.ToolStrip();
-            this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
-            this.filterComboBox = new System.Windows.Forms.ToolStripComboBox();
-            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
-            this.toolStripLabel2 = new System.Windows.Forms.ToolStripLabel();
-            this.findTypeComboBox = new System.Windows.Forms.ToolStripComboBox();
-            this.findComboBox = new System.Windows.Forms.ToolStripComboBox();
-            this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-            this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
             this.indexDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.typeDataGridViewImageColumn = new System.Windows.Forms.DataGridViewImageColumn();
             this.timestampDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -143,6 +130,22 @@ namespace oSpy
             this.descriptionDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Comment = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.bgColorDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.richTextBox = new System.Windows.Forms.RichTextBox();
+            this.propertyGrid = new System.Windows.Forms.PropertyGrid();
+            this.toolStrip1 = new System.Windows.Forms.ToolStrip();
+            this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
+            this.filterComboBox = new System.Windows.Forms.ToolStripComboBox();
+            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripLabel2 = new System.Windows.Forms.ToolStripLabel();
+            this.findTypeComboBox = new System.Windows.Forms.ToolStripComboBox();
+            this.findComboBox = new System.Windows.Forms.ToolStripComboBox();
+            this.statusStrip1 = new System.Windows.Forms.StatusStrip();
+            this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
+            this.domainCol = new System.Data.DataColumn();
+            this.severityCol = new System.Data.DataColumn();
+            this.backtraceCol = new System.Data.DataColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).BeginInit();
             this.menuStrip.SuspendLayout();
@@ -177,11 +180,14 @@ namespace oSpy
             this.processIdCol,
             this.threadIdCol,
             this.functionNameCol,
+            this.backtraceCol,
             this.returnAddressCol,
             this.callerModuleNameCol,
             this.resourceIdCol,
             this.msgTypeCol,
             this.contextCol,
+            this.domainCol,
+            this.severityCol,
             this.messageCol,
             this.directionCol,
             this.localAddressCol,
@@ -735,143 +741,6 @@ namespace oSpy
             this.dataGridView.SelectionChanged += new System.EventHandler(this.dataGridView_SelectionChanged);
             this.dataGridView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.dataGridView_MouseDoubleClick);
             // 
-            // splitContainer1
-            // 
-            this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
-            this.splitContainer1.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer1.Name = "splitContainer1";
-            // 
-            // splitContainer1.Panel1
-            // 
-            this.splitContainer1.Panel1.Controls.Add(this.richTextBox);
-            // 
-            // splitContainer1.Panel2
-            // 
-            this.splitContainer1.Panel2.Controls.Add(this.propertyGrid);
-            this.splitContainer1.Size = new System.Drawing.Size(828, 273);
-            this.splitContainer1.SplitterDistance = 623;
-            this.splitContainer1.TabIndex = 0;
-            // 
-            // richTextBox
-            // 
-            this.richTextBox.BackColor = System.Drawing.Color.Gray;
-            this.richTextBox.ContextMenuStrip = this.dumpContextMenuStrip;
-            this.richTextBox.Cursor = System.Windows.Forms.Cursors.Arrow;
-            this.richTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.richTextBox.Font = new System.Drawing.Font("Lucida Console", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.richTextBox.ForeColor = System.Drawing.Color.Black;
-            this.richTextBox.Location = new System.Drawing.Point(0, 0);
-            this.richTextBox.Name = "richTextBox";
-            this.richTextBox.ReadOnly = true;
-            this.richTextBox.Size = new System.Drawing.Size(623, 273);
-            this.richTextBox.TabIndex = 0;
-            this.richTextBox.Text = "";
-            this.richTextBox.WordWrap = false;
-            // 
-            // propertyGrid
-            // 
-            this.propertyGrid.BackColor = System.Drawing.SystemColors.Control;
-            this.propertyGrid.CommandsBackColor = System.Drawing.SystemColors.Control;
-            this.propertyGrid.ContextMenuStrip = this.propertyGridContextMenuStrip;
-            this.propertyGrid.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.propertyGrid.Location = new System.Drawing.Point(0, 0);
-            this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.PropertySort = System.Windows.Forms.PropertySort.Categorized;
-            this.propertyGrid.Size = new System.Drawing.Size(201, 273);
-            this.propertyGrid.TabIndex = 2;
-            this.propertyGrid.ToolbarVisible = false;
-            this.propertyGrid.SelectedGridItemChanged += new System.Windows.Forms.SelectedGridItemChangedEventHandler(this.propertyGrid_SelectedGridItemChanged);
-            // 
-            // toolStrip1
-            // 
-            this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripLabel1,
-            this.filterComboBox,
-            this.toolStripSeparator3,
-            this.toolStripLabel2,
-            this.findTypeComboBox,
-            this.findComboBox});
-            this.toolStrip1.Location = new System.Drawing.Point(0, 24);
-            this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(828, 25);
-            this.toolStrip1.TabIndex = 9;
-            this.toolStrip1.Text = "toolStrip1";
-            // 
-            // toolStripLabel1
-            // 
-            this.toolStripLabel1.Name = "toolStripLabel1";
-            this.toolStripLabel1.Size = new System.Drawing.Size(35, 22);
-            this.toolStripLabel1.Text = "Filter:";
-            // 
-            // filterComboBox
-            // 
-            this.filterComboBox.Items.AddRange(new object[] {
-            "(NOT FunctionName = \'RAPIStubDebug\') AND (NOT FunctionName = \'RAPIMgrDebug\')",
-            resources.GetString("filterComboBox.Items"),
-            "LocalPort = 990",
-            "LocalPort = 999",
-            "LocalPort = 5678",
-            "LocalPort = 26675",
-            "LocalPort = 990 OR LocalPort = 999 OR LocalPort = 5678 OR LocalPort = 26675",
-            "PeerAddress = \'10.0.0.15\'"});
-            this.filterComboBox.Name = "filterComboBox";
-            this.filterComboBox.Size = new System.Drawing.Size(300, 25);
-            this.filterComboBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.filterComboBox_KeyDown);
-            this.filterComboBox.SelectedIndexChanged += new System.EventHandler(this.filterComboBox_SelectedIndexChanged);
-            // 
-            // toolStripSeparator3
-            // 
-            this.toolStripSeparator3.Name = "toolStripSeparator3";
-            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 25);
-            // 
-            // toolStripLabel2
-            // 
-            this.toolStripLabel2.Name = "toolStripLabel2";
-            this.toolStripLabel2.Size = new System.Drawing.Size(31, 22);
-            this.toolStripLabel2.Text = "Find:";
-            // 
-            // findTypeComboBox
-            // 
-            this.findTypeComboBox.AutoSize = false;
-            this.findTypeComboBox.Items.AddRange(new object[] {
-            "ASCII string",
-            "ASCII string, case-insensitive",
-            "UTF16 LE string",
-            "UTF16 LE string, case-insensitive",
-            "HEX byte sequence"});
-            this.findTypeComboBox.Name = "findTypeComboBox";
-            this.findTypeComboBox.Size = new System.Drawing.Size(180, 21);
-            this.findTypeComboBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.findTypeComboBox_KeyDown);
-            // 
-            // findComboBox
-            // 
-            this.findComboBox.AutoSize = false;
-            this.findComboBox.Name = "findComboBox";
-            this.findComboBox.Size = new System.Drawing.Size(200, 21);
-            this.findComboBox.Leave += new System.EventHandler(this.findComboBox_Leave);
-            this.findComboBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.findComboBox_KeyDown);
-            // 
-            // statusStrip1
-            // 
-            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.statusBarLabel});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 563);
-            this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(828, 22);
-            this.statusStrip1.TabIndex = 10;
-            this.statusStrip1.Text = "statusStrip1";
-            // 
-            // statusBarLabel
-            // 
-            this.statusBarLabel.Name = "statusBarLabel";
-            this.statusBarLabel.Size = new System.Drawing.Size(0, 17);
-            // 
-            // dumpSaveFileDialog
-            // 
-            this.dumpSaveFileDialog.DefaultExt = "bin";
-            this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
-            // 
             // indexDataGridViewTextBoxColumn
             // 
             this.indexDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.ColumnHeader;
@@ -1091,6 +960,157 @@ namespace oSpy
             this.bgColorDataGridViewTextBoxColumn.ReadOnly = true;
             this.bgColorDataGridViewTextBoxColumn.Visible = false;
             // 
+            // splitContainer1
+            // 
+            this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
+            this.splitContainer1.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer1.Name = "splitContainer1";
+            // 
+            // splitContainer1.Panel1
+            // 
+            this.splitContainer1.Panel1.Controls.Add(this.richTextBox);
+            // 
+            // splitContainer1.Panel2
+            // 
+            this.splitContainer1.Panel2.Controls.Add(this.propertyGrid);
+            this.splitContainer1.Size = new System.Drawing.Size(828, 273);
+            this.splitContainer1.SplitterDistance = 623;
+            this.splitContainer1.TabIndex = 0;
+            // 
+            // richTextBox
+            // 
+            this.richTextBox.BackColor = System.Drawing.Color.Gray;
+            this.richTextBox.ContextMenuStrip = this.dumpContextMenuStrip;
+            this.richTextBox.Cursor = System.Windows.Forms.Cursors.Arrow;
+            this.richTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.richTextBox.Font = new System.Drawing.Font("Lucida Console", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.richTextBox.ForeColor = System.Drawing.Color.Black;
+            this.richTextBox.Location = new System.Drawing.Point(0, 0);
+            this.richTextBox.Name = "richTextBox";
+            this.richTextBox.ReadOnly = true;
+            this.richTextBox.Size = new System.Drawing.Size(623, 273);
+            this.richTextBox.TabIndex = 0;
+            this.richTextBox.Text = "";
+            this.richTextBox.WordWrap = false;
+            // 
+            // propertyGrid
+            // 
+            this.propertyGrid.BackColor = System.Drawing.SystemColors.Control;
+            this.propertyGrid.CommandsBackColor = System.Drawing.SystemColors.Control;
+            this.propertyGrid.ContextMenuStrip = this.propertyGridContextMenuStrip;
+            this.propertyGrid.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.propertyGrid.Location = new System.Drawing.Point(0, 0);
+            this.propertyGrid.Name = "propertyGrid";
+            this.propertyGrid.PropertySort = System.Windows.Forms.PropertySort.Categorized;
+            this.propertyGrid.Size = new System.Drawing.Size(201, 273);
+            this.propertyGrid.TabIndex = 2;
+            this.propertyGrid.ToolbarVisible = false;
+            this.propertyGrid.SelectedGridItemChanged += new System.Windows.Forms.SelectedGridItemChangedEventHandler(this.propertyGrid_SelectedGridItemChanged);
+            // 
+            // toolStrip1
+            // 
+            this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripLabel1,
+            this.filterComboBox,
+            this.toolStripSeparator3,
+            this.toolStripLabel2,
+            this.findTypeComboBox,
+            this.findComboBox});
+            this.toolStrip1.Location = new System.Drawing.Point(0, 24);
+            this.toolStrip1.Name = "toolStrip1";
+            this.toolStrip1.Size = new System.Drawing.Size(828, 25);
+            this.toolStrip1.TabIndex = 9;
+            this.toolStrip1.Text = "toolStrip1";
+            // 
+            // toolStripLabel1
+            // 
+            this.toolStripLabel1.Name = "toolStripLabel1";
+            this.toolStripLabel1.Size = new System.Drawing.Size(35, 22);
+            this.toolStripLabel1.Text = "Filter:";
+            // 
+            // filterComboBox
+            // 
+            this.filterComboBox.Items.AddRange(new object[] {
+            "(NOT FunctionName = \'RAPIStubDebug\') AND (NOT FunctionName = \'RAPIMgrDebug\')",
+            resources.GetString("filterComboBox.Items"),
+            "LocalPort = 990",
+            "LocalPort = 999",
+            "LocalPort = 5678",
+            "LocalPort = 26675",
+            "LocalPort = 990 OR LocalPort = 999 OR LocalPort = 5678 OR LocalPort = 26675",
+            "PeerAddress = \'10.0.0.15\'"});
+            this.filterComboBox.Name = "filterComboBox";
+            this.filterComboBox.Size = new System.Drawing.Size(300, 25);
+            this.filterComboBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.filterComboBox_KeyDown);
+            this.filterComboBox.SelectedIndexChanged += new System.EventHandler(this.filterComboBox_SelectedIndexChanged);
+            // 
+            // toolStripSeparator3
+            // 
+            this.toolStripSeparator3.Name = "toolStripSeparator3";
+            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 25);
+            // 
+            // toolStripLabel2
+            // 
+            this.toolStripLabel2.Name = "toolStripLabel2";
+            this.toolStripLabel2.Size = new System.Drawing.Size(31, 22);
+            this.toolStripLabel2.Text = "Find:";
+            // 
+            // findTypeComboBox
+            // 
+            this.findTypeComboBox.AutoSize = false;
+            this.findTypeComboBox.Items.AddRange(new object[] {
+            "ASCII string",
+            "ASCII string, case-insensitive",
+            "UTF16 LE string",
+            "UTF16 LE string, case-insensitive",
+            "HEX byte sequence"});
+            this.findTypeComboBox.Name = "findTypeComboBox";
+            this.findTypeComboBox.Size = new System.Drawing.Size(180, 21);
+            this.findTypeComboBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.findTypeComboBox_KeyDown);
+            // 
+            // findComboBox
+            // 
+            this.findComboBox.AutoSize = false;
+            this.findComboBox.Name = "findComboBox";
+            this.findComboBox.Size = new System.Drawing.Size(200, 21);
+            this.findComboBox.Leave += new System.EventHandler(this.findComboBox_Leave);
+            this.findComboBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.findComboBox_KeyDown);
+            // 
+            // statusStrip1
+            // 
+            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.statusBarLabel});
+            this.statusStrip1.Location = new System.Drawing.Point(0, 563);
+            this.statusStrip1.Name = "statusStrip1";
+            this.statusStrip1.Size = new System.Drawing.Size(828, 22);
+            this.statusStrip1.TabIndex = 10;
+            this.statusStrip1.Text = "statusStrip1";
+            // 
+            // statusBarLabel
+            // 
+            this.statusBarLabel.Name = "statusBarLabel";
+            this.statusBarLabel.Size = new System.Drawing.Size(0, 17);
+            // 
+            // dumpSaveFileDialog
+            // 
+            this.dumpSaveFileDialog.DefaultExt = "bin";
+            this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
+            // 
+            // domainCol
+            // 
+            this.domainCol.ColumnName = "Domain";
+            this.domainCol.DataType = typeof(uint);
+            // 
+            // severityCol
+            // 
+            this.severityCol.ColumnName = "Severity";
+            this.severityCol.DataType = typeof(uint);
+            // 
+            // backtraceCol
+            // 
+            this.backtraceCol.ColumnName = "Backtrace";
+            // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(828, 585);
@@ -1239,6 +1259,9 @@ namespace oSpy
         private System.Windows.Forms.DataGridViewTextBoxColumn descriptionDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn Comment;
         private System.Windows.Forms.DataGridViewTextBoxColumn bgColorDataGridViewTextBoxColumn;
+        private System.Data.DataColumn domainCol;
+        private System.Data.DataColumn severityCol;
+        private System.Data.DataColumn backtraceCol;
     }
 }
 

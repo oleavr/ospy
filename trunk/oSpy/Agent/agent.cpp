@@ -19,6 +19,7 @@
 #include "stdafx.h"
 #include "logging.h"
 #include "hooks.h"
+#include "util.h"
 
 #ifdef _MANAGED
 #pragma managed(push, off)
@@ -70,6 +71,8 @@ DllMain(HMODULE hModule,
 		{
 			// Initialize SHM logger
 			message_logger_init();
+
+			CUtil::Init();
 
 			hook_winsock();
 			hook_secur32();

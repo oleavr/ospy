@@ -116,24 +116,25 @@ idcrl_debug(void *obj,
         (message != NULL) ? message : L"");
 
     va_start(args, message);
-    log_debug_w("MSNIDCRL", ret_addr, buf, args);
+    log_debug_w("MSNIDCRL", (char *) &obj - 4, buf, args);
 
     sspy_free(buf);
 }
 
 static void __stdcall
-msnmsgr_debug(int foo, int bar,
+msnmsgr_debug(DWORD domain,
+			  DWORD severity,
 			  LPWSTR fmt_str,
 			  va_list args)
 {
-    DWORD ret_addr = *((DWORD *) ((DWORD) &foo - 4));
+    DWORD ret_addr = *((DWORD *) ((DWORD) &domain - 4));
 	WCHAR bad_str[] = L"	spServiceOut = 0x%p {%ls, ls%}";
 	WCHAR good_str[] = L"	spServiceOut = 0x%p {%ls, %ls}";
 
 	if (memcmp(fmt_str, bad_str, sizeof(bad_str)) == 0)
 		fmt_str = good_str;
 
-	log_debug_w("MsnmsgrDebug", ret_addr, fmt_str, args);
+	log_debug_w("MsnmsgrDebug", (char *) &domain - 4, fmt_str, args, domain, severity);
 }
 
 #define LOG_OVERRIDE_ERROR(e) \

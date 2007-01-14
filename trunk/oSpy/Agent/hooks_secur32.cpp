@@ -24,6 +24,8 @@
 
 static ContextTracker<PCtxtHandle> tracker;
 
+#define ENCRYPT_MESSAGE_ARGS_SIZE (4 * 4)
+
 static SECURITY_STATUS __cdecl
 DeleteSecurityContext_called(BOOL carry_on,
                              DWORD ret_addr,
@@ -56,7 +58,9 @@ EncryptMessage_called(BOOL carry_on,
 
         if (buffer->BufferType == SECBUFFER_DATA)
         {
-            message_logger_log_packet("EncryptMessage", ret_addr,
+			void *bt_address = (char *) &carry_on + 8 + ENCRYPT_MESSAGE_ARGS_SIZE;
+
+            message_logger_log_packet("EncryptMessage", bt_address,
                                       tracker.GetContextID(phContext),
                                       PACKET_DIRECTION_OUTGOING, NULL, NULL,
                                       (const char *) buffer->pvBuffer,
@@ -105,7 +109,7 @@ DecryptMessage_done(SECURITY_STATUS retval,
 
         if (buffer->BufferType == SECBUFFER_DATA)
         {
-            message_logger_log_packet("DecryptMessage", ret_addr,
+            message_logger_log_packet("DecryptMessage", (char *) &retval - 4,
                                       tracker.GetContextID(phContext),
                                       PACKET_DIRECTION_INCOMING, NULL, NULL,
                                       (const char *) buffer->pvBuffer,
@@ -119,7 +123,7 @@ DecryptMessage_done(SECURITY_STATUS retval,
 
 HOOK_GLUE_INTERRUPTIBLE(DeleteSecurityContext, (1 * 4))
 
-HOOK_GLUE_INTERRUPTIBLE(EncryptMessage, (4 * 4))
+HOOK_GLUE_INTERRUPTIBLE(EncryptMessage, ENCRYPT_MESSAGE_ARGS_SIZE)
 HOOK_GLUE_INTERRUPTIBLE(DecryptMessage, (4 * 4))
 
 void

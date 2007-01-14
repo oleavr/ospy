@@ -18,6 +18,8 @@
 
 #include "stdafx.h"
 #include "logging.h"
+#include "hooking.h"
+#include "util.h"
 #include <psapi.h>
 
 static bool initialized = FALSE;
@@ -190,42 +192,254 @@ ospy_rand()
     return 1 + rand();
 }
 
-#if 0
-
-static bool filter_google_relay(const char *function_name,
-                                DWORD ret_addr,
-                                const struct sockaddr *dest_addr,
-                                int *retval)
+static HMODULE __cdecl
+LoadLibraryA_called(BOOL carry_on,
+                    DWORD ret_addr,
+                    LPCSTR lpFileName)
 {
-  const struct sockaddr_in *sin = (const struct sockaddr_in *) dest_addr;
-  const char *addr_str = inet_ntoa(sin->sin_addr);
-  int port = ntohs(sin->sin_port);
-
-  if (ret_addr == 0x47eb7f || ret_addr == 0x47eacd)
-  {
-    message_logger_log_message(function_name, ret_addr, MESSAGE_CTX_WARNING,
-                               "rejecting GTalk UDP candidate traffic with %s",
-                               addr_str);
-
-    SetLastError(WSAEHOSTUNREACH);
-    *retval = SOCKET_ERROR;
-
-    return true;
-  }
-
-  return false;
+    return 0;
 }
 
-/*
+static HMODULE __stdcall
+LoadLibraryA_done(HMODULE retval,
+                  LPCSTR lpFileName)
+{
+    DWORD err = GetLastError();
 
-  if (port != 5222
-      &&
-      (
-         (strcmp(addr_str, "64.233.167.126") == 0 ||
-          strcmp(addr_str, "216.239.37.125") == 0 ||
-          strcmp(addr_str, "216.239.37.126") == 0)
-       ||
-      ))
-*/
+	CUtil::UpdateModuleList();
 
-#endif
+    SetLastError(err);
+    return retval;
+}
+
+static HMODULE __cdecl
+LoadLibraryW_called(BOOL carry_on,
+                    DWORD ret_addr,
+                    LPCWSTR lpFileName)
+{
+    return 0;
+}
+
+static HMODULE __stdcall
+LoadLibraryW_done(HMODULE retval,
+                  LPCWSTR lpFileName)
+{
+    DWORD err = GetLastError();
+
+	CUtil::UpdateModuleList();
+
+    SetLastError(err);
+    return retval;
+}
+
+HOOK_GLUE_INTERRUPTIBLE(LoadLibraryA, (1 * 4))
+HOOK_GLUE_INTERRUPTIBLE(LoadLibraryW, (1 * 4))
+
+CRITICAL_SECTION CUtil::m_cs = { 0, };
+OString CUtil::m_processName = "";
+OMap<OICString, OModuleInfo>::Type CUtil::m_modules;
+DWORD CUtil::m_lowestAddress = 0xFFFFFFFF;
+DWORD CUtil::m_highestAddress = 0;
+
+void
+CUtil::Init()
+{
+	InitializeCriticalSection(&m_cs);
+
+	char buf[_MAX_PATH];
+	if (GetModuleBaseNameA(NULL, NULL, buf, sizeof(buf)) > 0)
+	{
+		m_processName = buf;
+	}
+
+	HMODULE h = LoadLibrary("kernel32.dll");
+    if (h != NULL)
+	{
+		HOOK_FUNCTION(h, LoadLibraryA);
+		HOOK_FUNCTION(h, LoadLibraryW);
+	}
+
+	UpdateModuleList();
+}
+
+void
+CUtil::UpdateModuleList()
+{
+	EnterCriticalSection(&m_cs);
+
+	m_lowestAddress = 0xFFFFFFFF;
+	m_highestAddress = 0;
+
+	m_modules.clear();
+
+    HANDLE process = GetCurrentProcess();
+
+    HMODULE modules[256];
+    DWORD bytes_needed;
+
+    if (EnumProcessModules(process, (HMODULE *) &modules,
+                           sizeof(modules), &bytes_needed) == 0)
+    {
+        goto DONE;
+    }
+
+    if (bytes_needed > sizeof(modules))
+        bytes_needed = sizeof(modules);
+
+    for (unsigned int i = 0; i < bytes_needed / sizeof(HMODULE); i++)
+    {
+		char buf[128];
+
+		if (GetModuleBaseNameA(process, modules[i], buf, sizeof(buf)) != 0)
+		{
+			MODULEINFO mi;
+			if (GetModuleInformation(process, modules[i], &mi, sizeof(mi)) != 0)
+			{
+				OModuleInfo modInfo;
+				modInfo.name = buf;
+
+				IMAGE_DOS_HEADER *dosHeader = (IMAGE_DOS_HEADER *) modules[i];
+				IMAGE_NT_HEADERS *peHeader = (IMAGE_NT_HEADERS *) ((char *) modules[i] + dosHeader->e_lfanew);
+
+				modInfo.preferredStartAddress = peHeader->OptionalHeader.ImageBase;
+				modInfo.startAddress = (DWORD) mi.lpBaseOfDll;
+				modInfo.endAddress = (DWORD) mi.lpBaseOfDll + mi.SizeOfImage - 1;
+				m_modules[buf] = modInfo;
+
+				if (modInfo.startAddress < m_lowestAddress)
+					m_lowestAddress = modInfo.startAddress;
+				if (modInfo.endAddress > m_highestAddress)
+					m_highestAddress = modInfo.endAddress;
+			}
+		}
+    }
+
+DONE:
+	LeaveCriticalSection(&m_cs);
+}
+
+OString
+CUtil::GetModuleNameForAddress(DWORD address)
+{
+	OString result = "";
+
+	EnterCriticalSection(&m_cs);
+
+	OModuleInfo *mi = CUtil::GetModuleInfoForAddress(address);
+	if (mi != NULL)
+		result = mi->name.c_str();
+
+DONE:
+	LeaveCriticalSection(&m_cs);
+
+	return result;
+}
+
+OVector<OModuleInfo>::Type
+CUtil::GetAllModules()
+{
+	OVector<OModuleInfo>::Type ret;
+
+	EnterCriticalSection(&m_cs);
+
+	OMap<OICString, OModuleInfo>::Type::iterator it;
+	for (it = m_modules.begin(); it != m_modules.end(); it++)
+	{
+		ret.push_back((*it).second);
+	}
+
+	LeaveCriticalSection(&m_cs);
+
+	return ret;
+}
+
+bool
+CUtil::AddressIsWithinExecutableModule(DWORD address)
+{
+	bool result;
+
+	EnterCriticalSection(&m_cs);
+
+	result = (address >= m_lowestAddress && address <= m_highestAddress);
+
+	LeaveCriticalSection(&m_cs);
+
+	return result;
+}
+
+#define OPCODE_CALL_NEAR_RELATIVE     0xE8
+#define OPCODE_CALL_NEAR_ABS_INDIRECT 0xFF
+
+OString
+CUtil::CreateBackTrace(void *address)
+{
+	OStringStream s;
+	int count = 0;
+	DWORD *p = (DWORD *) address;
+
+	EnterCriticalSection(&m_cs);
+
+	for (; count < 8 && (char *) p < (char *) address + 16384; p++)
+	{
+		if (IsBadReadPtr(p, 4))
+			break;
+
+		DWORD value = *p;
+
+		if (value >= m_lowestAddress && value <= m_highestAddress)
+		{
+			bool isRetAddr = false;
+			unsigned char *codeAddr = (unsigned char *) value;
+			unsigned char *p1 = codeAddr - 5;
+			unsigned char *p2 = codeAddr - 6;
+
+			// FIXME: add the other CALL variations
+			if ((!IsBadCodePtr((FARPROC) p1) && *p1 == OPCODE_CALL_NEAR_RELATIVE) ||
+				(!IsBadCodePtr((FARPROC) p2) && *p2 == OPCODE_CALL_NEAR_ABS_INDIRECT))
+			{
+				isRetAddr = true;
+			}
+
+			if (isRetAddr)
+			{
+				OModuleInfo *mi = GetModuleInfoForAddress(value);
+
+				if (mi != NULL)
+				{
+					if (mi->name == "oSpyAgent.dll")
+						break;
+
+					DWORD canonicalAddress = mi->preferredStartAddress + (value - mi->startAddress);
+
+					if (count > 0)
+						s << "\n";
+
+					s << mi->name.c_str() << "::0x" << hex << canonicalAddress;
+
+					count++;
+				}
+			}
+		}
+	}
+
+	LeaveCriticalSection(&m_cs);
+
+	return s.str();
+}
+
+OModuleInfo *
+CUtil::GetModuleInfoForAddress(DWORD address)
+{
+	OMap<OICString, OModuleInfo>::Type::iterator it;
+	for (it = m_modules.begin(); it != m_modules.end(); it++)
+	{
+		OModuleInfo &mi = (*it).second;
+
+		if (address >= mi.startAddress && address <= mi.endAddress)
+		{
+			return &mi;
+		}
+	}
+
+	return NULL;
+}

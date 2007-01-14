@@ -67,6 +67,7 @@ namespace oSpy
         public const int MAX_ELEMENTS = 2048;
         public const int PACKET_BUFSIZE = 65536;
         public const int MAX_SOFTWALL_RULES = 128;
+        public const int BACKTRACE_BUFSIZE = 384;
 
         public const int ERROR_ALREADY_EXISTS = 183;
 
@@ -96,9 +97,8 @@ namespace oSpy
 
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
             public string function_name;
-            public UInt32 return_address;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-            public string caller_module_name;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = AgentListener.BACKTRACE_BUFSIZE)]
+            public string backtrace;
 
             public UInt32 resource_id;
 
@@ -106,6 +106,8 @@ namespace oSpy
 
             /* MessageType.Message */
             public MessageContext context;
+            public UInt32 domain;
+            public UInt32 severity;
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
             public string message;
 

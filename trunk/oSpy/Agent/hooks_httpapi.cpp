@@ -105,7 +105,7 @@ HttpCreateHttpHandle_done(ULONG retval,
 
     if (retval == NO_ERROR)
     {
-        message_logger_log_message("HttpCreateHttpHandle", ret_addr,
+        message_logger_log_message("HttpCreateHttpHandle", (char *) &retval - 4,
             MESSAGE_CTX_WARNING, "starting receive thread for handle %p",
             *pReqQueueHandle);
 

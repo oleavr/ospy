@@ -33,7 +33,6 @@ typedef enum {
     SIGNATURE_ACTIVESYNC_DEBUG,
     SIGNATURE_WCESMGR_DEBUG2,
     SIGNATURE_WCESMGR_DEBUG3,
-    SIGNATURE_WCESMGR_CCH_ADDOUTGOING_DEBUG_RET,
     SIGNATURE_WCESCOMM_DEBUG2,
     SIGNATURE_WCESCOMM_DEBUG2_ALTERNATE,
     SIGNATURE_WCESCOMM_DEBUG3,
@@ -127,17 +126,6 @@ static FunctionSignature as_signatures[] = {
         "57"                    // push    edi
         "33 FF"                 // xor     edi, edi
         "39 B8 08 01 00 00"     // cmp     [eax+108h], edi
-    },
-
-    // SIGNATURE_WCESMGR_CCH_ADDOUTGOING_DEBUG_RET
-    {
-        "wcesmgr.exe",
-		0,
-        "8B 46 08"              // mov     eax, [esi+CControlChannel.obj2]
-        "83 C4 28"              // add     esp, 28h
-        "85 C0"                 // test    eax, eax
-        "74 03"                 // jz      short loc_534977
-        "89 78 04",             // mov     [eax+4], edi
     },
 
     // SIGNATURE_WCESCOMM_DEBUG2
@@ -337,14 +325,14 @@ HttpSendResponseEntityBody_done(ULONG retval,
             }
             else
             {
-                message_logger_log_message("HttpSendResponseEntityBody", 0,
+                message_logger_log_message("HttpSendResponseEntityBody", NULL,
                     MESSAGE_CTX_ERROR,
                     "only HttpDataChunkFromMemory is supported for now");
             }
 
             if (EntityChunkCount > 1)
             {
-                message_logger_log_message("HttpSendResponseEntityBody", 0,
+                message_logger_log_message("HttpSendResponseEntityBody", NULL,
                     MESSAGE_CTX_WARNING,
                     "only EntityChunkCount == 1 is supported for now");
             }
@@ -390,21 +378,21 @@ ui_status_label_set(char *text)
     if (y >= 40)
     {
         /* substatus: y = 50 */
-        message_logger_log_message("UIStatusLabelSet", 0x0,
+        message_logger_log_message("UIStatusLabelSet", NULL,
             MESSAGE_CTX_ACTIVESYNC_SUBSTATUS,
             text);
     }
     else if (y >= 20)
     {
         /* status: y = 33 */
-        message_logger_log_message("UIStatusLabelSet", 0x0,
+        message_logger_log_message("UIStatusLabelSet", NULL,
             MESSAGE_CTX_ACTIVESYNC_STATUS,
             text);
     }
     else
     {
         /* device: y = 2 */
-        message_logger_log_message("UIStatusLabelSet", 0x0,
+        message_logger_log_message("UIStatusLabelSet", NULL,
             MESSAGE_CTX_ACTIVESYNC_DEVICE,
             text);
     }
@@ -442,7 +430,7 @@ wiz_status_label_set(void *pDX /* CDataExchange * */ )
         mov		[status], ecx
     }
 
-    message_logger_log_message("WizStatusLabelSet", 0x0,
+    message_logger_log_message("WizStatusLabelSet", NULL,
         MESSAGE_CTX_ACTIVESYNC_WZ_STATUS,
         status);
 
@@ -469,13 +457,10 @@ wcesmgr_debug_1(void *obj,
                 ...)
 {
     va_list args;
-    DWORD ret_addr = *((DWORD *) ((DWORD) &obj - 4));
 
     va_start(args, format);
-    log_debug_w("WCESMgrDebug", ret_addr, format, args);
+    log_debug_w("WCESMgrDebug", (char *) &obj - 4, format, args);
 }
-
-static LPVOID cch_addoutgoing_debug_retaddr = NULL;
 
 static void __cdecl
 wcesmgr_debug_2(void *obj,
@@ -484,19 +469,9 @@ wcesmgr_debug_2(void *obj,
                 ...)
 {
     va_list args;
-    DWORD ret_addr = *((DWORD *) ((DWORD) &obj - 4));
-
-    if ((LPVOID) ret_addr == cch_addoutgoing_debug_retaddr)
-    {
-        DWORD parent_retaddr = *((DWORD *) ((DWORD) &obj - 4 + 72));
-
-        message_logger_log_message("CControlChannel::QueueOutgoing",
-            parent_retaddr, MESSAGE_CTX_INFO, "Queueing outgoing data chunk");
-    }
 
     va_start(args, format);
-
-    log_debug("WCESMgrDebug2", ret_addr, format, args);
+    log_debug("WCESMgrDebug2", (char *) &obj - 4, format, args);
 }
 
 static void __cdecl
@@ -505,11 +480,9 @@ wcesmgr_debug_3(void *obj,
                 ...)
 {
     va_list args;
-    DWORD ret_addr = *((DWORD *) ((DWORD) &obj - 4));
 
     va_start(args, format);
-
-    log_debug("WCESMgrDebug3", ret_addr, format, args);
+    log_debug("WCESMgrDebug3", (char *) &obj - 4, format, args);
 }
 
 
@@ -523,10 +496,9 @@ rapimgr_debug(void *obj,
               ...)
 {
     va_list args;
-    DWORD ret_addr = *((DWORD *) ((DWORD) &obj - 4));
 
     va_start(args, format);
-    log_debug_w("RAPIMgrDebug", ret_addr, format, args);
+    log_debug_w("RAPIMgrDebug", (char *) &obj - 4, format, args);
 }
 
 
@@ -540,10 +512,9 @@ wcescomm_debug_1(void *obj,
                  ...)
 {
     va_list args;
-    DWORD ret_addr = *((DWORD *) ((DWORD) &obj - 4));
 
     va_start(args, format);
-    log_debug_w("WCESCommDebug1", ret_addr, format, args);
+    log_debug_w("WCESCommDebug1", (char *) &obj - 4, format, args);
 }
 
 static void __cdecl
@@ -551,11 +522,9 @@ wcescomm_debug_2(const char *format,
                  ...)
 {
     va_list args;
-    DWORD ret_addr = *((DWORD *) ((DWORD) &format - 4));
 
     va_start(args, format);
-
-    log_debug("WCESCommDebug2", ret_addr, format, args);
+    log_debug("WCESCommDebug2", (char *) &format - 4, format, args);
 }
 
 static void __cdecl
@@ -563,11 +532,9 @@ wcescomm_debug_3(const char *format,
                  ...)
 {
     va_list args;
-    DWORD ret_addr = *((DWORD *) ((DWORD) &format - 4));
 
     va_start(args, format);
-
-    log_debug("WCESCommDebug3", ret_addr, format, args);
+    log_debug("WCESCommDebug3", (char *) &format - 4, format, args);
 }
 
 
@@ -581,10 +548,9 @@ rapistub_debug(void *obj,
                ...)
 {
     va_list args;
-    DWORD ret_addr = *((DWORD *) ((DWORD) &obj - 4));
 
     va_start(args, format);
-    log_debug_w("RAPIStubDebug", ret_addr, format, args);
+    log_debug_w("RAPIStubDebug", (char *) &obj - 4, format, args);
 }
 
 
@@ -701,17 +667,6 @@ hook_activesync()
                                             wcesmgr_debug_3, NULL, &error))
         {
             LOG_OVERRIDE_ERROR("SIGNATURE_WCESMGR_DEBUG3", error);
-        }
-
-        // And we need to know what this return address is so that we can
-        // provide some useful debugging for seeing where the outgoing RAPI/RemSync
-        // chunks are queued from...
-        if (!find_signature(&as_signatures[SIGNATURE_WCESMGR_CCH_ADDOUTGOING_DEBUG_RET],
-                            &cch_addoutgoing_debug_retaddr, &error))
-        {
-            message_logger_log_message("hook_activesync", 0, MESSAGE_CTX_ERROR,
-                                       "find_signature failed: %s", error);
-            sspy_free(error);
         }
     }
     else if (cur_process_is("rapimgr.exe"))

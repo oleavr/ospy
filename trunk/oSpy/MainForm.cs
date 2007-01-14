@@ -176,14 +176,37 @@ namespace oSpy
                 row["ThreadId"] = msg.thread_id;
 
                 row["FunctionName"] = msg.function_name;
-                row["ReturnAddress"] = msg.return_address;
-                row["CallerModuleName"] = msg.caller_module_name;
+                row["Backtrace"] = msg.backtrace;
+
+                UInt32 returnAddress = 0;
+                string callerModName = "";
+
+                if (msg.backtrace.Length > 0)
+                {
+                    string[] tokens = msg.backtrace.Split(new char[] { '\n' }, 2);
+                    if (tokens.Length >= 1)
+                    {
+                        string line = tokens[0];
+                        string[] lineTokens = line.Split(new string[] { "::" }, 2, StringSplitOptions.None);
+
+                        if (lineTokens.Length == 2)
+                        {
+                            returnAddress = Convert.ToUInt32(lineTokens[1].Substring(2), 16);
+                            callerModName = lineTokens[0];
+                        }
+                    }
+                }
+
+                row["ReturnAddress"] = returnAddress;
+                row["CallerModuleName"] = callerModName;
 
                 row["ResourceId"] = msg.resource_id;
 
                 row["MsgType"] = msg.msg_type;
 
                 row["MsgContext"] = msg.context;
+                row["Domain"] = msg.domain;
+                row["Severity"] = msg.severity;
                 row["Message"] = msg.message;
 
                 if (msg.context == MessageContext.MESSAGE_CTX_ACTIVESYNC_DEVICE)

@@ -23,6 +23,10 @@
 #define MAX_ELEMENTS        2048
 #define PACKET_BUFSIZE     65536
 #define MAX_SOFTWALL_RULES   128
+#define BACKTRACE_BUFSIZE    384 /*
+								  * (sizeof(caller_module_name) + sizeof("::") + sizeof("0x12345678") * NUM_BT_LINES + SIZE_NUL_BYTE)
+								  *	rounded up to the closest "magic" size
+								  */
 
 typedef enum MessageType {
   MESSAGE_TYPE_MESSAGE = 0,
@@ -59,8 +63,7 @@ typedef struct {
   DWORD thread_id;
 
   char function_name[32];
-  DWORD return_address;
-  char caller_module_name[32];
+  char backtrace[BACKTRACE_BUFSIZE];
 
   DWORD resource_id;
 
@@ -68,6 +71,8 @@ typedef struct {
   
   /* MessageType.Message */
   MessageContext context;
+  DWORD domain;
+  DWORD severity;
   char message[256];
 
   /* MessageType.Packet */
@@ -93,20 +98,19 @@ typedef struct {
 void message_logger_init();
 void message_logger_get_queue(MessageQueue **queue, HANDLE *queue_mutex);
 
-void message_logger_log(const char *function_name, DWORD return_address, DWORD resource_id, MessageType msg_type, MessageContext context, PacketDirection direction, const sockaddr_in *local_addr, const sockaddr_in *peer_addr, const char *buf, int len, const char *message, ...);
-void message_logger_log_raw(const char *function_name, DWORD return_address, DWORD resource_id, MessageType msg_type, MessageContext context, PacketDirection direction, const sockaddr_in *local_addr, const sockaddr_in *peer_addr, const char *buf, int len, const char *message);
-void message_logger_log_message(const char *function_name, DWORD return_address, MessageContext context, const char *message, ...);
-void message_logger_log_message_raw(const char *function_name, DWORD return_address, MessageContext context, const char *message);
-void message_logger_log_packet(const char *function_name, DWORD return_address, DWORD resource_id, PacketDirection direction, const sockaddr_in *local_addr, const sockaddr_in *peer_addr, const char *buf, int len);
+void message_logger_log_full(const char *function_name, void *bt_address, DWORD resource_id, MessageType msg_type, MessageContext context, PacketDirection direction, const sockaddr_in *local_addr, const sockaddr_in *peer_addr, const char *buf, int len, const char *message, DWORD domain, DWORD severity);
+void message_logger_log(const char *function_name, void *bt_address, DWORD resource_id, MessageType msg_type, MessageContext context, PacketDirection direction, const sockaddr_in *local_addr, const sockaddr_in *peer_addr, const char *buf, int len, const char *message, ...);
+void message_logger_log_message(const char *function_name, void *bt_address, MessageContext context, const char *message, ...);
+void message_logger_log_packet(const char *function_name, void *bt_address, DWORD resource_id, PacketDirection direction, const sockaddr_in *local_addr, const sockaddr_in *peer_addr, const char *buf, int len);
 
-void log_tcp_listening(const char *function_name, DWORD return_address, SOCKET server_socket);
-void log_tcp_connecting(const char *function_name, DWORD return_address, SOCKET socket, const struct sockaddr *name);
-void log_tcp_connected(const char *function_name, DWORD return_address, SOCKET socket, const struct sockaddr *name);
-void log_tcp_client_connected(const char *function_name, DWORD return_address, SOCKET server_socket, SOCKET client_socket);
-void log_tcp_disconnected(const char *function_name, DWORD return_address, SOCKET s, DWORD *last_error);
+void log_tcp_listening(const char *function_name, void *bt_address, SOCKET server_socket);
+void log_tcp_connecting(const char *function_name, void *bt_address, SOCKET socket, const struct sockaddr *name);
+void log_tcp_connected(const char *function_name, void *bt_address, SOCKET socket, const struct sockaddr *name);
+void log_tcp_client_connected(const char *function_name, void *bt_address, SOCKET server_socket, SOCKET client_socket);
+void log_tcp_disconnected(const char *function_name, void *bt_address, SOCKET s, DWORD *last_error);
 
-void log_tcp_packet(const char *function_name, DWORD return_address, PacketDirection direction, SOCKET s, const char *buf, int len);
-void log_udp_packet(const char *function_name, DWORD return_address, PacketDirection direction, SOCKET s, const struct sockaddr *peer, const char *buf, int len);
+void log_tcp_packet(const char *function_name, void *bt_address, PacketDirection direction, SOCKET s, const char *buf, int len);
+void log_udp_packet(const char *function_name, void *bt_address, PacketDirection direction, SOCKET s, const struct sockaddr *peer, const char *buf, int len);
 
-void log_debug_w(const char *source, DWORD ret_addr, const LPWSTR format, va_list args);
-void log_debug(const char *source, DWORD ret_addr, const char *format, va_list args);
+void log_debug_w(const char *source, void *bt_address, const LPWSTR format, va_list args, DWORD domain = 0, DWORD severity = 0);
+void log_debug(const char *source, void *bt_address, const char *format, va_list args, DWORD domain = 0, DWORD severity = 0);
