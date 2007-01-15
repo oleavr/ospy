@@ -43,6 +43,12 @@
     <Compile Include="AboutBoxForm.Designer.cs">
       <DependentUpon>AboutBoxForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="BacktraceForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="BacktraceForm.Designer.cs">
+      <DependentUpon>BacktraceForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="CaptureForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -125,6 +131,10 @@
     <EmbeddedResource Include="AboutBoxForm.resx">
       <SubType>Designer</SubType>
       <DependentUpon>AboutBoxForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="BacktraceForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>BacktraceForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="CaptureForm.resx">
       <SubType>Designer</SubType>

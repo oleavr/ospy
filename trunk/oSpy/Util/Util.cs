@@ -22,6 +22,8 @@ using System.Text;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
+using System.Windows.Forms;
+using System.Text.RegularExpressions;
 
 namespace oSpy.Util
 {
@@ -348,6 +350,93 @@ namespace oSpy.Util
         {
             char[] chars = s.ToCharArray();
             return utf8Encoder.GetByteCount(chars, 0, chars.Length, true);
+        }
+    }
+
+    public class IDA
+    {
+        private delegate bool EnumWindowsHandler(int hWnd, int lParam);
+
+        private const int WM_SYSCOMMAND = 0x0112;
+        private const int SC_RESTORE = 0xF120;
+
+        [DllImport("user32.dll")]
+        private static extern bool EnumWindows(EnumWindowsHandler lpEnumFunc, int lParam);
+        [DllImport("user32.dll")]
+        private static extern int RealGetWindowClass(int hwnd, StringBuilder pszType, int cchType);
+        [DllImport("user32.dll")]
+        private static extern int GetWindowText(int hWnd, StringBuilder s, int nMaxCount);
+        [DllImport("user32.dll")]
+        private static extern bool IsIconic(int hWnd);
+        [DllImport("user32.dll")]
+        private static extern int SendMessage(int hWnd, uint Msg, int wParam, int lParam);
+        [DllImport("user32.DLL")]
+        private static extern bool SetForegroundWindow(int hWnd);
+
+        private static int idaHWnd;
+        private static string idaCallerModName;
+
+        public static void GoToAddressInIDA(string moduleName, UInt32 address)
+        {
+            idaCallerModName = moduleName;
+            idaHWnd = -1;
+
+            EnumWindows(FindIDAWindowCallback, 0);
+            if (idaHWnd == -1)
+            {
+                MessageBox.Show(String.Format("No IDA window with {0} found.", idaCallerModName),
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (IsIconic(idaHWnd))
+            {
+                SendMessage(idaHWnd, WM_SYSCOMMAND, SC_RESTORE, 0);
+            }
+            else
+            {
+                SetForegroundWindow(idaHWnd);
+            }
+
+            System.Threading.Thread.Sleep(100);
+
+            SendKeys.SendWait("g");
+            SendKeys.SendWait(String.Format("{0:x}", address));
+            SendKeys.SendWait("{ENTER}");
+        }
+
+        private static bool FindIDAWindowCallback(int hWnd, int lParam)
+        {
+            StringBuilder str = new StringBuilder(256);
+
+            RealGetWindowClass(hWnd, str, str.Capacity);
+            string cls = str.ToString();
+            if (cls != "TApplication")
+                return true;
+
+            GetWindowText(hWnd, str, str.Capacity);
+            string title = str.ToString();
+            if (!title.StartsWith("IDA - "))
+                return true;
+
+            Match match = Regex.Match(title, @"^IDA - (?<path>.*?)( \((?<srcfile>.*?)\))?$");
+            if (!match.Success)
+                return true;
+
+            string path = match.Groups["path"].Value;
+            string srcfile = match.Groups["srcfile"].Value;
+            if (srcfile == "")
+            {
+                srcfile = System.IO.Path.GetFileName(path);
+            }
+
+            if (string.Compare(srcfile, idaCallerModName, true) == 0)
+            {
+                idaHWnd = hWnd;
+                return false;
+            }
+
+            return true;
         }
     }
 
