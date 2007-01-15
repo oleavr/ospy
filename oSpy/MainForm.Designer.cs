@@ -40,11 +40,14 @@ namespace oSpy
             this.processIdCol = new System.Data.DataColumn();
             this.threadIdCol = new System.Data.DataColumn();
             this.functionNameCol = new System.Data.DataColumn();
+            this.backtraceCol = new System.Data.DataColumn();
             this.returnAddressCol = new System.Data.DataColumn();
             this.callerModuleNameCol = new System.Data.DataColumn();
             this.resourceIdCol = new System.Data.DataColumn();
             this.msgTypeCol = new System.Data.DataColumn();
             this.contextCol = new System.Data.DataColumn();
+            this.domainCol = new System.Data.DataColumn();
+            this.severityCol = new System.Data.DataColumn();
             this.messageCol = new System.Data.DataColumn();
             this.directionCol = new System.Data.DataColumn();
             this.localAddressCol = new System.Data.DataColumn();
@@ -86,6 +89,7 @@ namespace oSpy
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.dataGridContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.goToReturnaddressInIDAToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.showbacktraceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
             this.createSwRuleFromEntryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.bindingSource = new System.Windows.Forms.BindingSource(this.components);
@@ -110,6 +114,7 @@ namespace oSpy
             this.processIdDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.threadIdDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.functionNameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.backtraceDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.returnAddressDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.callerModuleNameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.resourceIdDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -143,9 +148,6 @@ namespace oSpy
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
-            this.domainCol = new System.Data.DataColumn();
-            this.severityCol = new System.Data.DataColumn();
-            this.backtraceCol = new System.Data.DataColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).BeginInit();
             this.menuStrip.SuspendLayout();
@@ -253,6 +255,10 @@ namespace oSpy
             this.functionNameCol.Caption = "Function name";
             this.functionNameCol.ColumnName = "FunctionName";
             // 
+            // backtraceCol
+            // 
+            this.backtraceCol.ColumnName = "Backtrace";
+            // 
             // returnAddressCol
             // 
             this.returnAddressCol.AllowDBNull = false;
@@ -281,6 +287,16 @@ namespace oSpy
             this.contextCol.Caption = "Message context";
             this.contextCol.ColumnName = "MsgContext";
             this.contextCol.DataType = typeof(uint);
+            // 
+            // domainCol
+            // 
+            this.domainCol.ColumnName = "Domain";
+            this.domainCol.DataType = typeof(uint);
+            // 
+            // severityCol
+            // 
+            this.severityCol.ColumnName = "Severity";
+            this.severityCol.DataType = typeof(uint);
             // 
             // messageCol
             // 
@@ -546,10 +562,11 @@ namespace oSpy
             // 
             this.dataGridContextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.goToReturnaddressInIDAToolStripMenuItem,
+            this.showbacktraceToolStripMenuItem,
             this.toolStripMenuItem3,
             this.createSwRuleFromEntryToolStripMenuItem});
             this.dataGridContextMenuStrip.Name = "dataGridContextMenuStrip";
-            this.dataGridContextMenuStrip.Size = new System.Drawing.Size(246, 54);
+            this.dataGridContextMenuStrip.Size = new System.Drawing.Size(246, 76);
             this.dataGridContextMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.dataGridContextMenuStrip_Opening);
             // 
             // goToReturnaddressInIDAToolStripMenuItem
@@ -558,6 +575,13 @@ namespace oSpy
             this.goToReturnaddressInIDAToolStripMenuItem.Size = new System.Drawing.Size(245, 22);
             this.goToReturnaddressInIDAToolStripMenuItem.Text = "&Go to return address in IDA";
             this.goToReturnaddressInIDAToolStripMenuItem.Click += new System.EventHandler(this.goToReturnaddressInIDAToolStripMenuItem_Click);
+            // 
+            // showbacktraceToolStripMenuItem
+            // 
+            this.showbacktraceToolStripMenuItem.Name = "showbacktraceToolStripMenuItem";
+            this.showbacktraceToolStripMenuItem.Size = new System.Drawing.Size(245, 22);
+            this.showbacktraceToolStripMenuItem.Text = "Show &backtrace...";
+            this.showbacktraceToolStripMenuItem.Click += new System.EventHandler(this.showbacktraceToolStripMenuItem_Click);
             // 
             // toolStripMenuItem3
             // 
@@ -707,6 +731,7 @@ namespace oSpy
             this.processIdDataGridViewTextBoxColumn,
             this.threadIdDataGridViewTextBoxColumn,
             this.functionNameDataGridViewTextBoxColumn,
+            this.backtraceDataGridViewTextBoxColumn,
             this.returnAddressDataGridViewTextBoxColumn,
             this.callerModuleNameDataGridViewTextBoxColumn,
             this.resourceIdDataGridViewTextBoxColumn,
@@ -800,6 +825,14 @@ namespace oSpy
             this.functionNameDataGridViewTextBoxColumn.HeaderText = "FunctionName";
             this.functionNameDataGridViewTextBoxColumn.Name = "functionNameDataGridViewTextBoxColumn";
             this.functionNameDataGridViewTextBoxColumn.ReadOnly = true;
+            // 
+            // backtraceDataGridViewTextBoxColumn
+            // 
+            this.backtraceDataGridViewTextBoxColumn.DataPropertyName = "Backtrace";
+            this.backtraceDataGridViewTextBoxColumn.HeaderText = "Backtrace";
+            this.backtraceDataGridViewTextBoxColumn.Name = "backtraceDataGridViewTextBoxColumn";
+            this.backtraceDataGridViewTextBoxColumn.ReadOnly = true;
+            this.backtraceDataGridViewTextBoxColumn.Visible = false;
             // 
             // returnAddressDataGridViewTextBoxColumn
             // 
@@ -1097,20 +1130,6 @@ namespace oSpy
             this.dumpSaveFileDialog.DefaultExt = "bin";
             this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
             // 
-            // domainCol
-            // 
-            this.domainCol.ColumnName = "Domain";
-            this.domainCol.DataType = typeof(uint);
-            // 
-            // severityCol
-            // 
-            this.severityCol.ColumnName = "Severity";
-            this.severityCol.DataType = typeof(uint);
-            // 
-            // backtraceCol
-            // 
-            this.backtraceCol.ColumnName = "Backtrace";
-            // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(828, 585);
@@ -1232,6 +1251,10 @@ namespace oSpy
         private System.Windows.Forms.ToolStripMenuItem parserConfigToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem selectAlltransactionsToolStripMenuItem;
+        private System.Data.DataColumn domainCol;
+        private System.Data.DataColumn severityCol;
+        private System.Data.DataColumn backtraceCol;
+        private System.Windows.Forms.ToolStripMenuItem showbacktraceToolStripMenuItem;
         private System.Windows.Forms.DataGridViewTextBoxColumn indexDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewImageColumn typeDataGridViewImageColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn timestampDataGridViewTextBoxColumn;
@@ -1239,6 +1262,7 @@ namespace oSpy
         private System.Windows.Forms.DataGridViewTextBoxColumn processIdDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn threadIdDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn functionNameDataGridViewTextBoxColumn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn backtraceDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn returnAddressDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn callerModuleNameDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn resourceIdDataGridViewTextBoxColumn;
@@ -1259,9 +1283,6 @@ namespace oSpy
         private System.Windows.Forms.DataGridViewTextBoxColumn descriptionDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn Comment;
         private System.Windows.Forms.DataGridViewTextBoxColumn bgColorDataGridViewTextBoxColumn;
-        private System.Data.DataColumn domainCol;
-        private System.Data.DataColumn severityCol;
-        private System.Data.DataColumn backtraceCol;
     }
 }
 

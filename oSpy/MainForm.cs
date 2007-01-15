@@ -522,7 +522,7 @@ namespace oSpy
                         }
                     }
                     break;
-                case 7:
+                case 8:
                     UInt32 retAddr = (UInt32)
                         row.Cells[returnAddressDataGridViewTextBoxColumn.Index].Value;
 
@@ -554,11 +554,6 @@ namespace oSpy
         private void clearMenuItem_Click(object sender, EventArgs e)
         {
             ClearState();
-        }
-
-        private void applyFilterButton_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void dataGridView_DataError(object sender, DataGridViewDataErrorEventArgs e)
@@ -999,19 +994,19 @@ namespace oSpy
 
         private void dataGridView_SelectionChanged(object sender, EventArgs e)
         {
+            if (updatingSelections)
+                return;
+
             UpdateDumpView();
         }
 
         private void UpdateDumpView()
         {
-            if (updatingSelections)
-                return;
-
             //
             // Sort the selected packets
             //
             List<IPPacket> packets = new List<IPPacket>();
-            Dictionary<IPPacket, DataGridViewRow> packetToRow = new Dictionary<IPPacket,DataGridViewRow>();
+            Dictionary<IPPacket, DataGridViewRow> packetToRow = new Dictionary<IPPacket, DataGridViewRow>();
             foreach (DataGridViewRow row in dataGridView.SelectedRows)
             {
                 if ((UInt32)row.Cells[msgTypeDataGridViewTextBoxColumn.Index].Value != Convert.ToUInt32(MessageType.MESSAGE_TYPE_PACKET))
@@ -1289,91 +1284,25 @@ namespace oSpy
             debugForm.Show();
         }
 
-        public delegate bool EnumWindowsHandler(int hWnd, int lParam);
-
-        public const int WM_SYSCOMMAND = 0x0112;
-        public const int SC_RESTORE = 0xF120;
-
-        [DllImport("user32.dll")]
-        public static extern bool EnumWindows(EnumWindowsHandler lpEnumFunc, int lParam);
-        [DllImport("user32.dll")]
-        public static extern int RealGetWindowClass(int hwnd, StringBuilder pszType, int cchType);
-        [DllImport("user32.dll")]
-        public static extern int GetWindowText(int hWnd, StringBuilder s, int nMaxCount);
-        [DllImport("user32.dll")]
-        public static extern bool IsIconic(int hWnd);
-        [DllImport("user32.dll")]
-        public static extern int SendMessage(int hWnd, uint Msg, int wParam, int lParam);
-        [DllImport("user32.DLL")]
-        public static extern bool SetForegroundWindow(int hWnd);
-
-        private int idaHWnd;
-        private string idaCallerModName;
-
         private void goToReturnaddressInIDAToolStripMenuItem_Click(object sender, EventArgs e)
         {
             DataGridViewRow row = dataGridView.SelectedRows[0];
 
-            idaCallerModName = (string)row.Cells[callerModuleNameDataGridViewTextBoxColumn.Index].Value;
-            UInt32 idaReturnAddress = (UInt32)row.Cells[returnAddressDataGridViewTextBoxColumn.Index].Value;
+            string moduleName = (string)row.Cells[callerModuleNameDataGridViewTextBoxColumn.Index].Value;
+            UInt32 returnAddress = (UInt32)row.Cells[returnAddressDataGridViewTextBoxColumn.Index].Value;
 
-            idaHWnd = -1;
-            EnumWindows(FindIDAWindowCallback, 0);
-            if (idaHWnd == -1)
-            {
-                MessageBox.Show(String.Format("No IDA window with {0} found.", idaCallerModName),
-                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            if (IsIconic(idaHWnd))
-            {
-                SendMessage(idaHWnd, WM_SYSCOMMAND, SC_RESTORE, 0);
-            }
-            else
-            {
-                SetForegroundWindow(idaHWnd);
-            }
-
-            System.Threading.Thread.Sleep(100);
-
-            SendKeys.SendWait("g");
-            SendKeys.SendWait(String.Format("{0:x}", idaReturnAddress));
-            SendKeys.SendWait("{ENTER}");
+            Util.IDA.GoToAddressInIDA(moduleName, returnAddress);
         }
 
-        private bool FindIDAWindowCallback(int hWnd, int lParam)
+        private void showbacktraceToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            StringBuilder str = new StringBuilder(256);
+            DataGridViewRow row = dataGridView.SelectedRows[0];
+            Int32 index = (Int32)row.Cells[indexDataGridViewTextBoxColumn.Index].Value;
+            string functionName = (string)row.Cells[functionNameDataGridViewTextBoxColumn.Index].Value;
+            string backtrace = (string)row.Cells[backtraceDataGridViewTextBoxColumn.Index].Value;
 
-            RealGetWindowClass(hWnd, str, str.Capacity);
-            string cls = str.ToString();
-            if (cls != "TApplication")
-                return true;
-
-            GetWindowText(hWnd, str, str.Capacity);
-            string title = str.ToString();
-            if (!title.StartsWith("IDA - "))
-                return true;
-
-            Match match = Regex.Match(title, @"^IDA - (?<path>.*?)( \((?<srcfile>.*?)\))?$");
-            if (!match.Success)
-                return true;
-
-            string path = match.Groups["path"].Value;
-            string srcfile = match.Groups["srcfile"].Value;
-            if (srcfile == "")
-            {
-                srcfile = System.IO.Path.GetFileName(path);
-            }
-
-            if (string.Compare(srcfile, idaCallerModName, true) == 0)
-            {
-                idaHWnd = hWnd;
-                return false;
-            }
-
-            return true;
+            BacktraceForm btForm = new BacktraceForm(index, functionName, backtrace);
+            btForm.Show(this);
         }
 
         private void createSwRuleFromEntryToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1420,6 +1349,15 @@ namespace oSpy
             bool selected = (dataGridView.SelectedRows.Count > 0);
 
             goToReturnaddressInIDAToolStripMenuItem.Enabled = selected;
+
+            showbacktraceToolStripMenuItem.Enabled = selected;
+            if (selected)
+            {
+                string bt = (string) dataGridView.SelectedRows[0].Cells[backtraceDataGridViewTextBoxColumn.Index].Value;
+                if (bt.Length == 0)
+                    showbacktraceToolStripMenuItem.Enabled = false;
+            }
+
             createSwRuleFromEntryToolStripMenuItem.Enabled = selected;
         }
 
