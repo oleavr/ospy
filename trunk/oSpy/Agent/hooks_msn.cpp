@@ -26,8 +26,9 @@
 
 typedef enum {
     SIGNATURE_GET_CHALLENGE_SECRET = 0,
-	SIGNATURE_MSNMSGR_DEBUG        = 1,
-    SIGNATURE_IDCRL_DEBUG          = 2,
+	SIGNATURE_MSNMSGR_DEBUG,
+    SIGNATURE_IDCRL_DEBUG,
+	SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME,
 };
 
 static FunctionSignature msn_signatures[] = {
@@ -79,6 +80,24 @@ static FunctionSignature msn_signatures[] = {
         "89 85 F8 F7 FF FF"     // mov     [ebp+var_808], eax
         "C7 07 ?? ?? 50 27"     // mov     dword ptr [edi], offset off_27503070
     },
+
+	// SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME
+	{
+		"msnmsgr.exe",
+		-4,						// we include the last two instructions of the function before
+								// the one we're interested in in order to make sure we find
+								// just one match (since this function is so generic)
+
+		"5D"					// pop     ebp
+		"C2 0C 00"				// retn    0Ch
+
+		"55"					// push    ebp
+		"8B EC"					// mov     ebp, esp
+		"8B 45 08"				// mov     eax, [ebp+arg_0]
+		"83 F8 ??"				// cmp     eax, 71         ; switch 72 cases
+		"0F 87 ?? ?? ?? ??"		// ja      loc_479F00      ; default
+		"FF 24 85 ?? ?? ?? ??"	// jmp     ds:off_46D134[eax*4] ; switch jump
+	},
 };
 
 static void __cdecl
@@ -143,6 +162,7 @@ msnmsgr_debug(DWORD domain,
             sspy_free(e)
 
 typedef const char *(__stdcall *GetChallengeSecretFunc) (const char **ret, int which_one);
+typedef const LPWSTR (__stdcall *ContactPropertyIdToNameFunc) (int property_id);
 
 void
 hook_msn()
@@ -157,25 +177,18 @@ hook_msn()
     if (find_signature(&msn_signatures[SIGNATURE_GET_CHALLENGE_SECRET],
         (LPVOID *) &get_challenge_secret, &error))
     {
-        ByteBuffer *buf = byte_buffer_sized_new(64);
+		OStringStream s;
         const char *product_id, *product_key;
 
         get_challenge_secret(&product_id, 1);
         get_challenge_secret(&product_key, 0);
 
-        byte_buffer_append_printf(buf, "Product ID: '");
-        byte_buffer_append(buf, (void *) product_id, strlen(product_id));
-        byte_buffer_append_printf(buf, "'\r\n");
-
-        byte_buffer_append_printf(buf, "Product Key: '");
-        byte_buffer_append(buf, (void *) product_key, strlen(product_key));
-        byte_buffer_append_printf(buf, "'");
+		s << "Product ID: '" << product_id << "'\r\n";
+		s << "Product Key: '" << product_key << "'";
 
         message_logger_log("hook_msn", 0, 0, MESSAGE_TYPE_PACKET,
             MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL,
-            (const char *) buf->buf, (int) buf->offset, "Product ID and Key");
-
-        byte_buffer_free(buf);
+			s.str().c_str(), s.str().size(), "Product ID and Key");
     }
     else
     {
@@ -189,6 +202,43 @@ hook_msn()
 	{
 		LOG_OVERRIDE_ERROR(error);
 	}
+
+	ContactPropertyIdToNameFunc contact_property_id_to_name;
+
+    if (find_signature(&msn_signatures[SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME],
+        (LPVOID *) &contact_property_id_to_name, &error))
+    {
+		OStringStream s;
+
+		for (int i = 0; i < 1024; i++)
+		{
+			const LPWSTR name = contact_property_id_to_name(i);
+			if (name == NULL)
+				continue;
+
+			if (i != 0)
+				s << "\r\n";
+
+			int bufSize = wcslen(name) + 1;
+			char *buf = (char *) sspy_malloc(bufSize);
+
+		    WideCharToMultiByte(CP_ACP, 0, name, -1, buf, bufSize, NULL, NULL);
+
+			s << i << " => " << buf;
+
+			sspy_free(buf);
+		}
+
+        message_logger_log("hook_msn", 0, 0, MESSAGE_TYPE_PACKET,
+            MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL,
+			s.str().c_str(), s.str().size(), "Contact property id mappings");
+	}
+    else
+    {
+        message_logger_log_message("hook_msn", 0, MESSAGE_CTX_WARNING,
+            "failed to find SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME: %s", error);
+        sspy_free(error);
+    }
 
     // IDCRL internal debugging function
     /*

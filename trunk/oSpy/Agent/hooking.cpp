@@ -417,7 +417,8 @@ find_signature_in_module(FunctionSignature *sig, const char *module_name, LPVOID
         goto DONE;
     }
 
-    *address = match;
+    *address = match - sig->start_offset;
+
     result = TRUE;
 
 DONE:
@@ -450,8 +451,6 @@ override_function_by_signature_in_module(FunctionSignature *sig,
 
     if (!find_signature_in_module(sig, module_name, &address, error))
         return FALSE;
-
-	address = (char *) address - sig->start_offset;
 
     if (!write_jmp_instruction_to_addr(address, replacement))
     {
