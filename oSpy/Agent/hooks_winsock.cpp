@@ -581,12 +581,20 @@ WSARecv_done(int retval,
 
     if (retval == 0)
     {
-        for (DWORD i = 0; i < dwBufferCount; i++)
+		int bytes_left = *lpNumberOfBytesRecvd;
+
+        for (DWORD i = 0; i < dwBufferCount && bytes_left > 0; i++)
         {
             WSABUF *buf = &lpBuffers[i];
 
+			int n = bytes_left;
+			if (n > buf->len)
+				n = buf->len;
+
             log_tcp_packet("WSARecv", bt_address, PACKET_DIRECTION_INCOMING, s,
-                           buf->buf, buf->len);
+						   buf->buf, n);
+
+			bytes_left -= n;
         }
     }
     else if (retval == SOCKET_ERROR)
@@ -649,12 +657,20 @@ WSASend_done(int retval,
 
     if (retval == 0)
     {
-        for (DWORD i = 0; i < dwBufferCount; i++)
+		int bytes_left = *lpNumberOfBytesSent;
+
+		for (DWORD i = 0; i < dwBufferCount && bytes_left > 0; i++)
         {
             WSABUF *buf = &lpBuffers[i];
 
+			int n = bytes_left;
+			if (n > buf->len)
+				n = buf->len;
+
             log_tcp_packet("WSASend", bt_address, PACKET_DIRECTION_OUTGOING, s,
-                           buf->buf, buf->len);
+                           buf->buf, n);
+
+			bytes_left -= n;
         }
     }
     else if (retval == SOCKET_ERROR)
