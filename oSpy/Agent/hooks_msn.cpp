@@ -29,21 +29,16 @@ typedef enum {
 	SIGNATURE_MSNMSGR_DEBUG,
     SIGNATURE_IDCRL_DEBUG,
 	SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME,
+	SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME_2,
 };
 
 static FunctionSignature msn_signatures[] = {
     // SIGNATURE_GET_CHALLENGE_SECRET
     {
         "msnmsgr.exe",
-		0,
-        "6A 08"                 // push    8
-        "B8 ?? ?? ?? ??"        // mov     eax, 846D06h
-        "E8 ?? ?? ?? ??"        // call    __EH_prolog3
-        "83 65 F0 00"           // and     dword ptr [ebp-10h], 0
+		16,
         "80 7D 0C 00"           // cmp     byte ptr [ebp+0Ch], 0
         "68 B7 00 00 00"        // push    183
-        "74 BF"                 // jz      short loc_4F8319
-        "E8 ?? ?? ?? ??"        // call    loc_538EF6
     },
 
 	// SIGNATURE_MSNMSGR_DEBUG
@@ -90,6 +85,24 @@ static FunctionSignature msn_signatures[] = {
 
 		"5D"					// pop     ebp
 		"C2 0C 00"				// retn    0Ch
+
+		"55"					// push    ebp
+		"8B EC"					// mov     ebp, esp
+		"8B 45 08"				// mov     eax, [ebp+arg_0]
+		"83 F8 ??"				// cmp     eax, 71         ; switch 72 cases
+		"0F 87 ?? ?? ?? ??"		// ja      loc_479F00      ; default
+		"FF 24 85 ?? ?? ?? ??"	// jmp     ds:off_46D134[eax*4] ; switch jump
+	},
+
+	// SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME_2
+	{
+		"msnmsgr.exe",
+		-6,						// we include the last two instructions of the function before
+								// the one we're interested in in order to make sure we find
+								// just one match (since this function is so generic)
+
+		"5E"					// pop     esi
+		"E9 ?? ?? ?? ??"		// jmp     sub_421B16
 
 		"55"					// push    ebp
 		"8B EC"					// mov     ebp, esp
@@ -205,8 +218,16 @@ hook_msn()
 
 	ContactPropertyIdToNameFunc contact_property_id_to_name;
 
-    if (find_signature(&msn_signatures[SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME],
-        (LPVOID *) &contact_property_id_to_name, &error))
+	bool found = find_signature(&msn_signatures[SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME],
+								(LPVOID *) &contact_property_id_to_name, &error);
+	if (!found)
+	{
+		sspy_free(error);
+		found = find_signature(&msn_signatures[SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME_2],
+							   (LPVOID *) &contact_property_id_to_name, &error);
+	}
+
+    if (found)
     {
 		OStringStream s;
 
