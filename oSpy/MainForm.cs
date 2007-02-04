@@ -1564,15 +1564,25 @@ namespace oSpy
             }
         }
 
-        private void selectAlltransactionsToolStripMenuItem_Click(object sender, EventArgs e)
+        private void rowsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            updatingSelections = true;
+            dataGridView.SelectAll();
+        }
 
+        private void UnselectAllRows()
+        {
             // Gotta be a more elegant way to do this...
             foreach (DataGridViewRow row in dataGridView.SelectedRows)
             {
                 row.Selected = false;
             }
+        }
+
+        private void transactionsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            updatingSelections = true;
+
+            UnselectAllRows();
 
             // Select the visible rows with these indexes
             Dictionary<int, List<TransactionNode>> allIndexes = packetParser.GetAllTransactionPacketIndexes();
@@ -1604,6 +1614,66 @@ namespace oSpy
             {
                 selRow.Selected = false;
                 selRow.Selected = true;
+            }
+        }
+
+        private bool GetNextRowIndex(out int index)
+        {
+            index = -1;
+
+            if (dataGridView.Rows.Count == 0)
+                return false;
+
+            if (dataGridView.SelectedRows.Count >= 1)
+                index = dataGridView.SelectedRows[0].Index + 1;
+            else
+                index = dataGridView.Rows[0].Index;
+
+            return true;
+        }
+
+        private void nextPacketBtn_Click(object sender, EventArgs e)
+        {
+            int startIndex;
+            if (!GetNextRowIndex(out startIndex))
+                return;
+
+            foreach (DataGridViewRow row in dataGridView.Rows)
+            {
+                if (row.Index >= startIndex)
+                {
+                    MessageType msgType = (MessageType) ((UInt32) row.Cells[msgTypeDataGridViewTextBoxColumn.Index].Value);
+                    PacketDirection direction = (PacketDirection)((UInt32)row.Cells[directionDataGridViewTextBoxColumn.Index].Value);
+
+                    if (msgType == MessageType.MESSAGE_TYPE_PACKET && direction != PacketDirection.PACKET_DIRECTION_INVALID)
+                    {
+                        dataGridView.CurrentCell = dataGridView[0, row.Index];
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void nextTransactionBtn_Click(object sender, EventArgs e)
+        {
+            int startIndex;
+            if (!GetNextRowIndex(out startIndex))
+                return;
+
+            Dictionary<int, List<TransactionNode>> allIndexes = packetParser.GetAllTransactionPacketIndexes();
+
+            foreach (DataGridViewRow row in dataGridView.Rows)
+            {
+                if (row.Index >= startIndex)
+                {
+                    int msgIndex = (int)row.Cells[indexDataGridViewTextBoxColumn.Index].Value;
+
+                    if (allIndexes.ContainsKey(msgIndex))
+                    {
+                        dataGridView.CurrentCell = dataGridView[0, row.Index];
+                        break;
+                    }
+                }
             }
         }
     }

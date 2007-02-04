@@ -74,7 +74,9 @@ namespace oSpy
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.exitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.selectAlltransactionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.selectallToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.rowsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.transactionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.captureToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.injectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.captureStartMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -145,9 +147,12 @@ namespace oSpy
             this.toolStripLabel2 = new System.Windows.Forms.ToolStripLabel();
             this.findTypeComboBox = new System.Windows.Forms.ToolStripComboBox();
             this.findComboBox = new System.Windows.Forms.ToolStripComboBox();
+            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
+            this.nextPacketBtn = new System.Windows.Forms.ToolStripButton();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
+            this.nextTransactionBtn = new System.Windows.Forms.ToolStripButton();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).BeginInit();
             this.menuStrip.SuspendLayout();
@@ -456,17 +461,33 @@ namespace oSpy
             // editToolStripMenuItem
             // 
             this.editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.selectAlltransactionsToolStripMenuItem});
+            this.selectallToolStripMenuItem});
             this.editToolStripMenuItem.Name = "editToolStripMenuItem";
             this.editToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.editToolStripMenuItem.Text = "&Edit";
             // 
-            // selectAlltransactionsToolStripMenuItem
+            // selectallToolStripMenuItem
             // 
-            this.selectAlltransactionsToolStripMenuItem.Name = "selectAlltransactionsToolStripMenuItem";
-            this.selectAlltransactionsToolStripMenuItem.Size = new System.Drawing.Size(189, 22);
-            this.selectAlltransactionsToolStripMenuItem.Text = "Select all &transactions";
-            this.selectAlltransactionsToolStripMenuItem.Click += new System.EventHandler(this.selectAlltransactionsToolStripMenuItem_Click);
+            this.selectallToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.rowsToolStripMenuItem,
+            this.transactionsToolStripMenuItem});
+            this.selectallToolStripMenuItem.Name = "selectallToolStripMenuItem";
+            this.selectallToolStripMenuItem.Size = new System.Drawing.Size(127, 22);
+            this.selectallToolStripMenuItem.Text = "Select &all";
+            // 
+            // rowsToolStripMenuItem
+            // 
+            this.rowsToolStripMenuItem.Name = "rowsToolStripMenuItem";
+            this.rowsToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
+            this.rowsToolStripMenuItem.Text = "&Rows";
+            this.rowsToolStripMenuItem.Click += new System.EventHandler(this.rowsToolStripMenuItem_Click);
+            // 
+            // transactionsToolStripMenuItem
+            // 
+            this.transactionsToolStripMenuItem.Name = "transactionsToolStripMenuItem";
+            this.transactionsToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
+            this.transactionsToolStripMenuItem.Text = "&Transactions";
+            this.transactionsToolStripMenuItem.Click += new System.EventHandler(this.transactionsToolStripMenuItem_Click);
             // 
             // captureToolStripMenuItem
             // 
@@ -1049,7 +1070,10 @@ namespace oSpy
             this.toolStripSeparator3,
             this.toolStripLabel2,
             this.findTypeComboBox,
-            this.findComboBox});
+            this.findComboBox,
+            this.toolStripSeparator4,
+            this.nextPacketBtn,
+            this.nextTransactionBtn});
             this.toolStrip1.Location = new System.Drawing.Point(0, 24);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(828, 25);
@@ -1110,6 +1134,21 @@ namespace oSpy
             this.findComboBox.Leave += new System.EventHandler(this.findComboBox_Leave);
             this.findComboBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.findComboBox_KeyDown);
             // 
+            // toolStripSeparator4
+            // 
+            this.toolStripSeparator4.Name = "toolStripSeparator4";
+            this.toolStripSeparator4.Size = new System.Drawing.Size(6, 25);
+            // 
+            // nextPacketBtn
+            // 
+            this.nextPacketBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.nextPacketBtn.Image = ((System.Drawing.Image)(resources.GetObject("nextPacketBtn.Image")));
+            this.nextPacketBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.nextPacketBtn.Name = "nextPacketBtn";
+            this.nextPacketBtn.Size = new System.Drawing.Size(25, 22);
+            this.nextPacketBtn.Text = ">P";
+            this.nextPacketBtn.Click += new System.EventHandler(this.nextPacketBtn_Click);
+            // 
             // statusStrip1
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -1129,6 +1168,16 @@ namespace oSpy
             // 
             this.dumpSaveFileDialog.DefaultExt = "bin";
             this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
+            // 
+            // nextTransactionBtn
+            // 
+            this.nextTransactionBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.nextTransactionBtn.Image = ((System.Drawing.Image)(resources.GetObject("nextTransactionBtn.Image")));
+            this.nextTransactionBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.nextTransactionBtn.Name = "nextTransactionBtn";
+            this.nextTransactionBtn.Size = new System.Drawing.Size(25, 17);
+            this.nextTransactionBtn.Text = ">T";
+            this.nextTransactionBtn.Click += new System.EventHandler(this.nextTransactionBtn_Click);
             // 
             // MainForm
             // 
@@ -1250,7 +1299,6 @@ namespace oSpy
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
         private System.Windows.Forms.ToolStripMenuItem parserConfigToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem selectAlltransactionsToolStripMenuItem;
         private System.Data.DataColumn domainCol;
         private System.Data.DataColumn severityCol;
         private System.Data.DataColumn backtraceCol;
@@ -1283,6 +1331,12 @@ namespace oSpy
         private System.Windows.Forms.DataGridViewTextBoxColumn descriptionDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn Comment;
         private System.Windows.Forms.DataGridViewTextBoxColumn bgColorDataGridViewTextBoxColumn;
+        private System.Windows.Forms.ToolStripMenuItem selectallToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem rowsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem transactionsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
+        private System.Windows.Forms.ToolStripButton nextPacketBtn;
+        private System.Windows.Forms.ToolStripButton nextTransactionBtn;
     }
 }
 
