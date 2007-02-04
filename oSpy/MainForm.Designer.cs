@@ -149,10 +149,10 @@ namespace oSpy
             this.findComboBox = new System.Windows.Forms.ToolStripComboBox();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.nextPacketBtn = new System.Windows.Forms.ToolStripButton();
+            this.nextTransactionBtn = new System.Windows.Forms.ToolStripButton();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
-            this.nextTransactionBtn = new System.Windows.Forms.ToolStripButton();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).BeginInit();
             this.menuStrip.SuspendLayout();
@@ -1147,7 +1147,19 @@ namespace oSpy
             this.nextPacketBtn.Name = "nextPacketBtn";
             this.nextPacketBtn.Size = new System.Drawing.Size(25, 22);
             this.nextPacketBtn.Text = ">P";
+            this.nextPacketBtn.ToolTipText = "Navigate to the next packet row";
             this.nextPacketBtn.Click += new System.EventHandler(this.nextPacketBtn_Click);
+            // 
+            // nextTransactionBtn
+            // 
+            this.nextTransactionBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.nextTransactionBtn.Image = ((System.Drawing.Image)(resources.GetObject("nextTransactionBtn.Image")));
+            this.nextTransactionBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.nextTransactionBtn.Name = "nextTransactionBtn";
+            this.nextTransactionBtn.Size = new System.Drawing.Size(25, 17);
+            this.nextTransactionBtn.Text = ">T";
+            this.nextTransactionBtn.ToolTipText = "Navigate to the next row being part of a transaction";
+            this.nextTransactionBtn.Click += new System.EventHandler(this.nextTransactionBtn_Click);
             // 
             // statusStrip1
             // 
@@ -1168,16 +1180,6 @@ namespace oSpy
             // 
             this.dumpSaveFileDialog.DefaultExt = "bin";
             this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
-            // 
-            // nextTransactionBtn
-            // 
-            this.nextTransactionBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.nextTransactionBtn.Image = ((System.Drawing.Image)(resources.GetObject("nextTransactionBtn.Image")));
-            this.nextTransactionBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.nextTransactionBtn.Name = "nextTransactionBtn";
-            this.nextTransactionBtn.Size = new System.Drawing.Size(25, 17);
-            this.nextTransactionBtn.Text = ">T";
-            this.nextTransactionBtn.Click += new System.EventHandler(this.nextTransactionBtn_Click);
             // 
             // MainForm
             // 
