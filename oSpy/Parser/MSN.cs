@@ -285,6 +285,68 @@ namespace oSpy.Parser
         }
     }
 
+    public class MSNSBVisualizer : SessionVisualizer
+    {
+        public override string Name
+        {
+            get { return "MSNSwitchboard"; }
+        }
+
+        public override VisualTransaction[] GetTransactions(IPSession session)
+        {
+            List<VisualTransaction> messages = new List<VisualTransaction>();
+
+            foreach (TransactionNode node in session.Nodes)
+            {
+                if (node.Name == "MSNSBCommand")
+                {
+                    IPPacket pkt = node.Slices[0].Packet;
+
+                    VisualTransaction vt = new VisualTransaction(node.Index, pkt.Direction, pkt.Timestamp);
+
+                    string headline = (string) node["Command"];
+
+                    if (node.Fields.ContainsKey("Arguments"))
+                        headline += " " + (string) node["Arguments"];
+
+                    vt.HeadlineText = headline;
+
+                    TransactionNode payloadNode = node.FindChild("Payload", false);
+                    if (payloadNode != null)
+                    {
+                        string body = "";
+
+                        if (payloadNode.Fields.ContainsKey("XML"))
+                        {
+                            XMLHighlighter highlighter;
+
+                            XML.PrettyPrint((string)payloadNode["XML"], out body, out highlighter);
+                        }
+                        else if (payloadNode.Fields.ContainsKey("Text"))
+                        {
+                            body = (string)payloadNode["Text"];
+                        }
+                        else if (payloadNode.Fields.ContainsKey("MSNSLP"))
+                        {
+                            body = (string)payloadNode["MSNSLP"];
+                        }
+                        else
+                        {
+                            body = String.Format("Unhandled payload format: {0}",
+                                (payloadNode.FieldNames.Count > 0) ? payloadNode.FieldNames[0] : payloadNode.Children[0].Name);
+                        }
+
+                        vt.BodyText = body;
+                    }
+
+                    messages.Add(vt);
+                }
+            }
+
+            return messages.ToArray();
+        }
+    }
+
     [Serializable()]
     public class MSNSLPCall
     {
@@ -396,8 +458,16 @@ namespace oSpy.Parser
     {
         public const int MSN_SB_PORT = 1863;
 
+        protected enum PayloadFormat {
+            TEXT,
+            XML,
+            MESSAGE,
+            SLP,
+        };
+
         protected static List<string> payloadCommandsFromClient;
         protected static List<string> payloadCommandsFromServer;
+        protected static Dictionary<string, PayloadFormat> payloadCommandFormats;
 
         static MSNTransactionFactory()
         {
@@ -411,6 +481,17 @@ namespace oSpy.Parser
                 "MSG", "UBX", "UUX", "FQY", "GCF", "FQY", "NOT",
                 "UUN", "UBN",
             });
+
+            payloadCommandFormats = new Dictionary<string, PayloadFormat>();
+            payloadCommandFormats["MSG"] = PayloadFormat.MESSAGE;
+            payloadCommandFormats["NOT"] = PayloadFormat.MESSAGE;
+            payloadCommandFormats["UBX"] = PayloadFormat.XML;
+            payloadCommandFormats["UUX"] = PayloadFormat.XML;
+            payloadCommandFormats["ADL"] = PayloadFormat.XML;
+            payloadCommandFormats["RML"] = PayloadFormat.XML;
+            payloadCommandFormats["GCF"] = PayloadFormat.XML;
+            payloadCommandFormats["UUN"] = PayloadFormat.SLP;
+            payloadCommandFormats["UBN"] = PayloadFormat.SLP;
         }
 
         public MSNTransactionFactory(DebugLogger logger)
@@ -589,7 +670,13 @@ namespace oSpy.Parser
 
                             logger.AddMessage(String.Format("Parsing {0} bytes of payload", payloadLength));
 
-                            if (cmd.ToUpper() == "MSG")
+                            PayloadFormat format = PayloadFormat.TEXT;
+
+                            string cmdUpper = cmd.ToUpper();
+                            if (payloadCommandFormats.ContainsKey(cmdUpper))
+                                format = payloadCommandFormats[cmdUpper];
+
+                            if (format == PayloadFormat.MESSAGE)
                             {
                                 SBParseMSG(stream, payloadNode, payloadLength);
                             }
@@ -597,13 +684,17 @@ namespace oSpy.Parser
                             {
                                 string body = stream.ReadStringUTF8(payloadLength, slices);
 
-                                if (cmd == "UUN" || cmd == "UBN")
+                                switch (format)
                                 {
-                                    payloadNode.AddTextField("MSNSLP", body, "MSNSLP data.", slices);
-                                }
-                                else
-                                {
-                                    payloadNode.AddXMLField("XML", body, "XML data.", slices);
+                                    case PayloadFormat.SLP:
+                                        payloadNode.AddTextField("MSNSLP", body, "MSNSLP data.", slices);
+                                        break;
+                                    case PayloadFormat.XML:
+                                        payloadNode.AddXMLField("XML", body, "XML data.", slices);
+                                        break;
+                                    default:
+                                        payloadNode.AddTextField("Text", body, "Text.", slices);
+                                        break;
                                 }
                             }
                         }
