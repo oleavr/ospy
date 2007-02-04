@@ -73,8 +73,11 @@ namespace oSpy
                 {
                     foreach (VisualTransaction transaction in stream.Transactions)
                     {
-                        transactions.Add(transaction);
-                        transactionToColIndex.Add(transaction, colIndex);
+                        if (transaction.Visible)
+                        {
+                            transactions.Add(transaction);
+                            transactionToColIndex.Add(transaction, colIndex);
+                        }
                     }
 
                     colIndex++;
@@ -263,6 +266,15 @@ namespace oSpy
                 UpdateView();
                 if (SessionsChanged != null)
                     SessionsChanged(value);
+
+                foreach (VisualSession stream in streams)
+                {
+                    foreach (VisualTransaction transaction in stream.Transactions)
+                    {
+                        transaction.SizeChanged += new EventHandler(transaction_SizeChanged);
+                        transaction.VisibleChanged += new EventHandler(transaction_VisibleChanged);
+                    }
+                }
             }
         }
 
@@ -333,27 +345,30 @@ namespace oSpy
             timeline.Height = timelineHeight;
         }
 
+        private bool updatingView = false;
+
         private void UpdateView()
         {
-            if (streams.Length == 0)
+            if (updatingView || streams.Length == 0)
                 return;
 
-            foreach (VisualSession stream in streams)
-            {
-                foreach (VisualTransaction transaction in stream.Transactions)
-                {
-                    transaction.SizeChanged += new EventHandler(transaction_SizeChanged);
-                }
-            }
+            updatingView = true;
 
             Recalibrate();
 
             Invalidate();
 
             timeline.UpdateLayout();
+
+            updatingView = false;
         }
 
         private void transaction_SizeChanged(object sender, EventArgs e)
+        {
+            UpdateView();
+        }
+
+        private void transaction_VisibleChanged(object sender, EventArgs e)
         {
             UpdateView();
         }

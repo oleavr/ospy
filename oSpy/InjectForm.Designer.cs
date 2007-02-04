@@ -30,6 +30,7 @@ namespace oSpy
         {
             this.panel1 = new System.Windows.Forms.Panel();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.asStartButton = new System.Windows.Forms.Button();
             this.asInjectButton = new System.Windows.Forms.Button();
             this.asKillButton = new System.Windows.Forms.Button();
             this.injectButton = new System.Windows.Forms.Button();
@@ -37,7 +38,6 @@ namespace oSpy
             this.killButton = new System.Windows.Forms.Button();
             this.closeButton = new System.Windows.Forms.Button();
             this.listView = new System.Windows.Forms.ListView();
-            this.asStartButton = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -65,6 +65,16 @@ namespace oSpy
             this.groupBox1.TabIndex = 7;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "ActiveSync processes";
+            // 
+            // asStartButton
+            // 
+            this.asStartButton.Location = new System.Drawing.Point(6, 46);
+            this.asStartButton.Name = "asStartButton";
+            this.asStartButton.Size = new System.Drawing.Size(117, 23);
+            this.asStartButton.TabIndex = 10;
+            this.asStartButton.Text = "Start";
+            this.asStartButton.UseVisualStyleBackColor = true;
+            this.asStartButton.Click += new System.EventHandler(this.asStartButton_Click);
             // 
             // asInjectButton
             // 
@@ -120,6 +130,7 @@ namespace oSpy
             // 
             this.closeButton.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
+            this.closeButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.closeButton.Location = new System.Drawing.Point(9, 239);
             this.closeButton.Name = "closeButton";
             this.closeButton.Size = new System.Drawing.Size(119, 23);
@@ -138,20 +149,11 @@ namespace oSpy
             this.listView.UseCompatibleStateImageBehavior = false;
             this.listView.View = System.Windows.Forms.View.List;
             // 
-            // asStartButton
-            // 
-            this.asStartButton.Location = new System.Drawing.Point(6, 46);
-            this.asStartButton.Name = "asStartButton";
-            this.asStartButton.Size = new System.Drawing.Size(117, 23);
-            this.asStartButton.TabIndex = 10;
-            this.asStartButton.Text = "Start";
-            this.asStartButton.UseVisualStyleBackColor = true;
-            this.asStartButton.Click += new System.EventHandler(this.asStartButton_Click);
-            // 
             // InjectForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.CancelButton = this.closeButton;
             this.ClientSize = new System.Drawing.Size(415, 287);
             this.Controls.Add(this.listView);
             this.Controls.Add(this.panel1);

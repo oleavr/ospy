@@ -1632,7 +1632,7 @@ namespace oSpy
             return true;
         }
 
-        private void nextPacketBtn_Click(object sender, EventArgs e)
+        private void GoToNextPacket()
         {
             int startIndex;
             if (!GetNextRowIndex(out startIndex))
@@ -1642,7 +1642,7 @@ namespace oSpy
             {
                 if (row.Index >= startIndex)
                 {
-                    MessageType msgType = (MessageType) ((UInt32) row.Cells[msgTypeDataGridViewTextBoxColumn.Index].Value);
+                    MessageType msgType = (MessageType)((UInt32)row.Cells[msgTypeDataGridViewTextBoxColumn.Index].Value);
                     PacketDirection direction = (PacketDirection)((UInt32)row.Cells[directionDataGridViewTextBoxColumn.Index].Value);
 
                     if (msgType == MessageType.MESSAGE_TYPE_PACKET && direction != PacketDirection.PACKET_DIRECTION_INVALID)
@@ -1654,7 +1654,7 @@ namespace oSpy
             }
         }
 
-        private void nextTransactionBtn_Click(object sender, EventArgs e)
+        private void GoToNextTransactionRow()
         {
             int startIndex;
             if (!GetNextRowIndex(out startIndex))
@@ -1675,6 +1675,26 @@ namespace oSpy
                     }
                 }
             }
+        }
+
+        private void nextpacketToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            GoToNextPacket();
+        }
+
+        private void nextRowTransactionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            GoToNextTransactionRow();
+        }
+
+        private void nextPacketBtn_Click(object sender, EventArgs e)
+        {
+            GoToNextPacket();
+        }
+
+        private void nextTransactionBtn_Click(object sender, EventArgs e)
+        {
+            GoToNextTransactionRow();
         }
     }
 }

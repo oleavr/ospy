@@ -69,6 +69,12 @@
     <Compile Include="Net\IPPacket.cs" />
     <Compile Include="Net\IPSession.cs" />
     <Compile Include="Net\PacketStream.cs" />
+    <Compile Include="NewVisualizationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="NewVisualizationForm.Designer.cs">
+      <DependentUpon>NewVisualizationForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Parser\ITransactionFactory.cs" />
     <Compile Include="MultiSessionView.cs">
       <SubType>UserControl</SubType>
@@ -162,6 +168,10 @@
     <EmbeddedResource Include="MainForm.resx">
       <SubType>Designer</SubType>
       <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NewVisualizationForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>NewVisualizationForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ProgressForm.resx">
       <SubType>Designer</SubType>

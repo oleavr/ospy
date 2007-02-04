@@ -37,19 +37,9 @@ namespace oSpy
         {
             InitializeComponent();
 
-            multiStreamView.Visible = false;
-
             this.sessions = sessions;
 
             multiStreamView.SessionsChanged += new SessionsChangedHandler(multiStreamView_SessionsChanged);
-
-            foreach (SessionVisualizer visualizer in StreamVisualizationManager.Visualizers)
-            {
-                if (visualizer.Visible)
-                {
-                    visualizerComboBox.Items.Add(visualizer);
-                }
-            }
         }
 
         private void multiStreamView_SessionsChanged(VisualSession[] newSessions)
@@ -82,7 +72,6 @@ namespace oSpy
                 Stream stream = File.Open(openFileDialog.FileName, FileMode.Open);
                 BinaryFormatter bFormatter = new BinaryFormatter();
                 multiStreamView.Streams = (VisualSession[])bFormatter.Deserialize(stream);
-                multiStreamView.Visible = true;
                 stream.Close();
             }
         }
@@ -111,41 +100,46 @@ namespace oSpy
             Close();
         }
 
-        private void visualizerComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            List<VisualSession> visSessions = new List<VisualSession>(sessions.Length);
-            List<VisualTransaction> transactions = new List<VisualTransaction>();
+            NewVisualizationForm frm = new NewVisualizationForm();
 
-            foreach (IPSession session in sessions)
+            if (frm.ShowDialog(this) == DialogResult.OK)
             {
-                SessionVisualizer visualizer = (SessionVisualizer) visualizerComboBox.Items[visualizerComboBox.SelectedIndex];
-                transactions.AddRange(visualizer.GetTransactions(session));
+                List<VisualSession> visSessions = new List<VisualSession>(sessions.Length);
+                List<VisualTransaction> transactions = new List<VisualTransaction>();
 
-                if (transactions.Count > 0)
+                foreach (IPSession session in sessions)
                 {
-                    VisualSession vs = new VisualSession(session);
+                    foreach (SessionVisualizer vis in frm.GetSelectedVisualizers())
+                    {
+                        transactions.AddRange(vis.GetTransactions(session));
+                    }
 
-                    transactions.AddRange(StreamVisualizationManager.TCPEventsVis.GetTransactions(session));
-                    vs.Transactions.AddRange(transactions);
+                    if (transactions.Count > 0)
+                    {
+                        VisualSession vs = new VisualSession(session);
 
-                    vs.TransactionsCreated();
+                        transactions.AddRange(StreamVisualizationManager.TCPEventsVis.GetTransactions(session));
 
-                    visSessions.Add(vs);
+                        vs.Transactions.AddRange(transactions);
+
+                        vs.TransactionsCreated();
+
+                        visSessions.Add(vs);
+
+                        transactions.Clear();
+                    }
                 }
 
-                transactions.Clear();
+                foreach (VisualSession session in visSessions)
+                {
+                    session.SessionsCreated();
+                }
+
+                multiStreamView.Streams = visSessions.ToArray();
+                multiStreamView.Focus();
             }
-
-            foreach (VisualSession session in visSessions)
-            {
-                session.SessionsCreated();
-            }
-
-            multiStreamView.Visible = false;
-            multiStreamView.Streams = visSessions.ToArray();
-            multiStreamView.Visible = true;
-
-            multiStreamView.Focus();
         }
     }
 }
