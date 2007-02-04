@@ -26,6 +26,104 @@ using oSpy.Net;
 
 namespace oSpy.Parser
 {
+    [Serializable()]
+    public class HTTPMessage : VisualTransaction
+    {
+        public HTTPMessage(int index, PacketDirection direction, DateTime startTime)
+            : base(index, direction, startTime, startTime)
+        {
+            HeaderRowsPerCol = 1000;
+        }
+    }
+
+    public class HTTPVisualizer : SessionVisualizer
+    {
+        public override string Name
+        {
+            get { return "HTTP"; }
+        }
+
+        public override VisualTransaction[] GetTransactions(IPSession session)
+        {
+            List<HTTPMessage> messages = new List<HTTPMessage>();
+
+            foreach (TransactionNode node in session.Nodes)
+            {
+                if (node.Name == "HTTPTransaction")
+                {
+                    TransactionNode subNode;
+
+                    subNode = node.FindChild("Request", false);
+                    if (subNode != null)
+                        messages.Add(ParseNode(subNode, true));
+
+                    subNode = node.FindChild("Response", false);
+                    if (subNode != null)
+                        messages.Add(ParseNode(subNode, false));
+
+                    subNode = node.FindChild("Response2", false);
+                    if (subNode != null)
+                        messages.Add(ParseNode(subNode, false));
+                }
+            }
+
+            return messages.ToArray();
+        }
+
+        private HTTPMessage ParseNode(TransactionNode httpNode, bool isRequest)
+        {
+            IPPacket pkt = httpNode.Slices[0].Packet;
+
+            HTTPMessage msg = new HTTPMessage(httpNode.Index, pkt.Direction, pkt.Timestamp);
+
+            if (isRequest)
+            {
+                msg.HeadlineText = String.Format("{0} {1} {2}", httpNode["Verb"], httpNode["Argument"], httpNode["Protocol"]);
+            }
+            else
+            {
+                msg.HeadlineText = String.Format("{0} {1}", httpNode["Protocol"], httpNode["Result"]);
+            }
+
+            TransactionNode headersNode = httpNode.FindChild("Headers", false);
+            if (headersNode != null)
+            {
+                foreach (string name in headersNode.FieldNames)
+                {
+                    msg.AddHeaderField(name, headersNode.Fields[name]);
+                }
+            }
+
+            TransactionNode bodyNode = httpNode.FindChild("Body", false);
+            if (bodyNode != null)
+            {
+                if (bodyNode.Fields.ContainsKey("XML"))
+                {
+                    string body;
+                    XMLHighlighter highlighter;
+
+                    XML.PrettyPrint((string)bodyNode["XML"], out body, out highlighter);
+
+                    msg.BodyText = body;
+                }
+                else if (bodyNode.Fields.ContainsKey("HTML"))
+                {
+                    msg.BodyText = (string)bodyNode["HTML"];
+                }
+                else if (bodyNode.Fields.ContainsKey("Raw"))
+                {
+                    msg.SetBodyFromPreviewData((byte[])bodyNode.Fields["Raw"], 512);
+                }
+                else
+                {
+                    msg.BodyText = String.Format("{0} unhandled", bodyNode.FieldNames[0]);
+                }
+            }
+
+            return msg;
+        }
+    }
+
     public class HTTPTransactionFactory : TransactionFactory
     {
         protected const string ellipsis = "(..)";
@@ -309,7 +407,7 @@ namespace oSpy.Parser
             }
             else
             {
-                bodyNode.AddField("Raw", StaticUtils.FormatByteArray(body),
+                bodyNode.AddField("Raw", body, StaticUtils.FormatByteArray(body),
                     "Raw body data.", slices);
             }
 

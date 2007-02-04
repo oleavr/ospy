@@ -65,6 +65,12 @@ namespace oSpy.Parser
             set { summary = value; }
         }
 
+        protected List<string> fieldNames;
+        public List<string> FieldNames
+        {
+            get { return fieldNames; }
+        }
+
         protected Dictionary<string, object> fields;
         public Dictionary<string, object> Fields
         {
@@ -145,6 +151,7 @@ namespace oSpy.Parser
             this.children = new List<TransactionNode>();
             this.childrenDict = new Dictionary<string, TransactionNode>();
             this.slices = new List<PacketSlice>();
+            this.fieldNames = new List<string>();
             this.fields = new Dictionary<string, object>();
             this.fieldSlices = new Dictionary<string, List<PacketSlice>>();
         }
@@ -163,14 +170,22 @@ namespace oSpy.Parser
 
         public TransactionNode FindChild(string name)
         {
+            return FindChild(name, true);
+        }
+
+        public TransactionNode FindChild(string name, bool recursive)
+        {
             if (childrenDict.ContainsKey(name))
                 return childrenDict[name];
 
-            foreach (TransactionNode child in childrenDict.Values)
+            if (recursive)
             {
-                TransactionNode node = child.FindChild(name);
-                if (node != null)
-                    return node;
+                foreach (TransactionNode child in childrenDict.Values)
+                {
+                    TransactionNode node = child.FindChild(name);
+                    if (node != null)
+                        return node;
+                }
             }
 
             return null;
@@ -183,6 +198,7 @@ namespace oSpy.Parser
 
         public void AddField(string name, object value, object formattedValue, string description, List<PacketSlice> slices)
         {
+            this.fieldNames.Add(name);
             this.fields[name] = value;
             Properties.Add(new PropertySpec(name, typeof(ValueType), "Packet", description));
             this[name] = formattedValue;
@@ -211,6 +227,7 @@ namespace oSpy.Parser
 
         protected void AddSpecialField(string name, object value, object formattedValue, string description, List<PacketSlice> slices, Type editorType)
         {
+            this.fieldNames.Add(name);
             this.fields[name] = value;
             PropertySpec propSpec = new PropertySpec(name, typeof(string), "Packet");
             propSpec.Description = description;

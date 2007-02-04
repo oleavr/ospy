@@ -431,10 +431,32 @@ namespace oSpy
 
             Rectangle tlRect = timeline.GetRealSize();
 
-            Bitmap bitmap = new Bitmap(headersBitmap.Width, timelineY + tlRect.Height);
+            int width = headersBitmap.Width;
+            int height = timelineY + tlRect.Height;
+
+            Bitmap bitmap = null;
+
+            for (bitmap = null; bitmap == null; )
+            {
+                try
+                {
+                    bitmap = new Bitmap(width, height);
+                }
+                catch (ArgumentException)
+                {
+                    if (width > height)
+                    {
+                        width /= 2;
+                    }
+                    else
+                    {
+                        height /= 2;
+                    }
+                }
+            }
 
             Graphics g = Graphics.FromImage(bitmap);
-            g.DrawImage(headersBitmap, new Rectangle(0, 0, headersBitmap.Width, headersBitmap.Height));
+            g.DrawImage(headersBitmap, new Rectangle(0, 0, width, headersBitmap.Height));
 
             timeline.DrawToBitmap(bitmap, 0, timelineY);
 

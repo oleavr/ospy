@@ -25,7 +25,7 @@ using System.Drawing.Extended;
 using System.Runtime.Serialization;
 using oSpy.Util;
 namespace oSpy
-{    
+{
     [Serializable()]
     public class VisualTransaction : UserControl, ISerializable, IComparable
     {
@@ -55,6 +55,20 @@ namespace oSpy
             set { endTime = value; Invalidate(); }
         }
 
+        private Color headlineBackColor;
+        public Color HeadlineBackColor
+        {
+            get { return headlineBackColor; }
+            set { headlineBackColor = value; Invalidate(); }
+        }
+
+        private Color headlineForeColor;
+        public Color HeadlineForeColor
+        {
+            get { return headlineForeColor; }
+            set { headlineForeColor = value; Invalidate(); }
+        }
+
         private Color headerBackColor;
         public Color HeaderBackColor
         {
@@ -81,6 +95,13 @@ namespace oSpy
         {
             get { return bodyForeColor; }
             set { bodyForeColor = value; Invalidate(); }
+        }
+
+        private Font headlineFont;
+        public Font HeadlineFont
+        {
+            get { return headlineFont; }
+            set { headlineFont = value; Recalibrate(); }
         }
 
         private Font headerFont;
@@ -122,6 +143,13 @@ namespace oSpy
         {
             get { return frameColor; }
             set { frameColor = value; Invalidate(); }
+        }
+
+        protected string headlineText;
+        public string HeadlineText
+        {
+            get { return headlineText; }
+            set { headlineText = value; Recalibrate(); }
         }
 
         protected List<KeyValuePair<string, string>> headerFields;
@@ -225,9 +253,10 @@ namespace oSpy
             this.startTime = startTime;
             this.endTime = endTime;
 
-            BodyBackColor = HeaderBackColor;
-            HeaderForeColor = BodyForeColor = Color.Black;
+            HeadlineBackColor = BodyBackColor = HeaderBackColor;
+            HeadlineForeColor = HeaderForeColor = BodyForeColor = Color.Black;
 
+            HeadlineFont = new Font("Lucida Console", 8);
             HeaderFont = new Font("Lucida Console", 8);
             BodyFont = new Font("Lucida Console", 8);
 
@@ -235,6 +264,7 @@ namespace oSpy
 
             framePenWidth = 1;
 
+            headlineText = "";
             headerFields = new List<KeyValuePair<string, string>>();
             BodyText = "";
             testScenario = -1;
@@ -259,12 +289,15 @@ namespace oSpy
             startTime = (DateTime) info.GetValue("startTime", typeof(DateTime));
             endTime = (DateTime)info.GetValue("endTime", typeof(DateTime));
 
-            headerBackColor = (Color) info.GetValue("headerBackColor", typeof(Color));
+            headlineBackColor = (Color)info.GetValue("headlineBackColor", typeof(Color));
+            headlineForeColor = (Color)info.GetValue("headlineForeColor", typeof(Color));
+            headerBackColor = (Color)info.GetValue("headerBackColor", typeof(Color));
             headerForeColor = (Color) info.GetValue("headerForeColor", typeof(Color));
             bodyBackColor = (Color) info.GetValue("bodyBackColor", typeof(Color));
             bodyForeColor = (Color) info.GetValue("bodyForeColor", typeof(Color));
 
-            HeaderFont = (Font) info.GetValue("HeaderFont", typeof(Font));
+            headlineFont = (Font)info.GetValue("headlineFont", typeof(Font));
+            HeaderFont = (Font)info.GetValue("HeaderFont", typeof(Font));
             bodyFont = (Font) info.GetValue("bodyFont", typeof(Font));
 
             headerRowsPerCol = info.GetInt32("headerRowsPerCol");
@@ -272,6 +305,7 @@ namespace oSpy
             framePenWidth = (int) info.GetValue("framePenWidth", typeof(int));
             frameColor = (Color) info.GetValue("frameColor", typeof(Color));
 
+            headlineText = info.GetString("headlineText");
             headerFields = (List<KeyValuePair<string, string>>)
                 info.GetValue("headerFields", typeof(List<KeyValuePair<string, string>>));
             BodyText = info.GetString("BodyText");
@@ -296,11 +330,14 @@ namespace oSpy
             info.AddValue("startTime", startTime);
             info.AddValue("endTime", endTime);
 
+            info.AddValue("headlineBackColor", headlineBackColor);
+            info.AddValue("headlineForeColor", headlineForeColor);
             info.AddValue("headerBackColor", headerBackColor);
             info.AddValue("headerForeColor", headerForeColor);
             info.AddValue("bodyBackColor", bodyBackColor);
             info.AddValue("bodyForeColor", bodyForeColor);
 
+            info.AddValue("headlineFont", headlineFont);
             info.AddValue("HeaderFont", headerFont);
             info.AddValue("bodyFont", bodyFont);
 
@@ -309,6 +346,7 @@ namespace oSpy
             info.AddValue("framePenWidth", framePenWidth);
             info.AddValue("frameColor", frameColor);
 
+            info.AddValue("headlineText", headlineText);
             info.AddValue("headerFields", headerFields);
             info.AddValue("BodyText", BodyText);
 
@@ -379,6 +417,8 @@ namespace oSpy
 
         private int ctxSquareWidth = 10;
 
+        private int headlineTopBottomSpacing = 5;
+        private int headlineLeftRightSpacing = 5;
         private int headerTopBottomSpacing = 5;
         private int headerLeftRightSpacing = 5;
         private int headerRowSpacing = 2;
@@ -386,6 +426,7 @@ namespace oSpy
         private int bodyLineSpacing = 2;
 
         private int commonWidth;
+        private int headlineX, headlineY, headlineContentX, headlineContentY, headlineHeight;
         private int headerX, headerY, headerContentX, headerContentY, headerContentWidth, headerRowHeight, headerHeight;
         private float headerWidestName;
         private float[] headerColWidths = new float[1];
@@ -402,10 +443,24 @@ namespace oSpy
             commonWidth += 2 * bodyBorderSpacing;
 
             //
+            // Headline
+            //
+            headlineX = 0 + framePenWidth;
+            headlineY = 0 + framePenWidth;
+
+            int headlineFontHeight = (int) headlineFont.GetHeight();
+
+            headlineContentX = headlineX + headlineLeftRightSpacing;
+            headlineContentY = headlineY + headlineTopBottomSpacing;
+
+            headlineHeight = (headlineText.Length > 0) ?
+                (headlineTopBottomSpacing * 2) + headlineFontHeight : 0;
+
+            //
             // Header
             //
             headerX = 0 + framePenWidth;
-            headerY = 0 + framePenWidth;
+            headerY = headlineY + headlineHeight + ((headlineHeight > 0) ? sectionSpacing : 0);
 
             int headerFontHeight = (int)headerFont.GetHeight();
 
@@ -489,7 +544,7 @@ namespace oSpy
         {
             Width = commonWidth + (2 * framePenWidth);
 
-            int height = headerHeight + (2 * framePenWidth);
+            int height = headlineHeight + headerHeight + (2 * framePenWidth);
             if (bodyLines.Length > 0)
             {
                 height += ((headerHeight > 0) ? sectionSpacing : 0) + bodyHeight;
@@ -507,6 +562,22 @@ namespace oSpy
             float x = 0, y = 0;
             Brush brush;
             Pen pen = new Pen(frameColor, framePenWidth);
+
+            //
+            // Headline
+            //
+            if (headlineText.Length > 0)
+            {
+                eg.FillRoundRectangle(new SolidBrush(headlineBackColor),
+                    headlineX, headlineY, commonWidth, headlineHeight, 2.0f);
+
+                brush = new SolidBrush(headlineForeColor);
+
+                x = headlineContentX;
+                y = headlineContentY;
+
+                g.DrawString(headlineText, headlineFont, brush, x, y);
+            }
 
             //
             // Header
@@ -587,13 +658,13 @@ namespace oSpy
             // Draw a round frame around both header and body
             //
             int width = commonWidth + framePenWidth;
-            int height = headerHeight + framePenWidth;
+            int height = headlineHeight + headerHeight + framePenWidth;
             if (bodyLines.Length > 0)
             {
                 height += ((headerHeight > 0) ? sectionSpacing : 0) + bodyHeight;
             }
 
-            eg.DrawRoundRectangle(pen, headerX - framePenWidth, headerY - framePenWidth,
+            eg.DrawRoundRectangle(pen, headlineX - framePenWidth, headlineY - framePenWidth,
                                   width, height, 4.0f);
         }
 

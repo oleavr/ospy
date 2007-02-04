@@ -42,102 +42,12 @@ namespace oSpy
 
         public void DisplayXML(string xmlData)
         {
-            StringReader stringReader = new StringReader(xmlData);
-            XmlTextReader reader = new XmlTextReader(stringReader);
-            StringBuilder builder = new StringBuilder(xmlData.Length);
+            string prettyXml;
+            Util.XMLHighlighter highlighter;
 
-            builder.Append("FORMATTED:\n----------\n\n");
+            Util.XML.PrettyPrint(xmlData, out prettyXml, out highlighter);
 
-            XMLHighlighter highlighter = new XMLHighlighter();
-
-            int indent = 0;
-            while (reader.Read())
-            {
-                int offset;
-
-                switch (reader.NodeType)
-                {
-                    case XmlNodeType.Element:
-                        builder.AppendFormat("{0,-" + Convert.ToString(indent) + "}", "");
-
-                        offset = builder.Length;
-                        builder.Append("<");
-                        highlighter.AddToken(XMLHighlightContext.ELEMENT_OPENING, offset, builder.Length - offset);
-
-                        offset = builder.Length;
-                        builder.Append(reader.Name);
-                        highlighter.AddToken(XMLHighlightContext.ELEMENT_NAME, offset, builder.Length - offset);
-                        
-                        bool empty;
-                        empty = reader.IsEmptyElement;
-
-                        for (int i = 0; i < reader.AttributeCount; i++)
-                        {
-                            reader.MoveToAttribute(i);
-
-                            builder.Append(" ");
-
-                            offset = builder.Length;
-                            builder.Append(reader.Name);
-                            highlighter.AddToken(XMLHighlightContext.ELEMENT_ATTRIBUTE_KEY, offset, builder.Length - offset);
-
-                            builder.Append("=\"");
-
-                            offset = builder.Length;
-                            builder.Append(reader.Value);
-                            highlighter.AddToken(XMLHighlightContext.ELEMENT_ATTRIBUTE_VALUE, offset, builder.Length - offset);
-
-                            builder.Append("\"");
-                        }
-
-                        offset = builder.Length;
-
-                        if (empty)
-                        {
-                            builder.Append("/");
-                        }
-                        else
-                        {
-                            indent += 4;
-                        }
-
-                        builder.Append(">");
-                        highlighter.AddToken(XMLHighlightContext.ELEMENT_CLOSING, offset, builder.Length - offset);
-
-                        builder.Append("\n");
-
-                        break;
-                    case XmlNodeType.EndElement:
-                        indent -= 4;
-
-                        builder.AppendFormat("{0,-" + Convert.ToString(indent) + "}", "");
-
-                        offset = builder.Length;
-                        builder.Append("</");
-                        highlighter.AddToken(XMLHighlightContext.ELEMENT_OPENING, offset, builder.Length - offset);
-
-                        offset = builder.Length;
-                        builder.Append(reader.Name);
-                        highlighter.AddToken(XMLHighlightContext.ELEMENT_NAME, offset, builder.Length - offset);
-
-                        offset = builder.Length;
-                        builder.Append(">");
-                        highlighter.AddToken(XMLHighlightContext.ELEMENT_CLOSING, offset, builder.Length - offset);
-
-                        builder.Append("\n");
-                        break;
-                    case XmlNodeType.Text:
-                        builder.AppendFormat("{0,-" + Convert.ToString(indent) + "}", "");
-                        builder.Append(reader.Value);
-                        builder.Append("\n");
-                        break;
-                }
-            }
-
-            builder.AppendFormat("\n\n\nRAW:\n----\n\n{0}", xmlData);
-
-            richTextBox.Text = builder.ToString();
-
+            richTextBox.Text = prettyXml;
             highlighter.HighlightRichTextBox(richTextBox);
         }
 
@@ -153,85 +63,6 @@ namespace oSpy
         private void closeButton_Click(object sender, EventArgs e)
         {
             Close();
-        }
-    }
-
-    public enum XMLHighlightContext
-    {
-        ELEMENT_OPENING,
-        ELEMENT_CLOSING,
-        ELEMENT_NAME,
-        ELEMENT_ATTRIBUTE_KEY,
-        ELEMENT_ATTRIBUTE_VALUE,
-    };
-
-    public class XMLHighlighter
-    {
-        protected class HighlightContext
-        {
-            protected Color color;
-            public Color Color
-            {
-                get
-                {
-                    return color;
-                }
-            }
-
-            protected List<KeyValuePair<int, int>> tags;
-            public KeyValuePair<int, int>[] Tags
-            {
-                get
-                {
-                    return tags.ToArray();
-                }
-            }
-
-            public HighlightContext(Color c)
-            {
-                color = c;
-                tags = new List<KeyValuePair<int, int>>();
-            }
-
-            public void Add(int offset, int length)
-            {
-                tags.Add(new KeyValuePair<int, int>(offset, length));
-            }
-        }
-
-        protected Dictionary<XMLHighlightContext, HighlightContext> contexts;
-
-        public XMLHighlighter()
-        {
-            Color cyanish = Color.FromArgb(64, 255, 255);
-            Color greenish = Color.FromArgb(96, 255, 96);
-            Color redish = Color.FromArgb(255, 160, 160);
-
-            contexts = new Dictionary<XMLHighlightContext, HighlightContext>(5);
-            contexts.Add(XMLHighlightContext.ELEMENT_OPENING, new HighlightContext(cyanish));
-            contexts.Add(XMLHighlightContext.ELEMENT_CLOSING, new HighlightContext(cyanish));
-            contexts.Add(XMLHighlightContext.ELEMENT_NAME, new HighlightContext(cyanish));
-            contexts.Add(XMLHighlightContext.ELEMENT_ATTRIBUTE_KEY, new HighlightContext(greenish));
-            contexts.Add(XMLHighlightContext.ELEMENT_ATTRIBUTE_VALUE, new HighlightContext(redish));
-        }
-
-        public void AddToken(XMLHighlightContext ctx, int offset, int length)
-        {
-            contexts[ctx].Add(offset, length);
-        }
-
-        public void HighlightRichTextBox(RichTextBox box)
-        {
-            foreach (HighlightContext ctx in contexts.Values)
-            {
-                foreach (KeyValuePair<int, int> pair in ctx.Tags)
-                {
-                    box.Select(pair.Key, pair.Value);
-                    box.SelectionColor = ctx.Color;
-                }
-            }
-
-            box.Select(0, 0);
         }
     }
 

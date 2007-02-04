@@ -96,6 +96,7 @@
     <Compile Include="Util\Util.cs" />
     <Compile Include="Util\Constants.cs" />
     <Compile Include="Util\IDebugLogger.cs" />
+    <Compile Include="Util\XML.cs" />
     <Compile Include="VisualSession.cs">
     </Compile>
     <Compile Include="ConversationsForm.cs">
@@ -110,7 +111,9 @@
     <Compile Include="DebugForm.Designer.cs">
       <DependentUpon>DebugForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Parser\HTTP.cs" />
+    <Compile Include="Parser\HTTP.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="InjectForm.cs">
       <SubType>Form</SubType>
     </Compile>
