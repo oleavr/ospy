@@ -229,6 +229,7 @@ namespace oSpy
 
             Register(new TCPVisualizer());
             Register(new HTTPVisualizer());
+            Register(new MSNSBVisualizer());
             Register(new MSNP2PVisualizer());
         }
 
