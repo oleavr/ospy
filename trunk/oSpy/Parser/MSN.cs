@@ -396,13 +396,19 @@ namespace oSpy.Parser
     {
         public const int MSN_SB_PORT = 1863;
 
-        protected static List<string> payloadCommands;
+        protected static List<string> payloadCommandsFromClient;
+        protected static List<string> payloadCommandsFromServer;
 
         static MSNTransactionFactory()
         {
             // FIXME: add all of them here
-            payloadCommands = new List<string>(new string[] {
-                "MSG", "UBX", "UUX", "ADL", "FQY", "QRY", "GCF", "FQY", "NOT",
+            payloadCommandsFromClient = new List<string>(new string[] {
+                "MSG", "UBX", "UUX", "ADL", "RML", "FQY", "QRY", "GCF", "FQY", "NOT",
+                "UUN", "UBN",
+            });
+
+            payloadCommandsFromServer = new List<string>(new string[] {
+                "MSG", "UBX", "UUX", "FQY", "GCF", "FQY", "NOT",
                 "UUN", "UBN",
             });
         }
@@ -556,7 +562,16 @@ namespace oSpy.Parser
                     stream.ReadBytes(2);
 
                     // Is there a payload?
-                    if (arguments.Length > 0 && payloadCommands.Contains(cmd))
+                    bool hasPayload = false;
+                    if (arguments.Length > 0)
+                    {
+                        List<string> payloadCommands =
+                            (direction == PacketDirection.PACKET_DIRECTION_OUTGOING) ? payloadCommandsFromClient : payloadCommandsFromServer;
+
+                        hasPayload = payloadCommands.Contains(cmd);
+                    }
+
+                    if (hasPayload)
                     {
                         int payloadLength = -1;
 
