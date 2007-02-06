@@ -25,8 +25,10 @@ using System.Drawing.Extended;
 using System.IO;
 using System.Runtime.InteropServices;
 using oSpy.Util;
+
 namespace oSpy
 {
+    public delegate void TransactionDoubleClickHandler(VisualTransaction transaction);
     public delegate void SessionsChangedHandler(VisualSession[] newSessions);
 
     public class MultiSessionView : UserControl
@@ -63,21 +65,18 @@ namespace oSpy
 
                 ruler.Clear();
 
-                // First off, create a flat list of all transactions in all streams,
+                // First off, create a flat list of all transactions in all sessions,
                 // and make a lookup table for each transaction's column index
                 List<VisualTransaction> transactions = new List<VisualTransaction>();
                 Dictionary<VisualTransaction, int> transactionToColIndex = new Dictionary<VisualTransaction, int>();
 
                 int colIndex = 0;
-                foreach (VisualSession stream in msv.Streams)
+                foreach (VisualSession session in msv.Sessions)
                 {
-                    foreach (VisualTransaction transaction in stream.Transactions)
+                    foreach (VisualTransaction transaction in session.Transactions)
                     {
-                        if (transaction.Visible)
-                        {
-                            transactions.Add(transaction);
-                            transactionToColIndex.Add(transaction, colIndex);
-                        }
+                        transactions.Add(transaction);
+                        transactionToColIndex.Add(transaction, colIndex);
                     }
 
                     colIndex++;
@@ -147,7 +146,7 @@ namespace oSpy
                     ruler.AddMark(sameTime[0].StartTime, highest + 10);
                 }
 
-                realWidth = ruler.Width + (msv.streams.Length * (msv.colWidth + msv.colSpacing));
+                realWidth = ruler.Width + (msv.sessions.Count * (msv.colWidth + msv.colSpacing));
                 realHeight = y;
             }
 
@@ -207,6 +206,8 @@ namespace oSpy
 
                 Width = (int) strWidth + spacing;
                 Height = requiredHeight;
+
+                Invalidate();
             }
 
             protected override void OnFontChanged(EventArgs e)
@@ -226,8 +227,6 @@ namespace oSpy
             private string FormatTime(DateTime t)
             {
                 return String.Format("[{0}]", t.ToLongTimeString());
-                //return String.Format("[{0:00}:{1:00}:{2:00}]",
-                //    t.Hour, t.Minute, t.Second);
             }
 
             protected override void OnPaint(PaintEventArgs e)
@@ -256,43 +255,29 @@ namespace oSpy
             }
         }
 
-        protected VisualSession[] streams;
-        public VisualSession[] Streams
-        {
-            get { return streams; }
-            set
-            {
-                streams = value;
-                UpdateView();
-                if (SessionsChanged != null)
-                    SessionsChanged(value);
+        protected EventHandler transactionSizeChangedHandler, transactionDoubleClickHandler;
 
-                foreach (VisualSession stream in streams)
-                {
-                    foreach (VisualTransaction transaction in stream.Transactions)
-                    {
-                        transaction.SizeChanged += new EventHandler(transaction_SizeChanged);
-                        transaction.VisibleChanged += new EventHandler(transaction_VisibleChanged);
-                    }
-                }
-            }
+        protected List<VisualSession> sessions;
+        public VisualSession[] Sessions
+        {
+            get { return sessions.ToArray(); }
+            set { DeleteSessions(sessions.ToArray(), false); AddSessions(value); }
         }
 
         public event SessionsChangedHandler SessionsChanged;
+        public event TransactionDoubleClickHandler TransactionDoubleClick;
 
         protected ColorPool colorPool;
         protected Timeline timeline;
 
         public MultiSessionView()
         {
-            streams = new VisualSession[0];
+            transactionSizeChangedHandler = new EventHandler(transaction_SizeChanged);
+            transactionDoubleClickHandler = new EventHandler(transaction_DoubleClick);
+
+            sessions = new List<VisualSession>();
 
             this.BackColor = Color.White;
-
-            colorPool = new ColorPool();
-
-            // The first color is white, skip it
-            colorPool.GetColorForId("MultiStreamView1");
 
             timeline = new Timeline(this);
             timeline.Parent = this;
@@ -300,154 +285,87 @@ namespace oSpy
             timeline.Scroll += new ScrollEventHandler(timeline_Scroll);
             timeline.Click += new EventHandler(timeline_Click);
 
-            Recalibrate();
+            Clear();
         }
 
-        private void timeline_Click(object sender, EventArgs e)
+
+        //
+        // API
+        //
+
+        public void Clear()
         {
-            OnClick(e);
+            colorPool = new ColorPool();
+            // The first color is white, skip it
+            colorPool.GetColorForId("MultiSessionView1");
+
+            DeleteSessions(sessions.ToArray());
         }
 
-        private int contentX, contentY, contentWidth, contentHeight;
-
-        private int headingX, headingY, headingHeight;
-        private int timelineX, timelineY, timelineWidth, timelineHeight;
-
-        private int colWidth;
-        private int colSpacing;
-
-        private void Recalibrate()
+        public void AddSessions(VisualSession[] sessions)
         {
-            contentX = this.ClientRectangle.X;
-            contentY = this.ClientRectangle.Y;
-            contentWidth = this.ClientRectangle.Width - contentX;
-            contentHeight = this.ClientRectangle.Height - contentY;
-
-            headingX = contentX;
-            headingY = contentY + 5;
-            headingHeight = 20;
-
-            timelineX = contentX;
-            timelineY = headingY + headingHeight + 5;
-            timelineWidth = contentWidth;
-            timelineHeight = contentHeight - timelineY;
-
-            if (streams.Length > 0)
-                colWidth = streams[0].Transactions[0].Width;
-            else
-                colWidth = 100;
-
-            colSpacing = 10;
-
-            timeline.Left = timelineX;
-            timeline.Top = timelineY;
-            timeline.Width = timelineWidth;
-            timeline.Height = timelineHeight;
+            AddSessions(sessions, true);
         }
 
-        private bool updatingView = false;
-
-        private void UpdateView()
+        public void AddSessions(VisualSession[] sessions, bool update)
         {
-            if (updatingView || streams.Length == 0)
-                return;
+            this.sessions.AddRange(sessions);
 
-            updatingView = true;
+            EmitSessionsChanged();
 
-            Recalibrate();
-
-            Invalidate();
-
-            timeline.UpdateLayout();
-
-            updatingView = false;
-        }
-
-        private void transaction_SizeChanged(object sender, EventArgs e)
-        {
-            UpdateView();
-        }
-
-        private void transaction_VisibleChanged(object sender, EventArgs e)
-        {
-            UpdateView();
-        }
-
-        protected override void OnSizeChanged(EventArgs e)
-        {
-            Recalibrate();
-        }
-
-        private int scrollOffset = 0;
-
-        void timeline_Scroll(object sender, ScrollEventArgs e)
-        {
-            if (e.ScrollOrientation == ScrollOrientation.HorizontalScroll)
+            foreach (VisualSession session in sessions)
             {
-                scrollOffset = e.NewValue;
-                Invalidate();
+                foreach (VisualTransaction transaction in session.Transactions)
+                {
+                    transaction.Parent = null;
+                    transaction.Left = 0;
+                    transaction.Top = 0;
+                    transaction.SizeChanged += transactionSizeChangedHandler;
+                    transaction.DoubleClick += transactionDoubleClickHandler;
+                }
+            }
+
+            if (update)
+            {
+                UpdateView();
+                EmitSessionsChanged();
             }
         }
 
-        private void timeline_SizeChanged(object sender, EventArgs e)
+        public void DeleteSessions(VisualSession[] sessions)
         {
-            scrollOffset = StaticUtils.GetScrollPos(timeline.Handle, StaticUtils.SB_HORZ);
-            Invalidate();
+            DeleteSessions(sessions, true);
         }
 
-        protected override void OnPaint(PaintEventArgs e)
+        public void DeleteSessions(VisualSession[] sessions, bool update)
         {
-            Bitmap bitmap = GetHeadersBitmap();
-
-            e.Graphics.DrawImage(bitmap,
-                new Rectangle(0, 0, bitmap.Width - scrollOffset, bitmap.Height),
-                new Rectangle(scrollOffset, 0, bitmap.Width - scrollOffset, bitmap.Height),
-                GraphicsUnit.Pixel);
-        }
-
-        private Bitmap GetHeadersBitmap()
-        {
-            int w = headingX + timeline.ColumnsStartPos + (streams.Length * (colWidth + colSpacing));
-            int h = headingY + headingHeight;
-
-            Bitmap bitmap = new Bitmap(w, h);
-
-            Graphics g = Graphics.FromImage(bitmap);
-            ExtendedGraphics eg = new ExtendedGraphics(g);
-
-            Brush fgBrush = new SolidBrush(Color.White);
-            Font headerFont = new Font("Tahoma", 10, FontStyle.Bold);
-
-            int x = headingX + timeline.ColumnsStartPos;
-
-            foreach (VisualSession stream in streams)
+            foreach (VisualSession session in sessions)
             {
-                string str = String.Format("{0} <-> {1}", stream.LocalEndpoint, stream.RemoteEndpoint);
+                foreach (VisualTransaction transaction in session.Transactions)
+                {
+                    transaction.Parent = null;
+                    transaction.Left = 0;
+                    transaction.Top = 0;
+                    transaction.SizeChanged -= transactionSizeChangedHandler;
+                    transaction.DoubleClick -= transactionDoubleClickHandler;
+                }
 
-                Brush bgBrush = new SolidBrush(colorPool.GetColorForId(Convert.ToString(str.GetHashCode())));
-
-                eg.FillRoundRectangle(bgBrush, x, headingY, colWidth, headingHeight, 2.0f);
-
-                SizeF fs = g.MeasureString(str, headerFont);
-
-                g.DrawString(str, headerFont, fgBrush,
-                    x + (colWidth / 2) - (fs.Width / 2),
-                    headingY + ((headingHeight / 2) - (fs.Height / 2)));
-
-                x += colWidth + colSpacing;
+                this.sessions.Remove(session);
             }
 
-            return bitmap;
+            if (update)
+            {
+                UpdateView();
+                EmitSessionsChanged();
+            }
         }
 
         public void SaveToPng(string filename)
         {
-            Bitmap headersBitmap = GetHeadersBitmap();
-
             Rectangle tlRect = timeline.GetRealSize();
 
-            int width = headersBitmap.Width;
-            int height = timelineY + tlRect.Height;
+            int width = headingBitmap.Width;
+            int height = timelineRect.Y + tlRect.Height;
 
             Bitmap bitmap = null;
 
@@ -471,13 +389,228 @@ namespace oSpy
             }
 
             Graphics g = Graphics.FromImage(bitmap);
-            g.DrawImage(headersBitmap, new Rectangle(0, 0, width, headersBitmap.Height));
+            g.DrawImage(headingBitmap, new Rectangle(0, 0, width, headingBitmap.Height));
 
-            timeline.DrawToBitmap(bitmap, 0, timelineY);
+            timeline.DrawToBitmap(bitmap, 0, timelineRect.Y);
 
             Stream stream = File.Open(filename, FileMode.Create);
             bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
             stream.Close();
+        }
+
+
+        //
+        // Helper functions
+        //
+
+        private void EmitSessionsChanged()
+        {
+            if (SessionsChanged != null)
+                SessionsChanged(sessions.ToArray());
+        }
+
+        private Rectangle contentRect;
+        private Rectangle headingRect, headingColsRect;
+        private Rectangle timelineRect;
+
+        private int colWidth;
+        private int colSpacing;
+
+        private Bitmap headingBitmap;
+
+        private void Recalibrate()
+        {
+            contentRect.X = this.ClientRectangle.X;
+            contentRect.Y = this.ClientRectangle.Y;
+            contentRect.Width = this.ClientRectangle.Width - contentRect.X;
+            contentRect.Height = this.ClientRectangle.Height - contentRect.Y;
+
+            headingRect.X = contentRect.X;
+            headingRect.Y = contentRect.Y + 5;
+            headingRect.Width = contentRect.Width;
+            headingRect.Height = 20;
+
+            headingColsRect.X = headingRect.X + timeline.ColumnsStartPos;
+            headingColsRect.Y = headingRect.Y;
+            headingColsRect.Width = headingRect.Width - headingColsRect.X;
+            headingColsRect.Height = headingRect.Height;
+
+            timelineRect.X = contentRect.X;
+            timelineRect.Y = headingRect.Y + headingRect.Height + 5;
+            timelineRect.Width = contentRect.Width;
+            timelineRect.Height = contentRect.Height - timelineRect.Y;
+
+            if (sessions.Count > 0)
+                colWidth = sessions[0].Transactions[0].Width;
+            else
+                colWidth = 100;
+
+            colSpacing = 10;
+
+            timeline.Left = timelineRect.X;
+            timeline.Top = timelineRect.Y;
+            timeline.Width = timelineRect.Width;
+            timeline.Height = timelineRect.Height;
+
+            headingBitmap = GetHeadingBitmap();
+        }
+
+        private bool updatingView = false;
+
+        private void UpdateView()
+        {
+            if (updatingView)
+                return;
+
+            updatingView = true;
+
+            Recalibrate();
+
+            Invalidate();
+
+            timeline.UpdateLayout();
+
+            updatingView = false;
+        }
+
+        private Bitmap GetHeadingBitmap()
+        {
+            int w = headingColsRect.X + (sessions.Count * (colWidth + colSpacing));
+            int h = headingColsRect.Y + headingColsRect.Width;
+
+            Bitmap bitmap = new Bitmap(w, h);
+
+            Graphics g = Graphics.FromImage(bitmap);
+            ExtendedGraphics eg = new ExtendedGraphics(g);
+
+            Brush fgBrush = new SolidBrush(Color.White);
+            Font headerFont = new Font("Tahoma", 10, FontStyle.Bold);
+
+            int x = headingColsRect.X;
+
+            foreach (VisualSession stream in sessions)
+            {
+                string localEpStr = stream.LocalEndpoint.ToString();
+                string remoteEpStr = stream.RemoteEndpoint.ToString();
+
+                string str;
+                if (localEpStr.Length > 0 && remoteEpStr.Length > 0)
+                    str = String.Format("{0} <-> {1}", localEpStr, remoteEpStr);
+                else
+                    str = "<UNKNOWN ENDPOINTS>";
+
+                Brush bgBrush = new SolidBrush(colorPool.GetColorForId(Convert.ToString(str.GetHashCode())));
+
+                eg.FillRoundRectangle(bgBrush, x, headingColsRect.Y, colWidth, headingColsRect.Height, 2.0f);
+
+                SizeF fs = g.MeasureString(str, headerFont);
+
+                g.DrawString(str, headerFont, fgBrush,
+                    x + (colWidth / 2) - (fs.Width / 2),
+                    headingColsRect.Y + ((headingColsRect.Height / 2) - (fs.Height / 2)));
+
+                x += colWidth + colSpacing;
+            }
+
+            return bitmap;
+        }
+
+        private VisualSession GetVisualSessionAtCoordinates(int x, int y)
+        {
+            if (x < headingColsRect.X || x > headingColsRect.X + headingColsRect.Width ||
+                y < headingColsRect.Y || y > headingColsRect.Y + headingColsRect.Height)
+            {
+                return null;
+            }
+
+            int virtX = scrollOffset + x;
+            int index = virtX / (colWidth + colSpacing);
+            if (index < sessions.Count)
+            {
+                return sessions[index];
+            }
+
+            return null;
+        }
+
+
+        //
+        // Event handlers
+        //
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Bitmap bitmap = headingBitmap;
+
+            e.Graphics.DrawImage(bitmap,
+                new Rectangle(0, 0, bitmap.Width - scrollOffset, bitmap.Height),
+                new Rectangle(scrollOffset, 0, bitmap.Width - scrollOffset, bitmap.Height),
+                GraphicsUnit.Pixel);
+        }
+
+        protected override void OnSizeChanged(EventArgs e)
+        {
+            Recalibrate();
+        }
+
+        private VisualSession ctxMenuCurSession;
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            base.OnMouseUp(e);
+
+            if (e.Button != MouseButtons.Right)
+                return;
+
+            ctxMenuCurSession = GetVisualSessionAtCoordinates(e.X, e.Y);
+            if (ctxMenuCurSession == null)
+                return;
+
+            ContextMenuStrip menu = new ContextMenuStrip();
+            menu.Items.Add("Delete", null, new EventHandler(headingCol_OnDeleteClick));
+            menu.Show(this, e.X, e.Y);
+        }
+
+        private void headingCol_OnDeleteClick(object sender, EventArgs e)
+        {
+            Visible = false;
+
+            DeleteSessions(new VisualSession[] { ctxMenuCurSession });
+
+            Visible = true;
+        }
+
+        private void timeline_Click(object sender, EventArgs e)
+        {
+            OnClick(e);
+        }
+
+        private void transaction_SizeChanged(object sender, EventArgs e)
+        {
+            UpdateView();
+        }
+
+        private void transaction_DoubleClick(object sender, EventArgs e)
+        {
+            if (transactionDoubleClickHandler != null)
+                TransactionDoubleClick(sender as VisualTransaction);
+        }
+
+        private int scrollOffset = 0;
+
+        void timeline_Scroll(object sender, ScrollEventArgs e)
+        {
+            if (e.ScrollOrientation == ScrollOrientation.HorizontalScroll)
+            {
+                scrollOffset = e.NewValue;
+                Invalidate();
+            }
+        }
+
+        private void timeline_SizeChanged(object sender, EventArgs e)
+        {
+            scrollOffset = StaticUtils.GetScrollPos(timeline.Handle, StaticUtils.SB_HORZ);
+            Invalidate();
         }
     }
 }

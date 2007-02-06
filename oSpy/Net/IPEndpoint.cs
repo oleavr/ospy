@@ -33,7 +33,14 @@ namespace oSpy.Net
 
         public override string ToString()
         {
-            return String.Format("{0}:{1}", address, port);
+            if (address.Length > 0 && port > 0)
+            {
+                return String.Format("{0}:{1}", address, port);
+            }
+            else
+            {
+                return "";
+            }
         }
 
         protected static string LookupAddress(string addr)
