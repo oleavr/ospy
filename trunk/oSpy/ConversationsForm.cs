@@ -27,6 +27,7 @@ using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using oSpy.Parser;
 using oSpy.Net;
+
 namespace oSpy
 {
     public partial class ConversationsForm : Form
@@ -37,20 +38,11 @@ namespace oSpy
         {
             InitializeComponent();
 
+            multiStreamView.Visible = false;
+
             this.sessions = sessions;
 
-            multiStreamView.SessionsChanged += new SessionsChangedHandler(multiStreamView_SessionsChanged);
-        }
-
-        private void multiStreamView_SessionsChanged(VisualSession[] newSessions)
-        {
-            foreach (VisualSession session in newSessions)
-            {
-                foreach (VisualTransaction transaction in session.Transactions)
-                {
-                    transaction.DoubleClick += new EventHandler(transaction_DoubleClick);
-                }
-            }
+            multiStreamView.TransactionDoubleClick += new TransactionDoubleClickHandler(multiStreamView_TransactionDoubleClick);
         }
 
         private void multiStreamView_Click(object sender, EventArgs e)
@@ -59,9 +51,9 @@ namespace oSpy
             splitContainer.Panel2Collapsed = true;
         }
 
-        private void transaction_DoubleClick(object sender, EventArgs e)
+        private void multiStreamView_TransactionDoubleClick(VisualTransaction transaction)
         {
-            propertyGrid.SelectedObject = sender;
+            propertyGrid.SelectedObject = transaction;
             splitContainer.Panel2Collapsed = false;
         }
 
@@ -69,10 +61,14 @@ namespace oSpy
         {
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
+                multiStreamView.Visible = false;
+
                 Stream stream = File.Open(openFileDialog.FileName, FileMode.Open);
                 BinaryFormatter bFormatter = new BinaryFormatter();
-                multiStreamView.Streams = (VisualSession[])bFormatter.Deserialize(stream);
+                multiStreamView.Sessions = (VisualSession[])bFormatter.Deserialize(stream);
                 stream.Close();
+
+                multiStreamView.Visible = true;
             }
         }
 
@@ -80,10 +76,14 @@ namespace oSpy
         {
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
+                multiStreamView.Visible = false;
+
                 Stream stream = File.Open(saveFileDialog.FileName, FileMode.Create);
                 BinaryFormatter bFormatter = new BinaryFormatter();
-                bFormatter.Serialize(stream, multiStreamView.Streams);
+                bFormatter.Serialize(stream, multiStreamView.Sessions);
                 stream.Close();
+
+                multiStreamView.Visible = true;
             }
         }
 
@@ -106,6 +106,10 @@ namespace oSpy
 
             if (frm.ShowDialog(this) == DialogResult.OK)
             {
+                multiStreamView.Visible = false;
+
+                multiStreamView.Clear();
+
                 List<VisualSession> visSessions = new List<VisualSession>(sessions.Length);
                 List<VisualTransaction> transactions = new List<VisualTransaction>();
 
@@ -137,7 +141,9 @@ namespace oSpy
                     session.SessionsCreated();
                 }
 
-                multiStreamView.Streams = visSessions.ToArray();
+                multiStreamView.Sessions = visSessions.ToArray();
+
+                multiStreamView.Visible = true;
                 multiStreamView.Focus();
             }
         }

@@ -97,18 +97,12 @@ namespace oSpy
     {
         public override string Name
         {
-            get
-            {
-                return "TCPEvents";
-            }
+            get { return "TCPEvents"; }
         }
 
         public override bool Visible
         {
-            get
-            {
-                return false;
-            }
+            get { return false; }
         }
 
         public override VisualTransaction[] GetTransactions(IPSession session)
@@ -118,7 +112,7 @@ namespace oSpy
             foreach (TCPEvent ev in session.Events)
             {
                 VisualTransaction transaction = new VisualTransaction(0, ev.Timestamp);
-                transaction.BodyText = ev.ToString();
+                transaction.HeadlineText = ev.ToString();
                 transactions.Add(transaction);
             }
 
@@ -130,10 +124,7 @@ namespace oSpy
     {
         public override string Name
         {
-            get
-            {
-                return "TCP";
-            }
+            get { return "TCP"; }
         }
 
         private const int maxPreview = 128;

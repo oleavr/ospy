@@ -38,11 +38,12 @@ namespace oSpy
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
             this.exportToimageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
             this.closeToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.propertyGrid = new System.Windows.Forms.PropertyGrid();
             this.splitContainer = new System.Windows.Forms.SplitContainer();
-            this.multiStreamView = new oSpy.MultiSessionView();
             this.exportToImageFileDialog = new System.Windows.Forms.SaveFileDialog();
+            this.multiStreamView = new oSpy.MultiSessionView();
             this.menuStrip1.SuspendLayout();
             this.splitContainer.Panel1.SuspendLayout();
             this.splitContainer.Panel2.SuspendLayout();
@@ -64,8 +65,7 @@ namespace oSpy
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.fileToolStripMenuItem,
-            this.closeToolStripMenuItem1});
+            this.fileToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(1046, 24);
@@ -80,7 +80,9 @@ namespace oSpy
             this.loadToolStripMenuItem,
             this.saveToolStripMenuItem,
             this.toolStripMenuItem1,
-            this.exportToimageToolStripMenuItem});
+            this.exportToimageToolStripMenuItem,
+            this.toolStripMenuItem2,
+            this.closeToolStripMenuItem1});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(77, 20);
             this.fileToolStripMenuItem.Text = "&Visualization";
@@ -123,10 +125,15 @@ namespace oSpy
             this.exportToimageToolStripMenuItem.Text = "Export to &image...";
             this.exportToimageToolStripMenuItem.Click += new System.EventHandler(this.exportToimageToolStripMenuItem_Click);
             // 
+            // toolStripMenuItem2
+            // 
+            this.toolStripMenuItem2.Name = "toolStripMenuItem2";
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(170, 6);
+            // 
             // closeToolStripMenuItem1
             // 
             this.closeToolStripMenuItem1.Name = "closeToolStripMenuItem1";
-            this.closeToolStripMenuItem1.Size = new System.Drawing.Size(45, 20);
+            this.closeToolStripMenuItem1.Size = new System.Drawing.Size(173, 22);
             this.closeToolStripMenuItem1.Text = "&Close";
             this.closeToolStripMenuItem1.Click += new System.EventHandler(this.closeToolStripMenuItem1_Click);
             // 
@@ -157,6 +164,12 @@ namespace oSpy
             this.splitContainer.SplitterDistance = 785;
             this.splitContainer.TabIndex = 8;
             // 
+            // exportToImageFileDialog
+            // 
+            this.exportToImageFileDialog.DefaultExt = "png";
+            this.exportToImageFileDialog.Filter = "PNG image files|*.png";
+            this.exportToImageFileDialog.Title = "Export to image";
+            // 
             // multiStreamView
             // 
             this.multiStreamView.AutoScroll = true;
@@ -165,16 +178,10 @@ namespace oSpy
             this.multiStreamView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.multiStreamView.Location = new System.Drawing.Point(0, 0);
             this.multiStreamView.Name = "multiStreamView";
+            this.multiStreamView.Sessions = new oSpy.VisualSession[0];
             this.multiStreamView.Size = new System.Drawing.Size(1046, 535);
-            this.multiStreamView.Streams = new oSpy.VisualSession[0];
             this.multiStreamView.TabIndex = 5;
             this.multiStreamView.Click += new System.EventHandler(this.multiStreamView_Click);
-            // 
-            // exportToImageFileDialog
-            // 
-            this.exportToImageFileDialog.DefaultExt = "png";
-            this.exportToImageFileDialog.Filter = "PNG image files|*.png";
-            this.exportToImageFileDialog.Title = "Export to image";
             // 
             // ConversationsForm
             // 
@@ -214,6 +221,7 @@ namespace oSpy
         private System.Windows.Forms.SaveFileDialog exportToImageFileDialog;
         private System.Windows.Forms.ToolStripMenuItem newToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
         private System.Windows.Forms.ToolStripMenuItem closeToolStripMenuItem1;
     }
 }
