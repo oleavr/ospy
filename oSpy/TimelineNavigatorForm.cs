@@ -1,4 +1,22 @@
-﻿using System;
+﻿/**
+ * Copyright (C) 2006  Ole André Vadla Ravnås <oleavr@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -6,6 +24,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using oSpy.Util;
+using System.Drawing.Extended;
 
 namespace oSpy
 {
@@ -25,6 +44,7 @@ namespace oSpy
             this.timeline = timeline;
 
             timeline.LayoutChanged += new EventHandler(timeline_LayoutChanged);
+            timeline.SizeChanged += new EventHandler(timeline_SizeChanged);
             ResizeBegin += new EventHandler(TimelineNavigatorForm_ResizeBegin);
             ResizeEnd += new EventHandler(TimelineNavigatorForm_ResizeEnd);
         }
@@ -43,37 +63,22 @@ namespace oSpy
             if (fullRect.Width <= 0 || fullRect.Height <= 0)
                 return;
 
-
-
-            // FIXME: rewrite this logic when my brain is less fried
-#if false
-            int diffW = ClientRectangle.Width - prevWidth;
-            int diffH = ClientRectangle.Height - prevHeight;
-
-            float ratio;
-            int w = ClientRectangle.Width;
-            int h = ClientRectangle.Height;
-
-            if (diffW > diffH)
-            {
-                ratio = (float)fullRect.Width / (float)fullRect.Height;
-                w = (int)((float)ClientRectangle.Width * ratio);
-            }
-            else
-            {
-                ratio = (float)fullRect.Height / (float)fullRect.Width;
-                h = (int)((float)ClientRectangle.Height * ratio);
-            }
-
-            SetClientSizeCore(w, h);
-#endif
-
             UpdateNavBitmap();
         }
 
         private Bitmap fullBitmap, navBitmap;
 
         private void timeline_LayoutChanged(object sender, EventArgs e)
+        {
+            UpdateBitmaps();
+        }
+
+        private void timeline_SizeChanged(object sender, EventArgs e)
+        {
+            Invalidate();
+        }
+
+        private void UpdateBitmaps()
         {
             try
             {
@@ -121,58 +126,124 @@ namespace oSpy
 
             Invalidate();
         }
+        
+        private void GetRatios(out float x, out float y)
+        {
+            Rectangle fullRect = timeline.GetRealSize();
+            if (fullRect.Width <= 0 || fullRect.Height <= 0)
+            {
+                x = y = 1.0f;
+                return;
+            }
+            
+            x = (float)ClientRectangle.Width / (float)fullRect.Width;
+            y = (float)ClientRectangle.Height / (float)fullRect.Height;
+        }
 
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
 
+            Graphics g = e.Graphics;
+
             if (navBitmap == null)
             {
-                e.Graphics.FillRectangle(new SolidBrush(Color.Red), e.ClipRectangle);
-                return;
+                g.FillRectangle(new SolidBrush(Color.White), e.ClipRectangle);
+            }
+            else
+            {
+                g.DrawImage(navBitmap, 0, 0);
             }
 
-            Graphics g = e.Graphics;
-            g.DrawImage(navBitmap, 0, 0);
+            // Find the current viewport
+            int x = StaticUtils.GetScrollPos(timeline.Handle, StaticUtils.SB_HORZ);
+            int y = StaticUtils.GetScrollPos(timeline.Handle, StaticUtils.SB_VERT);
 
+            if (x >= 0 && y >= 0)
+            {
+                float ratioX, ratioY;
+                GetRatios(out ratioX, out ratioY);
 
+                int w = timeline.ClientRectangle.Width;
+                int h = timeline.ClientRectangle.Height;
+
+                Pen pen = new Pen(ForeColor);
+
+                // Scale it down to our miniature
+                x = (int) ((float)x * ratioX);
+                y = (int) ((float)y * ratioY);
+
+                w = (int) ((float)w * ratioX);
+                if (w >= ClientRectangle.Width)
+                    w = ClientRectangle.Width - (int) pen.Width;
+
+                h = (int) ((float)h * ratioY);
+                if (h >= ClientRectangle.Height)
+                    h = ClientRectangle.Height - (int) pen.Width;
+
+                ExtendedGraphics eg = new ExtendedGraphics(g);
+                eg.FillRoundRectangle(new SolidBrush(Color.FromArgb(127, 0x9B, 0x57, 0x9F)),
+                                      x, y, w, h, 3);
+                eg.DrawRoundRectangle(pen, x, y, w, h, 3);
+            }
         }
 
-        private void TimelineNavigatorForm_MouseClick(object sender, MouseEventArgs e)
+        private void NavigateToPoint(int destX, int destY)
+        {
+            float ratioX, ratioY;
+            GetRatios(out ratioX, out ratioY);
+
+            // Transform x and y into upper left from center
+            int x = (int)(destX - (((float)timeline.ClientRectangle.Width * ratioX) / 2.0f));
+            if (x < ClientRectangle.X)
+                x = ClientRectangle.X;
+
+            int y = (int)(destY - (((float)timeline.ClientRectangle.Height * ratioY) / 2.0f));
+            if (y < ClientRectangle.Y)
+                y = ClientRectangle.Y;
+
+            float relativeX = (float)x / (float)ClientRectangle.Width;
+            float relativeY = (float)y / (float)ClientRectangle.Height;
+
+            int horzMin, horzMax;
+            int vertMin, vertMax;
+            StaticUtils.GetScrollRange(timeline.Handle, StaticUtils.SB_HORZ, out horzMin, out horzMax);
+            StaticUtils.GetScrollRange(timeline.Handle, StaticUtils.SB_VERT, out vertMin, out vertMax);
+
+            int horzNew = (int)((float)horzMax * relativeX);
+            int vertNew = (int)((float)vertMax * relativeY);
+
+            timeline.SetScrollPosition(horzNew, vertNew);
+
+            Invalidate();
+        }
+
+        private bool mouseDown = false;
+
+        private void TimelineNavigatorForm_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button != MouseButtons.Left)
                 return;
 
-            float relativeX = (float)e.X / (float)ClientRectangle.Width;
-            float relativeY = (float)e.Y / (float)ClientRectangle.Height;
+            NavigateToPoint(e.X, e.Y);
 
-            int horzMin, horzMax;
-            StaticUtils.GetScrollRange(timeline.Handle, StaticUtils.SB_HORZ, out horzMin, out horzMax);
+            mouseDown = true;
+        }
 
-            int horzNew = (int)((float)horzMax * relativeX);
+        private void TimelineNavigatorForm_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Left)
+                return;
 
-            if (StaticUtils.SetScrollPos(timeline.Handle, StaticUtils.SB_HORZ, horzNew, true) != -1)
-            {
-                StaticUtils.SendMessage(timeline.Handle, StaticUtils.WM_HSCROLL, StaticUtils.SB_THUMBPOSITION + (0x10000 * horzNew), 0);
-            }
-            else
-            {
-                MessageBox.Show("SetScrollPos(SB_HORZ) failed");
-            }
+            mouseDown = false;
+        }
 
-            int vertMin, vertMax;
-            StaticUtils.GetScrollRange(timeline.Handle, StaticUtils.SB_VERT, out vertMin, out vertMax);
+        private void TimelineNavigatorForm_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!mouseDown)
+                return;
 
-            int vertNew = (int)((float)vertMax * relativeY);
-
-            if (StaticUtils.SetScrollPos(timeline.Handle, StaticUtils.SB_VERT, vertNew, true) != -1)
-            {
-                StaticUtils.SendMessage(timeline.Handle, StaticUtils.WM_VSCROLL, StaticUtils.SB_THUMBPOSITION + (0x10000 * vertNew), 0);
-            }
-            else
-            {
-                MessageBox.Show("SetScrollPos(SB_VERT) failed");
-            }
+            NavigateToPoint(e.X, e.Y);
         }
     }
 }

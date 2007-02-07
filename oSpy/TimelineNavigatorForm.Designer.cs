@@ -46,7 +46,9 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = " ";
             this.TopMost = true;
-            this.MouseClick += new System.Windows.Forms.MouseEventHandler(this.TimelineNavigatorForm_MouseClick);
+            this.MouseUp += new System.Windows.Forms.MouseEventHandler(this.TimelineNavigatorForm_MouseUp);
+            this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.TimelineNavigatorForm_MouseMove);
+            this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.TimelineNavigatorForm_MouseDown);
             this.ResumeLayout(false);
 
         }
