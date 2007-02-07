@@ -28,233 +28,238 @@ using oSpy.Util;
 
 namespace oSpy
 {
+    public class Timeline : UserControl
+    {
+        public event EventHandler LayoutChanged;
+
+        protected MultiSessionView msv;
+        protected TimeRuler ruler;
+
+        protected int realWidth;
+        protected int realHeight;
+
+        public int ColumnsStartPos
+        {
+            get { return ruler.Width; }
+        }
+
+        public Timeline(MultiSessionView msw)
+        {
+            this.msv = msw;
+
+            ruler = new TimeRuler();
+            ruler.Parent = this;
+            ruler.Left = 0;
+            ruler.Top = 0;
+
+            this.AutoScroll = true;
+            this.BackColor = Color.White;
+        }
+
+        public void UpdateLayout()
+        {
+            int x = ColumnsStartPos;
+
+            ruler.Clear();
+
+            // First off, create a flat list of all transactions in all sessions,
+            // and make a lookup table for each transaction's column index
+            List<VisualTransaction> transactions = new List<VisualTransaction>();
+            Dictionary<VisualTransaction, int> transactionToColIndex = new Dictionary<VisualTransaction, int>();
+
+            int colIndex = 0;
+            foreach (VisualSession session in msv.Sessions)
+            {
+                foreach (VisualTransaction transaction in session.Transactions)
+                {
+                    transactions.Add(transaction);
+                    transactionToColIndex.Add(transaction, colIndex);
+                }
+
+                colIndex++;
+            }
+
+            // Sort the transactions by StartTime
+            transactions.Sort();
+
+            int y = 0;
+
+            // Now it's time to rock 'n roll!
+            while (transactions.Count > 0)
+            {
+                // Find all transactions with the same time and the height of the highest one of them
+                List<VisualTransaction> sameTime = new List<VisualTransaction>(1);
+                DateTime curTime = transactions[0].StartTime;
+                int highest = 0;
+
+                for (int i = 0; i < transactions.Count; i++)
+                {
+                    VisualTransaction curTransaction = transactions[i];
+
+                    if (sameTime.Count > 0)
+                    {
+                        if (curTransaction.StartTime != curTime)
+                            break;
+                    }
+
+                    sameTime.Add(curTransaction);
+                    if (curTransaction.Height > highest)
+                        highest = curTransaction.Height;
+                }
+
+                // Remove them from the list
+                transactions.RemoveRange(0, sameTime.Count);
+
+                Dictionary<int, int> columnOffsets = new Dictionary<int, int>();
+
+                // Lay them out
+                foreach (VisualTransaction transaction in sameTime)
+                {
+                    colIndex = transactionToColIndex[transaction];
+
+                    transaction.Parent = this;
+                    transaction.Left = ColumnsStartPos + (colIndex * (msv.ColumnWidth + msv.ColumnSpacing));
+
+                    int colY = 0;
+
+                    if (columnOffsets.ContainsKey(colIndex))
+                    {
+                        colY = columnOffsets[colIndex] + 10;
+                    }
+
+                    transaction.Top = y + colY;
+
+                    columnOffsets[colIndex] = colY + transaction.Height;
+                }
+
+                foreach (int offset in columnOffsets.Values)
+                {
+                    if (offset > highest)
+                        highest = offset;
+                }
+
+                y += highest + 10;
+
+                ruler.AddMark(sameTime[0].StartTime, highest + 10);
+            }
+
+            realWidth = ruler.Width + (msv.Sessions.Length * (msv.ColumnWidth + msv.ColumnSpacing));
+            realHeight = y;
+
+            if (LayoutChanged != null)
+                LayoutChanged(this, new EventArgs());
+        }
+
+        public Rectangle GetRealSize()
+        {
+            return new Rectangle(0, 0, realWidth, realHeight);
+        }
+
+        public void DrawToBitmap(Bitmap bitmap, int x, int y)
+        {
+            foreach (Control control in Controls)
+            {
+                Rectangle rect = new Rectangle(x + control.Left,
+                    y + control.Top, realWidth, realHeight);
+                control.DrawToBitmap(bitmap, rect);
+            }
+        }
+    }
+
+    public class TimeRuler : UserControl
+    {
+        protected int requiredHeight;
+        protected List<KeyValuePair<int, DateTime>> marks;
+
+        public TimeRuler()
+        {
+            marks = new List<KeyValuePair<int, DateTime>>();
+
+            BackColor = Color.White;
+            ForeColor = Color.Black;
+            Font = new Font("Lucida Console", 8, FontStyle.Regular);
+
+            Clear();
+        }
+
+        public void Clear()
+        {
+            requiredHeight = 0;
+            marks.Clear();
+            CalculateSize();
+        }
+
+        public void AddMark(DateTime time, int height)
+        {
+            marks.Add(new KeyValuePair<int, DateTime>(height, time));
+            requiredHeight += height;
+            CalculateSize();
+        }
+
+        private float strWidth = 0;
+        private int spacing = 5;
+
+        private void CalculateSize()
+        {
+            Graphics g = this.CreateGraphics();
+            strWidth = g.MeasureString(FormatTime(DateTime.Now), Font).Width;
+
+            Width = (int)strWidth + spacing;
+            Height = requiredHeight;
+
+            Invalidate();
+        }
+
+        protected override void OnFontChanged(EventArgs e)
+        {
+            base.OnFontChanged(e);
+
+            CalculateSize();
+        }
+
+        protected override void OnSizeChanged(EventArgs e)
+        {
+            base.OnSizeChanged(e);
+
+            CalculateSize();
+        }
+
+        private string FormatTime(DateTime t)
+        {
+            return String.Format("[{0}]", t.ToLongTimeString());
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            Rectangle r = e.ClipRectangle;
+
+            Brush bgBrush = new SolidBrush(BackColor);
+            Brush fgBrush = new SolidBrush(ForeColor);
+
+            g.FillRectangle(bgBrush, r);
+
+            int y = 3;
+            string lastTimeStr = null;
+            foreach (KeyValuePair<int, DateTime> mark in marks)
+            {
+                string timeStr = FormatTime(mark.Value);
+                if (timeStr != lastTimeStr)
+                {
+                    g.DrawString(timeStr, Font, fgBrush, (Width / 2.0f) - (strWidth / 2.0f), y);
+                    lastTimeStr = timeStr;
+                }
+
+                y += mark.Key;
+            }
+        }
+    }
+
     public delegate void TransactionDoubleClickHandler(VisualTransaction transaction);
     public delegate void SessionsChangedHandler(VisualSession[] newSessions);
 
     public class MultiSessionView : UserControl
     {
-        protected class Timeline : UserControl
-        {
-            protected MultiSessionView msv;
-            protected TimeRuler ruler;
-
-            protected int realWidth;
-            protected int realHeight;
-
-            public int ColumnsStartPos
-            {
-                get { return ruler.Width; }
-            }
-
-            public Timeline(MultiSessionView msw)
-            {
-                this.msv = msw;
-
-                ruler = new TimeRuler();
-                ruler.Parent = this;
-                ruler.Left = 0;
-                ruler.Top = 0;
-
-                this.AutoScroll = true;
-                this.BackColor = Color.White;
-            }
-
-            public void UpdateLayout()
-            {
-                int x = ColumnsStartPos;
-
-                ruler.Clear();
-
-                // First off, create a flat list of all transactions in all sessions,
-                // and make a lookup table for each transaction's column index
-                List<VisualTransaction> transactions = new List<VisualTransaction>();
-                Dictionary<VisualTransaction, int> transactionToColIndex = new Dictionary<VisualTransaction, int>();
-
-                int colIndex = 0;
-                foreach (VisualSession session in msv.Sessions)
-                {
-                    foreach (VisualTransaction transaction in session.Transactions)
-                    {
-                        transactions.Add(transaction);
-                        transactionToColIndex.Add(transaction, colIndex);
-                    }
-
-                    colIndex++;
-                }
-
-                // Sort the transactions by StartTime
-                transactions.Sort();
-
-                int y = 0;
-
-                // Now it's time to rock 'n roll!
-                while (transactions.Count > 0)
-                {
-                    // Find all transactions with the same time and the height of the highest one of them
-                    List<VisualTransaction> sameTime = new List<VisualTransaction>(1);
-                    DateTime curTime = transactions[0].StartTime;
-                    int highest = 0;
-
-                    for (int i = 0; i < transactions.Count; i++)
-                    {
-                        VisualTransaction curTransaction = transactions[i];
-
-                        if (sameTime.Count > 0)
-                        {
-                            if (curTransaction.StartTime != curTime)
-                                break;
-                        }
-
-                        sameTime.Add(curTransaction);
-                        if (curTransaction.Height > highest)
-                            highest = curTransaction.Height;
-                    }
-
-                    // Remove them from the list
-                    transactions.RemoveRange(0, sameTime.Count);
-
-                    Dictionary<int, int> columnOffsets = new Dictionary<int, int>();
-
-                    // Lay them out
-                    foreach (VisualTransaction transaction in sameTime)
-                    {
-                        colIndex = transactionToColIndex[transaction];
-
-                        transaction.Parent = this;
-                        transaction.Left = ColumnsStartPos + (colIndex * (msv.colWidth + msv.colSpacing));
-
-                        int colY = 0;
-
-                        if (columnOffsets.ContainsKey(colIndex))
-                        {
-                            colY = columnOffsets[colIndex] + 10;
-                        }
-
-                        transaction.Top = y + colY;
-
-                        columnOffsets[colIndex] = colY + transaction.Height;
-                    }
-
-                    foreach (int offset in columnOffsets.Values)
-                    {
-                        if (offset > highest)
-                            highest = offset;
-                    }
-
-                    y += highest + 10;
-
-                    ruler.AddMark(sameTime[0].StartTime, highest + 10);
-                }
-
-                realWidth = ruler.Width + (msv.sessions.Count * (msv.colWidth + msv.colSpacing));
-                realHeight = y;
-            }
-
-            public Rectangle GetRealSize()
-            {
-                return new Rectangle(0, 0, realWidth, realHeight);
-            }
-
-            public void DrawToBitmap(Bitmap bitmap, int x, int y)
-            {
-                foreach (Control control in Controls)
-                {
-                    Rectangle rect = new Rectangle(x + control.Left,
-                        y + control.Top, realWidth, realHeight);
-                    control.DrawToBitmap(bitmap, rect);
-                }
-            }
-        }
-
-        protected class TimeRuler : UserControl
-        {
-            protected int requiredHeight;
-            protected List<KeyValuePair<int, DateTime>> marks;
-
-            public TimeRuler()
-            {
-                marks = new List<KeyValuePair<int, DateTime>>();
-
-                BackColor = Color.White;
-                ForeColor = Color.Black;
-                Font = new Font("Lucida Console", 8, FontStyle.Regular);
-
-                Clear();
-            }
-
-            public void Clear()
-            {
-                requiredHeight = 0;
-                marks.Clear();
-                CalculateSize();
-            }
-
-            public void AddMark(DateTime time, int height)
-            {
-                marks.Add(new KeyValuePair<int, DateTime>(height, time));
-                requiredHeight += height;
-                CalculateSize();
-            }
-
-            private float strWidth = 0;
-            private int spacing = 5;
-
-            private void CalculateSize()
-            {
-                Graphics g = this.CreateGraphics();
-                strWidth = g.MeasureString(FormatTime(DateTime.Now), Font).Width;
-
-                Width = (int) strWidth + spacing;
-                Height = requiredHeight;
-
-                Invalidate();
-            }
-
-            protected override void OnFontChanged(EventArgs e)
-            {
-                base.OnFontChanged(e);
-
-                CalculateSize();
-            }
-
-            protected override void OnSizeChanged(EventArgs e)
-            {
-                base.OnSizeChanged(e);
-
-                CalculateSize();
-            }
-
-            private string FormatTime(DateTime t)
-            {
-                return String.Format("[{0}]", t.ToLongTimeString());
-            }
-
-            protected override void OnPaint(PaintEventArgs e)
-            {
-                Graphics g = e.Graphics;
-                Rectangle r = e.ClipRectangle;
-
-                Brush bgBrush = new SolidBrush(BackColor);
-                Brush fgBrush = new SolidBrush(ForeColor);
-
-                g.FillRectangle(bgBrush, r);
-
-                int y = 3;
-                string lastTimeStr = null;
-                foreach (KeyValuePair<int, DateTime> mark in marks)
-                {
-                    string timeStr = FormatTime(mark.Value);
-                    if (timeStr != lastTimeStr)
-                    {
-                        g.DrawString(timeStr, Font, fgBrush, (Width / 2.0f) - (strWidth / 2.0f), y);
-                        lastTimeStr = timeStr;
-                    }
-
-                    y += mark.Key;
-                }
-            }
-        }
-
         protected EventHandler transactionSizeChangedHandler, transactionDoubleClickHandler;
 
         protected List<VisualSession> sessions;
@@ -264,11 +269,24 @@ namespace oSpy
             set { DeleteSessions(sessions.ToArray(), false); AddSessions(value); }
         }
 
+        protected int colWidth;
+        public int ColumnWidth
+        {
+            get { return colWidth; }
+        }
+
+        protected int colSpacing;
+        public int ColumnSpacing
+        {
+            get { return colSpacing; }
+        }
+
         public event SessionsChangedHandler SessionsChanged;
         public event TransactionDoubleClickHandler TransactionDoubleClick;
 
         protected ColorPool colorPool;
         protected Timeline timeline;
+        protected TimelineNavigatorForm navigatorForm;
 
         public MultiSessionView()
         {
@@ -278,12 +296,15 @@ namespace oSpy
             sessions = new List<VisualSession>();
 
             this.BackColor = Color.White;
+            this.DoubleBuffered = true;
 
             timeline = new Timeline(this);
             timeline.Parent = this;
             timeline.SizeChanged += new EventHandler(timeline_SizeChanged);
             timeline.Scroll += new ScrollEventHandler(timeline_Scroll);
             timeline.Click += new EventHandler(timeline_Click);
+
+            navigatorForm = new TimelineNavigatorForm(timeline);
 
             Clear();
         }
@@ -296,6 +317,7 @@ namespace oSpy
         public void Clear()
         {
             colorPool = new ColorPool();
+
             // The first color is white, skip it
             colorPool.GetColorForId("MultiSessionView1");
 
@@ -344,10 +366,10 @@ namespace oSpy
                 foreach (VisualTransaction transaction in session.Transactions)
                 {
                     transaction.Parent = null;
-                    transaction.Left = 0;
-                    transaction.Top = 0;
-                    transaction.SizeChanged -= transactionSizeChangedHandler;
-                    transaction.DoubleClick -= transactionDoubleClickHandler;
+                    //transaction.Left = 0;
+                    //transaction.Top = 0;
+                    //transaction.SizeChanged -= transactionSizeChangedHandler;
+                    //transaction.DoubleClick -= transactionDoubleClickHandler;
                 }
 
                 this.sessions.Remove(session);
@@ -398,6 +420,13 @@ namespace oSpy
             stream.Close();
         }
 
+        public void AutoPositionNavigatorForm()
+        {
+            Point p = new Point(timeline.ClientRectangle.Width - navigatorForm.Width - 5,
+                                timeline.ClientRectangle.Height - navigatorForm.Height - 5);
+            navigatorForm.Location = timeline.PointToScreen(p);
+        }
+
 
         //
         // Helper functions
@@ -412,9 +441,6 @@ namespace oSpy
         private Rectangle contentRect;
         private Rectangle headingRect, headingColsRect;
         private Rectangle timelineRect;
-
-        private int colWidth;
-        private int colSpacing;
 
         private Bitmap headingBitmap;
 
@@ -548,6 +574,26 @@ namespace oSpy
                 GraphicsUnit.Pixel);
         }
 
+        protected override void OnVisibleChanged(EventArgs e)
+        {
+            base.OnVisibleChanged(e);
+
+            if (Visible)
+            {
+                AutoPositionNavigatorForm();
+                navigatorForm.Show();
+            }
+            else
+                navigatorForm.Hide();
+        }
+
+        protected override void OnHandleDestroyed(EventArgs e)
+        {
+            base.OnHandleDestroyed(e);
+
+            navigatorForm.Close();
+        }
+
         protected override void OnSizeChanged(EventArgs e)
         {
             Recalibrate();
@@ -573,11 +619,7 @@ namespace oSpy
 
         private void headingCol_OnDeleteClick(object sender, EventArgs e)
         {
-            Visible = false;
-
             DeleteSessions(new VisualSession[] { ctxMenuCurSession });
-
-            Visible = true;
         }
 
         private void timeline_Click(object sender, EventArgs e)
@@ -611,6 +653,8 @@ namespace oSpy
         {
             scrollOffset = StaticUtils.GetScrollPos(timeline.Handle, StaticUtils.SB_HORZ);
             Invalidate();
+
+            AutoPositionNavigatorForm();
         }
     }
 }
