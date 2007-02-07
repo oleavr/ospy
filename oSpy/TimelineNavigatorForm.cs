@@ -83,7 +83,7 @@ namespace oSpy
 
                 try
                 {
-                    fullBitmap = new Bitmap(fullRect.Width, fullRect.Height, System.Drawing.Imaging.PixelFormat.Format16bppRgb555);
+                    fullBitmap = new Bitmap(fullRect.Width, fullRect.Height);
                 }
                 catch (ArgumentException)
                 {
