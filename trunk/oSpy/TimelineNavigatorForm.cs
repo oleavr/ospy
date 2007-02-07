@@ -116,6 +116,7 @@ namespace oSpy
 
             navBitmap = new Bitmap(ClientRectangle.Width, ClientRectangle.Height);
             Graphics g = Graphics.FromImage(navBitmap);
+            g.FillRectangle(new SolidBrush(timeline.BackColor), 0, 0, navBitmap.Width, navBitmap.Height);
             g.DrawImage(fullBitmap, 0, 0, navBitmap.Width, navBitmap.Height);
 
             Invalidate();
@@ -131,7 +132,10 @@ namespace oSpy
                 return;
             }
 
-            e.Graphics.DrawImage(navBitmap, 0, 0);
+            Graphics g = e.Graphics;
+            g.DrawImage(navBitmap, 0, 0);
+
+
         }
 
         private void TimelineNavigatorForm_MouseClick(object sender, MouseEventArgs e)
