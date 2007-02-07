@@ -99,6 +99,12 @@
     <Compile Include="SoftwallForm.Designer.cs">
       <DependentUpon>SoftwallForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="TimelineNavigatorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TimelineNavigatorForm.Designer.cs">
+      <DependentUpon>TimelineNavigatorForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Util\Util.cs" />
     <Compile Include="Util\Constants.cs" />
     <Compile Include="Util\IDebugLogger.cs" />
@@ -189,6 +195,10 @@
     <EmbeddedResource Include="TextView.resx">
       <SubType>Designer</SubType>
       <DependentUpon>TextView.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TimelineNavigatorForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>TimelineNavigatorForm.cs</DependentUpon>
     </EmbeddedResource>
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>

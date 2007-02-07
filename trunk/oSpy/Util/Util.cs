@@ -43,6 +43,16 @@ namespace oSpy.Util
 
         public const int SB_HORZ = 0x0;
         public const int SB_VERT = 0x1;
+        public const int SB_THUMBPOSITION = 4;
+
+        public const int WM_HSCROLL = 0x114;
+        public const int WM_VSCROLL = 0x115;
+
+        [DllImport("user32.dll")]
+        public static extern bool SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
+
+        [DllImport("User32.dll")]
+        public static extern bool PostMessage(IntPtr hWnd, int msg, int wParam, int lParam);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         public static extern bool GetScrollRange(IntPtr hWnd, int nBar, out int lpMinPos, out int lpMaxPos);
