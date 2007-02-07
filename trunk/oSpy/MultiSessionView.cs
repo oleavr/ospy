@@ -31,6 +31,7 @@ namespace oSpy
     public class Timeline : UserControl
     {
         public event EventHandler LayoutChanged;
+        public event EventHandler ScrollPositionChanged;
 
         protected MultiSessionView msv;
         protected TimeRuler ruler;
@@ -163,6 +164,22 @@ namespace oSpy
                     y + control.Top, realWidth, realHeight);
                 control.DrawToBitmap(bitmap, rect);
             }
+        }
+
+        public void SetScrollPosition(int x, int y)
+        {
+            AutoScrollPosition = new Point(x, y);
+
+            if (ScrollPositionChanged != null)
+                ScrollPositionChanged(this, new EventArgs());
+        }
+
+        protected override void OnScroll(ScrollEventArgs se)
+        {
+            base.OnScroll(se);
+
+            if (ScrollPositionChanged != null)
+                ScrollPositionChanged(this, new EventArgs());
         }
     }
 
@@ -301,7 +318,7 @@ namespace oSpy
             timeline = new Timeline(this);
             timeline.Parent = this;
             timeline.SizeChanged += new EventHandler(timeline_SizeChanged);
-            timeline.Scroll += new ScrollEventHandler(timeline_Scroll);
+            timeline.ScrollPositionChanged += new EventHandler(timeline_Scroll);
             timeline.Click += new EventHandler(timeline_Click);
 
             navigatorForm = new TimelineNavigatorForm(timeline);
@@ -578,13 +595,18 @@ namespace oSpy
         {
             base.OnVisibleChanged(e);
 
+            if (DesignMode)
+                return;
+
             if (Visible)
             {
                 AutoPositionNavigatorForm();
                 navigatorForm.Show();
             }
             else
+            {
                 navigatorForm.Hide();
+            }
         }
 
         protected override void OnHandleDestroyed(EventArgs e)
@@ -640,18 +662,15 @@ namespace oSpy
 
         private int scrollOffset = 0;
 
-        void timeline_Scroll(object sender, ScrollEventArgs e)
+        private void timeline_Scroll(object sender, EventArgs e)
         {
-            if (e.ScrollOrientation == ScrollOrientation.HorizontalScroll)
-            {
-                scrollOffset = e.NewValue;
-                Invalidate();
-            }
+            scrollOffset = -timeline.AutoScrollPosition.X;
+            Invalidate();
         }
 
         private void timeline_SizeChanged(object sender, EventArgs e)
         {
-            scrollOffset = StaticUtils.GetScrollPos(timeline.Handle, StaticUtils.SB_HORZ);
+            scrollOffset = timeline.AutoScrollPosition.X;
             Invalidate();
 
             AutoPositionNavigatorForm();
