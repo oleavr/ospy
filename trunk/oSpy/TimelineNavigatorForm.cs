@@ -45,6 +45,8 @@ namespace oSpy
 
             timeline.LayoutChanged += new EventHandler(timeline_LayoutChanged);
             timeline.SizeChanged += new EventHandler(timeline_SizeChanged);
+            timeline.Scroll += new ScrollEventHandler(timeline_Scroll);
+
             ResizeBegin += new EventHandler(TimelineNavigatorForm_ResizeBegin);
             ResizeEnd += new EventHandler(TimelineNavigatorForm_ResizeEnd);
         }
@@ -74,6 +76,11 @@ namespace oSpy
         }
 
         private void timeline_SizeChanged(object sender, EventArgs e)
+        {
+            Invalidate();
+        }
+
+        private void timeline_Scroll(object sender, ScrollEventArgs e)
         {
             Invalidate();
         }
