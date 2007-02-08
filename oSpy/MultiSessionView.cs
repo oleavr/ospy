@@ -511,6 +511,8 @@ namespace oSpy
 
             Invalidate();
 
+            selectedSessions.Clear();
+
             timeline.UpdateLayout();
 
             updatingView = false;
@@ -519,7 +521,7 @@ namespace oSpy
         private Bitmap GetHeadingBitmap()
         {
             int w = headingColsRect.X + (sessions.Count * (colWidth + colSpacing));
-            int h = headingColsRect.Y + headingColsRect.Width;
+            int h = headingColsRect.Y + headingColsRect.Height + 3; // FIXME
 
             Bitmap bitmap = new Bitmap(w, h);
 
@@ -530,6 +532,8 @@ namespace oSpy
             Font headerFont = new Font("Tahoma", 10, FontStyle.Bold);
 
             int x = headingColsRect.X;
+
+            Pen selectedPen = new Pen(Color.Black, 3);
 
             foreach (VisualSession stream in sessions)
             {
@@ -545,6 +549,11 @@ namespace oSpy
                 Brush bgBrush = new SolidBrush(colorPool.GetColorForId(Convert.ToString(str.GetHashCode())));
 
                 eg.FillRoundRectangle(bgBrush, x, headingColsRect.Y, colWidth, headingColsRect.Height, 2.0f);
+
+                if (selectedSessions.ContainsKey(stream))
+                {
+                    eg.DrawRoundRectangle(selectedPen, x, headingColsRect.Y, colWidth, headingColsRect.Height, 2.0f);
+                }
 
                 SizeF fs = g.MeasureString(str, headerFont);
 
@@ -621,6 +630,28 @@ namespace oSpy
             Recalibrate();
         }
 
+        private Dictionary<VisualSession, bool> selectedSessions = new Dictionary<VisualSession, bool>();
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+
+            if (e.Button != MouseButtons.Left)
+                return;
+
+            VisualSession session = GetVisualSessionAtCoordinates(e.X, e.Y);
+            if (session == null)
+                return;
+
+            if (!selectedSessions.ContainsKey(session))
+                selectedSessions[session] = true;
+            else
+                selectedSessions.Remove(session);
+
+            headingBitmap = GetHeadingBitmap();
+            Invalidate();
+        }
+
         private VisualSession ctxMenuCurSession;
 
         protected override void OnMouseUp(MouseEventArgs e)
@@ -635,13 +666,18 @@ namespace oSpy
                 return;
 
             ContextMenuStrip menu = new ContextMenuStrip();
-            menu.Items.Add("Delete", null, new EventHandler(headingCol_OnDeleteClick));
+            ToolStripItem item = new ToolStripMenuItem("Delete selected", null, new EventHandler(headingCol_OnDeleteClick));
+            menu.Items.Add(item);
+            item.Enabled = (selectedSessions.Count > 0);
             menu.Show(this, e.X, e.Y);
         }
 
         private void headingCol_OnDeleteClick(object sender, EventArgs e)
         {
-            DeleteSessions(new VisualSession[] { ctxMenuCurSession });
+            VisualSession[] sessions = new VisualSession[selectedSessions.Keys.Count];
+            selectedSessions.Keys.CopyTo(sessions, 0);
+            selectedSessions.Clear();
+            DeleteSessions(sessions);
         }
 
         private void timeline_Click(object sender, EventArgs e)
