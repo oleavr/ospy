@@ -65,6 +65,9 @@
     <Compile Include="Event\SocketEventType.cs" />
     <Compile Include="Event\TCPEvent.cs" />
     <Compile Include="ExtendedGraphics.cs" />
+    <Compile Include="GroovyTextBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Net\IPEndpoint.cs" />
     <Compile Include="Net\IPPacket.cs" />
     <Compile Include="Net\IPSession.cs" />
@@ -199,6 +202,10 @@
     <EmbeddedResource Include="TimelineNavigatorForm.resx">
       <SubType>Designer</SubType>
       <DependentUpon>TimelineNavigatorForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="VisualTransaction.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>VisualTransaction.cs</DependentUpon>
     </EmbeddedResource>
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>

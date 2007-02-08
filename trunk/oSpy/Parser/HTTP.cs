@@ -100,11 +100,13 @@ namespace oSpy.Parser
                 if (bodyNode.Fields.ContainsKey("XML"))
                 {
                     string body;
-                    XMLHighlighter highlighter;
+                    XmlHighlighter highlighter = new XmlHighlighter(XmlHighlightColorScheme.VisualizationScheme);
 
-                    XML.PrettyPrint((string)bodyNode["XML"], out body, out highlighter);
+                    XmlUtils.PrettyPrint((string)bodyNode["XML"], out body, highlighter);
 
                     msg.BodyText = body;
+
+                    highlighter.HighlightRichTextBox(msg.BodyBox);
                 }
                 else if (bodyNode.Fields.ContainsKey("HTML"))
                 {

@@ -26,11 +26,15 @@ using System.Xml;
 
 namespace oSpy.Util
 {
-    class XML
+    class XmlUtils
     {
-        public static void PrettyPrint(string xmlData, out string prettyXml, out XMLHighlighter highlighter)
+        public static void PrettyPrint(string xmlData, out string prettyXml)
         {
-            highlighter = new XMLHighlighter();
+            PrettyPrint(xmlData, out prettyXml, null);
+        }
+
+        public static void PrettyPrint(string xmlData, out string prettyXml, XmlHighlighter highlighter)
+        {
             StringReader stringReader = new StringReader(xmlData);
             XmlTextReader reader = new XmlTextReader(stringReader);
             StringBuilder builder = new StringBuilder(xmlData.Length);
@@ -47,11 +51,13 @@ namespace oSpy.Util
 
                         offset = builder.Length;
                         builder.Append("<");
-                        highlighter.AddToken(XMLHighlightContext.ELEMENT_OPENING, offset, builder.Length - offset);
+                        if (highlighter != null)
+                            highlighter.AddToken(XmlHighlightContext.ELEMENT_OPENING, offset, builder.Length - offset);
 
                         offset = builder.Length;
                         builder.Append(reader.Name);
-                        highlighter.AddToken(XMLHighlightContext.ELEMENT_NAME, offset, builder.Length - offset);
+                        if (highlighter != null)
+                            highlighter.AddToken(XmlHighlightContext.ELEMENT_NAME, offset, builder.Length - offset);
 
                         bool empty;
                         empty = reader.IsEmptyElement;
@@ -64,13 +70,15 @@ namespace oSpy.Util
 
                             offset = builder.Length;
                             builder.Append(reader.Name);
-                            highlighter.AddToken(XMLHighlightContext.ELEMENT_ATTRIBUTE_KEY, offset, builder.Length - offset);
+                            if (highlighter != null)
+                                highlighter.AddToken(XmlHighlightContext.ELEMENT_ATTRIBUTE_KEY, offset, builder.Length - offset);
 
                             builder.Append("=\"");
 
                             offset = builder.Length;
                             builder.Append(reader.Value);
-                            highlighter.AddToken(XMLHighlightContext.ELEMENT_ATTRIBUTE_VALUE, offset, builder.Length - offset);
+                            if (highlighter != null)
+                                highlighter.AddToken(XmlHighlightContext.ELEMENT_ATTRIBUTE_VALUE, offset, builder.Length - offset);
 
                             builder.Append("\"");
                         }
@@ -87,7 +95,8 @@ namespace oSpy.Util
                         }
 
                         builder.Append(">");
-                        highlighter.AddToken(XMLHighlightContext.ELEMENT_CLOSING, offset, builder.Length - offset);
+                        if (highlighter != null)
+                            highlighter.AddToken(XmlHighlightContext.ELEMENT_CLOSING, offset, builder.Length - offset);
 
                         builder.Append("\n");
 
@@ -99,15 +108,18 @@ namespace oSpy.Util
 
                         offset = builder.Length;
                         builder.Append("</");
-                        highlighter.AddToken(XMLHighlightContext.ELEMENT_OPENING, offset, builder.Length - offset);
+                        if (highlighter != null)
+                            highlighter.AddToken(XmlHighlightContext.ELEMENT_OPENING, offset, builder.Length - offset);
 
                         offset = builder.Length;
                         builder.Append(reader.Name);
-                        highlighter.AddToken(XMLHighlightContext.ELEMENT_NAME, offset, builder.Length - offset);
+                        if (highlighter != null)
+                            highlighter.AddToken(XmlHighlightContext.ELEMENT_NAME, offset, builder.Length - offset);
 
                         offset = builder.Length;
                         builder.Append(">");
-                        highlighter.AddToken(XMLHighlightContext.ELEMENT_CLOSING, offset, builder.Length - offset);
+                        if (highlighter != null)
+                            highlighter.AddToken(XmlHighlightContext.ELEMENT_CLOSING, offset, builder.Length - offset);
 
                         builder.Append("\n");
                         break;
@@ -123,16 +135,97 @@ namespace oSpy.Util
         }
     }
 
-    public enum XMLHighlightContext
+    public enum XmlHighlightContext
     {
         ELEMENT_OPENING,
         ELEMENT_CLOSING,
         ELEMENT_NAME,
         ELEMENT_ATTRIBUTE_KEY,
         ELEMENT_ATTRIBUTE_VALUE,
-    };
+    }
 
-    public class XMLHighlighter
+    public class XmlHighlightColorScheme
+    {
+        protected Color elementOpeningColor;
+        public Color ElementOpeningColor
+        {
+            get { return elementOpeningColor; }
+            set { elementOpeningColor = value; }
+        }
+
+        protected Color elementClosingColor;
+        public Color ElementClosingColor
+        {
+            get { return elementClosingColor; }
+            set { elementClosingColor = value; }
+        }
+
+        protected Color elementNameColor;
+        public Color ElementNameColor
+        {
+            get { return elementNameColor; }
+            set { elementNameColor = value; }
+        }
+
+        protected Color attributeKeyColor;
+        public Color AttributeKeyColor
+        {
+            get { return attributeKeyColor; }
+            set { attributeKeyColor = value; }
+        }
+
+        protected Color attributeValueColor;
+        public Color AttributeValueColor
+        {
+            get { return attributeValueColor; }
+            set { attributeValueColor = value; }
+        }
+
+        public XmlHighlightColorScheme()
+        {
+            elementOpeningColor = Color.Black;
+            elementClosingColor = Color.Black;
+            elementNameColor = Color.Black;
+            attributeKeyColor = Color.Black;
+            attributeValueColor = Color.Black;
+        }
+
+        static protected XmlHighlightColorScheme darkBlueScheme;
+        static public XmlHighlightColorScheme DarkBlueScheme
+        {
+            get { return darkBlueScheme; }
+        }
+
+        static protected XmlHighlightColorScheme visualizationScheme;
+        static public XmlHighlightColorScheme VisualizationScheme
+        {
+            get { return visualizationScheme; }
+        }
+
+        static XmlHighlightColorScheme()
+        {
+            Color cyanish = Color.FromArgb(64, 255, 255);
+            Color greenish = Color.FromArgb(96, 255, 96);
+            Color redish = Color.FromArgb(255, 160, 160);
+            Color bluish = Color.FromArgb(106, 90, 205);
+
+            darkBlueScheme = new XmlHighlightColorScheme();
+            darkBlueScheme.ElementOpeningColor = cyanish;
+            darkBlueScheme.ElementClosingColor = cyanish;
+            darkBlueScheme.ElementNameColor = cyanish;
+            darkBlueScheme.AttributeKeyColor = greenish;
+            darkBlueScheme.AttributeValueColor = redish;
+
+            visualizationScheme = new XmlHighlightColorScheme();
+            visualizationScheme.ElementOpeningColor = Color.Chocolate;
+            visualizationScheme.ElementClosingColor = Color.Chocolate;
+            visualizationScheme.ElementNameColor = Color.Chocolate;
+            visualizationScheme.AttributeKeyColor = bluish;
+            visualizationScheme.AttributeValueColor = redish;
+        }
+    }
+
+    public class XmlHighlighter
     {
         protected class HighlightContext
         {
@@ -166,23 +259,19 @@ namespace oSpy.Util
             }
         }
 
-        protected Dictionary<XMLHighlightContext, HighlightContext> contexts;
+        protected Dictionary<XmlHighlightContext, HighlightContext> contexts;
 
-        public XMLHighlighter()
+        public XmlHighlighter(XmlHighlightColorScheme scheme)
         {
-            Color cyanish = Color.FromArgb(64, 255, 255);
-            Color greenish = Color.FromArgb(96, 255, 96);
-            Color redish = Color.FromArgb(255, 160, 160);
-
-            contexts = new Dictionary<XMLHighlightContext, HighlightContext>(5);
-            contexts.Add(XMLHighlightContext.ELEMENT_OPENING, new HighlightContext(cyanish));
-            contexts.Add(XMLHighlightContext.ELEMENT_CLOSING, new HighlightContext(cyanish));
-            contexts.Add(XMLHighlightContext.ELEMENT_NAME, new HighlightContext(cyanish));
-            contexts.Add(XMLHighlightContext.ELEMENT_ATTRIBUTE_KEY, new HighlightContext(greenish));
-            contexts.Add(XMLHighlightContext.ELEMENT_ATTRIBUTE_VALUE, new HighlightContext(redish));
+            contexts = new Dictionary<XmlHighlightContext, HighlightContext>(5);
+            contexts.Add(XmlHighlightContext.ELEMENT_OPENING, new HighlightContext(scheme.ElementOpeningColor));
+            contexts.Add(XmlHighlightContext.ELEMENT_CLOSING, new HighlightContext(scheme.ElementClosingColor));
+            contexts.Add(XmlHighlightContext.ELEMENT_NAME, new HighlightContext(scheme.ElementNameColor));
+            contexts.Add(XmlHighlightContext.ELEMENT_ATTRIBUTE_KEY, new HighlightContext(scheme.AttributeKeyColor));
+            contexts.Add(XmlHighlightContext.ELEMENT_ATTRIBUTE_VALUE, new HighlightContext(scheme.AttributeValueColor));
         }
 
-        public void AddToken(XMLHighlightContext ctx, int offset, int length)
+        public void AddToken(XmlHighlightContext ctx, int offset, int length)
         {
             contexts[ctx].Add(offset, length);
         }
