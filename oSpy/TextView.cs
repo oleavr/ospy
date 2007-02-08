@@ -25,6 +25,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Xml;
 using System.IO;
+using oSpy.Util;
 
 namespace oSpy
 {
@@ -43,9 +44,9 @@ namespace oSpy
         public void DisplayXML(string xmlData)
         {
             string prettyXml;
-            Util.XMLHighlighter highlighter;
+            XmlHighlighter highlighter = new XmlHighlighter(XmlHighlightColorScheme.DarkBlueScheme);
 
-            Util.XML.PrettyPrint(xmlData, out prettyXml, out highlighter);
+            XmlUtils.PrettyPrint(xmlData, out prettyXml, highlighter);
 
             richTextBox.Text = prettyXml;
             highlighter.HighlightRichTextBox(richTextBox);

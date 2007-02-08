@@ -96,14 +96,13 @@ namespace oSpy
                 try
                 {
                     fullBitmap = new Bitmap(fullRect.Width, fullRect.Height);
+                    timeline.DrawToBitmap(fullBitmap, 0, 0);
                 }
                 catch (ArgumentException)
                 {
                     fullBitmap = null;
                     return;
                 }
-
-                timeline.DrawToBitmap(fullBitmap, 0, 0);
 
                 SetClientSizeCore(130, 130);
 

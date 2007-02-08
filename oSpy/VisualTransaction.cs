@@ -24,6 +24,7 @@ using System.Drawing;
 using System.Drawing.Extended;
 using System.Runtime.Serialization;
 using oSpy.Util;
+
 namespace oSpy
 {
     [Serializable()]
@@ -83,18 +84,16 @@ namespace oSpy
             set { headerForeColor = value; Invalidate(); }
         }
 
-        private Color bodyBackColor;
         public Color BodyBackColor
         {
-            get { return bodyBackColor; }
-            set { bodyBackColor = value; Invalidate(); }
+            get { return bodyBox.BackColor; }
+            set { bodyBox.BackColor = value; }
         }
 
-        private Color bodyForeColor;
         public Color BodyForeColor
         {
-            get { return bodyForeColor; }
-            set { bodyForeColor = value; Invalidate(); }
+            get { return bodyBox.ForeColor; }
+            set { bodyBox.ForeColor = value; }
         }
 
         private Font headlineFont;
@@ -117,11 +116,10 @@ namespace oSpy
             }
         }
 
-        private Font bodyFont;
         public Font BodyFont
         {
-            get { return bodyFont; }
-            set { bodyFont = value; Recalibrate(); }
+            get { return bodyBox.Font; }
+            set { bodyBox.Font = value; Recalibrate(); }
         }
 
         private int headerRowsPerCol;
@@ -154,19 +152,18 @@ namespace oSpy
 
         protected List<KeyValuePair<string, string>> headerFields;
 
-        private string bodyText;
-        private string[] bodyLines;
+        protected GroovyTextBox bodyBox;
+        public GroovyTextBox BodyBox
+        {
+            get { return bodyBox; }
+        }
+
         public string BodyText
         {
-            get { return bodyText; }
+            get { return bodyBox.Text; }
             set
             {
-                bodyText = value;
-
-                if (value.Length > 0)
-                    bodyLines = value.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
-                else
-                    bodyLines = new string[0];
+                bodyBox.Text = value;
 
                 Recalibrate();
             }
@@ -180,6 +177,7 @@ namespace oSpy
         }
 
         protected Image previewImage;
+    
         public Image PreviewImage
         {
             get { return previewImage; }
@@ -230,6 +228,9 @@ namespace oSpy
         {
             initializing = true;
 
+            bodyBox = new GroovyTextBox();
+            bodyBox.Parent = this;
+
             this.index = index;
 
             this.direction = direction;
@@ -266,7 +267,6 @@ namespace oSpy
 
             headlineText = "";
             headerFields = new List<KeyValuePair<string, string>>();
-            BodyText = "";
             testScenario = -1;
 
             contextID = null;
@@ -293,12 +293,9 @@ namespace oSpy
             headlineForeColor = (Color)info.GetValue("headlineForeColor", typeof(Color));
             headerBackColor = (Color)info.GetValue("headerBackColor", typeof(Color));
             headerForeColor = (Color) info.GetValue("headerForeColor", typeof(Color));
-            bodyBackColor = (Color) info.GetValue("bodyBackColor", typeof(Color));
-            bodyForeColor = (Color) info.GetValue("bodyForeColor", typeof(Color));
 
             headlineFont = (Font)info.GetValue("headlineFont", typeof(Font));
             HeaderFont = (Font)info.GetValue("HeaderFont", typeof(Font));
-            bodyFont = (Font) info.GetValue("bodyFont", typeof(Font));
 
             headerRowsPerCol = info.GetInt32("headerRowsPerCol");
 
@@ -334,12 +331,9 @@ namespace oSpy
             info.AddValue("headlineForeColor", headlineForeColor);
             info.AddValue("headerBackColor", headerBackColor);
             info.AddValue("headerForeColor", headerForeColor);
-            info.AddValue("bodyBackColor", bodyBackColor);
-            info.AddValue("bodyForeColor", bodyForeColor);
 
             info.AddValue("headlineFont", headlineFont);
             info.AddValue("HeaderFont", headerFont);
-            info.AddValue("bodyFont", bodyFont);
 
             info.AddValue("headerRowsPerCol", headerRowsPerCol);
 
@@ -413,24 +407,24 @@ namespace oSpy
             AddHeaderField(name, Convert.ToString(value));
         }
 
-        private int sectionSpacing = 5;
+        private const int sectionSpacing = 5;
 
-        private int ctxSquareWidth = 10;
+        private const int ctxSquareWidth = 10;
 
-        private int headlineTopBottomSpacing = 5;
-        private int headlineLeftRightSpacing = 5;
-        private int headerTopBottomSpacing = 5;
-        private int headerLeftRightSpacing = 5;
-        private int headerRowSpacing = 2;
-        private int bodyBorderSpacing = 5;
-        private int bodyLineSpacing = 2;
+        private const int headlineTopBottomSpacing = 5;
+        private const int headlineLeftRightSpacing = 5;
+        private const int headerTopBottomSpacing = 5;
+        private const int headerLeftRightSpacing = 5;
+        private const int headerRowSpacing = 2;
+        private const int bodyBorderSpacing = 5;
+        private const int bodyBottomSpacing = 2;
+        private const int bodyMaxHeight = 200;
 
         private int commonWidth;
         private int headlineX, headlineY, headlineContentX, headlineContentY, headlineHeight;
         private int headerX, headerY, headerContentX, headerContentY, headerContentWidth, headerRowHeight, headerHeight;
         private float headerWidestName;
         private float[] headerColWidths = new float[1];
-        private int bodyX, bodyY, bodyContentX, bodyContentY, bodyLineHeight, bodyHeight;
 
         private void Recalibrate()
         {
@@ -439,7 +433,7 @@ namespace oSpy
 
             Graphics g = this.CreateGraphics();
 
-            commonWidth = (int)g.MeasureString("0000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................", bodyFont).Width;
+            commonWidth = (int)g.MeasureString("0000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................", bodyBox.Font).Width + 20;
             commonWidth += 2 * bodyBorderSpacing;
 
             //
@@ -504,26 +498,14 @@ namespace oSpy
             //
             // Body
             //
-            bodyX = headerX;
-            bodyY = headerY + headerHeight + ((headerHeight > 0) ? sectionSpacing : 0);
-
-            int bodyFontHeight = (int)bodyFont.GetHeight();
-
-            bodyLineHeight = bodyFontHeight + bodyLineSpacing;
-
-            bodyContentX = bodyX + bodyBorderSpacing;
-            bodyContentY = bodyY + bodyBorderSpacing;
-
-            bodyHeight = (2 * bodyBorderSpacing);
-            if (bodyLines.Length >= 1)
-            {
-                bodyHeight += (bodyLineHeight * bodyLines.Length) - bodyLineSpacing;
-            }
-
-            if (previewImage != null)
-            {
-                bodyHeight += (2 * bodyLineHeight) + previewImage.Height;
-            }
+            bodyBox.Left = headerX;
+            bodyBox.Top = headerY + headerHeight + ((headerHeight > 0) ? sectionSpacing : 0);
+            bodyBox.Width = commonWidth;
+            int height = bodyBox.GetPreferredSize(new Size(commonWidth, bodyMaxHeight)).Height;
+            if (height > bodyMaxHeight)
+                height = bodyMaxHeight;
+            bodyBox.Height = height;
+            bodyBox.Visible = (bodyBox.Text.Length > 0);
 
             UpdateSize();
 
@@ -545,9 +527,9 @@ namespace oSpy
             Width = commonWidth + (2 * framePenWidth);
 
             int height = headlineHeight + headerHeight + (2 * framePenWidth);
-            if (bodyLines.Length > 0)
+            if (bodyBox.Visible)
             {
-                height += ((headerHeight > 0) ? sectionSpacing : 0) + bodyHeight;
+                height += ((headlineHeight > 0 || headerHeight > 0) ? sectionSpacing : 0) + bodyBox.Height + bodyBottomSpacing;
             }
 
             Height = height;
@@ -628,40 +610,13 @@ namespace oSpy
             }
 
             //
-            // Body
-            //
-            if (bodyLines.Length > 0)
-            {
-                eg.FillRoundRectangle(new SolidBrush(bodyBackColor),
-                    bodyX, bodyY, commonWidth, bodyHeight, 2.0f);
-
-                brush = new SolidBrush(bodyForeColor);
-                y = bodyContentY;
-                foreach (string line in bodyLines)
-                {
-                    g.DrawString(line, bodyFont, brush, bodyContentX, y);
-
-                    y += bodyLineHeight;
-                }
-            }
-
-            if (previewImage != null)
-            {
-                y += bodyLineHeight;
-
-                g.DrawImage(previewImage, bodyX + bodyLineHeight, y);
-
-                y += bodyLineHeight;
-            }
-
-            //
-            // Draw a round frame around both header and body
+            // Draw a round outer frame
             //
             int width = commonWidth + framePenWidth;
             int height = headlineHeight + headerHeight + framePenWidth;
-            if (bodyLines.Length > 0)
+            if (bodyBox.Visible)
             {
-                height += ((headerHeight > 0) ? sectionSpacing : 0) + bodyHeight;
+                height += ((headlineHeight > 0 || headerHeight > 0) ? sectionSpacing : 0) + bodyBox.Height + bodyBottomSpacing;
             }
 
             eg.DrawRoundRectangle(pen, headlineX - framePenWidth, headlineY - framePenWidth,
@@ -688,6 +643,17 @@ namespace oSpy
 
         public virtual void SessionsCreated()
         {
+        }
+
+        private void InitializeComponent()
+        {
+            this.SuspendLayout();
+            // 
+            // VisualTransaction
+            // 
+            this.Name = "VisualTransaction";
+            this.ResumeLayout(false);
+
         }
     }
 
@@ -753,7 +719,6 @@ namespace oSpy
             return Color.FromArgb((baseColor.R + (10 * wrapCount)) % 256,
                                   (baseColor.G + (10 * wrapCount)) % 256,
                                   (baseColor.B + (10 * wrapCount)) % 256);
-
         }
     }
 }

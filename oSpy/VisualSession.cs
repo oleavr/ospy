@@ -127,8 +127,6 @@ namespace oSpy
             get { return "TCP"; }
         }
 
-        private const int maxPreview = 128;
-
         public override VisualTransaction[] GetTransactions(IPSession session)
         {
             List<VisualTransaction> transactions = new List<VisualTransaction>();
@@ -156,7 +154,7 @@ namespace oSpy
                         transaction.AddHeaderField("Size", transferred);
 
                         byte[] bytes = previewData.ToArray();
-                        transaction.SetBodyFromTruncatedPreviewData(bytes, transferred - bytes.Length);
+                        transaction.SetBodyFromPreviewData(bytes, bytes.Length);
                     }
 
                     transaction = new VisualTransaction(packet.Index, packet.Direction, packet.Timestamp);
@@ -169,14 +167,7 @@ namespace oSpy
 
                 transaction.EndTime = packet.Timestamp;
 
-                if (transferred < maxPreview)
-                {
-                    int n = packet.Bytes.Length;
-                    if (transferred + n > maxPreview)
-                        n = maxPreview - transferred;
-
-                    previewData.Write(packet.Bytes, 0, n);
-                }
+                previewData.Write(packet.Bytes, 0, packet.Bytes.Length);
 
                 transferred += packet.Bytes.Length;
             }

@@ -312,6 +312,8 @@ namespace oSpy.Parser
 
                     vt.HeadlineText = headline;
 
+                    XmlHighlighter highlighter = null;
+
                     TransactionNode payloadNode = node.FindChild("Payload", false);
                     if (payloadNode != null)
                     {
@@ -319,9 +321,8 @@ namespace oSpy.Parser
 
                         if (payloadNode.Fields.ContainsKey("XML"))
                         {
-                            XMLHighlighter highlighter;
-
-                            XML.PrettyPrint((string)payloadNode["XML"], out body, out highlighter);
+                            highlighter = new XmlHighlighter(XmlHighlightColorScheme.VisualizationScheme);
+                            XmlUtils.PrettyPrint((string)payloadNode["XML"], out body, highlighter);
                         }
                         else if (payloadNode.Fields.ContainsKey("Text"))
                         {
@@ -338,6 +339,9 @@ namespace oSpy.Parser
                         }
 
                         vt.BodyText = body;
+
+                        if (highlighter != null)
+                            highlighter.HighlightRichTextBox(vt.BodyBox);
                     }
 
                     messages.Add(vt);
