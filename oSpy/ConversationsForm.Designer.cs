@@ -68,7 +68,7 @@ namespace oSpy
             this.fileToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1046, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(782, 24);
             this.menuStrip1.TabIndex = 6;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -160,7 +160,7 @@ namespace oSpy
             // 
             this.splitContainer.Panel2.Controls.Add(this.propertyGrid);
             this.splitContainer.Panel2Collapsed = true;
-            this.splitContainer.Size = new System.Drawing.Size(1046, 535);
+            this.splitContainer.Size = new System.Drawing.Size(782, 499);
             this.splitContainer.SplitterDistance = 785;
             this.splitContainer.TabIndex = 8;
             // 
@@ -179,7 +179,7 @@ namespace oSpy
             this.multiStreamView.Location = new System.Drawing.Point(0, 0);
             this.multiStreamView.Name = "multiStreamView";
             this.multiStreamView.Sessions = new oSpy.VisualSession[0];
-            this.multiStreamView.Size = new System.Drawing.Size(1046, 535);
+            this.multiStreamView.Size = new System.Drawing.Size(782, 499);
             this.multiStreamView.TabIndex = 5;
             this.multiStreamView.Click += new System.EventHandler(this.multiStreamView_Click);
             // 
@@ -188,7 +188,7 @@ namespace oSpy
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
-            this.ClientSize = new System.Drawing.Size(1046, 559);
+            this.ClientSize = new System.Drawing.Size(782, 523);
             this.Controls.Add(this.splitContainer);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
