@@ -46,21 +46,29 @@ namespace oSpy
             timeline.LayoutChanged += new EventHandler(timeline_LayoutChanged);
             timeline.SizeChanged += new EventHandler(timeline_SizeChanged);
             timeline.Scroll += new ScrollEventHandler(timeline_Scroll);
-
-            ResizeBegin += new EventHandler(TimelineNavigatorForm_ResizeBegin);
-            ResizeEnd += new EventHandler(TimelineNavigatorForm_ResizeEnd);
         }
 
         private int prevWidth, prevHeight;
 
-        private void TimelineNavigatorForm_ResizeBegin(object sender, EventArgs e)
+        protected override void OnResizeBegin(EventArgs e)
         {
+            base.OnResizeBegin(e);
+
             prevWidth = ClientRectangle.Width;
             prevHeight = ClientRectangle.Height;
         }
 
-        private void TimelineNavigatorForm_ResizeEnd(object sender, EventArgs e)
+        protected override void OnResize(EventArgs e)
         {
+            base.OnResize(e);
+
+            UpdateNavBitmap();
+        }
+
+        protected override void OnResizeEnd(EventArgs e)
+        {
+            base.OnResizeEnd(e);
+
             Rectangle fullRect = timeline.GetRealSize();
             if (fullRect.Width <= 0 || fullRect.Height <= 0)
                 return;

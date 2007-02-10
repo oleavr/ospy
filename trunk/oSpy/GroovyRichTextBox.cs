@@ -24,14 +24,16 @@ using System.Runtime.InteropServices;
 
 namespace oSpy
 {
-    public class GroovyTextBox : RichTextBox
+    public class GroovyRichTextBox : RichTextBox
     {
-        public GroovyTextBox()
+        public GroovyRichTextBox()
         {
             WordWrap = false;
             ReadOnly = true;
             BorderStyle = BorderStyle.None;
             ScrollBars = RichTextBoxScrollBars.Vertical;
+            AutoSize = false;
+            DetectUrls = false;
         }
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]

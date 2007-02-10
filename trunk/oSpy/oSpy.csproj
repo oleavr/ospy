@@ -65,7 +65,7 @@
     <Compile Include="Event\SocketEventType.cs" />
     <Compile Include="Event\TCPEvent.cs" />
     <Compile Include="ExtendedGraphics.cs" />
-    <Compile Include="GroovyTextBox.cs">
+    <Compile Include="GroovyRichTextBox.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Net\IPEndpoint.cs" />
