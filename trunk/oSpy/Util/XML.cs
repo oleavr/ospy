@@ -131,7 +131,7 @@ namespace oSpy.Util
                 }
             }
 
-            prettyXml = builder.ToString();
+            prettyXml = builder.ToString().TrimEnd(new char[] { '\n' });
         }
     }
 
