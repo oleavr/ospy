@@ -24,6 +24,7 @@ using System.Drawing;
 using System.Drawing.Extended;
 using System.Runtime.Serialization;
 using oSpy.Util;
+using System.Runtime.InteropServices;
 
 namespace oSpy
 {
@@ -778,17 +779,66 @@ namespace oSpy
             eg.DrawRoundRectangle(pen, 0, 0, Width - framePenWidth, Height - framePenWidth, 4.0f);
         }
 
+        [DllImport("gdi32.dll")]
+        private static extern long BitBlt(
+            IntPtr hdcDest,
+            int xDest,
+            int yDest,
+            int nWidth,
+            int nHeight,
+            IntPtr hdcSource,
+            int xSrc,
+            int ySrc,
+            Int32 dwRop);
+
+        const int SRCCOPY = 13369376;
+
+        private Bitmap ControlToBitmap(Control ctrl)
+        {
+            Graphics grCtrl = Graphics.FromHwnd(ctrl.Handle);
+            Bitmap result = new Bitmap(ctrl.Width, ctrl.Height, grCtrl);
+
+            IntPtr hdcCtrl = grCtrl.GetHdc();
+            Graphics grDest = Graphics.FromImage(result);
+            IntPtr hdcDest = grDest.GetHdc();
+
+            int sourceX, sourceY;
+            if (ctrl is Form)
+            {
+                sourceX = ctrl.ClientSize.Width - ctrl.Width + 4;
+                sourceY = ctrl.ClientSize.Height - ctrl.Height + 4;
+            }
+            else
+            {
+                sourceX = 0;
+                sourceY = 0;
+            }
+
+            BitBlt(hdcDest, 0, 0, ctrl.Width, ctrl.Height, hdcCtrl, sourceX, sourceY, SRCCOPY);
+
+            grCtrl.ReleaseHdc(hdcCtrl);
+            grDest.ReleaseHdc(hdcDest);
+
+            return result;
+        }
+
         public void DrawToBitmapFull(Bitmap bitmap, int x, int y)
         {
             DrawToBitmap(bitmap, new Rectangle(x, y, bitmap.Width, bitmap.Height));
 
-            /*
-            foreach (Control control in Controls)
+            Graphics g = Graphics.FromImage(bitmap);
+
+            if (headlineBox.Text.Length > 0)
             {
-                control.DrawToBitmap(bitmap,
-                    new Rectangle(x + control.Left, y + control.Top,
-                                  control.Width, control.Height));
-            }*/
+                Bitmap headlineBitmap = ControlToBitmap(headlineBox);
+                g.DrawImage(headlineBitmap, x + headlineBox.Left, y + headlineBox.Top);
+            }
+
+            if (bodyBox.Text.Length > 0)
+            {
+                Bitmap bodyBitmap = ControlToBitmap(bodyBox);
+                g.DrawImage(bodyBitmap, x + bodyBox.Left, y + bodyBox.Top);
+            }
         }
 
         public void SetBodyFromPreviewData(byte[] data, int maxSize)
