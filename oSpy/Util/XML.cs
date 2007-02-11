@@ -38,6 +38,8 @@ namespace oSpy.Util
             StringReader stringReader = new StringReader(xmlData);
             XmlTextReader reader = new XmlTextReader(stringReader);
             StringBuilder builder = new StringBuilder(xmlData.Length);
+            string[] tokens;
+            char[] nsSepChars = new char[] { ':' };
 
             int indent = 0;
             while (reader.Read())
@@ -55,7 +57,26 @@ namespace oSpy.Util
                             highlighter.AddToken(XmlHighlightContext.ELEMENT_OPENING, offset, builder.Length - offset);
 
                         offset = builder.Length;
-                        builder.Append(reader.Name);
+                        tokens = reader.Name.Split(nsSepChars, 2);
+                        if (tokens.Length > 1)
+                        {
+                            builder.Append(tokens[0]);
+                            if (highlighter != null)
+                                highlighter.AddToken(XmlHighlightContext.ELEMENT_NAMESPACE_NAME, offset, builder.Length - offset);
+
+                            offset = builder.Length;
+                            builder.Append(":");
+                            if (highlighter != null)
+                                highlighter.AddToken(XmlHighlightContext.ELEMENT_NAMESPACE_SEPARATOR, offset, 1);
+
+                            offset = builder.Length;
+                            builder.Append(tokens[1]);
+                        }
+                        else
+                        {
+                            builder.Append(tokens[0]);
+                        }
+
                         if (highlighter != null)
                             highlighter.AddToken(XmlHighlightContext.ELEMENT_NAME, offset, builder.Length - offset);
 
@@ -69,7 +90,28 @@ namespace oSpy.Util
                             builder.Append(" ");
 
                             offset = builder.Length;
-                            builder.Append(reader.Name);
+
+                            offset = builder.Length;
+                            tokens = reader.Name.Split(nsSepChars, 2);
+                            if (tokens.Length > 1)
+                            {
+                                builder.Append(tokens[0]);
+                                if (highlighter != null)
+                                    highlighter.AddToken(XmlHighlightContext.ELEMENT_ATTRIBUTE_KEY, offset, builder.Length - offset);
+
+                                offset = builder.Length;
+                                builder.Append(":");
+                                if (highlighter != null)
+                                    highlighter.AddToken(XmlHighlightContext.ELEMENT_NAMESPACE_SEPARATOR, offset, 1);
+
+                                offset = builder.Length;
+                                builder.Append(tokens[1]);
+                            }
+                            else
+                            {
+                                builder.Append(tokens[0]);
+                            }
+
                             if (highlighter != null)
                                 highlighter.AddToken(XmlHighlightContext.ELEMENT_ATTRIBUTE_KEY, offset, builder.Length - offset);
 
@@ -112,7 +154,26 @@ namespace oSpy.Util
                             highlighter.AddToken(XmlHighlightContext.ELEMENT_OPENING, offset, builder.Length - offset);
 
                         offset = builder.Length;
-                        builder.Append(reader.Name);
+                        tokens = reader.Name.Split(nsSepChars, 2);
+                        if (tokens.Length > 1)
+                        {
+                            builder.Append(tokens[0]);
+                            if (highlighter != null)
+                                highlighter.AddToken(XmlHighlightContext.ELEMENT_NAMESPACE_NAME, offset, builder.Length - offset);
+
+                            offset = builder.Length;
+                            builder.Append(":");
+                            if (highlighter != null)
+                                highlighter.AddToken(XmlHighlightContext.ELEMENT_NAMESPACE_SEPARATOR, offset, 1);
+
+                            offset = builder.Length;
+                            builder.Append(tokens[1]);
+                        }
+                        else
+                        {
+                            builder.Append(tokens[0]);
+                        }
+
                         if (highlighter != null)
                             highlighter.AddToken(XmlHighlightContext.ELEMENT_NAME, offset, builder.Length - offset);
 
@@ -139,6 +200,8 @@ namespace oSpy.Util
     {
         ELEMENT_OPENING,
         ELEMENT_CLOSING,
+        ELEMENT_NAMESPACE_NAME,
+        ELEMENT_NAMESPACE_SEPARATOR,
         ELEMENT_NAME,
         ELEMENT_ATTRIBUTE_KEY,
         ELEMENT_ATTRIBUTE_VALUE,
@@ -158,6 +221,20 @@ namespace oSpy.Util
         {
             get { return elementClosingColor; }
             set { elementClosingColor = value; }
+        }
+
+        protected Color elementNamespaceNameColor;
+        public Color ElementNamespaceNameColor
+        {
+            get { return elementNamespaceNameColor; }
+            set { elementNamespaceNameColor = value; }
+        }
+
+        protected Color elementNamespaceSeparatorColor;
+        public Color ElementNamespaceSeparatorColor
+        {
+            get { return elementNamespaceSeparatorColor; }
+            set { elementNamespaceSeparatorColor = value; }
         }
 
         protected Color elementNameColor;
@@ -185,6 +262,8 @@ namespace oSpy.Util
         {
             elementOpeningColor = Color.Black;
             elementClosingColor = Color.Black;
+            elementNamespaceNameColor = Color.Black;
+            elementNamespaceSeparatorColor = Color.Black;
             elementNameColor = Color.Black;
             attributeKeyColor = Color.Black;
             attributeValueColor = Color.Black;
@@ -205,23 +284,32 @@ namespace oSpy.Util
         static XmlHighlightColorScheme()
         {
             Color cyanish = Color.FromArgb(64, 255, 255);
+            Color darkCyanish = Color.FromArgb(0, 128, 128);
             Color greenish = Color.FromArgb(96, 255, 96);
+            Color darkGreenish = Color.FromArgb(46, 139, 87);
             Color redish = Color.FromArgb(255, 160, 160);
             Color bluish = Color.FromArgb(106, 90, 205);
+            Color lightBluish = Color.FromArgb(128, 160, 255);
+            Color pinkish = Color.FromArgb(255, 0, 255);
+            Color brownish = Color.FromArgb(255, 165, 0);
 
             darkBlueScheme = new XmlHighlightColorScheme();
             darkBlueScheme.ElementOpeningColor = cyanish;
             darkBlueScheme.ElementClosingColor = cyanish;
+            darkBlueScheme.ElementNamespaceNameColor = brownish;
+            darkBlueScheme.ElementNamespaceSeparatorColor = lightBluish;
             darkBlueScheme.ElementNameColor = cyanish;
             darkBlueScheme.AttributeKeyColor = greenish;
             darkBlueScheme.AttributeValueColor = redish;
 
             visualizationScheme = new XmlHighlightColorScheme();
-            visualizationScheme.ElementOpeningColor = Color.Chocolate;
-            visualizationScheme.ElementClosingColor = Color.Chocolate;
-            visualizationScheme.ElementNameColor = Color.Chocolate;
-            visualizationScheme.AttributeKeyColor = bluish;
-            visualizationScheme.AttributeValueColor = redish;
+            visualizationScheme.ElementOpeningColor = darkCyanish;
+            visualizationScheme.ElementClosingColor = darkCyanish;
+            visualizationScheme.ElementNamespaceNameColor = bluish;
+            visualizationScheme.ElementNamespaceSeparatorColor = Color.Blue;
+            visualizationScheme.ElementNameColor = darkCyanish;
+            visualizationScheme.AttributeKeyColor = darkGreenish;
+            visualizationScheme.AttributeValueColor = pinkish;
         }
     }
 
@@ -266,6 +354,8 @@ namespace oSpy.Util
             contexts = new Dictionary<XmlHighlightContext, HighlightContext>(5);
             contexts.Add(XmlHighlightContext.ELEMENT_OPENING, new HighlightContext(scheme.ElementOpeningColor));
             contexts.Add(XmlHighlightContext.ELEMENT_CLOSING, new HighlightContext(scheme.ElementClosingColor));
+            contexts.Add(XmlHighlightContext.ELEMENT_NAMESPACE_NAME, new HighlightContext(scheme.ElementNamespaceNameColor));
+            contexts.Add(XmlHighlightContext.ELEMENT_NAMESPACE_SEPARATOR, new HighlightContext(scheme.ElementNamespaceSeparatorColor));
             contexts.Add(XmlHighlightContext.ELEMENT_NAME, new HighlightContext(scheme.ElementNameColor));
             contexts.Add(XmlHighlightContext.ELEMENT_ATTRIBUTE_KEY, new HighlightContext(scheme.AttributeKeyColor));
             contexts.Add(XmlHighlightContext.ELEMENT_ATTRIBUTE_VALUE, new HighlightContext(scheme.AttributeValueColor));
