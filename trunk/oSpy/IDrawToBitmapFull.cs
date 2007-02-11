@@ -24,7 +24,7 @@ using System.Drawing;
 
 namespace oSpy
 {
-    interface IDrawToBitmapFull
+    public interface IDrawToBitmapFull
     {
         void DrawToBitmapFull(Bitmap bitmap, int x, int y);
     }
