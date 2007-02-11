@@ -37,6 +37,9 @@ namespace oSpy
             set { timeline = value; }
         }
 
+        protected const int defaultMaxWH = 640;
+        protected Size maxSize;
+
         public TimelineNavigatorForm(Timeline timeline)
         {
             InitializeComponent();
@@ -46,6 +49,8 @@ namespace oSpy
             timeline.LayoutChanged += new EventHandler(timeline_LayoutChanged);
             timeline.SizeChanged += new EventHandler(timeline_SizeChanged);
             timeline.Scroll += new ScrollEventHandler(timeline_Scroll);
+
+            maxSize.Width = maxSize.Height = defaultMaxWH;
         }
 
         private int prevWidth, prevHeight;
@@ -69,6 +74,12 @@ namespace oSpy
         {
             base.OnResizeEnd(e);
 
+            if (Width > maxSize.Width || Height > maxSize.Height)
+            {
+                Width = maxSize.Width;
+                Height = maxSize.Height;
+            }
+
             Rectangle fullRect = timeline.GetRealSize();
             if (fullRect.Width <= 0 || fullRect.Height <= 0)
                 return;
@@ -76,7 +87,7 @@ namespace oSpy
             UpdateNavBitmap();
         }
 
-        private Bitmap fullBitmap, navBitmap;
+        private Bitmap maxScaleBitmap, navBitmap;
 
         private void timeline_LayoutChanged(object sender, EventArgs e)
         {
@@ -101,20 +112,17 @@ namespace oSpy
                 if (fullRect.Width <= 0 || fullRect.Height <= 0)
                     return;
 
-                try
-                {
-                    fullBitmap = new Bitmap(fullRect.Width, fullRect.Height);
-                    timeline.DrawToBitmap(fullBitmap, 0, 0);
-                }
-                catch (ArgumentException)
-                {
-                    fullBitmap = null;
-                    return;
-                }
+                float ratio = (float)fullRect.Width / (float)fullRect.Height;
+
+                maxSize.Width = (int)((float)defaultMaxWH * ratio);
+                maxSize.Height = defaultMaxWH;
+
+                maxScaleBitmap = new Bitmap(maxSize.Width, maxSize.Height);
+
+                timeline.DrawToBitmapScaled(maxScaleBitmap);
 
                 SetClientSizeCore(130, 130);
 
-                float ratio = (float)fullRect.Width / (float)fullRect.Height;
                 int w = (int)((float)ClientRectangle.Width * ratio);
                 int h = ClientRectangle.Height;
                 SetClientSizeCore(w, h);
@@ -127,7 +135,7 @@ namespace oSpy
 
         private void UpdateNavBitmap()
         {
-            if (fullBitmap == null || ClientRectangle.Width <= 0 || ClientRectangle.Height <= 0)
+            if (maxScaleBitmap == null || ClientRectangle.Width <= 0 || ClientRectangle.Height <= 0)
             {
                 navBitmap = null;
                 return;
@@ -136,7 +144,7 @@ namespace oSpy
             navBitmap = new Bitmap(ClientRectangle.Width, ClientRectangle.Height);
             Graphics g = Graphics.FromImage(navBitmap);
             g.FillRectangle(new SolidBrush(timeline.BackColor), 0, 0, navBitmap.Width, navBitmap.Height);
-            g.DrawImage(fullBitmap, 0, 0, navBitmap.Width, navBitmap.Height);
+            g.DrawImage(maxScaleBitmap, 0, 0, navBitmap.Width, navBitmap.Height);
 
             Invalidate();
         }

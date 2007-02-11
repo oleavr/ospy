@@ -76,14 +76,10 @@ namespace oSpy
         {
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
-                multiStreamView.Visible = false;
-
                 Stream stream = File.Open(saveFileDialog.FileName, FileMode.Create);
                 BinaryFormatter bFormatter = new BinaryFormatter();
                 bFormatter.Serialize(stream, multiStreamView.Sessions);
                 stream.Close();
-
-                multiStreamView.Visible = true;
             }
         }
 

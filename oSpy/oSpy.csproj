@@ -68,6 +68,7 @@
     <Compile Include="GroovyRichTextBox.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="IDrawToBitmapFull.cs" />
     <Compile Include="Net\IPEndpoint.cs" />
     <Compile Include="Net\IPPacket.cs" />
     <Compile Include="Net\IPSession.cs" />
