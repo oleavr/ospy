@@ -706,11 +706,6 @@ namespace oSpy
             menu.Show(this, e.X, e.Y);
         }
 
-        protected override void OnGotFocus(EventArgs e)
-        {
-            timeline.Focus();
-        }
-
         private void headingCol_OnDeleteClick(object sender, EventArgs e)
         {
             VisualSession[] sessions = new VisualSession[selectedSessions.Keys.Count];
