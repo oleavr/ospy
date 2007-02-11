@@ -25,10 +25,11 @@ using System.Drawing.Extended;
 using System.IO;
 using System.Runtime.InteropServices;
 using oSpy.Util;
+using System.Drawing.Drawing2D;
 
 namespace oSpy
 {
-    public class Timeline : UserControl
+    public class Timeline : UserControl, IDrawToBitmapFull
     {
         public event EventHandler LayoutChanged;
         public event EventHandler ScrollPositionChanged;
@@ -156,13 +157,41 @@ namespace oSpy
             return new Rectangle(0, 0, realWidth, realHeight);
         }
 
-        public void DrawToBitmap(Bitmap bitmap, int x, int y)
+        public void DrawToBitmapFull(Bitmap bitmap, int x, int y)
         {
             foreach (Control control in Controls)
             {
-                Rectangle rect = new Rectangle(x + control.Left,
-                    y + control.Top, realWidth, realHeight);
-                control.DrawToBitmap(bitmap, rect);
+                IDrawToBitmapFull dtbfControl = control as IDrawToBitmapFull;
+
+                dtbfControl.DrawToBitmapFull(bitmap, x + control.Left, y + control.Top);
+            }
+        }
+
+        public void DrawToBitmapScaled(Bitmap bitmap)
+        {
+            float ratioX = (float)bitmap.Width / (float)realWidth;
+            float ratioY = (float)bitmap.Height / (float)realHeight;
+
+            Matrix matrix = new Matrix();
+            matrix.Scale(ratioX, ratioY);
+
+            Graphics g = Graphics.FromImage(bitmap);
+            g.Transform = matrix;
+
+            DrawToGraphics(g);
+        }
+
+        public void DrawToGraphics(Graphics g)
+        {
+            foreach (Control control in Controls)
+            {
+                IDrawToBitmapFull dtbfControl = control as IDrawToBitmapFull;
+
+                Bitmap bitmap = new Bitmap(control.Width, control.Height);
+
+                dtbfControl.DrawToBitmapFull(bitmap, 0, 0);
+
+                g.DrawImage(bitmap, control.Left, control.Top);
             }
         }
 
@@ -183,7 +212,7 @@ namespace oSpy
         }
     }
 
-    public class TimeRuler : UserControl
+    public class TimeRuler : UserControl, IDrawToBitmapFull
     {
         protected int requiredHeight;
         protected List<KeyValuePair<int, DateTime>> marks;
@@ -269,6 +298,11 @@ namespace oSpy
 
                 y += mark.Key;
             }
+        }
+
+        public void DrawToBitmapFull(Bitmap bitmap, int x, int y)
+        {
+            DrawToBitmap(bitmap, new Rectangle(x, y, bitmap.Width, bitmap.Height));
         }
     }
 
@@ -430,7 +464,7 @@ namespace oSpy
             Graphics g = Graphics.FromImage(bitmap);
             g.DrawImage(headingBitmap, new Rectangle(0, 0, width, headingBitmap.Height));
 
-            timeline.DrawToBitmap(bitmap, 0, timelineRect.Y);
+            timeline.DrawToBitmapFull(bitmap, 0, timelineRect.Y);
 
             Stream stream = File.Open(filename, FileMode.Create);
             bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Png);

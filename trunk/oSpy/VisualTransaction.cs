@@ -28,7 +28,7 @@ using oSpy.Util;
 namespace oSpy
 {
     [Serializable()]
-    public class VisualTransaction : UserControl, ISerializable, IComparable
+    public class VisualTransaction : UserControl, ISerializable, IComparable, IDrawToBitmapFull
     {
         private int index;
         public int Index
@@ -107,7 +107,7 @@ namespace oSpy
             set
             {
                 headerFont = value;
-                headerFontBold = new Font(headerFont.FontFamily, headerFont.Size - 0.25f, FontStyle.Bold);
+                headerFontBold = new Font(headerFont, FontStyle.Bold);
                 UpdateHeaders(true);
             }
         }
@@ -225,19 +225,22 @@ namespace oSpy
         private bool initializing;
         private static TransactionColorPool colorPool = new TransactionColorPool();
 
+        private void InitializeBasics()
+        {
+            headlineBox = new GroovyRichTextBox();
+            headlineBox.Parent = this;
+
+            headerBoxes = new List<KeyValuePair<TextBox, TextBox>>();
+
+            bodyBox = new GroovyRichTextBox();
+            bodyBox.Parent = this;
+        }
+
         private void Initialize(int index, PacketDirection direction, DateTime startTime, DateTime endTime)
         {
             initializing = true;
 
-            headlineBox = new GroovyRichTextBox();
-            headlineBox.Margin = new Padding(5, 0, 0, 0);
-            headlineBox.Parent = this;
-
-            bodyBox = new GroovyRichTextBox();
-            bodyBox.Margin = new Padding(5, 0, 0, 0);
-            bodyBox.Parent = this;
-
-            headerBoxes = new List<KeyValuePair<TextBox, TextBox>>();
+            InitializeBasics();
 
             this.index = index;
 
@@ -288,6 +291,8 @@ namespace oSpy
         {
             initializing = true;
 
+            InitializeBasics();
+
             index = info.GetInt32("index");
 
             direction = (PacketDirection)info.GetValue("direction", typeof(PacketDirection));
@@ -295,17 +300,29 @@ namespace oSpy
             startTime = (DateTime) info.GetValue("startTime", typeof(DateTime));
             endTime = (DateTime)info.GetValue("endTime", typeof(DateTime));
 
+            HeadlineBackColor = (Color)info.GetValue("HeadlineBackColor", typeof(Color));
+            HeadlineForeColor = (Color)info.GetValue("HeadlineForeColor", typeof(Color));
+
             headerBackColor = (Color)info.GetValue("headerBackColor", typeof(Color));
             headerForeColor = (Color) info.GetValue("headerForeColor", typeof(Color));
 
+            BodyBackColor = (Color)info.GetValue("BodyBackColor", typeof(Color));
+            BodyForeColor = (Color)info.GetValue("BodyForeColor", typeof(Color));
+
+            HeadlineFont = (Font)info.GetValue("HeadlineFont", typeof(Font));
+
             HeaderFont = (Font)info.GetValue("HeaderFont", typeof(Font));
+
+            BodyFont = (Font)info.GetValue("BodyFont", typeof(Font));
 
             headerRowsPerCol = info.GetInt32("headerRowsPerCol");
 
             framePenWidth = (int) info.GetValue("framePenWidth", typeof(int));
             frameColor = (Color) info.GetValue("frameColor", typeof(Color));
 
-            BodyText = info.GetString("BodyText");
+            HeadlineText = info.GetString("HeadlineText");
+
+            bodyBox.Rtf = info.GetString("BodyRtf");
 
             contextID = info.GetString("contextID");
 
@@ -327,17 +344,29 @@ namespace oSpy
             info.AddValue("startTime", startTime);
             info.AddValue("endTime", endTime);
 
+            info.AddValue("HeadlineBackColor", HeadlineBackColor);
+            info.AddValue("HeadlineForeColor", HeadlineForeColor);
+
             info.AddValue("headerBackColor", headerBackColor);
             info.AddValue("headerForeColor", headerForeColor);
 
+            info.AddValue("BodyBackColor", BodyBackColor);
+            info.AddValue("BodyForeColor", BodyForeColor);
+
+            info.AddValue("HeadlineFont", HeadlineFont);
+
             info.AddValue("HeaderFont", headerFont);
+
+            info.AddValue("BodyFont", BodyFont);
 
             info.AddValue("headerRowsPerCol", headerRowsPerCol);
 
             info.AddValue("framePenWidth", framePenWidth);
             info.AddValue("frameColor", frameColor);
 
-            info.AddValue("BodyText", BodyText);
+            info.AddValue("HeadlineText", HeadlineText);
+
+            info.AddValue("BodyRtf", bodyBox.Rtf);
 
             info.AddValue("contextID", contextID);
 
@@ -502,7 +531,7 @@ namespace oSpy
         private const int headerTopBottomSpacing = 5;
         private const int headerLeftRightSpacing = 7;
         private const int headerRowSpacing = 2;
-        private const int bodyBoxBorderWidth = 15;
+        private const int bodyBoxBorderWidth = 28;
         private const int bodyMaxHeight = 200;
 
         private int commonWidth;
@@ -574,9 +603,7 @@ namespace oSpy
                 KeyValuePair<TextBox, TextBox> field = headerBoxes[i];
                 int colNo = i / headerRowsPerCol;
 
-                Size prefSize = field.Key.GetPreferredSize(proposedSize);
-                prefSize.Width -= 5;
-                field.Key.Size = prefSize;
+                field.Key.Size = field.Key.GetPreferredSize(proposedSize);
 
                 if (field.Key.Width > headerWidestName)
                     headerWidestName = field.Key.Width;
@@ -722,8 +749,6 @@ namespace oSpy
             ExtendedGraphics eg = new ExtendedGraphics(g);
             Rectangle rect = e.ClipRectangle;
 
-            float x = 0, y = 0;
-            Brush brush;
             Pen pen = new Pen(frameColor, framePenWidth);
 
             //
@@ -751,6 +776,19 @@ namespace oSpy
             // Draw a round outer frame
             //
             eg.DrawRoundRectangle(pen, 0, 0, Width - framePenWidth, Height - framePenWidth, 4.0f);
+        }
+
+        public void DrawToBitmapFull(Bitmap bitmap, int x, int y)
+        {
+            DrawToBitmap(bitmap, new Rectangle(x, y, bitmap.Width, bitmap.Height));
+
+            /*
+            foreach (Control control in Controls)
+            {
+                control.DrawToBitmap(bitmap,
+                    new Rectangle(x + control.Left, y + control.Top,
+                                  control.Width, control.Height));
+            }*/
         }
 
         public void SetBodyFromPreviewData(byte[] data, int maxSize)
