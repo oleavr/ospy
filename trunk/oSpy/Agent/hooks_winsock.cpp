@@ -29,6 +29,8 @@ static MODULEINFO wsock32_info;
 #define CONNECT_ARGS_SIZE (3 * 4)
 #define WSA_ACCEPT_ARGS_SIZE (5 * 4)
 
+OMap<void *, bool>::Type ignored_send_ret_addrs;
+
 static int __cdecl
 getaddrinfo_called(BOOL carry_on,
                    DWORD ret_addr,
@@ -342,24 +344,27 @@ send_done(int retval,
           int len,
           int flags)
 {
-  DWORD err = GetLastError();
-  int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
-  void *bt_address = (char *) &retval - 4;
+	DWORD err = GetLastError();
+    void *ret_addr = *((void **) ((DWORD) &retval - 4));
+	void *bt_address = (char *) &retval - 4;
 
-  if (retval > 0)
-  {
-    log_tcp_packet("send", bt_address, PACKET_DIRECTION_OUTGOING, s, buf, retval);
-  }
-  else if (retval == SOCKET_ERROR)
-  {
-    if (err != WSAEWOULDBLOCK)
-    {
-      log_tcp_disconnected("send", bt_address, s, &err);
-    }
-  }
+	if (retval > 0)
+	{
+		if (ignored_send_ret_addrs.find(ret_addr) == ignored_send_ret_addrs.end())
+		{
+			log_tcp_packet("send", bt_address, PACKET_DIRECTION_OUTGOING, s, buf, retval);
+		}
+	}
+	else if (retval == SOCKET_ERROR)
+	{
+		if (err != WSAEWOULDBLOCK)
+		{
+			log_tcp_disconnected("send", bt_address, s, &err);
+		}
+	}
 
-  SetLastError(err);
-  return retval;
+	SetLastError(err);
+	return retval;
 }
 
 static int __cdecl
