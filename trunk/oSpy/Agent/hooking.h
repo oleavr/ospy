@@ -314,7 +314,7 @@ typedef struct {
 void write_byte_to_addr(LPVOID lpAddr, BYTE b);
 void write_dword_to_addr(LPVOID lpAddr, DWORD dw);
 BOOL write_jmp_instruction_to_addr(LPVOID lpOrgProc, LPVOID lpNewProc);
-BOOL find_signature(FunctionSignature *sig, LPVOID *address, char **error);
-BOOL find_signature_in_module(FunctionSignature *sig, const char *module_name, LPVOID *address, char **error);
-BOOL override_function_by_signature(FunctionSignature *sig, LPVOID replacement, LPVOID *patched_address, char **error);
-BOOL override_function_by_signature_in_module(FunctionSignature *sig, const char *module_name, LPVOID replacement, LPVOID *patched_address, char **error);
+BOOL find_signature(const FunctionSignature *sig, LPVOID *address, char **error);
+BOOL find_signature_in_module(const FunctionSignature *sig, const char *module_name, LPVOID *address, char **error);
+BOOL override_function_by_signature(const FunctionSignature *sig, LPVOID replacement, LPVOID *patched_address, char **error);
+BOOL override_function_by_signature_in_module(const FunctionSignature *sig, const char *module_name, LPVOID replacement, LPVOID *patched_address, char **error);

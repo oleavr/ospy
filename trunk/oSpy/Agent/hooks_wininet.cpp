@@ -25,10 +25,10 @@ typedef enum {
 	SIGNATURE_ICSOCKET_SEND_TAIL = 0,
 	SIGNATURE_ICSOCKET_SEND_CALL,
     SIGNATURE_SECURE_SEND_AFTER_ENCRYPT,
-	SIGNATURE_ENCRYPT_MESSAGE_CALL,
+	//SIGNATURE_ENCRYPT_MESSAGE_CALL,
 };
 
-static FunctionSignature wininet_signatures[] = {
+static const FunctionSignature wininet_signatures[] = {
 	// SIGNATURE_ICSOCKET_SEND_TAIL
     {
         "wininet.dll",
@@ -65,7 +65,41 @@ static FunctionSignature wininet_signatures[] = {
 	},
 };
 
-static char *icsocket_send_tail_impl = NULL;
+static const FunctionSignature wininet_signatures_ie7[] = {
+	// SIGNATURE_ICSOCKET_SEND_TAIL
+    {
+        "wininet.dll",
+		-5,
+		"E8 68 85 FF FF"		// call    ?DoFsm@@YGKPAVCFsm@@@Z ; DoFsm(CFsm *)
+		"5E"					// pop     esi
+		"5D"					// pop     ebp
+		"C2 0C 00"				// retn    0Ch
+    },
+
+	// SIGNATURE_ICSOCKET_SEND_CALL
+	{
+		"wininet.dll",
+		-10,
+		"FF 76 78"				// push    dword ptr [esi+78h]
+		"53"					// push    ebx
+	},
+
+    // SIGNATURE_SECURE_SEND_AFTER_ENCRYPT
+    {
+        "wininet.dll",
+		0,
+		"85 C0"					// test    eax, eax
+		"89 45 08"				// mov     [ebp+arg_0], eax
+		"75 33"					// jnz     short OUT
+    },
+};
+
+typedef struct {
+	char *data;
+	int dataLen;
+} CFsm_SecureSend_Upper;
+
+static int cfsm_securesend_base_size;
 
 static __declspec(naked) void
 icsocket_send_tail()
@@ -135,13 +169,11 @@ secure_send_after_encrypt()
 	if (retval == 0)
 	{
 		self = *((void **) ((char *) parent_ebp - 0x4));
-
 		void *bt_address = (void *) *((DWORD *) ((char *) parent_ebp + 0x4));
 		SOCKET sock = *((SOCKET *) ((char *) self + 0x18));
-		char *data = *((char **) ((char *) fsm + 0x74));
-		int dataLen = *((int *) ((char *) fsm + 0x78));
+		CFsm_SecureSend_Upper *fsm_upper = (CFsm_SecureSend_Upper *) ((char *) fsm + cfsm_securesend_base_size);
 
-		log_tcp_packet("SecureSend", bt_address, PACKET_DIRECTION_OUTGOING, sock, data, dataLen);
+		log_tcp_packet("SecureSend", bt_address, PACKET_DIRECTION_OUTGOING, sock, fsm_upper->data, fsm_upper->dataLen);
 	}
 
     __asm {
@@ -173,22 +205,33 @@ hook_wininet()
 		return;
     }
 
+	const FunctionSignature *sigs = wininet_signatures;
+	cfsm_securesend_base_size = 0x74;
+	bool found;
 	char *error;
 
-	if (override_function_by_signature(&wininet_signatures[SIGNATURE_ICSOCKET_SEND_TAIL],
-                                       icsocket_send_tail, (LPVOID *) &icsocket_send_tail_impl,
-                                       &error))
+	found = override_function_by_signature(&sigs[SIGNATURE_ICSOCKET_SEND_TAIL],
+										   icsocket_send_tail, NULL, &error);
+	if (!found)
 	{
-	}
-	else
-	{
-        LOG_OVERRIDE_ERROR("SIGNATURE_ICSOCKET_SEND_TAIL", error);
+		sigs = wininet_signatures_ie7;
+		cfsm_securesend_base_size = 0x78;
+
+		sspy_free(error);
+
+		found = override_function_by_signature(&sigs[SIGNATURE_ICSOCKET_SEND_TAIL],
+											   icsocket_send_tail, NULL, &error);
+		if (!found)
+		{
+			LOG_OVERRIDE_ERROR("SIGNATURE_ICSOCKET_SEND_TAIL", error);
+		}
 	}
 
 	void *icsocket_send_call_retaddr;
 
-	if (find_signature(&wininet_signatures[SIGNATURE_ICSOCKET_SEND_CALL], &icsocket_send_call_retaddr,
-					   &error))
+	found = find_signature(&sigs[SIGNATURE_ICSOCKET_SEND_CALL], &icsocket_send_call_retaddr,
+						   &error);
+	if (found)
 	{
 		ignored_send_ret_addrs[icsocket_send_call_retaddr] = true;
 	}
@@ -197,7 +240,7 @@ hook_wininet()
         LOG_OVERRIDE_ERROR("SIGNATURE_ICSOCKET_SEND_CALL", error);
 	}
 
-    if (override_function_by_signature(&wininet_signatures[SIGNATURE_SECURE_SEND_AFTER_ENCRYPT],
+    if (override_function_by_signature(&sigs[SIGNATURE_SECURE_SEND_AFTER_ENCRYPT],
                                        secure_send_after_encrypt, (LPVOID *) &secure_send_after_encrypt_impl,
                                        &error))
     {
