@@ -21,6 +21,7 @@
 void hook_winsock();
 void hook_secur32();
 void hook_crypt();
+void hook_wininet();
 void hook_httpapi();
 void hook_activesync();
 void hook_msn();
