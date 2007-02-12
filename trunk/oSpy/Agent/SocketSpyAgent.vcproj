@@ -215,6 +215,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\hooks_wininet.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\hooks_winsock.cpp"
 				>
 			</File>

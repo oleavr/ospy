@@ -392,10 +392,12 @@ CUtil::CreateBackTrace(void *address)
 			unsigned char *codeAddr = (unsigned char *) value;
 			unsigned char *p1 = codeAddr - 5;
 			unsigned char *p2 = codeAddr - 6;
+			unsigned char *p3 = codeAddr - 3;
 
 			// FIXME: add the other CALL variations
 			if ((!IsBadCodePtr((FARPROC) p1) && *p1 == OPCODE_CALL_NEAR_RELATIVE) ||
-				(!IsBadCodePtr((FARPROC) p2) && *p2 == OPCODE_CALL_NEAR_ABS_INDIRECT))
+				(!IsBadCodePtr((FARPROC) p2) && *p2 == OPCODE_CALL_NEAR_ABS_INDIRECT) ||
+				(!IsBadCodePtr((FARPROC) p3) && *p3 == OPCODE_CALL_NEAR_ABS_INDIRECT))
 			{
 				isRetAddr = true;
 			}
