@@ -19,12 +19,34 @@
 #include "stdafx.h"
 #include "hooking.h"
 #include "logging.h"
+#include "hooks.h"
 
 typedef enum {
-    SIGNATURE_SECURE_SEND_AFTER_ENCRYPT = 0,
+	SIGNATURE_ICSOCKET_SEND_TAIL = 0,
+	SIGNATURE_ICSOCKET_SEND_CALL,
+    SIGNATURE_SECURE_SEND_AFTER_ENCRYPT,
+	SIGNATURE_ENCRYPT_MESSAGE_CALL,
 };
 
 static FunctionSignature wininet_signatures[] = {
+	// SIGNATURE_ICSOCKET_SEND_TAIL
+    {
+        "wininet.dll",
+		-5,
+		"E8 93 5C FF FF"		// call    ?DoFsm@@YGKPAVCFsm@@@Z ; DoFsm(CFsm *)
+		"5E"					// pop     esi
+		"5D"					// pop     ebp
+		"C2 0C 00"				// retn    0Ch
+    },
+
+	// SIGNATURE_ICSOCKET_SEND_CALL
+	{
+		"wininet.dll",
+		-12,
+		"FF 76 74"				// push    dword ptr [esi+74h]
+		"FF 77 18"				// push    dword ptr [edi+18h]
+	},
+
     // SIGNATURE_SECURE_SEND_AFTER_ENCRYPT
     {
         "wininet.dll",
@@ -42,6 +64,50 @@ static FunctionSignature wininet_signatures[] = {
 		"3B C7"					// cmp     eax, edi
 	},
 };
+
+static char *icsocket_send_tail_impl = NULL;
+
+static __declspec(naked) void
+icsocket_send_tail()
+{
+	void *parent_ebp;
+	void *self; // ICSocket *
+    int retval;
+
+    __asm {
+		pushad;
+
+		mov		edi, ebp; // store parent's ebp
+
+        mov		ebp, esp;
+        sub		esp, __LOCAL_SIZE;
+
+		mov		[parent_ebp], edi;
+		mov		[self], esi;
+		mov		[retval], eax;
+    }
+
+	if (retval == 0)
+	{
+		void *bt_address = (void *) *((DWORD *) ((char *) parent_ebp + 0x4));
+		SOCKET sock = *((SOCKET *) ((char *) self + 0x18));
+		char *data = *((char **) ((char *) parent_ebp + 0x8));
+		int dataLen = *((int *) ((char *) parent_ebp + 0xc));
+
+		log_tcp_packet("ICSocket::Send", bt_address, PACKET_DIRECTION_OUTGOING, sock, data, dataLen);
+	}
+
+    __asm {
+        mov		esp, ebp;
+
+		popad;
+
+		/* continue where the original left off */
+		pop     esi;
+		pop     ebp;
+		retn    0Ch;
+    }
+}
 
 static char *secure_send_after_encrypt_impl = NULL;
 
@@ -108,6 +174,28 @@ hook_wininet()
     }
 
 	char *error;
+
+	if (override_function_by_signature(&wininet_signatures[SIGNATURE_ICSOCKET_SEND_TAIL],
+                                       icsocket_send_tail, (LPVOID *) &icsocket_send_tail_impl,
+                                       &error))
+	{
+	}
+	else
+	{
+        LOG_OVERRIDE_ERROR("SIGNATURE_ICSOCKET_SEND_TAIL", error);
+	}
+
+	void *icsocket_send_call_retaddr;
+
+	if (find_signature(&wininet_signatures[SIGNATURE_ICSOCKET_SEND_CALL], &icsocket_send_call_retaddr,
+					   &error))
+	{
+		ignored_send_ret_addrs[icsocket_send_call_retaddr] = true;
+	}
+	else
+	{
+        LOG_OVERRIDE_ERROR("SIGNATURE_ICSOCKET_SEND_CALL", error);
+	}
 
     if (override_function_by_signature(&wininet_signatures[SIGNATURE_SECURE_SEND_AFTER_ENCRYPT],
                                        secure_send_after_encrypt, (LPVOID *) &secure_send_after_encrypt_impl,

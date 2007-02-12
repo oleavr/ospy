@@ -18,6 +18,8 @@
 
 #pragma once
 
+extern OMap<void *, bool>::Type ignored_send_ret_addrs;
+
 void hook_winsock();
 void hook_secur32();
 void hook_crypt();
