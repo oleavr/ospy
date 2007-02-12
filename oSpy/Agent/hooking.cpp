@@ -363,13 +363,13 @@ scan_against_all_tokens(unsigned char *p, SignatureToken **tokens)
 }
 
 BOOL
-find_signature(FunctionSignature *sig, LPVOID *address, char **error)
+find_signature(const FunctionSignature *sig, LPVOID *address, char **error)
 {
     return find_signature_in_module(sig, sig->module_name, address, error);
 }
 
 BOOL
-find_signature_in_module(FunctionSignature *sig, const char *module_name, LPVOID *address, char **error)
+find_signature_in_module(const FunctionSignature *sig, const char *module_name, LPVOID *address, char **error)
 {
     BOOL result = FALSE;
     unsigned char *base, *p, *match;
@@ -431,7 +431,7 @@ DONE:
 }
 
 BOOL
-override_function_by_signature(FunctionSignature *sig,
+override_function_by_signature(const FunctionSignature *sig,
                                LPVOID replacement,
                                LPVOID *patched_address,
                                char **error)
@@ -441,7 +441,7 @@ override_function_by_signature(FunctionSignature *sig,
 }
 
 BOOL
-override_function_by_signature_in_module(FunctionSignature *sig,
+override_function_by_signature_in_module(const FunctionSignature *sig,
                                          const char *module_name,
                                          LPVOID replacement,
                                          LPVOID *patched_address,
