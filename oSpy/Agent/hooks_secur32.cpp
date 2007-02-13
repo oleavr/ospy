@@ -24,6 +24,9 @@
 
 static ContextTracker<PCtxtHandle> tracker;
 
+OMap<void *, bool>::Type ignored_encryptmsg_ret_addrs;
+OMap<void *, bool>::Type ignored_decryptmsg_ret_addrs;
+
 #define ENCRYPT_MESSAGE_ARGS_SIZE (4 * 4)
 
 static SECURITY_STATUS __cdecl
@@ -50,9 +53,10 @@ EncryptMessage_called(BOOL carry_on,
                       PSecBufferDesc pMessage,
                       ULONG MessageSeqNo)
 {
-    unsigned int i;
+	if (ignored_encryptmsg_ret_addrs.find((void *) ret_addr) != ignored_encryptmsg_ret_addrs.end())
+		return 0;
 
-    for (i = 0; i < pMessage->cBuffers; i++)
+    for (unsigned int i = 0; i < pMessage->cBuffers; i++)
     {
         SecBuffer *buffer = &pMessage->pBuffers[i];
 
@@ -103,19 +107,22 @@ DecryptMessage_done(SECURITY_STATUS retval,
     int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
     unsigned int i;
 
-    for (i = 0; i < pMessage->cBuffers; i++)
-    {
-        SecBuffer *buffer = &pMessage->pBuffers[i];
+	if (ignored_decryptmsg_ret_addrs.find((void *) ret_addr) == ignored_decryptmsg_ret_addrs.end())
+	{
+		for (i = 0; i < pMessage->cBuffers; i++)
+		{
+			SecBuffer *buffer = &pMessage->pBuffers[i];
 
-        if (buffer->BufferType == SECBUFFER_DATA)
-        {
-            message_logger_log_packet("DecryptMessage", (char *) &retval - 4,
-                                      tracker.GetContextID(phContext),
-                                      PACKET_DIRECTION_INCOMING, NULL, NULL,
-                                      (const char *) buffer->pvBuffer,
-                                      buffer->cbBuffer);
-        }
-    }
+			if (buffer->BufferType == SECBUFFER_DATA)
+			{
+				message_logger_log_packet("DecryptMessage", (char *) &retval - 4,
+										  tracker.GetContextID(phContext),
+										  PACKET_DIRECTION_INCOMING, NULL, NULL,
+										  (const char *) buffer->pvBuffer,
+										  buffer->cbBuffer);
+			}
+		}
+	}
 
     SetLastError(err);
     return retval;
