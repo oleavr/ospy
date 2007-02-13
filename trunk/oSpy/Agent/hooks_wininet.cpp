@@ -188,11 +188,12 @@ typedef struct {
 
 typedef struct {
 	char *data;
-	int padding1;
+	char *recvBuf;
 	int unk1;		// observed to be 0
 	int dataLen;
-	int unk3;		// observed to be the same as dataLen
-	int padding2[10];
+	int bytesReceived1;
+	int bytesReceived2;
+	int padding2[9];
 	int unk4;		// observed to be 0
 } CFsm_SecureReceive_Upper;
 
@@ -213,12 +214,13 @@ handle_icsocket_send(void *parent_ebp, void *self)
 {
 	void *bt_address = (void *) ((char *) parent_ebp + 0x4);
 	void *ret_addr = (void *) *((DWORD *) bt_address);
-	ICSocket_Upper *sock_upper = (ICSocket_Upper *) ((char *) self + icsocket_base_size);
-	char *data = *((char **) ((char *) parent_ebp + 0x8));
-	int dataLen = *((int *) ((char *) parent_ebp + 0xc));
 	
 	if (ignored_icsend_ret_addrs.find(ret_addr) == ignored_icsend_ret_addrs.end())
 	{
+		ICSocket_Upper *sock_upper = (ICSocket_Upper *) ((char *) self + icsocket_base_size);
+		char *data = *((char **) ((char *) parent_ebp + 0x8));
+		int dataLen = *((int *) ((char *) parent_ebp + 0xc));
+
 		log_tcp_packet("ICSocket::Send", bt_address, PACKET_DIRECTION_OUTGOING, sock_upper->fd, data, dataLen);
 	}
 }
@@ -265,15 +267,15 @@ handle_icsocket_recv(void *parent_ebp, void *self)
 {
 	void *bt_address = (void *) ((char *) parent_ebp + 0x4);
 	void *ret_addr = (void *) *((DWORD *) bt_address);
-	ICSocket_Upper *sock_upper = (ICSocket_Upper *) ((char *) self + icsocket_base_size);
-	//char *data = *((char **) ((char *) parent_ebp + 0x8));
-	//int dataLen = *((int *) ((char *) parent_ebp + 0xc));
 	
-	/*
 	if (ignored_icrecv_ret_addrs.find(ret_addr) == ignored_icrecv_ret_addrs.end())
 	{
+		ICSocket_Upper *sock_upper = (ICSocket_Upper *) ((char *) self + icsocket_base_size);
+		char *data = **((char ***) ((char *) parent_ebp + 0x8));
+		int dataLen = **((int **) ((char *) parent_ebp + 0xc));
+
 		log_tcp_packet("ICSocket::Receive", bt_address, PACKET_DIRECTION_INCOMING, sock_upper->fd, data, dataLen);
-	}*/
+	}
 }
 
 static __declspec(naked) void
