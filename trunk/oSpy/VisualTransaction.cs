@@ -154,6 +154,21 @@ namespace oSpy
 
         protected List<KeyValuePair<TextBox, TextBox>> headerBoxes;
 
+        public List<KeyValuePair<string, string>> HeaderFields
+        {
+            get
+            {
+                List<KeyValuePair<string, string>> fields = new List<KeyValuePair<string, string>>(headerBoxes.Count);
+
+                foreach (KeyValuePair<TextBox, TextBox> boxPair in headerBoxes)
+                {
+                    fields.Add(new KeyValuePair<string, string>(boxPair.Key.Text, boxPair.Value.Text));
+                }
+
+                return fields;
+            }
+        }
+
         protected GroovyRichTextBox bodyBox;
         public GroovyRichTextBox BodyBox
         {
