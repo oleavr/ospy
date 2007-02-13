@@ -367,6 +367,18 @@ namespace oSpy.Util
             char[] chars = s.ToCharArray();
             return utf8Encoder.GetByteCount(chars, 0, chars.Length, true);
         }
+
+        public static byte[] EncodeUTF8(string s)
+        {
+            char[] chars = s.ToCharArray();
+
+            int byteCount = utf8Encoder.GetByteCount(chars, 0, chars.Length, true);
+
+            byte[] bytes = new byte[byteCount];
+            utf8Encoder.GetBytes(chars, 0, chars.Length, bytes, 0, true);
+
+            return bytes;
+        }
     }
 
     public class IDA

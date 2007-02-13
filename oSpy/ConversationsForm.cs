@@ -27,6 +27,7 @@ using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using oSpy.Parser;
 using oSpy.Net;
+using oSpy.Util;
 
 namespace oSpy
 {
@@ -142,6 +143,70 @@ namespace oSpy
                 multiStreamView.Visible = true;
                 multiStreamView.Focus();
             }
+        }
+
+        private void exportToXMLToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (exportToXmlFileDialog.ShowDialog() != DialogResult.OK)
+                return;
+
+            StringBuilder builder = new StringBuilder();
+
+            builder.Append("<Streams>");
+
+            foreach (VisualSession session in multiStreamView.Sessions)
+            {
+                builder.AppendFormat("<Stream LocalEndpoint=\"{0}\" RemoteEndpoint=\"{1}\">",
+                    session.LocalEndpoint, session.RemoteEndpoint);
+
+                foreach (VisualTransaction transaction in session.Transactions)
+                {
+                    builder.AppendFormat("<Transaction Index=\"{0}\" Direction=\"{1}\" StartTime=\"{2}\" EndTime=\"{3}\">",
+                        transaction.Index,
+                        (transaction.Direction == PacketDirection.PACKET_DIRECTION_INCOMING) ? "in" : "out",
+                        transaction.StartTime.ToString("s"), transaction.EndTime.ToString("s"));
+
+                    if (transaction.HeadlineText.Length > 0)
+                    {
+                        byte[] headlineBytes = StaticUtils.EncodeUTF8(transaction.HeadlineText);
+                        builder.AppendFormat("<Headline>{0}</Headline>", Convert.ToBase64String(headlineBytes));
+                    }
+
+                    List<KeyValuePair<string, string>> headerFields = transaction.HeaderFields;
+                    if (headerFields.Count > 0)
+                    {
+                        builder.Append("<Headers>");
+
+                        foreach (KeyValuePair<string, string> pair in headerFields)
+                        {
+                            byte[] headerNameBytes = StaticUtils.EncodeUTF8(pair.Key);
+                            byte[] headerValueBytes = StaticUtils.EncodeUTF8(pair.Value);
+
+                            builder.AppendFormat("<Header Name=\"{0}\">{1}</Header>",
+                                Convert.ToBase64String(headerNameBytes), Convert.ToBase64String(headerValueBytes));
+                        }
+
+                        builder.Append("</Headers>");
+                    }
+
+                    if (transaction.BodyText.Length > 0)
+                    {
+                        byte[] bodyBytes = StaticUtils.EncodeUTF8(transaction.BodyText);
+                        builder.AppendFormat("<Body>{0}</Body>", Convert.ToBase64String(bodyBytes));
+                    }
+
+                    builder.Append("</Transaction>");
+                }
+
+                builder.AppendFormat("</Stream>");
+            }
+
+            builder.Append("</Streams>");
+
+            FileStream fs = new FileStream(exportToXmlFileDialog.FileName, FileMode.Create);
+            byte[] bytes = StaticUtils.EncodeUTF8(builder.ToString());
+            fs.Write(bytes, 0, bytes.Length);
+            fs.Close();
         }
     }
 }
