@@ -19,6 +19,8 @@
 #pragma once
 
 extern OMap<void *, bool>::Type ignored_send_ret_addrs;
+extern OMap<void *, bool>::Type ignored_encryptmsg_ret_addrs;
+extern OMap<void *, bool>::Type ignored_decryptmsg_ret_addrs;
 
 void hook_winsock();
 void hook_secur32();
