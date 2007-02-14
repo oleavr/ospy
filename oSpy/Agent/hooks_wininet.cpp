@@ -271,10 +271,21 @@ handle_icsocket_recv(void *parent_ebp, void *self)
 	if (ignored_icrecv_ret_addrs.find(ret_addr) == ignored_icrecv_ret_addrs.end())
 	{
 		ICSocket_Upper *sock_upper = (ICSocket_Upper *) ((char *) self + icsocket_base_size);
-		char *data = **((char ***) ((char *) parent_ebp + 0x8));
-		int dataLen = **((int **) ((char *) parent_ebp + 0xc));
 
-		log_tcp_packet("ICSocket::Receive", bt_address, PACKET_DIRECTION_INCOMING, sock_upper->fd, data, dataLen);
+//unsigned __int32 __thiscall ICSocket__Receive(void *this,void **bufPtr,unsigned __int32 *bufSize,unsigned __int32 *arg3,unsigned __int32 *arg4,unsigned __int32 arg5,unsigned __int32 arg6,int *arg7);
+
+		void **bufPtr = *((void ***) ((char *) parent_ebp + 0x8));
+		unsigned int *bufSize = *((unsigned int **) ((char *) parent_ebp + 0xc));
+		unsigned int *arg3 = *((unsigned int **) ((char *) parent_ebp + 0x10));
+		unsigned int *arg4 = *((unsigned int **) ((char *) parent_ebp + 0x14));
+		unsigned int arg5 = *((unsigned int *) ((char *) parent_ebp + 0x18));
+		unsigned int arg6 = *((unsigned int *) ((char *) parent_ebp + 0x1c));
+		unsigned int *arg7 = *((unsigned int **) ((char *) parent_ebp + 0x20));
+
+		message_logger_log_message("ICSocket::Receive", bt_address, MESSAGE_CTX_INFO,
+			"*bufPtr=%p, *bufSize=%d, *arg3=%d, *arg4=%d, arg5=%d, arg6=%d, *arg7=%d",
+			*bufPtr, *bufSize, *arg3, *arg4, arg5, arg6, *arg7);
+		//log_tcp_packet("ICSocket::Receive", bt_address, PACKET_DIRECTION_INCOMING, sock_upper->fd, data, dataLen);
 	}
 }
 
