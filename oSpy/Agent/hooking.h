@@ -27,6 +27,17 @@
 
 #include "util.h"
 
+typedef struct {
+	DWORD edi;
+	DWORD esi;
+	DWORD ebp;
+	DWORD esp;
+	DWORD ebx;
+	DWORD edx;
+	DWORD ecx;
+	DWORD eax;
+} CpuContext;
+
 /****************************************************************************
  * Useful hooking macros taking care of all the dirty work                  *
  ****************************************************************************/
@@ -166,6 +177,85 @@
       __asm mov ecx, [name##_start] \
       __asm add ecx, 5 \
       __asm jmp ecx \
+    } \
+  }
+
+#define HOOK_GLUE_EXTENDED(name, args_size) \
+  static LPVOID name##_start = NULL; \
+  \
+  __declspec(naked) static void name##_done_proxy() \
+  { \
+    __asm { \
+	  __asm pushad /* Could be useful to have a copy of the registers after return */ \
+	  \
+      /* Copy retaddr to the top of the stack */ \
+      __asm sub esp, 4 \
+      __asm push ebp \
+      __asm mov ebp, [esp+8+32+32] \
+      __asm mov [esp+4], ebp \
+      __asm pop ebp \
+      \
+      /* Call our C callback */ \
+      __asm jmp name##_done \
+    } \
+  } \
+  \
+  __declspec(naked) static void name##_hook() \
+  { \
+    __asm { \
+	  /* Marshalled as a CpuContext struct, and also very useful \
+       * to make sure that all registers are preserved. */ \
+	  __asm pushad \
+      \
+      /* Push an extra argument through which the callback can signal \
+       * that it doesn't want to carry on but return to caller. \
+       */ \
+      __asm push TRUE \
+      \
+      /* Call our C callback */ \
+      __asm call name##_called \
+      \
+      __asm pop edx \
+      __asm cmp edx, FALSE \
+	  \
+	  __asm popad /* restore the registers again */ \
+	  \
+      __asm jnz CARRY_ON /* should we carry on or return to caller? */ \
+      \
+      /* Return to caller */ \
+      __asm ret args_size \
+      \
+      __asm CARRY_ON: \
+	  __asm pushad /* store all registers to use as a CpuContext to the second callback */ \
+	  \
+      /* Make a copy of retaddr + args onto the top of the stack */ \
+      __asm sub esp, (args_size + 4) \
+	  __asm push ecx \
+      __asm push esi \
+      __asm push edi \
+      __asm lea edi, [12 + esp] \
+      __asm mov esi, edi \
+      __asm add esi, (args_size + 4 + 32) \
+      __asm cld \
+	  __asm lea ecx, (ds:args_size + 4) / 4 \
+      __asm rep movsd \
+      __asm pop edi \
+      __asm pop esi \
+	  __asm pop ecx \
+	  \
+      /* Replace the return address on the copy so that we can trap the return. */ \
+	  __asm add esp, 4 \
+      __asm push name##_done_proxy \
+      \
+      /* Set up stack frame (we need to do this because we've */ \
+      /* overwritten this code in the start of the original function) */ \
+      __asm push ebp \
+      __asm mov ebp, esp \
+      \
+      /* Continue */ \
+      __asm mov eax, [name##_start] \
+      __asm add eax, 5 \
+      __asm jmp eax \
     } \
   }
 

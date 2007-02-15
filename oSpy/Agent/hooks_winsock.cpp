@@ -286,25 +286,28 @@ closesocket_done(int retval,
 
 static int __cdecl
 recv_called(BOOL carry_on,
-            DWORD ret_addr,
+			CpuContext ctx_before,
+            void *ret_addr,
             SOCKET s,
             char *buf,
             int len,
             int flags)
 {
-    return softwall_decide_from_socket("recv", ret_addr, s, &carry_on);
+    return softwall_decide_from_socket("recv", (DWORD) ret_addr, s, &carry_on);
 }
 
 static int __stdcall
-recv_done(int retval,
+recv_done(CpuContext ctx_after,
+		  CpuContext ctx_before,
+		  void *ret_addr,
           SOCKET s,
           char *buf,
           int len,
           int flags)
 {
     DWORD err = GetLastError();
-    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
-	void *bt_address = (char *) &retval - 4;
+	int retval = ctx_after.eax;
+	void *bt_address = (char *) &ctx_after - 4;
 
     if (retval > 0)
     {
@@ -797,7 +800,8 @@ HOOK_GLUE_INTERRUPTIBLE(getaddrinfo, (4 * 4))
 
 HOOK_GLUE_INTERRUPTIBLE(closesocket, CLOSESOCKET_ARGS_SIZE)
 
-HOOK_GLUE_INTERRUPTIBLE(recv, (4 * 4))
+HOOK_GLUE_EXTENDED(recv, (4 * 4))
+
 HOOK_GLUE_INTERRUPTIBLE(send, (4 * 4))
 HOOK_GLUE_INTERRUPTIBLE(recvfrom, (6 * 4))
 HOOK_GLUE_INTERRUPTIBLE(sendto, (6 * 4))
