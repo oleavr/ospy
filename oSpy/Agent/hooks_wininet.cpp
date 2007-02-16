@@ -153,6 +153,9 @@ SecureReceiveAfterDecrypt()
 	void *self; // ICSecureSocket *
 	void *fsm; // CFsm_SecureReceive *
     int retval;
+	void *bt_address;
+	ICSocket_Upper *sock_upper;
+	CFsm_SecureReceive_Upper *fsm_upper;
 
     __asm {
 		pushad;
@@ -168,14 +171,18 @@ SecureReceiveAfterDecrypt()
 		mov		[retval], eax;
     }
 
-	if (retval == 0)
+	bt_address = (void *) ((char *) parent_ebp + 0x4);
+	sock_upper = (ICSocket_Upper *) ((char *) self + g_icsocketBaseSize);
+	fsm_upper = (CFsm_SecureReceive_Upper *) ((char *) fsm + g_cfsmSecureRecvBaseSize);
+
+	if (fsm_upper->dataLen > 0)
 	{
-		void *bt_address = (void *) ((char *) parent_ebp + 0x4);
-		ICSocket_Upper *sock_upper = (ICSocket_Upper *) ((char *) self + g_icsocketBaseSize);
-		CFsm_SecureReceive_Upper *fsm_upper = (CFsm_SecureReceive_Upper *) ((char *) fsm + g_cfsmSecureRecvBaseSize);
+		DWORD origLastError = GetLastError();
 
 		log_tcp_packet("SecureReceive", bt_address, PACKET_DIRECTION_INCOMING, sock_upper->fd,
 					   fsm_upper->data, fsm_upper->dataLen);
+
+		SetLastError(origLastError);
 	}
 
     __asm {
@@ -197,6 +204,9 @@ SecureSendAfterEncrypt()
 	void *self; // ICSecureSocket *
 	void *fsm; // CFsm_SecureSend *
     int retval;
+	void *bt_address;
+	ICSocket_Upper *sock_upper;
+	CFsm_SecureSend_Upper *fsm_upper;
 
     __asm {
 		pushad;
@@ -211,15 +221,19 @@ SecureSendAfterEncrypt()
 		mov		[retval], eax;
     }
 
-	if (retval == 0)
+	self = *((void **) ((char *) parent_ebp - 0x4));
+	bt_address = (void *) ((char *) parent_ebp + 0x4);
+	sock_upper = (ICSocket_Upper *) ((char *) self + g_icsocketBaseSize);
+	fsm_upper = (CFsm_SecureSend_Upper *) ((char *) fsm + g_cfsmSecureSendBaseSize);
+
+	if (fsm_upper->dataLen > 0)
 	{
-		self = *((void **) ((char *) parent_ebp - 0x4));
-		void *bt_address = (void *) ((char *) parent_ebp + 0x4);
-		ICSocket_Upper *sock_upper = (ICSocket_Upper *) ((char *) self + g_icsocketBaseSize);
-		CFsm_SecureSend_Upper *fsm_upper = (CFsm_SecureSend_Upper *) ((char *) fsm + g_cfsmSecureSendBaseSize);
+		DWORD origLastError = GetLastError();
 
 		log_tcp_packet("SecureSend", bt_address, PACKET_DIRECTION_OUTGOING, sock_upper->fd,
 					   fsm_upper->data, fsm_upper->dataLen);
+
+		SetLastError(origLastError);
 	}
 
     __asm {
