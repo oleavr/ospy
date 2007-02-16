@@ -24,8 +24,8 @@
 
 static ContextTracker<PCtxtHandle> tracker;
 
-OMap<void *, bool>::Type ignored_encryptmsg_ret_addrs;
-OMap<void *, bool>::Type ignored_decryptmsg_ret_addrs;
+CHookContext g_encryptMessageHookContext;
+CHookContext g_decryptMessageHookContext;
 
 #define ENCRYPT_MESSAGE_ARGS_SIZE (4 * 4)
 
@@ -47,36 +47,41 @@ DeleteSecurityContext_done(SECURITY_STATUS retval,
 
 static SECURITY_STATUS __cdecl
 EncryptMessage_called(BOOL carry_on,
-                      DWORD ret_addr,
+					  CpuContext ctx_before,
+                      void *ret_addr,
                       PCtxtHandle phContext,
                       ULONG fQOP,
                       PSecBufferDesc pMessage,
                       ULONG MessageSeqNo)
 {
-	if (ignored_encryptmsg_ret_addrs.find((void *) ret_addr) != ignored_encryptmsg_ret_addrs.end())
-		return 0;
+	if (g_encryptMessageHookContext.ShouldLog(ret_addr, &ctx_before))
+	{
+		for (unsigned int i = 0; i < pMessage->cBuffers; i++)
+		{
+			SecBuffer *buffer = &pMessage->pBuffers[i];
 
-    for (unsigned int i = 0; i < pMessage->cBuffers; i++)
-    {
-        SecBuffer *buffer = &pMessage->pBuffers[i];
+			if (buffer->BufferType == SECBUFFER_DATA)
+			{
+				void *bt_address = (char *) &carry_on + 8 + ENCRYPT_MESSAGE_ARGS_SIZE;
 
-        if (buffer->BufferType == SECBUFFER_DATA)
-        {
-			void *bt_address = (char *) &carry_on + 8 + ENCRYPT_MESSAGE_ARGS_SIZE;
-
-            message_logger_log_packet("EncryptMessage", bt_address,
-                                      tracker.GetContextID(phContext),
-                                      PACKET_DIRECTION_OUTGOING, NULL, NULL,
-                                      (const char *) buffer->pvBuffer,
-                                      buffer->cbBuffer);
-        }
-    }
+				message_logger_log_packet("EncryptMessage", bt_address,
+										  tracker.GetContextID(phContext),
+										  PACKET_DIRECTION_OUTGOING, NULL, NULL,
+										  (const char *) buffer->pvBuffer,
+										  buffer->cbBuffer);
+			}
+		}
+	}
 
     return 0;
 }
 
 static SECURITY_STATUS __stdcall
 EncryptMessage_done(SECURITY_STATUS retval,
+					void *bt_address,
+					CpuContext ctx_after,
+					CpuContext ctx_before,
+					void *ret_addr,
                     PCtxtHandle phContext,
                     ULONG fQOP,
                     PSecBufferDesc pMessage,
@@ -87,7 +92,8 @@ EncryptMessage_done(SECURITY_STATUS retval,
 
 static SECURITY_STATUS __cdecl
 DecryptMessage_called(BOOL carry_on,
-                      DWORD ret_addr,
+					  CpuContext ctx_before,
+					  void *ret_addr,
                       PCtxtHandle phContext,
                       PSecBufferDesc pMessage,
                       ULONG MessageSeqNo,
@@ -98,16 +104,19 @@ DecryptMessage_called(BOOL carry_on,
 
 static SECURITY_STATUS __stdcall
 DecryptMessage_done(SECURITY_STATUS retval,
+					void *bt_address,
+					CpuContext ctx_after,
+					CpuContext ctx_before,
+					void *ret_addr,
                     PCtxtHandle phContext,
                     PSecBufferDesc pMessage,
                     ULONG MessageSeqNo,
                     PULONG pfQOP)
 {
     DWORD err = GetLastError();
-    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
     unsigned int i;
 
-	if (ignored_decryptmsg_ret_addrs.find((void *) ret_addr) == ignored_decryptmsg_ret_addrs.end())
+	if (g_decryptMessageHookContext.ShouldLog(ret_addr, &ctx_before))
 	{
 		for (i = 0; i < pMessage->cBuffers; i++)
 		{
@@ -130,8 +139,8 @@ DecryptMessage_done(SECURITY_STATUS retval,
 
 HOOK_GLUE_INTERRUPTIBLE(DeleteSecurityContext, (1 * 4))
 
-HOOK_GLUE_INTERRUPTIBLE(EncryptMessage, ENCRYPT_MESSAGE_ARGS_SIZE)
-HOOK_GLUE_INTERRUPTIBLE(DecryptMessage, (4 * 4))
+HOOK_GLUE_EXTENDED(EncryptMessage, ENCRYPT_MESSAGE_ARGS_SIZE)
+HOOK_GLUE_EXTENDED(DecryptMessage, (4 * 4))
 
 void
 hook_secur32()

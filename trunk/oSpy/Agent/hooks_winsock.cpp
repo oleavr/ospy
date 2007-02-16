@@ -29,7 +29,8 @@ static MODULEINFO wsock32_info;
 #define CONNECT_ARGS_SIZE (3 * 4)
 #define WSA_ACCEPT_ARGS_SIZE (5 * 4)
 
-OMap<void *, bool>::Type ignored_send_ret_addrs;
+CHookContext g_recvHookContext;
+CHookContext g_sendHookContext;
 
 static int __cdecl
 getaddrinfo_called(BOOL carry_on,
@@ -284,6 +285,33 @@ closesocket_done(int retval,
     return retval;
 }
 
+static unsigned long localhost_addr;
+
+static bool
+is_stupid_rpc(SOCKET s, const char *buf, int len)
+{
+	if (len != 1)
+		return false;
+
+	if (buf[0] != '!')
+		return false;
+
+    struct sockaddr_in local_addr, peer_addr;
+    int sin_len;
+
+    sin_len = sizeof(local_addr);
+    getsockname(s, (struct sockaddr *) &local_addr, &sin_len);
+	if (local_addr.sin_addr.s_addr != localhost_addr)
+		return false;
+
+    sin_len = sizeof(peer_addr);
+    getpeername(s, (struct sockaddr *) &peer_addr, &sin_len);
+	if (peer_addr.sin_addr.s_addr != localhost_addr)
+		return false;
+
+	return true;
+}
+
 static int __cdecl
 recv_called(BOOL carry_on,
 			CpuContext ctx_before,
@@ -297,7 +325,9 @@ recv_called(BOOL carry_on,
 }
 
 static int __stdcall
-recv_done(CpuContext ctx_after,
+recv_done(int retval,
+		  void *bt_address,
+		  CpuContext ctx_after,
 		  CpuContext ctx_before,
 		  void *ret_addr,
           SOCKET s,
@@ -306,24 +336,25 @@ recv_done(CpuContext ctx_after,
           int flags)
 {
     DWORD err = GetLastError();
-	int retval = ctx_after.eax;
-	void *bt_address = (char *) &ctx_after - 4;
 
-    if (retval > 0)
-    {
-        log_tcp_packet("recv", bt_address, PACKET_DIRECTION_INCOMING, s, buf, retval);
-    }
-    else if (retval == 0)
-    {
-        log_tcp_disconnected("recv", bt_address, s, NULL);
-    }
-    else if (retval == SOCKET_ERROR)
-    {
-        if (err != WSAEWOULDBLOCK)
-        {
-            log_tcp_disconnected("recv", bt_address, s, &err);
-        }
-    }
+	if (retval > 0)
+	{
+		if (g_recvHookContext.ShouldLog(ret_addr, &ctx_before) && !is_stupid_rpc(s, buf, retval))
+		{
+			log_tcp_packet("recv", bt_address, PACKET_DIRECTION_INCOMING, s, buf, retval);
+		}
+	}
+	else if (retval == 0)
+	{
+		log_tcp_disconnected("recv", bt_address, s, NULL);
+	}
+	else if (retval == SOCKET_ERROR)
+	{
+		if (err != WSAEWOULDBLOCK)
+		{
+			log_tcp_disconnected("recv", bt_address, s, &err);
+		}
+	}
 
     SetLastError(err);
     return retval;
@@ -331,29 +362,32 @@ recv_done(CpuContext ctx_after,
 
 static int __cdecl
 send_called(BOOL carry_on,
-            DWORD ret_addr,
+			CpuContext ctx_before,
+			void *ret_addr,
             SOCKET s,
             const char *buf,
             int len,
             int flags)
 {
-    return softwall_decide_from_socket("send", ret_addr, s, &carry_on);
+    return softwall_decide_from_socket("send", (DWORD) ret_addr, s, &carry_on);
 }
 
 static int __stdcall
 send_done(int retval,
+		  void *bt_address,
+		  CpuContext ctx_after,
+		  CpuContext ctx_before,
+		  void *ret_addr,
           SOCKET s,
           const char *buf,
           int len,
           int flags)
 {
 	DWORD err = GetLastError();
-    void *ret_addr = *((void **) ((DWORD) &retval - 4));
-	void *bt_address = (char *) &retval - 4;
 
 	if (retval > 0)
 	{
-		if (ignored_send_ret_addrs.find(ret_addr) == ignored_send_ret_addrs.end())
+		if (g_sendHookContext.ShouldLog(ret_addr, &ctx_before) && !is_stupid_rpc(s, buf, retval))
 		{
 			log_tcp_packet("send", bt_address, PACKET_DIRECTION_OUTGOING, s, buf, retval);
 		}
@@ -801,8 +835,7 @@ HOOK_GLUE_INTERRUPTIBLE(getaddrinfo, (4 * 4))
 HOOK_GLUE_INTERRUPTIBLE(closesocket, CLOSESOCKET_ARGS_SIZE)
 
 HOOK_GLUE_EXTENDED(recv, (4 * 4))
-
-HOOK_GLUE_INTERRUPTIBLE(send, (4 * 4))
+HOOK_GLUE_EXTENDED(send, (4 * 4))
 HOOK_GLUE_INTERRUPTIBLE(recvfrom, (6 * 4))
 HOOK_GLUE_INTERRUPTIBLE(sendto, (6 * 4))
 HOOK_GLUE_INTERRUPTIBLE(accept, ACCEPT_ARGS_SIZE)
@@ -823,6 +856,8 @@ hook_winsock()
                    "oSpy", MB_ICONERROR | MB_OK);
       return;
     }
+
+	localhost_addr = inet_addr("127.0.0.1");
 
     HOOK_FUNCTION(h, getaddrinfo);
 

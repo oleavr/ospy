@@ -21,6 +21,8 @@
 #include "logging.h"
 #include "hooks.h"
 
+#if 0
+
 typedef enum {
 	SIGNATURE_ICSOCKET_SEND_TAIL = 0,
 	SIGNATURE_ICSOCKET_SEND_CALL,
@@ -552,3 +554,4 @@ hook_wininet_old()
         LOG_OVERRIDE_ERROR("SIGNATURE_SECURE_RECV_DECRYPTMESSAGE_CALL", error);
 	}
 }
+#endif

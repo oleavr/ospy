@@ -18,9 +18,12 @@
 
 #pragma once
 
-extern OMap<void *, bool>::Type ignored_send_ret_addrs;
-extern OMap<void *, bool>::Type ignored_encryptmsg_ret_addrs;
-extern OMap<void *, bool>::Type ignored_decryptmsg_ret_addrs;
+class CHookContext;
+
+extern CHookContext g_recvHookContext;
+extern CHookContext g_sendHookContext;
+extern CHookContext g_encryptMessageHookContext;
+extern CHookContext g_decryptMessageHookContext;
 
 void hook_winsock();
 void hook_secur32();
