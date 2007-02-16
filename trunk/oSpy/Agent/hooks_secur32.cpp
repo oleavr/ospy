@@ -48,6 +48,7 @@ DeleteSecurityContext_done(SECURITY_STATUS retval,
 static SECURITY_STATUS __cdecl
 EncryptMessage_called(BOOL carry_on,
 					  CpuContext ctx_before,
+					  void *bt_addr,
                       void *ret_addr,
                       PCtxtHandle phContext,
                       ULONG fQOP,
@@ -62,9 +63,7 @@ EncryptMessage_called(BOOL carry_on,
 
 			if (buffer->BufferType == SECBUFFER_DATA)
 			{
-				void *bt_address = (char *) &carry_on + 8 + ENCRYPT_MESSAGE_ARGS_SIZE;
-
-				message_logger_log_packet("EncryptMessage", bt_address,
+				message_logger_log_packet("EncryptMessage", bt_addr,
 										  tracker.GetContextID(phContext),
 										  PACKET_DIRECTION_OUTGOING, NULL, NULL,
 										  (const char *) buffer->pvBuffer,
@@ -78,9 +77,9 @@ EncryptMessage_called(BOOL carry_on,
 
 static SECURITY_STATUS __stdcall
 EncryptMessage_done(SECURITY_STATUS retval,
-					void *bt_address,
 					CpuContext ctx_after,
 					CpuContext ctx_before,
+					void *bt_addr,
 					void *ret_addr,
                     PCtxtHandle phContext,
                     ULONG fQOP,
@@ -93,6 +92,7 @@ EncryptMessage_done(SECURITY_STATUS retval,
 static SECURITY_STATUS __cdecl
 DecryptMessage_called(BOOL carry_on,
 					  CpuContext ctx_before,
+					  void *bt_addr,
 					  void *ret_addr,
                       PCtxtHandle phContext,
                       PSecBufferDesc pMessage,
@@ -104,9 +104,9 @@ DecryptMessage_called(BOOL carry_on,
 
 static SECURITY_STATUS __stdcall
 DecryptMessage_done(SECURITY_STATUS retval,
-					void *bt_address,
 					CpuContext ctx_after,
 					CpuContext ctx_before,
+					void *bt_addr,
 					void *ret_addr,
                     PCtxtHandle phContext,
                     PSecBufferDesc pMessage,

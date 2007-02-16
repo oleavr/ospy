@@ -240,17 +240,13 @@ typedef struct {
     __asm { \
 	  __asm pushad /* Could be useful to have a copy of the registers after return */ \
 	  \
-	  /* Place return value and bt_address first for convenience */ \
-	  __asm sub esp, 8 \
-	  __asm push ebp \
-	  __asm mov [esp+4], eax \
-	  __asm mov [esp+4+4], esp \
-	  __asm pop ebp \
+	  /* Place return value first for convenience */ \
+	  __asm push eax \
 	  \
       /* Copy retaddr to the top of the stack */ \
       __asm sub esp, 4 \
       __asm push ebp \
-      __asm mov ebp, [esp+8+8+32+32] \
+      __asm mov ebp, [esp+4+4+4+32+32+4] \
       __asm mov [esp+4], ebp \
       __asm pop ebp \
       \
@@ -262,10 +258,17 @@ typedef struct {
   __declspec(naked) static void name##_hook() \
   { \
     __asm { \
+	  /* The backtrace address could be useful. */ \
+	  __asm sub esp, 4 \
+	  __asm push ebp \
+	  __asm lea ebp, [esp+4+4] \
+	  __asm mov [esp+4], ebp \
+	  __asm pop ebp \
+	  \
 	  /* Marshalled as a CpuContext struct, and also very useful \
        * to make sure that all registers are preserved. */ \
 	  __asm pushad \
-      \
+	  \
       /* Push an extra argument through which the callback can signal \
        * that it doesn't want to carry on but return to caller. \
        */ \
@@ -294,7 +297,7 @@ typedef struct {
       __asm push edi \
       __asm lea edi, [12 + esp] \
       __asm mov esi, edi \
-      __asm add esi, (args_size + 4 + 32) \
+      __asm add esi, (args_size + 4 + 32 + 4) \
       __asm cld \
 	  __asm lea ecx, (ds:args_size + 4) / 4 \
       __asm rep movsd \
@@ -312,9 +315,9 @@ typedef struct {
       __asm mov ebp, esp \
       \
       /* Continue */ \
-      __asm mov eax, [name##_start] \
-	  __asm add eax, 5 \
-	  __asm jmp eax \
+	  __asm push [name##_start] \
+	  __asm add [esp], 5 \
+	  __asm ret \
     } \
   }
 
