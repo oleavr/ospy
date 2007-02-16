@@ -315,6 +315,7 @@ is_stupid_rpc(SOCKET s, const char *buf, int len)
 static int __cdecl
 recv_called(BOOL carry_on,
 			CpuContext ctx_before,
+			void *bt_addr,
             void *ret_addr,
             SOCKET s,
             char *buf,
@@ -326,9 +327,9 @@ recv_called(BOOL carry_on,
 
 static int __stdcall
 recv_done(int retval,
-		  void *bt_address,
 		  CpuContext ctx_after,
 		  CpuContext ctx_before,
+		  void *bt_addr,
 		  void *ret_addr,
           SOCKET s,
           char *buf,
@@ -341,18 +342,18 @@ recv_done(int retval,
 	{
 		if (g_recvHookContext.ShouldLog(ret_addr, &ctx_before) && !is_stupid_rpc(s, buf, retval))
 		{
-			log_tcp_packet("recv", bt_address, PACKET_DIRECTION_INCOMING, s, buf, retval);
+			log_tcp_packet("recv", bt_addr, PACKET_DIRECTION_INCOMING, s, buf, retval);
 		}
 	}
 	else if (retval == 0)
 	{
-		log_tcp_disconnected("recv", bt_address, s, NULL);
+		log_tcp_disconnected("recv", bt_addr, s, NULL);
 	}
 	else if (retval == SOCKET_ERROR)
 	{
 		if (err != WSAEWOULDBLOCK)
 		{
-			log_tcp_disconnected("recv", bt_address, s, &err);
+			log_tcp_disconnected("recv", bt_addr, s, &err);
 		}
 	}
 
@@ -363,6 +364,7 @@ recv_done(int retval,
 static int __cdecl
 send_called(BOOL carry_on,
 			CpuContext ctx_before,
+			void *bt_addr,
 			void *ret_addr,
             SOCKET s,
             const char *buf,
@@ -374,9 +376,9 @@ send_called(BOOL carry_on,
 
 static int __stdcall
 send_done(int retval,
-		  void *bt_address,
 		  CpuContext ctx_after,
 		  CpuContext ctx_before,
+		  void *bt_addr,
 		  void *ret_addr,
           SOCKET s,
           const char *buf,
@@ -389,14 +391,14 @@ send_done(int retval,
 	{
 		if (g_sendHookContext.ShouldLog(ret_addr, &ctx_before) && !is_stupid_rpc(s, buf, retval))
 		{
-			log_tcp_packet("send", bt_address, PACKET_DIRECTION_OUTGOING, s, buf, retval);
+			log_tcp_packet("send", bt_addr, PACKET_DIRECTION_OUTGOING, s, buf, retval);
 		}
 	}
 	else if (retval == SOCKET_ERROR)
 	{
 		if (err != WSAEWOULDBLOCK)
 		{
-			log_tcp_disconnected("send", bt_address, s, &err);
+			log_tcp_disconnected("send", bt_addr, s, &err);
 		}
 	}
 
