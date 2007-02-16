@@ -1,8 +1,6 @@
 #summary The list of ideas for future implementations (TODO)...
 #labels Phase-Requirements
 
-The list of ideas for future implementations (TODO)
-
 = High priority =
 
 NONE for now...
@@ -21,6 +19,5 @@ NONE for now...
 
 
  
-
 
 
