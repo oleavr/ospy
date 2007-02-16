@@ -38,6 +38,28 @@ typedef struct {
 	DWORD eax;
 } CpuContext;
 
+typedef bool (*HookRetAddrShouldLogFunc) (CpuContext *context, va_list args);
+
+class CHookContext
+{
+public:
+	CHookContext() {}
+
+	void RegisterReturnAddress(void *address, HookRetAddrShouldLogFunc func=NULL) { m_retAddrs[address] = func; }
+
+	bool ShouldLog(void *returnAddress, CpuContext *ctx, ...);
+
+protected:
+	OMap<void *, HookRetAddrShouldLogFunc>::Type m_retAddrs;
+};
+
+typedef struct {
+    char *module_name;
+	int start_offset;
+    char *signature;
+} FunctionSignature;
+
+
 /****************************************************************************
  * Useful hooking macros taking care of all the dirty work                  *
  ****************************************************************************/
@@ -180,6 +202,36 @@ typedef struct {
     } \
   }
 
+#define HOOK_FUNCTION(handle, name) HOOK_FUNCTION_BY_ALIAS(handle, name, name)
+
+#define HOOK_FUNCTION_BY_ALIAS(handle, name, alias) \
+  { \
+    unsigned char signature[5] = { \
+      0x8B, 0xFF, /* mov edi, edi */ \
+      0x55,       /* push ebp */ \
+      0x8B, 0xEC  /* mov ebp, esp */ \
+    }; \
+    \
+    name##_start = GetProcAddress(handle, #name); \
+    if (name##_start != NULL) \
+    { \
+      if (address_has_bytes(name##_start, signature, sizeof(signature))) \
+      { \
+        write_jmp_instruction_to_addr(name##_start, name##_hook); \
+      } \
+      else \
+      { \
+        MessageBox(0, "Signature of " #name " is incompatible", \
+                      "oSpy", MB_ICONWARNING | MB_OK); \
+      } \
+    } \
+    else \
+    { \
+      MessageBox(0, "GetProcAddress of " #name " failed", \
+                    "oSpy", MB_ICONWARNING | MB_OK); \
+    } \
+  }
+
 #define HOOK_GLUE_EXTENDED(name, args_size) \
   static LPVOID name##_start = NULL; \
   \
@@ -188,10 +240,17 @@ typedef struct {
     __asm { \
 	  __asm pushad /* Could be useful to have a copy of the registers after return */ \
 	  \
+	  /* Place return value and bt_address first for convenience */ \
+	  __asm sub esp, 8 \
+	  __asm push ebp \
+	  __asm mov [esp+4], eax \
+	  __asm mov [esp+4+4], esp \
+	  __asm pop ebp \
+	  \
       /* Copy retaddr to the top of the stack */ \
       __asm sub esp, 4 \
       __asm push ebp \
-      __asm mov ebp, [esp+8+32+32] \
+      __asm mov ebp, [esp+8+8+32+32] \
       __asm mov [esp+4], ebp \
       __asm pop ebp \
       \
@@ -254,38 +313,8 @@ typedef struct {
       \
       /* Continue */ \
       __asm mov eax, [name##_start] \
-      __asm add eax, 5 \
-      __asm jmp eax \
-    } \
-  }
-
-#define HOOK_FUNCTION(handle, name) HOOK_FUNCTION_BY_ALIAS(handle, name, name)
-
-#define HOOK_FUNCTION_BY_ALIAS(handle, name, alias) \
-  { \
-    unsigned char signature[5] = { \
-      0x8B, 0xFF, /* mov edi, edi */ \
-      0x55,       /* push ebp */ \
-      0x8B, 0xEC  /* mov ebp, esp */ \
-    }; \
-    \
-    name##_start = GetProcAddress(handle, #name); \
-    if (name##_start != NULL) \
-    { \
-      if (address_has_bytes(name##_start, signature, sizeof(signature))) \
-      { \
-        write_jmp_instruction_to_addr(name##_start, name##_hook); \
-      } \
-      else \
-      { \
-        MessageBox(0, "Signature of " #name " is incompatible", \
-                      "oSpy", MB_ICONWARNING | MB_OK); \
-      } \
-    } \
-    else \
-    { \
-      MessageBox(0, "GetProcAddress of " #name " failed", \
-                    "oSpy", MB_ICONWARNING | MB_OK); \
+	  __asm add eax, 5 \
+	  __asm jmp eax \
     } \
   }
 
@@ -394,12 +423,6 @@ typedef struct {
                        "oSpy", MB_ICONWARNING | MB_OK); \
         } \
     }
-
-typedef struct {
-    char *module_name;
-	int start_offset;
-    char *signature;
-} FunctionSignature;
 
 void write_byte_to_addr(LPVOID lpAddr, BYTE b);
 void write_dword_to_addr(LPVOID lpAddr, DWORD dw);

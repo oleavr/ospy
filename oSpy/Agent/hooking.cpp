@@ -21,6 +21,21 @@
 #include "util.h"
 #include "logging.h"
 
+bool
+CHookContext::ShouldLog(void *returnAddress, CpuContext *ctx, ...)
+{
+	if (m_retAddrs.find(returnAddress) == m_retAddrs.end())
+		return true;
+
+	HookRetAddrShouldLogFunc func = m_retAddrs[returnAddress];
+	if (func == NULL)
+		return false;
+
+	va_list args;
+    va_start(args, ctx);
+	return func(ctx, args);
+}
+
 #define MAKEPTR(p,o) (LPVOID) ( (DWORD)p + (DWORD)o )
 #define WRITE_OPCODE(pCode, x) \
    res = WriteProcessMemory( hProcess, pCode, &x, sizeof(x), &nWritten ); \
