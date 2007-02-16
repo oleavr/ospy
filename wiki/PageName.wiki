@@ -1,8 +1,11 @@
 #summary The list of ideas for future implementations (TODO)...
+#labels Phase-Requirements
+
+The list of ideas for future implementations (TODO)
 
 = High priority =
 
-
+NONE for now...
 
 = Low priority =
   * change the icon for SecureSend/SecureReceive to the same arrows but with a lock next to it 
@@ -18,4 +21,6 @@
 
 
  
+
+
 
