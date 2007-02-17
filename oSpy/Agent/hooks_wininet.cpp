@@ -29,6 +29,9 @@ typedef enum {
 	SIGNATURE_SECURE_SEND_ENCRYPTMESSAGE_CALL,
 	SIGNATURE_SECURE_RECV_AFTER_DECRYPT,
 	SIGNATURE_SECURE_SEND_AFTER_ENCRYPT,
+	SIGNATURE_ICASYNCTHREAD_MY_GETADDR,
+	SIGNATURE_MY_GETADDR_GETADDRINFO,
+	SIGNATURE_ICASYNCTHREAD_CONNECT,
 };
 
 static const FunctionSignature signatures[] = {
@@ -98,6 +101,32 @@ static const FunctionSignature signatures[] = {
 		"89 45 08"				// mov     [ebp+arg_0], eax
 		"75 33"					// jnz     short OUT
     },
+
+	// SIGNATURE_ICASYNCTHREAD_MY_GETADDR
+    {
+        "wininet.dll",
+		0,
+		"8B F0"					// mov     esi, eax
+		"85 F6"					// test    esi, esi
+		"0F 85 49 21 03 00"		// jnz     loc_771FCD41
+    },
+
+	// SIGNATURE_MY_GETADDR_GETADDRINFO
+    {
+        "wininet.dll",
+		0,
+		"89 45 14"				// mov     [ebp+arg_C], eax
+		"A1 ?? ?? ?? ??"		// mov     eax, _WPP_GLOBAL_Control
+    },
+
+	// SIGNATURE_ICASYNCTHREAD_CONNECT
+    {
+        "wininet.dll",
+		0,
+		"3B C6"					// cmp     eax, esi
+		"74 30"					// jz      short loc_771CACAC
+		"8B 85 6C FF FF FF"		// mov     eax, [ebp+var_94]
+    },
 };
 
 typedef struct {
@@ -131,6 +160,8 @@ static unsigned int g_cfsmSecureRecvBaseSize = 0;
 static unsigned int g_cfsmSecureSendBaseSize = 0;
 static char *g_secureSendAfterDecryptImpl = NULL;
 static char *g_secureSendAfterEncryptImpl = NULL;
+
+static void *g_icasyncthreadMygetaddrRetAddr = NULL;
 
 static bool
 ICSocketReceiveContinue_ShouldLog(CpuContext *context, va_list args)
@@ -249,6 +280,14 @@ SecureSendAfterEncrypt()
     }
 }
 
+static bool
+getaddrinfoFromMyGetaddrShouldLog(CpuContext *context, va_list args)
+{
+	void *retAddr = *((void **) (context->ebp + 4));
+	
+	return (retAddr != g_icasyncthreadMygetaddrRetAddr);
+}
+
 #define LOG_OVERRIDE_ERROR(sig, e) \
             message_logger_log_message("hook_wininet", 0, MESSAGE_CTX_ERROR,\
                 "override_function_by_signature for " sig " failed: %s", e);\
@@ -346,4 +385,32 @@ hook_wininet()
 	{
         LOG_OVERRIDE_ERROR("SIGNATURE_SECURE_SEND_AFTER_ENCRYPT", error);
     }
+
+	if (find_signature(&signatures[SIGNATURE_ICASYNCTHREAD_MY_GETADDR],
+					   &g_icasyncthreadMygetaddrRetAddr, &error))
+	{
+		if (find_signature(&signatures[SIGNATURE_MY_GETADDR_GETADDRINFO],
+						   &retAddr, &error))
+		{
+			g_getaddrinfoHookContext.RegisterReturnAddress(retAddr, getaddrinfoFromMyGetaddrShouldLog);
+		}
+		else
+		{
+			LOG_OVERRIDE_ERROR("SIGNATURE_MY_GETADDR_GETADDRINFO", error);
+		}
+	}
+	else
+	{
+        LOG_OVERRIDE_ERROR("SIGNATURE_ICASYNCTHREAD_MY_GETADDR", error);
+	}
+
+	if (find_signature(&signatures[SIGNATURE_ICASYNCTHREAD_CONNECT],
+					   &retAddr, &error))
+	{
+		g_connectHookContext.RegisterReturnAddress(retAddr);
+	}
+	else
+	{
+		LOG_OVERRIDE_ERROR("SIGNATURE_ICASYNCTHREAD_CONNECT", error);
+	}
 }
