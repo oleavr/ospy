@@ -7,7 +7,7 @@ NONE for now...
 
 = Low priority =
   * change the icon for SecureSend/SecureReceive to the same arrows but with a lock next to it 
-  * a View Menu with check-items to set "hidden" filters [DONE]
+  * a View Menu with check-items to set "hidden" filters *DONE*
   * save filters to xml/registry
   * make it possible to select text in the dump view, right click and select "Open for analysis..." which will open in a new window. where you get a dump view on the left side, and a chunks list on the right side where you can select one or multiple chunks and get them shown in the dump view
   * select text, right click and say for example "Base64 decode to new chunk..."
