@@ -24,6 +24,7 @@
 #include <map>
 
 static MODULEINFO schannel_info;
+static MODULEINFO crypt32_info;
 
 static LPVOID own_base;
 static DWORD own_size;
@@ -43,6 +44,11 @@ called_internally(DWORD ret_addr)
     {
         return TRUE;
     }
+    else if (ret_addr >= (DWORD) crypt32_info.lpBaseOfDll &&
+             ret_addr < (DWORD) crypt32_info.lpBaseOfDll + crypt32_info.SizeOfImage)
+	{
+		return TRUE;
+	}
 
     return FALSE;
 }
@@ -955,6 +961,22 @@ hook_crypt()
 
     if (GetModuleInformation(GetCurrentProcess(), h, &schannel_info,
                              sizeof(schannel_info)) == 0)
+    {
+        message_logger_log_message("hook_crypt", 0, MESSAGE_CTX_WARNING,
+                                   "GetModuleInformation failed with errno %d",
+                                   GetLastError());
+    }
+
+	h = LoadLibrary("crypt32.dll");
+    if (h == NULL)
+    {
+        MessageBox(0, "Failed to load 'crypt32.dll'.",
+                   "oSpy", MB_ICONERROR | MB_OK);
+        return;
+    }
+
+    if (GetModuleInformation(GetCurrentProcess(), h, &crypt32_info,
+                             sizeof(crypt32_info)) == 0)
     {
         message_logger_log_message("hook_crypt", 0, MESSAGE_CTX_WARNING,
                                    "GetModuleInformation failed with errno %d",
