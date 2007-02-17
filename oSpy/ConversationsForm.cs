@@ -203,9 +203,7 @@ namespace oSpy
                 }
             }
 
-            XmlTextWriter xmlWriter = new XmlTextWriter(exportToXmlFileDialog.FileName, Encoding.UTF8);
-            doc.WriteTo(xmlWriter);
-            xmlWriter.Close();
+            doc.Save(exportToXmlFileDialog.FileName);
         }
     }
 }

@@ -31,6 +31,7 @@ using oSpy.Parser;
 using oSpy.Util;
 using oSpy.Net;
 using System.Threading;
+using System.Xml;
 
 namespace oSpy
 {
@@ -107,6 +108,9 @@ namespace oSpy
 
             ClearState();
 
+            ApplyFilters();
+            LoadSettings();
+
             findTypeComboBox.SelectedIndex = 0;
         }
 
@@ -126,8 +130,6 @@ namespace oSpy
             tmpPacketList = new List<IPPacket>(32);
             richTextBox.Clear();
             propertyGrid.SelectedObject = null;
-
-            ApplyFilters();
         }
 
         private void packetParser_PacketDescriptionReceived(IPPacket[] packets, string description)
@@ -426,6 +428,7 @@ namespace oSpy
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
+            SaveSettings();
             listener.Stop();
         }
 
@@ -1403,6 +1406,44 @@ namespace oSpy
         {
             ApplyFilters();
             dataGridView.Focus();
+        }
+
+        private string GetSettingsFilePath()
+        {
+            string appDir =
+                Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetModules()[0].FullyQualifiedName);
+
+            return String.Format("{0}\\settings.xml", appDir);
+        }
+
+        private void LoadSettings()
+        {
+            if (!File.Exists(GetSettingsFilePath()))
+                return;
+
+            XmlDocument doc = new XmlDocument();
+            doc.Load(GetSettingsFilePath());
+
+            XmlNode node = doc.SelectSingleNode("/Settings/Filters/Filter");
+            if (node != null)
+                filterComboBox.Text = node.InnerXml.Trim();
+        }
+
+        private void SaveSettings()
+        {
+            XmlDocument doc = new XmlDocument();
+
+            XmlElement settingsElement = doc.CreateElement("Settings");
+            doc.AppendChild(settingsElement);
+
+            XmlElement filtersElement = doc.CreateElement("Filters");
+            settingsElement.AppendChild(filtersElement);
+
+            XmlElement filterElement = doc.CreateElement("Filter");
+            filterElement.AppendChild(doc.CreateTextNode(filterComboBox.Text));
+            filtersElement.AppendChild(filterElement);
+
+            doc.Save(GetSettingsFilePath());
         }
 
         private void ApplyFilters()
