@@ -126,6 +126,8 @@ namespace oSpy
             tmpPacketList = new List<IPPacket>(32);
             richTextBox.Clear();
             propertyGrid.SelectedObject = null;
+
+            ApplyFilters();
         }
 
         private void packetParser_PacketDescriptionReceived(IPPacket[] packets, string description)
@@ -1392,35 +1394,59 @@ namespace oSpy
         {
             if (e.KeyCode == Keys.Enter)
             {
-                ApplyFilter();
+                ApplyFilters();
+                dataGridView.Focus();
             }
         }
 
         private void filterComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            ApplyFilter();
+            ApplyFilters();
+            dataGridView.Focus();
         }
 
-        private void ApplyFilter()
+        private void ApplyFilters()
         {
+            StringBuilder builder = new StringBuilder();
+
+            if (!viewInternalDebugToolStripMenuItem.Checked)
+            {
+                builder.AppendFormat("(NOT FunctionName = 'MsnmsgrDebug')");
+            }
+
+            if (!viewWinCryptToolStripMenuItem.Checked)
+            {
+                if (builder.Length > 0)
+                    builder.Append(" AND ");
+
+                builder.AppendFormat("(NOT FunctionName LIKE 'Crypt*')");
+            }
+
+            if (filterComboBox.Text.Length > 0)
+            {
+                if (builder.Length > 0)
+                    builder.Append(" AND ");
+
+                builder.Append(filterComboBox.Text);
+            }
+
             try
             {
-                bindingSource.Filter = filterComboBox.Text;
-                dataGridView.Focus();
+                bindingSource.Filter = builder.ToString();
             }
             catch (SyntaxErrorException ex)
             {
-                MessageBox.Show(String.Format("Syntax error: {0}", ex.Message),
-                                "Error",
+                MessageBox.Show(String.Format("Syntax error: {0}", ex.Message), "Error",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             catch (EvaluateException ex)
             {
                 MessageBox.Show(String.Format("Error while evaluation expression: {0}\n\n" +
                     "For information about all available column names, save the capture " +
-                    "to a file (.xml) and have a look at it with a text editor.", ex.Message),
-                                "Error",
-                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    "to a file (.osd), uncompress it with bunzip2 and have a look at " +
+                    "the result with a text editor.", ex.Message),
+                    "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -1695,6 +1721,16 @@ namespace oSpy
         private void nextTransactionBtn_Click(object sender, EventArgs e)
         {
             GoToNextTransactionRow();
+        }
+
+        private void viewInternalDebugToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
+        {
+            ApplyFilters();
+        }
+
+        private void viewWinCryptToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
+        {
+            ApplyFilters();
         }
     }
 }
