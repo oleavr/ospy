@@ -29,8 +29,8 @@ namespace oSpy
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle11 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle12 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle7 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle8 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.dataSet = new System.Data.DataSet();
             this.messageTbl = new System.Data.DataTable();
@@ -77,6 +77,9 @@ namespace oSpy
             this.selectallToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.rowsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.transactionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.goToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.nextpacketToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.nextRowTransactionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.captureToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.injectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.captureStartMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -153,9 +156,9 @@ namespace oSpy
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
-            this.goToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.nextpacketToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.nextRowTransactionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.viewInternalDebugToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
+            this.viewWinCryptToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).BeginInit();
             this.menuStrip.SuspendLayout();
@@ -493,6 +496,31 @@ namespace oSpy
             this.transactionsToolStripMenuItem.Text = "&Transactions";
             this.transactionsToolStripMenuItem.Click += new System.EventHandler(this.transactionsToolStripMenuItem_Click);
             // 
+            // goToolStripMenuItem
+            // 
+            this.goToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.nextpacketToolStripMenuItem,
+            this.nextRowTransactionToolStripMenuItem});
+            this.goToolStripMenuItem.Name = "goToolStripMenuItem";
+            this.goToolStripMenuItem.Size = new System.Drawing.Size(32, 20);
+            this.goToolStripMenuItem.Text = "&Go";
+            // 
+            // nextpacketToolStripMenuItem
+            // 
+            this.nextpacketToolStripMenuItem.Name = "nextpacketToolStripMenuItem";
+            this.nextpacketToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.R)));
+            this.nextpacketToolStripMenuItem.Size = new System.Drawing.Size(296, 22);
+            this.nextpacketToolStripMenuItem.Text = "Next &packet row";
+            this.nextpacketToolStripMenuItem.Click += new System.EventHandler(this.nextpacketToolStripMenuItem_Click);
+            // 
+            // nextRowTransactionToolStripMenuItem
+            // 
+            this.nextRowTransactionToolStripMenuItem.Name = "nextRowTransactionToolStripMenuItem";
+            this.nextRowTransactionToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
+            this.nextRowTransactionToolStripMenuItem.Size = new System.Drawing.Size(296, 22);
+            this.nextRowTransactionToolStripMenuItem.Text = "Next row belonging to a &transaction";
+            this.nextRowTransactionToolStripMenuItem.Click += new System.EventHandler(this.nextRowTransactionToolStripMenuItem_Click);
+            // 
             // captureToolStripMenuItem
             // 
             this.captureToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -542,6 +570,9 @@ namespace oSpy
             // analyzeToolStripMenuItem
             // 
             this.analyzeToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.viewInternalDebugToolStripMenuItem,
+            this.viewWinCryptToolStripMenuItem,
+            this.toolStripMenuItem5,
             this.showMSNP2PConversationsToolStripMenuItem});
             this.analyzeToolStripMenuItem.Name = "analyzeToolStripMenuItem";
             this.analyzeToolStripMenuItem.Size = new System.Drawing.Size(41, 20);
@@ -812,9 +843,9 @@ namespace oSpy
             // 
             this.timestampDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
             this.timestampDataGridViewTextBoxColumn.DataPropertyName = "Timestamp";
-            dataGridViewCellStyle11.Format = "T";
-            dataGridViewCellStyle11.NullValue = null;
-            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle11;
+            dataGridViewCellStyle7.Format = "T";
+            dataGridViewCellStyle7.NullValue = null;
+            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle7;
             this.timestampDataGridViewTextBoxColumn.HeaderText = "Timestamp";
             this.timestampDataGridViewTextBoxColumn.Name = "timestampDataGridViewTextBoxColumn";
             this.timestampDataGridViewTextBoxColumn.ReadOnly = true;
@@ -862,9 +893,9 @@ namespace oSpy
             // returnAddressDataGridViewTextBoxColumn
             // 
             this.returnAddressDataGridViewTextBoxColumn.DataPropertyName = "ReturnAddress";
-            dataGridViewCellStyle12.Format = "x";
-            dataGridViewCellStyle12.NullValue = null;
-            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle12;
+            dataGridViewCellStyle8.Format = "x";
+            dataGridViewCellStyle8.NullValue = null;
+            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle8;
             this.returnAddressDataGridViewTextBoxColumn.HeaderText = "ReturnAddress";
             this.returnAddressDataGridViewTextBoxColumn.Name = "returnAddressDataGridViewTextBoxColumn";
             this.returnAddressDataGridViewTextBoxColumn.ReadOnly = true;
@@ -1160,7 +1191,7 @@ namespace oSpy
             this.nextTransactionBtn.Image = ((System.Drawing.Image)(resources.GetObject("nextTransactionBtn.Image")));
             this.nextTransactionBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.nextTransactionBtn.Name = "nextTransactionBtn";
-            this.nextTransactionBtn.Size = new System.Drawing.Size(25, 17);
+            this.nextTransactionBtn.Size = new System.Drawing.Size(25, 22);
             this.nextTransactionBtn.Text = ">T";
             this.nextTransactionBtn.ToolTipText = "Go to the next row belonging to a transaction";
             this.nextTransactionBtn.Click += new System.EventHandler(this.nextTransactionBtn_Click);
@@ -1185,30 +1216,30 @@ namespace oSpy
             this.dumpSaveFileDialog.DefaultExt = "bin";
             this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
             // 
-            // goToolStripMenuItem
+            // viewInternalDebugToolStripMenuItem
             // 
-            this.goToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.nextpacketToolStripMenuItem,
-            this.nextRowTransactionToolStripMenuItem});
-            this.goToolStripMenuItem.Name = "goToolStripMenuItem";
-            this.goToolStripMenuItem.Size = new System.Drawing.Size(32, 20);
-            this.goToolStripMenuItem.Text = "&Go";
+            this.viewInternalDebugToolStripMenuItem.Checked = true;
+            this.viewInternalDebugToolStripMenuItem.CheckOnClick = true;
+            this.viewInternalDebugToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.viewInternalDebugToolStripMenuItem.Name = "viewInternalDebugToolStripMenuItem";
+            this.viewInternalDebugToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
+            this.viewInternalDebugToolStripMenuItem.Text = "Internal debug";
+            this.viewInternalDebugToolStripMenuItem.CheckedChanged += new System.EventHandler(this.viewInternalDebugToolStripMenuItem_CheckedChanged);
             // 
-            // nextpacketToolStripMenuItem
+            // toolStripMenuItem5
             // 
-            this.nextpacketToolStripMenuItem.Name = "nextpacketToolStripMenuItem";
-            this.nextpacketToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.R)));
-            this.nextpacketToolStripMenuItem.Size = new System.Drawing.Size(296, 22);
-            this.nextpacketToolStripMenuItem.Text = "Next &packet row";
-            this.nextpacketToolStripMenuItem.Click += new System.EventHandler(this.nextpacketToolStripMenuItem_Click);
+            this.toolStripMenuItem5.Name = "toolStripMenuItem5";
+            this.toolStripMenuItem5.Size = new System.Drawing.Size(163, 6);
             // 
-            // nextRowTransactionToolStripMenuItem
+            // viewWinCryptToolStripMenuItem
             // 
-            this.nextRowTransactionToolStripMenuItem.Name = "nextRowTransactionToolStripMenuItem";
-            this.nextRowTransactionToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
-            this.nextRowTransactionToolStripMenuItem.Size = new System.Drawing.Size(296, 22);
-            this.nextRowTransactionToolStripMenuItem.Text = "Next row belonging to a &transaction";
-            this.nextRowTransactionToolStripMenuItem.Click += new System.EventHandler(this.nextRowTransactionToolStripMenuItem_Click);
+            this.viewWinCryptToolStripMenuItem.Checked = true;
+            this.viewWinCryptToolStripMenuItem.CheckOnClick = true;
+            this.viewWinCryptToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.viewWinCryptToolStripMenuItem.Name = "viewWinCryptToolStripMenuItem";
+            this.viewWinCryptToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
+            this.viewWinCryptToolStripMenuItem.Text = "WinCrypt API";
+            this.viewWinCryptToolStripMenuItem.CheckedChanged += new System.EventHandler(this.viewWinCryptToolStripMenuItem_CheckedChanged);
             // 
             // MainForm
             // 
@@ -1371,6 +1402,9 @@ namespace oSpy
         private System.Windows.Forms.ToolStripMenuItem goToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem nextpacketToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem nextRowTransactionToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem viewInternalDebugToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem viewWinCryptToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem5;
     }
 }
 
