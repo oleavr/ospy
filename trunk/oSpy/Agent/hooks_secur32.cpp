@@ -21,6 +21,21 @@
 #include "logging.h"
 #define SECURITY_WIN32
 #include <security.h>
+#include <psapi.h>
+
+static MODULEINFO rpcrt4_info;
+
+static BOOL
+called_internally(void *ret_addr)
+{
+    if ((DWORD) ret_addr >= (DWORD) rpcrt4_info.lpBaseOfDll &&
+        (DWORD) ret_addr < (DWORD) rpcrt4_info.lpBaseOfDll + rpcrt4_info.SizeOfImage)
+    {
+        return TRUE;
+    }
+
+    return FALSE;
+}
 
 static ContextTracker<PCtxtHandle> tracker;
 
@@ -55,7 +70,8 @@ EncryptMessage_called(BOOL carry_on,
                       PSecBufferDesc pMessage,
                       ULONG MessageSeqNo)
 {
-	if (g_encryptMessageHookContext.ShouldLog(ret_addr, &ctx_before))
+	if (g_encryptMessageHookContext.ShouldLog(ret_addr, &ctx_before)
+		&& !called_internally(ret_addr))
 	{
 		for (unsigned int i = 0; i < pMessage->cBuffers; i++)
 		{
@@ -116,7 +132,8 @@ DecryptMessage_done(SECURITY_STATUS retval,
     DWORD err = GetLastError();
     unsigned int i;
 
-	if (g_decryptMessageHookContext.ShouldLog(ret_addr, &ctx_before))
+	if (g_decryptMessageHookContext.ShouldLog(ret_addr, &ctx_before)
+		&& !called_internally(ret_addr))
 	{
 		for (i = 0; i < pMessage->cBuffers; i++)
 		{
@@ -145,8 +162,25 @@ HOOK_GLUE_EXTENDED(DecryptMessage, (4 * 4))
 void
 hook_secur32()
 {
-    // Hook the Secur32 API
-    HMODULE h = LoadLibrary("secur32.dll");
+	// We don't want to log calls from the RPCRT4 API
+    HMODULE h = LoadLibrary("RPCRT4.dll");
+    if (h == NULL)
+    {
+        MessageBox(0, "Failed to load 'RPCRT4.dll'.",
+                   "oSpy", MB_ICONERROR | MB_OK);
+        return;
+    }
+
+    if (GetModuleInformation(GetCurrentProcess(), h, &rpcrt4_info,
+                             sizeof(rpcrt4_info)) == 0)
+    {
+        message_logger_log_message("hook_secur32", 0, MESSAGE_CTX_WARNING,
+                                   "GetModuleInformation failed with errno %d",
+                                   GetLastError());
+    }
+
+	// Hook the Secur32 API
+    h = LoadLibrary("secur32.dll");
     if (h == NULL)
     {
 	    MessageBox(0, "Failed to load 'secur32.dll'.",

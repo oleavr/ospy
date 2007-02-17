@@ -20,8 +20,10 @@
 
 class CHookContext;
 
+extern CHookContext g_getaddrinfoHookContext;
 extern CHookContext g_recvHookContext;
 extern CHookContext g_sendHookContext;
+extern CHookContext g_connectHookContext;
 extern CHookContext g_encryptMessageHookContext;
 extern CHookContext g_decryptMessageHookContext;
 

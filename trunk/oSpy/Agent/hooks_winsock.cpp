@@ -29,12 +29,16 @@ static MODULEINFO wsock32_info;
 #define CONNECT_ARGS_SIZE (3 * 4)
 #define WSA_ACCEPT_ARGS_SIZE (5 * 4)
 
+CHookContext g_getaddrinfoHookContext;
 CHookContext g_recvHookContext;
 CHookContext g_sendHookContext;
+CHookContext g_connectHookContext;
 
 static int __cdecl
 getaddrinfo_called(BOOL carry_on,
-                   DWORD ret_addr,
+				   CpuContext ctx_before,
+				   void *bt_addr,
+                   void *ret_addr,
                    const char *nodename,
                    const char *servname,
                    const struct addrinfo *hints,
@@ -198,70 +202,78 @@ dump_addrinfo(const struct addrinfo *first_ai,
 
 static int __stdcall
 getaddrinfo_done(int retval,
+				 CpuContext ctx_after,
+				 CpuContext ctx_before,
+				 void *bt_addr,
+				 void *ret_addr,
                  const char *nodename,
                  const char *servname,
                  const struct addrinfo *hints,
                  struct addrinfo **res)
 {
     DWORD err = GetLastError();
-    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
-    ByteBuffer *msg = byte_buffer_sized_new(64);
-    ByteBuffer *body = byte_buffer_sized_new(256);
-    const char *nn, *sn;
 
-    nn = (nodename != NULL) ? nodename : "NULL";
-    sn = (servname != NULL) ? servname : "NULL";
+	if (g_getaddrinfoHookContext.ShouldLog(ret_addr, &ctx_before))
+	{
+		int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+		ByteBuffer *msg = byte_buffer_sized_new(64);
+		ByteBuffer *body = byte_buffer_sized_new(256);
+		const char *nn, *sn;
 
-    byte_buffer_append_printf(msg, "nodename=%s, servname=%s", nn, sn);
+		nn = (nodename != NULL) ? nodename : "NULL";
+		sn = (servname != NULL) ? servname : "NULL";
 
-    byte_buffer_append_printf(body, "nodename: %s\r\nservname: %s\r\nhints:",
-        nn, sn);
+		byte_buffer_append_printf(msg, "nodename=%s, servname=%s", nn, sn);
 
-    dump_addrinfo(hints, body);
+		byte_buffer_append_printf(body, "nodename: %s\r\nservname: %s\r\nhints:",
+			nn, sn);
 
-    byte_buffer_append_printf(body, "\r\nresult:");
+		dump_addrinfo(hints, body);
 
-    if (retval == 0)
-    {
-        dump_addrinfo(*res, body);
-    }
-    else
-    {
-        char *str = NULL;
+		byte_buffer_append_printf(body, "\r\nresult:");
 
-        switch (err)
-        {
-            case EAI_AGAIN:    str = "EAI_AGAIN";    break;
-            case EAI_BADFLAGS: str = "EAI_BADFLAGS"; break;
-            case EAI_FAIL:     str = "EAI_FAIL";     break;
-            case EAI_FAMILY:   str = "EAI_FAMILY";   break;
-            case EAI_MEMORY:   str = "EAI_MEMORY";   break;
-            //case EAI_NODATA:   str = "EAI_NODATA";   break;
-            case EAI_NONAME:   str = "EAI_NONAME";   break;
-            case EAI_SERVICE:  str = "EAI_SERVICE";  break;
-            case EAI_SOCKTYPE: str = "EAI_SOCKTYPE"; break;
-            default:                                 break;
-        }
+		if (retval == 0)
+		{
+			dump_addrinfo(*res, body);
+		}
+		else
+		{
+			char *str = NULL;
 
-        byte_buffer_append_printf(body, "\r\n  ");
+			switch (err)
+			{
+				case EAI_AGAIN:    str = "EAI_AGAIN";    break;
+				case EAI_BADFLAGS: str = "EAI_BADFLAGS"; break;
+				case EAI_FAIL:     str = "EAI_FAIL";     break;
+				case EAI_FAMILY:   str = "EAI_FAMILY";   break;
+				case EAI_MEMORY:   str = "EAI_MEMORY";   break;
+				//case EAI_NODATA:   str = "EAI_NODATA";   break;
+				case EAI_NONAME:   str = "EAI_NONAME";   break;
+				case EAI_SERVICE:  str = "EAI_SERVICE";  break;
+				case EAI_SOCKTYPE: str = "EAI_SOCKTYPE"; break;
+				default:                                 break;
+			}
 
-        if (str != NULL)
-        {
-            byte_buffer_append_printf(body, "%s", str);
-        }
-        else
-        {
-            byte_buffer_append_printf(body, "ERROR_0x%08x", err);
-        }
-    }
+			byte_buffer_append_printf(body, "\r\n  ");
 
-    message_logger_log("getaddrinfo", (char *) &retval - 4, 0,
-		MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
-		NULL, NULL, (const char *) body->buf, (int) body->offset,
-        (const char *) msg->buf);
+			if (str != NULL)
+			{
+				byte_buffer_append_printf(body, "%s", str);
+			}
+			else
+			{
+				byte_buffer_append_printf(body, "ERROR_0x%08x", err);
+			}
+		}
 
-    byte_buffer_free(msg);
-    byte_buffer_free(body);
+		message_logger_log("getaddrinfo", (char *) &retval - 4, 0,
+			MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+			NULL, NULL, (const char *) body->buf, (int) body->offset,
+			(const char *) msg->buf);
+
+		byte_buffer_free(msg);
+		byte_buffer_free(body);
+	}
 
     SetLastError(err);
     return retval;
@@ -541,17 +553,19 @@ accept_done(SOCKET retval,
 
 static int __cdecl
 connect_called(BOOL carry_on,
-               DWORD ret_addr,
+			   CpuContext ctx_before,
+			   void *bt_addr,
+			   void *ret_addr,
                SOCKET s,
                const struct sockaddr *name,
                int namelen)
 {
     int retval =
-        softwall_decide_from_socket_and_remote_address("connect", ret_addr, s,
+        softwall_decide_from_socket_and_remote_address("connect", (DWORD) ret_addr, s,
                                                        (const sockaddr_in *) name,
                                                        &carry_on);
 
-    if (carry_on)
+	if (carry_on && g_connectHookContext.ShouldLog(ret_addr, &ctx_before))
 	{
 		void *bt_address = (char *) &carry_on + 8 + CONNECT_ARGS_SIZE;
         log_tcp_connecting("connect", bt_address, s, name);
@@ -562,14 +576,17 @@ connect_called(BOOL carry_on,
 
 static int __stdcall
 connect_done(int retval,
+			 CpuContext ctx_after,
+			 CpuContext ctx_before,
+			 void *bt_addr,
+			 void *ret_addr,
              SOCKET s,
              const struct sockaddr *name,
              int namelen)
 {
     DWORD err = GetLastError();
-    int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
 
-    if (retval != SOCKET_ERROR)
+    if (retval != SOCKET_ERROR && g_connectHookContext.ShouldLog(ret_addr, &ctx_before))
     {
         log_tcp_connected("connect", (char *) &retval - 4, s, name);
     }
@@ -832,7 +849,7 @@ wsock32_recv_done(int retval,
   return retval;
 }
 
-HOOK_GLUE_INTERRUPTIBLE(getaddrinfo, (4 * 4))
+HOOK_GLUE_EXTENDED(getaddrinfo, (4 * 4))
 
 HOOK_GLUE_INTERRUPTIBLE(closesocket, CLOSESOCKET_ARGS_SIZE)
 
@@ -841,7 +858,7 @@ HOOK_GLUE_EXTENDED(send, (4 * 4))
 HOOK_GLUE_INTERRUPTIBLE(recvfrom, (6 * 4))
 HOOK_GLUE_INTERRUPTIBLE(sendto, (6 * 4))
 HOOK_GLUE_INTERRUPTIBLE(accept, ACCEPT_ARGS_SIZE)
-HOOK_GLUE_INTERRUPTIBLE(connect, CONNECT_ARGS_SIZE)
+HOOK_GLUE_EXTENDED(connect, CONNECT_ARGS_SIZE)
 HOOK_GLUE_INTERRUPTIBLE(WSARecv, (7 * 4))
 HOOK_GLUE_INTERRUPTIBLE(WSASend, (7 * 4))
 HOOK_GLUE_INTERRUPTIBLE(WSAAccept, WSA_ACCEPT_ARGS_SIZE)
