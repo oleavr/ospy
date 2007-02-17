@@ -28,6 +28,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using oSpy.Parser;
 using oSpy.Net;
 using oSpy.Util;
+using System.Xml;
 
 namespace oSpy
 {
@@ -150,63 +151,61 @@ namespace oSpy
             if (exportToXmlFileDialog.ShowDialog() != DialogResult.OK)
                 return;
 
-            StringBuilder builder = new StringBuilder();
+            XmlDocument doc = new XmlDocument();
 
-            builder.Append("<Streams>");
+            XmlElement streamsElement = doc.CreateElement("Streams");
+            doc.AppendChild(streamsElement);
 
             foreach (VisualSession session in multiStreamView.Sessions)
             {
-                builder.AppendFormat("<Stream LocalEndpoint=\"{0}\" RemoteEndpoint=\"{1}\">",
-                    session.LocalEndpoint, session.RemoteEndpoint);
+                XmlElement streamElement = doc.CreateElement("Stream");
+                streamElement.SetAttribute("LocalEndpoint", session.LocalEndpoint.ToString());
+                streamElement.SetAttribute("RemoteEndpoint", session.RemoteEndpoint.ToString());
+                streamsElement.AppendChild(streamElement);
 
                 foreach (VisualTransaction transaction in session.Transactions)
                 {
-                    builder.AppendFormat("<Transaction Index=\"{0}\" Direction=\"{1}\" StartTime=\"{2}\" EndTime=\"{3}\">",
-                        transaction.Index,
-                        (transaction.Direction == PacketDirection.PACKET_DIRECTION_INCOMING) ? "in" : "out",
-                        transaction.StartTime.ToString("s"), transaction.EndTime.ToString("s"));
+                    XmlElement transactionElement = doc.CreateElement("Transaction");
+                    transactionElement.SetAttribute("Index", Convert.ToString(transaction.Index));
+                    transactionElement.SetAttribute("Direction", (transaction.Direction == PacketDirection.PACKET_DIRECTION_INCOMING) ? "in" : "out");
+                    transactionElement.SetAttribute("StartTime", transaction.StartTime.ToString("s"));
+                    transactionElement.SetAttribute("EndTime", transaction.EndTime.ToString("s"));
+                    streamElement.AppendChild(transactionElement);
 
                     if (transaction.HeadlineText.Length > 0)
                     {
-                        byte[] headlineBytes = StaticUtils.EncodeUTF8(transaction.HeadlineText);
-                        builder.AppendFormat("<Headline>{0}</Headline>", Convert.ToBase64String(headlineBytes));
+                        XmlElement headlineElement = doc.CreateElement("Headline");
+                        headlineElement.AppendChild(doc.CreateTextNode(transaction.HeadlineText));
+                        transactionElement.AppendChild(headlineElement);
                     }
 
                     List<KeyValuePair<string, string>> headerFields = transaction.HeaderFields;
                     if (headerFields.Count > 0)
                     {
-                        builder.Append("<Headers>");
+                        XmlElement headersElement = doc.CreateElement("Headers");
+                        transactionElement.AppendChild(headersElement);
 
                         foreach (KeyValuePair<string, string> pair in headerFields)
                         {
-                            byte[] headerNameBytes = StaticUtils.EncodeUTF8(pair.Key);
-                            byte[] headerValueBytes = StaticUtils.EncodeUTF8(pair.Value);
-
-                            builder.AppendFormat("<Header Name=\"{0}\">{1}</Header>",
-                                Convert.ToBase64String(headerNameBytes), Convert.ToBase64String(headerValueBytes));
+                            XmlElement headerElement = doc.CreateElement("Header");
+                            headerElement.SetAttribute("Name", pair.Key.Substring(0, pair.Key.Length - 1));
+                            headerElement.AppendChild(doc.CreateTextNode(pair.Value));
+                            headersElement.AppendChild(headerElement);
                         }
-
-                        builder.Append("</Headers>");
                     }
 
                     if (transaction.BodyText.Length > 0)
                     {
-                        byte[] bodyBytes = StaticUtils.EncodeUTF8(transaction.BodyText);
-                        builder.AppendFormat("<Body>{0}</Body>", Convert.ToBase64String(bodyBytes));
+                        XmlElement bodyElement = doc.CreateElement("Body");
+                        bodyElement.AppendChild(doc.CreateTextNode(transaction.BodyText));
+                        transactionElement.AppendChild(bodyElement);
                     }
-
-                    builder.Append("</Transaction>");
                 }
-
-                builder.AppendFormat("</Stream>");
             }
 
-            builder.Append("</Streams>");
-
-            FileStream fs = new FileStream(exportToXmlFileDialog.FileName, FileMode.Create);
-            byte[] bytes = StaticUtils.EncodeUTF8(builder.ToString());
-            fs.Write(bytes, 0, bytes.Length);
-            fs.Close();
+            XmlTextWriter xmlWriter = new XmlTextWriter(exportToXmlFileDialog.FileName, Encoding.UTF8);
+            doc.WriteTo(xmlWriter);
+            xmlWriter.Close();
         }
     }
 }
