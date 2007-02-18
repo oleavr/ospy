@@ -231,6 +231,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\overlapped.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\softwall.cpp"
 				>
 			</File>
@@ -286,6 +290,10 @@
 			</File>
 			<File
 				RelativePath=".\logging.h"
+				>
+			</File>
+			<File
+				RelativePath=".\overlapped.h"
 				>
 			</File>
 			<File

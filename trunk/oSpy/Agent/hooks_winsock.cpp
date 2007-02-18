@@ -19,6 +19,7 @@
 #include "stdafx.h"
 #include "hooking.h"
 #include "logging.h"
+#include "overlapped.h"
 #include <Ws2tcpip.h>
 #include <psapi.h>
 
@@ -602,9 +603,61 @@ called_from_wsock(DWORD ret_addr)
             ret_addr < (DWORD) wsock32_info.lpBaseOfDll + wsock32_info.SizeOfImage);
 }
 
+typedef struct {
+	void *btAddr;
+	SOCKET sock;
+	LPWSABUF lpBuffers;
+	DWORD dwBufferCount;
+	LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine;
+} AsyncRecvContext;
+
+static void
+wsaRecvCompletedHandler(COverlappedOperation *operation)
+{
+	AsyncRecvContext *ctx = (AsyncRecvContext *) operation->GetData();
+	DWORD transferred, flags;
+
+	BOOL success = WSAGetOverlappedResult(ctx->sock, operation->GetRealOverlapped(), &transferred, TRUE, &flags);
+	DWORD wsaLastError = WSAGetLastError();
+
+	if (success)
+	{
+		int bytesLeft = transferred;
+
+		for (DWORD i = 0; i < ctx->dwBufferCount && bytesLeft > 0; i++)
+        {
+			WSABUF *buf = &ctx->lpBuffers[i];
+
+			int n = bytesLeft;
+			if (n > buf->len)
+				n = buf->len;
+
+			log_tcp_packet("WSARecv", ctx->btAddr, PACKET_DIRECTION_INCOMING, ctx->sock,
+						   buf->buf, n);
+
+			bytesLeft -= n;
+        }
+	}
+
+	if (ctx->lpCompletionRoutine != NULL)
+	{
+		ctx->lpCompletionRoutine((success) ? 0 : wsaLastError, transferred, operation->GetClientOverlapped(), flags);
+	}
+	else
+	{
+		HANDLE clientEvent = operation->GetClientOverlapped()->hEvent;
+		if (clientEvent != 0 && clientEvent != INVALID_HANDLE_VALUE)
+		{
+			SetEvent(clientEvent);
+		}
+	}
+}
+
 int __cdecl
 WSARecv_called(BOOL carry_on,
-               DWORD ret_addr,
+			   CpuContext ctx_before,
+			   void *bt_addr,
+			   void *ret_addr,
                SOCKET s,
                LPWSABUF lpBuffers,
                DWORD dwBufferCount,
@@ -613,11 +666,31 @@ WSARecv_called(BOOL carry_on,
                LPWSAOVERLAPPED lpOverlapped,
                LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine)
 {
-    return softwall_decide_from_socket("WSARecv", ret_addr, s, &carry_on);
+	/*
+	if (lpOverlapped != NULL || lpCompletionRoutine != NULL)
+	{
+		AsyncRecvContext *ctx = (AsyncRecvContext *) sspy_malloc(sizeof(AsyncRecvContext));
+		ctx->btAddr = bt_addr;
+		ctx->sock = s;
+		ctx->lpBuffers = lpBuffers;
+		ctx->dwBufferCount = dwBufferCount;
+		ctx->lpCompletionRoutine = lpCompletionRoutine;
+
+		lpCompletionRoutine = NULL; // we'll take care of this ourselves
+
+		COverlappedManager::TrackOperation(&lpOverlapped, ctx, wsaRecvCompletedHandler);
+		return 0;
+	}*/
+
+    return softwall_decide_from_socket("WSARecv", (DWORD) ret_addr, s, &carry_on);
 }
 
 static int __stdcall
 WSARecv_done(int retval,
+			 CpuContext ctx_after,
+			 CpuContext ctx_before,
+			 void *bt_addr,
+			 void *ret_addr,
              SOCKET s,
              LPWSABUF lpBuffers,
              DWORD dwBufferCount,
@@ -628,17 +701,11 @@ WSARecv_done(int retval,
 {
     DWORD err = GetLastError();
     DWORD wsa_err = WSAGetLastError();
-    DWORD ret_addr = *((DWORD *) ((DWORD) &retval - 4));
-	void *bt_address = (char *) &retval - 4;
 
-    if (called_from_wsock(ret_addr))
+	// FIXME: check the return value here in case of overlapped ops
+
+    if (called_from_wsock((DWORD) ret_addr))
         return retval;
-
-    if (lpOverlapped != NULL)
-    {
-        message_logger_log_message("WSARecv", bt_address, MESSAGE_CTX_WARNING,
-                                   "overlapped I/O not yet supported");
-    }
 
     if (retval == 0)
     {
@@ -652,7 +719,7 @@ WSARecv_done(int retval,
 			if (n > buf->len)
 				n = buf->len;
 
-            log_tcp_packet("WSARecv", bt_address, PACKET_DIRECTION_INCOMING, s,
+            log_tcp_packet("WSARecv", bt_addr, PACKET_DIRECTION_INCOMING, s,
 						   buf->buf, n);
 
 			bytes_left -= n;
@@ -662,13 +729,13 @@ WSARecv_done(int retval,
     {
         if (wsa_err == WSAEWOULDBLOCK)
         {
-            message_logger_log_message("WSARecv", bt_address, MESSAGE_CTX_WARNING,
+            message_logger_log_message("WSARecv", bt_addr, MESSAGE_CTX_WARNING,
 						               "non-blocking mode not yet supported");
         }
 
         if (wsa_err != WSAEWOULDBLOCK && wsa_err != WSA_IO_PENDING)
         {
-            log_tcp_disconnected("WSARecv", bt_address, s,
+            log_tcp_disconnected("WSARecv", bt_addr, s,
                                  (err == WSAECONNRESET) ? NULL : &err);
         }
     }
@@ -859,7 +926,7 @@ HOOK_GLUE_INTERRUPTIBLE(recvfrom, (6 * 4))
 HOOK_GLUE_INTERRUPTIBLE(sendto, (6 * 4))
 HOOK_GLUE_INTERRUPTIBLE(accept, ACCEPT_ARGS_SIZE)
 HOOK_GLUE_EXTENDED(connect, CONNECT_ARGS_SIZE)
-HOOK_GLUE_INTERRUPTIBLE(WSARecv, (7 * 4))
+HOOK_GLUE_EXTENDED(WSARecv, (7 * 4))
 HOOK_GLUE_INTERRUPTIBLE(WSASend, (7 * 4))
 HOOK_GLUE_INTERRUPTIBLE(WSAAccept, WSA_ACCEPT_ARGS_SIZE)
 HOOK_GLUE_INTERRUPTIBLE(wsock32_recv, (4 * 4))
