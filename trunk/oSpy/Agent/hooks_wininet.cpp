@@ -34,7 +34,102 @@ typedef enum {
 	SIGNATURE_ICASYNCTHREAD_CONNECT,
 };
 
-static const FunctionSignature signatures[] = {
+static const FunctionSignature signatures_ie6[] = {
+	// SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET
+	{
+		"wininet.dll",
+		-24,
+		"80 4E 1E 01"			// or      byte ptr [esi+1Eh], 1
+		"89 46 38"				// mov     [esi+38h], eax
+		"89 46 34"				// mov     [esi+34h], eax
+		"89 46 3C"				// mov     [esi+3Ch], eax
+		"89 46 40"				// mov     [esi+40h], eax
+		"89 46 44"				// mov     [esi+44h], eax
+		"89 46 4C"				// mov     [esi+4Ch], eax
+		"C7 06 ?? ?? ?? ??"		// mov     dword ptr [esi], offset ??_7ICSecureSocket@@6B@ ; const ICSecureSocket::`vftable'
+	},
+
+	// SIGNATURE_ICSOCKET_RECEIVE_CONTINUE_RECV
+    {
+        "wininet.dll",
+		-22,
+		"53"					// push    ebx
+		"FF B6 ?? 00 00 00"		// push    dword ptr [esi+9Ch]
+		"FF B6 ?? 00 00 00"		// push    dword ptr [esi+94h]
+		"FF 70 ??"				// push    dword ptr [eax+18h]
+		"FF 15 ?? ?? ?? ??"		// call    __I_recv
+    },
+
+	// SIGNATURE_ICSOCKET_SEND_START_SEND
+    {
+        "wininet.dll",
+		-15,
+		"6A 00"					// push    0
+		"50"					// push    eax
+		"FF 76 ??"				// push    dword ptr [esi+74h]
+		"FF 77 ??"				// push    dword ptr [edi+18h]
+		"FF 15 ?? ?? ?? ??"		// call    __I_send
+    },
+
+	// SIGNATURE_SECURE_RECV_DECRYPTMESSAGE_CALL
+    {
+        "wininet.dll",
+		-3,
+		"FF 50 4C"				// call    dword ptr [eax+4Ch]
+		"3B C3"					// cmp     eax, ebx
+		"89 45 FC"				// mov     [ebp+var_4], eax
+	},
+
+	// SIGNATURE_SECURE_SEND_ENCRYPTMESSAGE_CALL
+    {
+        "wininet.dll",
+		-3,
+		"FF 50 48"				// call    dword ptr [eax+48h]
+		"3B C7"					// cmp     eax, edi
+	},
+
+	// SIGNATURE_SECURE_RECV_AFTER_DECRYPT
+    {
+        "wininet.dll",
+		0,
+		"3D 18 03 09 80"		// cmp     eax, 80090318h
+		"89 86 ?? ?? ?? ??"		// mov     [esi+0B0h], eax
+	},
+
+    // SIGNATURE_SECURE_SEND_AFTER_ENCRYPT
+    {
+        "wininet.dll",
+		0,
+		"85 C0"					// test    eax, eax
+		"89 45 08"				// mov     [ebp+arg_0], eax
+		"75 30"					// jnz     short OUT
+    },
+
+	// SIGNATURE_ICASYNCTHREAD_MY_GETADDR -- not in ie6
+    {
+        "wininet.dll",
+		0,
+		""
+    },
+
+	// SIGNATURE_MY_GETADDR_GETADDRINFO -- not in ie6
+    {
+        "wininet.dll",
+		0,
+		""
+    },
+
+	// SIGNATURE_ICASYNCTHREAD_CONNECT
+    {
+        "wininet.dll",
+		0,
+		"83 F8 FF"				// cmp     eax, 0FFFFFFFFh
+		"74 16"					// jz      short loc_771D8FFF
+		"8B 45 D8"				// mov     eax, [ebp+var_28]
+    },
+};
+
+static const FunctionSignature signatures_ie7[] = {
 	// SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET
 	{
 		"wininet.dll",
@@ -304,6 +399,7 @@ hook_wininet()
 		return;
     }
 
+	const FunctionSignature *signatures = signatures_ie7;
 	g_icsocketBaseSize = 0x1c;
 	g_cfsmSecureRecvBaseSize = 0x94;
 	g_cfsmSecureSendBaseSize = 0x78;
@@ -312,35 +408,45 @@ hook_wininet()
 	void *retAddr;
 	void **vtableAddr;
 
-	if (find_signature(&signatures[SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET],
-					   (LPVOID *) &vtableAddr, &error))
+	bool found = find_signature(&signatures[SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET],
+								(LPVOID *) &vtableAddr, &error);
+	if (!found)
 	{
-		g_ICSecureSocketVTable = *vtableAddr;
+		signatures = signatures_ie6;
+		g_cfsmSecureRecvBaseSize -= 4;
+		g_cfsmSecureSendBaseSize -= 4;
 
-		if (find_signature(&signatures[SIGNATURE_ICSOCKET_RECEIVE_CONTINUE_RECV],
-						   &retAddr, &error))
-		{
-			g_recvHookContext.RegisterReturnAddress(retAddr, ICSocketReceiveContinue_ShouldLog);
-		}
-		else
-		{
-			LOG_OVERRIDE_ERROR("SIGNATURE_ICSOCKET_RECEIVE_CONTINUE_RECV", error);
-		}
+		found = find_signature(&signatures[SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET],
+							   (LPVOID *) &vtableAddr, &error);
+	}
 
-		if (find_signature(&signatures[SIGNATURE_ICSOCKET_SEND_START_SEND],
-						   &retAddr, &error))
-		{
-			g_sendHookContext.RegisterReturnAddress(retAddr, ICSocketSendStart_ShouldLog);
-		}
-		else
-		{
-			LOG_OVERRIDE_ERROR("SIGNATURE_ICSOCKET_SEND_START_SEND", error);
-		}			
+	if (!found)
+	{
+		LOG_OVERRIDE_ERROR("SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET", error);
+		return;
+	}
+
+	g_ICSecureSocketVTable = *vtableAddr;
+
+	if (find_signature(&signatures[SIGNATURE_ICSOCKET_RECEIVE_CONTINUE_RECV],
+					   &retAddr, &error))
+	{
+		g_recvHookContext.RegisterReturnAddress(retAddr, ICSocketReceiveContinue_ShouldLog);
 	}
 	else
 	{
-		LOG_OVERRIDE_ERROR("SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET", error);
+		LOG_OVERRIDE_ERROR("SIGNATURE_ICSOCKET_RECEIVE_CONTINUE_RECV", error);
 	}
+
+	if (find_signature(&signatures[SIGNATURE_ICSOCKET_SEND_START_SEND],
+					   &retAddr, &error))
+	{
+		g_sendHookContext.RegisterReturnAddress(retAddr, ICSocketSendStart_ShouldLog);
+	}
+	else
+	{
+		LOG_OVERRIDE_ERROR("SIGNATURE_ICSOCKET_SEND_START_SEND", error);
+	}			
 
 	if (find_signature(&signatures[SIGNATURE_SECURE_RECV_DECRYPTMESSAGE_CALL],
 					   &retAddr, &error))
@@ -386,22 +492,25 @@ hook_wininet()
         LOG_OVERRIDE_ERROR("SIGNATURE_SECURE_SEND_AFTER_ENCRYPT", error);
     }
 
-	if (find_signature(&signatures[SIGNATURE_ICASYNCTHREAD_MY_GETADDR],
-					   &g_icasyncthreadMygetaddrRetAddr, &error))
+	if (signatures == signatures_ie7)
 	{
-		if (find_signature(&signatures[SIGNATURE_MY_GETADDR_GETADDRINFO],
-						   &retAddr, &error))
+		if (find_signature(&signatures[SIGNATURE_ICASYNCTHREAD_MY_GETADDR],
+						   &g_icasyncthreadMygetaddrRetAddr, &error))
 		{
-			g_getaddrinfoHookContext.RegisterReturnAddress(retAddr, getaddrinfoFromMyGetaddrShouldLog);
+			if (find_signature(&signatures[SIGNATURE_MY_GETADDR_GETADDRINFO],
+							   &retAddr, &error))
+			{
+				g_getaddrinfoHookContext.RegisterReturnAddress(retAddr, getaddrinfoFromMyGetaddrShouldLog);
+			}
+			else
+			{
+				LOG_OVERRIDE_ERROR("SIGNATURE_MY_GETADDR_GETADDRINFO", error);
+			}
 		}
 		else
 		{
-			LOG_OVERRIDE_ERROR("SIGNATURE_MY_GETADDR_GETADDRINFO", error);
+			LOG_OVERRIDE_ERROR("SIGNATURE_ICASYNCTHREAD_MY_GETADDR", error);
 		}
-	}
-	else
-	{
-        LOG_OVERRIDE_ERROR("SIGNATURE_ICASYNCTHREAD_MY_GETADDR", error);
 	}
 
 	if (find_signature(&signatures[SIGNATURE_ICASYNCTHREAD_CONNECT],
