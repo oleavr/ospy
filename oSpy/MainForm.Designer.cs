@@ -29,8 +29,8 @@ namespace oSpy
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle7 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle8 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.dataSet = new System.Data.DataSet();
             this.messageTbl = new System.Data.DataTable();
@@ -87,6 +87,9 @@ namespace oSpy
             this.manageSoftwallRulesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.parserConfigToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.analyzeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.viewInternalDebugToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.viewWinCryptToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
             this.showMSNP2PConversationsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.debugToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
@@ -110,7 +113,7 @@ namespace oSpy
             this.collapseAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
             this.autoHighlightMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.splitContainer = new System.Windows.Forms.SplitContainer();
+            this.mainSplitContainer = new System.Windows.Forms.SplitContainer();
             this.dataGridView = new System.Windows.Forms.DataGridView();
             this.indexDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.typeDataGridViewImageColumn = new System.Windows.Forms.DataGridViewImageColumn();
@@ -140,7 +143,7 @@ namespace oSpy
             this.descriptionDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Comment = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.bgColorDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.lowerSplitContainer = new System.Windows.Forms.SplitContainer();
             this.richTextBox = new System.Windows.Forms.RichTextBox();
             this.propertyGrid = new System.Windows.Forms.PropertyGrid();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
@@ -156,9 +159,6 @@ namespace oSpy
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
-            this.viewInternalDebugToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
-            this.viewWinCryptToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).BeginInit();
             this.menuStrip.SuspendLayout();
@@ -166,13 +166,13 @@ namespace oSpy
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource)).BeginInit();
             this.dumpContextMenuStrip.SuspendLayout();
             this.propertyGridContextMenuStrip.SuspendLayout();
-            this.splitContainer.Panel1.SuspendLayout();
-            this.splitContainer.Panel2.SuspendLayout();
-            this.splitContainer.SuspendLayout();
+            this.mainSplitContainer.Panel1.SuspendLayout();
+            this.mainSplitContainer.Panel2.SuspendLayout();
+            this.mainSplitContainer.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).BeginInit();
-            this.splitContainer1.Panel1.SuspendLayout();
-            this.splitContainer1.Panel2.SuspendLayout();
-            this.splitContainer1.SuspendLayout();
+            this.lowerSplitContainer.Panel1.SuspendLayout();
+            this.lowerSplitContainer.Panel2.SuspendLayout();
+            this.lowerSplitContainer.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -578,6 +578,31 @@ namespace oSpy
             this.analyzeToolStripMenuItem.Size = new System.Drawing.Size(41, 20);
             this.analyzeToolStripMenuItem.Text = "&View";
             // 
+            // viewInternalDebugToolStripMenuItem
+            // 
+            this.viewInternalDebugToolStripMenuItem.Checked = true;
+            this.viewInternalDebugToolStripMenuItem.CheckOnClick = true;
+            this.viewInternalDebugToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.viewInternalDebugToolStripMenuItem.Name = "viewInternalDebugToolStripMenuItem";
+            this.viewInternalDebugToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
+            this.viewInternalDebugToolStripMenuItem.Text = "Internal debug";
+            this.viewInternalDebugToolStripMenuItem.CheckedChanged += new System.EventHandler(this.viewInternalDebugToolStripMenuItem_CheckedChanged);
+            // 
+            // viewWinCryptToolStripMenuItem
+            // 
+            this.viewWinCryptToolStripMenuItem.Checked = true;
+            this.viewWinCryptToolStripMenuItem.CheckOnClick = true;
+            this.viewWinCryptToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.viewWinCryptToolStripMenuItem.Name = "viewWinCryptToolStripMenuItem";
+            this.viewWinCryptToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
+            this.viewWinCryptToolStripMenuItem.Text = "WinCrypt API";
+            this.viewWinCryptToolStripMenuItem.CheckedChanged += new System.EventHandler(this.viewWinCryptToolStripMenuItem_CheckedChanged);
+            // 
+            // toolStripMenuItem5
+            // 
+            this.toolStripMenuItem5.Name = "toolStripMenuItem5";
+            this.toolStripMenuItem5.Size = new System.Drawing.Size(163, 6);
+            // 
             // showMSNP2PConversationsToolStripMenuItem
             // 
             this.showMSNP2PConversationsToolStripMenuItem.Name = "showMSNP2PConversationsToolStripMenuItem";
@@ -750,25 +775,25 @@ namespace oSpy
             this.autoHighlightMenuItem.Text = "&Automatic highlighting";
             this.autoHighlightMenuItem.CheckedChanged += new System.EventHandler(this.autoHighlightMenuItem_CheckedChanged);
             // 
-            // splitContainer
+            // mainSplitContainer
             // 
-            this.splitContainer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            this.mainSplitContainer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.splitContainer.Location = new System.Drawing.Point(0, 52);
-            this.splitContainer.Name = "splitContainer";
-            this.splitContainer.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            this.mainSplitContainer.Location = new System.Drawing.Point(0, 52);
+            this.mainSplitContainer.Name = "mainSplitContainer";
+            this.mainSplitContainer.Orientation = System.Windows.Forms.Orientation.Horizontal;
             // 
-            // splitContainer.Panel1
+            // mainSplitContainer.Panel1
             // 
-            this.splitContainer.Panel1.Controls.Add(this.dataGridView);
+            this.mainSplitContainer.Panel1.Controls.Add(this.dataGridView);
             // 
-            // splitContainer.Panel2
+            // mainSplitContainer.Panel2
             // 
-            this.splitContainer.Panel2.Controls.Add(this.splitContainer1);
-            this.splitContainer.Size = new System.Drawing.Size(828, 510);
-            this.splitContainer.SplitterDistance = 233;
-            this.splitContainer.TabIndex = 8;
+            this.mainSplitContainer.Panel2.Controls.Add(this.lowerSplitContainer);
+            this.mainSplitContainer.Size = new System.Drawing.Size(828, 510);
+            this.mainSplitContainer.SplitterDistance = 233;
+            this.mainSplitContainer.TabIndex = 8;
             // 
             // dataGridView
             // 
@@ -843,9 +868,9 @@ namespace oSpy
             // 
             this.timestampDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
             this.timestampDataGridViewTextBoxColumn.DataPropertyName = "Timestamp";
-            dataGridViewCellStyle7.Format = "T";
-            dataGridViewCellStyle7.NullValue = null;
-            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle7;
+            dataGridViewCellStyle1.Format = "T";
+            dataGridViewCellStyle1.NullValue = null;
+            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle1;
             this.timestampDataGridViewTextBoxColumn.HeaderText = "Timestamp";
             this.timestampDataGridViewTextBoxColumn.Name = "timestampDataGridViewTextBoxColumn";
             this.timestampDataGridViewTextBoxColumn.ReadOnly = true;
@@ -893,9 +918,9 @@ namespace oSpy
             // returnAddressDataGridViewTextBoxColumn
             // 
             this.returnAddressDataGridViewTextBoxColumn.DataPropertyName = "ReturnAddress";
-            dataGridViewCellStyle8.Format = "x";
-            dataGridViewCellStyle8.NullValue = null;
-            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle8;
+            dataGridViewCellStyle2.Format = "x";
+            dataGridViewCellStyle2.NullValue = null;
+            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle2;
             this.returnAddressDataGridViewTextBoxColumn.HeaderText = "ReturnAddress";
             this.returnAddressDataGridViewTextBoxColumn.Name = "returnAddressDataGridViewTextBoxColumn";
             this.returnAddressDataGridViewTextBoxColumn.ReadOnly = true;
@@ -1049,23 +1074,23 @@ namespace oSpy
             this.bgColorDataGridViewTextBoxColumn.ReadOnly = true;
             this.bgColorDataGridViewTextBoxColumn.Visible = false;
             // 
-            // splitContainer1
+            // lowerSplitContainer
             // 
-            this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
-            this.splitContainer1.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer1.Name = "splitContainer1";
+            this.lowerSplitContainer.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lowerSplitContainer.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
+            this.lowerSplitContainer.Location = new System.Drawing.Point(0, 0);
+            this.lowerSplitContainer.Name = "lowerSplitContainer";
             // 
-            // splitContainer1.Panel1
+            // lowerSplitContainer.Panel1
             // 
-            this.splitContainer1.Panel1.Controls.Add(this.richTextBox);
+            this.lowerSplitContainer.Panel1.Controls.Add(this.richTextBox);
             // 
-            // splitContainer1.Panel2
+            // lowerSplitContainer.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.propertyGrid);
-            this.splitContainer1.Size = new System.Drawing.Size(828, 273);
-            this.splitContainer1.SplitterDistance = 623;
-            this.splitContainer1.TabIndex = 0;
+            this.lowerSplitContainer.Panel2.Controls.Add(this.propertyGrid);
+            this.lowerSplitContainer.Size = new System.Drawing.Size(828, 273);
+            this.lowerSplitContainer.SplitterDistance = 623;
+            this.lowerSplitContainer.TabIndex = 0;
             // 
             // richTextBox
             // 
@@ -1216,37 +1241,12 @@ namespace oSpy
             this.dumpSaveFileDialog.DefaultExt = "bin";
             this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
             // 
-            // viewInternalDebugToolStripMenuItem
-            // 
-            this.viewInternalDebugToolStripMenuItem.Checked = true;
-            this.viewInternalDebugToolStripMenuItem.CheckOnClick = true;
-            this.viewInternalDebugToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.viewInternalDebugToolStripMenuItem.Name = "viewInternalDebugToolStripMenuItem";
-            this.viewInternalDebugToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
-            this.viewInternalDebugToolStripMenuItem.Text = "Internal debug";
-            this.viewInternalDebugToolStripMenuItem.CheckedChanged += new System.EventHandler(this.viewInternalDebugToolStripMenuItem_CheckedChanged);
-            // 
-            // toolStripMenuItem5
-            // 
-            this.toolStripMenuItem5.Name = "toolStripMenuItem5";
-            this.toolStripMenuItem5.Size = new System.Drawing.Size(163, 6);
-            // 
-            // viewWinCryptToolStripMenuItem
-            // 
-            this.viewWinCryptToolStripMenuItem.Checked = true;
-            this.viewWinCryptToolStripMenuItem.CheckOnClick = true;
-            this.viewWinCryptToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.viewWinCryptToolStripMenuItem.Name = "viewWinCryptToolStripMenuItem";
-            this.viewWinCryptToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
-            this.viewWinCryptToolStripMenuItem.Text = "WinCrypt API";
-            this.viewWinCryptToolStripMenuItem.CheckedChanged += new System.EventHandler(this.viewWinCryptToolStripMenuItem_CheckedChanged);
-            // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(828, 585);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.toolStrip1);
-            this.Controls.Add(this.splitContainer);
+            this.Controls.Add(this.mainSplitContainer);
             this.Controls.Add(this.menuStrip);
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
@@ -1260,13 +1260,13 @@ namespace oSpy
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource)).EndInit();
             this.dumpContextMenuStrip.ResumeLayout(false);
             this.propertyGridContextMenuStrip.ResumeLayout(false);
-            this.splitContainer.Panel1.ResumeLayout(false);
-            this.splitContainer.Panel2.ResumeLayout(false);
-            this.splitContainer.ResumeLayout(false);
+            this.mainSplitContainer.Panel1.ResumeLayout(false);
+            this.mainSplitContainer.Panel2.ResumeLayout(false);
+            this.mainSplitContainer.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).EndInit();
-            this.splitContainer1.Panel1.ResumeLayout(false);
-            this.splitContainer1.Panel2.ResumeLayout(false);
-            this.splitContainer1.ResumeLayout(false);
+            this.lowerSplitContainer.Panel1.ResumeLayout(false);
+            this.lowerSplitContainer.Panel2.ResumeLayout(false);
+            this.lowerSplitContainer.ResumeLayout(false);
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();
             this.statusStrip1.ResumeLayout(false);
@@ -1342,9 +1342,9 @@ namespace oSpy
         private System.Windows.Forms.ToolStripMenuItem hexToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem copyToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem4;
-        protected System.Windows.Forms.SplitContainer splitContainer;
+        protected System.Windows.Forms.SplitContainer mainSplitContainer;
         private System.Windows.Forms.DataGridView dataGridView;
-        private System.Windows.Forms.SplitContainer splitContainer1;
+        private System.Windows.Forms.SplitContainer lowerSplitContainer;
         private System.Windows.Forms.RichTextBox richTextBox;
         private System.Windows.Forms.PropertyGrid propertyGrid;
         private System.Windows.Forms.ToolStrip toolStrip1;
