@@ -26,6 +26,7 @@ using System.Text;
 using System.IO;
 using ICSharpCode.SharpZipLib.BZip2;
 using System.Text.RegularExpressions;
+using oSpy.Configuration;
 using oSpy.Event;
 using oSpy.Parser;
 using oSpy.Util;
@@ -37,6 +38,7 @@ namespace oSpy
 {
     public partial class MainForm : Form
     {
+        private ConfigContext config;
         private AgentListener listener;
 
         private DataTable tblMessages;
@@ -87,6 +89,8 @@ namespace oSpy
         {
             InitializeComponent();
 
+            config = ConfigManager.GetContext("MainForm");
+
             colorPool = new ColorPool();
 
             listener = new AgentListener();
@@ -106,12 +110,11 @@ namespace oSpy
 
             dumpDisplayMode = DisplayMode.HEX;
 
-            ClearState();
-
-            ApplyFilters();
-            LoadSettings();
-
             findTypeComboBox.SelectedIndex = 0;
+
+            ClearState();
+            LoadSettings();
+            ApplyFilters();
         }
 
         protected void ClearState()
@@ -130,6 +133,68 @@ namespace oSpy
             tmpPacketList = new List<IPPacket>(32);
             richTextBox.Clear();
             propertyGrid.SelectedObject = null;
+        }
+
+        protected void LoadSettings()
+        {
+            if (config.HasSetting("Location"))
+                Location = (Point) config["Location"];
+            if (config.HasSetting("Size"))
+                Size = (Size) config["Size"];
+
+            if (config.HasSetting("MainSplitPos"))
+                mainSplitContainer.SplitterDistance = (int)config["MainSplitPos"];
+            if (config.HasSetting("LowerSplitPos"))
+                lowerSplitContainer.SplitterDistance = (int)config["LowerSplitPos"];
+
+            if (config.HasSetting("ViewInternalDebugChecked"))
+                viewInternalDebugToolStripMenuItem.Checked = (bool)config["ViewInternalDebugChecked"];
+            if (config.HasSetting("ViewWinCryptChecked"))
+                viewWinCryptToolStripMenuItem.Checked = (bool)config["ViewWinCryptChecked"];
+
+            foreach (DataGridViewColumn col in dataGridView.Columns)
+            {
+                if (col.Visible)
+                {
+                    string name = col.Name + "Width";
+
+                    if (config.HasSetting(name))
+                        col.Width = (int)config[name];
+                }
+            }
+
+            if (config.HasSetting("FilterText"))
+                filterComboBox.Text = (string)config["FilterText"];
+
+            if (config.HasSetting("FindTypeIndex"))
+                findTypeComboBox.SelectedIndex = (int)config["FindTypeIndex"];
+            if (config.HasSetting("FindText"))
+                findComboBox.Text = (string)config["FindText"];
+        }
+
+        protected void SaveSettings()
+        {
+            config["Location"] = Location;
+            config["Size"] = Size;
+
+            config["MainSplitPos"] = mainSplitContainer.SplitterDistance;
+            config["LowerSplitPos"] = lowerSplitContainer.SplitterDistance;
+
+            config["ViewInternalDebugChecked"] = viewInternalDebugToolStripMenuItem.Checked;
+            config["ViewWinCryptChecked"] = viewWinCryptToolStripMenuItem.Checked;
+
+            foreach (DataGridViewColumn col in dataGridView.Columns)
+            {
+                if (col.Visible)
+                {
+                    config[col.Name + "Width"] = col.Width;
+                }
+            }
+
+            config["FilterText"] = filterComboBox.Text;
+
+            config["FindTypeIndex"] = findTypeComboBox.SelectedIndex;
+            config["FindText"] = findComboBox.Text;
         }
 
         private void packetParser_PacketDescriptionReceived(IPPacket[] packets, string description)
@@ -429,6 +494,7 @@ namespace oSpy
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             SaveSettings();
+            ConfigManager.Save();
             listener.Stop();
         }
 
@@ -1406,44 +1472,6 @@ namespace oSpy
         {
             ApplyFilters();
             dataGridView.Focus();
-        }
-
-        private string GetSettingsFilePath()
-        {
-            string appDir =
-                Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetModules()[0].FullyQualifiedName);
-
-            return String.Format("{0}\\settings.xml", appDir);
-        }
-
-        private void LoadSettings()
-        {
-            if (!File.Exists(GetSettingsFilePath()))
-                return;
-
-            XmlDocument doc = new XmlDocument();
-            doc.Load(GetSettingsFilePath());
-
-            XmlNode node = doc.SelectSingleNode("/Settings/Filters/Filter");
-            if (node != null)
-                filterComboBox.Text = node.InnerXml.Trim();
-        }
-
-        private void SaveSettings()
-        {
-            XmlDocument doc = new XmlDocument();
-
-            XmlElement settingsElement = doc.CreateElement("Settings");
-            doc.AppendChild(settingsElement);
-
-            XmlElement filtersElement = doc.CreateElement("Filters");
-            settingsElement.AppendChild(filtersElement);
-
-            XmlElement filterElement = doc.CreateElement("Filter");
-            filterElement.AppendChild(doc.CreateTextNode(filterComboBox.Text));
-            filtersElement.AppendChild(filterElement);
-
-            doc.Save(GetSettingsFilePath());
         }
 
         private void ApplyFilters()

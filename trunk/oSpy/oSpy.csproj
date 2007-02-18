@@ -55,6 +55,7 @@
     <Compile Include="CaptureForm.Designer.cs">
       <DependentUpon>CaptureForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Configuration\ConfigManager.cs" />
     <Compile Include="Configuration\ParserConfigDialog.cs">
       <SubType>Form</SubType>
     </Compile>
