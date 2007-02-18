@@ -29,7 +29,140 @@ using oSpy.Net;
 namespace oSpy.Parser
 {
     [Serializable()]
-    public class MSNP2PMessage : VisualTransaction
+    public abstract class MSNSessionMessage : VisualTransaction
+    {
+        protected static Dictionary<UInt32, MSNSLPCall> sidToCall = new Dictionary<UInt32, MSNSLPCall>();
+        protected static Dictionary<string, MSNSLPCall> cidToCall = new Dictionary<string, MSNSLPCall>();
+
+        public MSNSessionMessage(int index, PacketDirection direction, DateTime startTime)
+            : base(index, direction, startTime)
+        {
+        }
+
+        public MSNSessionMessage(SerializationInfo info, StreamingContext ctx)
+            : base(info, ctx)
+        {
+        }
+
+        public override void SessionsCreated()
+        {
+            HeaderRowsPerCol = 5;
+
+            if (ContainsSLP())
+            {
+                PostProcessSLP();
+            }
+            else
+            {
+                PostProcessData();
+            }
+        }
+
+        protected abstract bool ContainsSLP();
+
+        protected abstract string GetSLPData();
+
+        protected virtual void PostProcessSLP()
+        {
+            MSNSLPCall call = null;
+            string str;
+
+            str = GetSLPData();
+            if (str != null)
+            {
+                BodyText = str;
+
+                string[] firstLineAndRest = str.Split(lineDelimiters, 2, StringSplitOptions.None);
+
+                Dictionary<string, string> slpHeaderFields, sessionHeaderFields;
+                string slpBody, sessionBody;
+
+                ParseHTTPStyle(firstLineAndRest[1], out slpHeaderFields, out slpBody);
+                ParseHTTPStyle(slpBody, out sessionHeaderFields, out sessionBody);
+
+                if (slpHeaderFields.ContainsKey("CALL-ID") &&
+                    sessionHeaderFields.ContainsKey("SESSIONID"))
+                {
+                    string cid = slpHeaderFields["CALL-ID"];
+                    UInt32 sid = Convert.ToUInt32(sessionHeaderFields["SESSIONID"]);
+
+                    if (cidToCall.ContainsKey(cid))
+                    {
+                        call = cidToCall[cid];
+                    }
+                    else
+                    {
+                        call = new MSNSLPCall(cid);
+                        cidToCall[cid] = call;
+                        sidToCall[sid] = call;
+                    }
+                }
+            }
+
+            if (call != null)
+                ContextID = call.CallID;
+        }
+
+        protected virtual void PostProcessData()
+        {
+        }
+
+        protected static int unknownImgCount = 0;
+
+        protected static string[] lineDelimiters = new string[] { "\r\n", "\n" };
+        protected static string[] dblLineDelimiters = new string[] { "\r\n\r\n", "\n\n" };
+
+        private void ParseHTTPStyle(string str,
+                                    out Dictionary<string, string> headerFields,
+                                    out string body)
+        {
+
+            string[] headersAndBody = str.Split(dblLineDelimiters, 2, StringSplitOptions.None);
+
+            string[] headerLines = headersAndBody[0].Split(lineDelimiters, StringSplitOptions.RemoveEmptyEntries);
+
+            headerFields = new Dictionary<string, string>(headerLines.Length);
+            foreach (string line in headerLines)
+            {
+                string[] keyValue = line.Split(new char[] { ':' }, 2);
+                if (keyValue.Length > 1)
+                    headerFields[keyValue[0].ToUpper()] = keyValue[1].TrimStart();
+            }
+
+            if (headersAndBody.Length > 1)
+                body = headersAndBody[1];
+            else
+                body = "";
+        }
+    }
+
+    [Serializable()]
+    public class MSNSLPMessage : MSNSessionMessage
+    {
+        public MSNSLPMessage(int index, PacketDirection direction, DateTime startTime, string slpData)
+            : base(index, direction, startTime)
+        {
+            BodyText = slpData;
+        }
+
+        public MSNSLPMessage(SerializationInfo info, StreamingContext ctx)
+            : base(info, ctx)
+        {
+        }
+
+        protected override bool ContainsSLP()
+        {
+            return true;
+        }
+
+        protected override string GetSLPData()
+        {
+            return BodyText;
+        }
+    }
+
+    [Serializable()]
+    public class MSNP2PMessage : MSNSessionMessage
     {
         private UInt32 messageID;
         public UInt32 MessageID
@@ -97,8 +230,6 @@ namespace oSpy.Parser
             }
         }
 
-        protected static Dictionary<string, MSNSLPCall> cidToCall = new Dictionary<string, MSNSLPCall>();
-        protected static Dictionary<UInt32, MSNSLPCall> sidToCall = new Dictionary<UInt32, MSNSLPCall>();
         protected static Dictionary<UInt32, MemoryStream> previewData = new Dictionary<UInt32, MemoryStream>();
 
         public MSNP2PMessage(int index, PacketDirection direction, DateTime startTime,
@@ -165,124 +296,68 @@ namespace oSpy.Parser
             AddHeaderField("AckedDataSize", ackedDataSize);
         }
 
-        public override void SessionsCreated()
+        protected override bool ContainsSLP()
         {
-            string str;
-            int n;
+            return (sessionID == 0);
+        }
 
-            HeaderRowsPerCol = 5;
+        protected override string GetSLPData()
+        {
+            string str = null;
 
-            MSNSLPCall call = null;
-
-            if (sessionID == 0)
+            byte[] bytes = PreviewData.ToArray();
+            if (bytes.Length > 0)
             {
-                byte[] bytes = PreviewData.ToArray();
-                if (bytes.Length > 0)
+                str = StaticUtils.DecodeUTF8(bytes);
+                if (str[str.Length - 1] == '\0')
                 {
-                    str = StaticUtils.DecodeUTF8(bytes);
-                    if (str[str.Length - 1] == '\0')
-                    {
-                        str = str.Substring(0, str.Length - 1);
-                        str += "\\0";
-                    }
-
-                    BodyText = str;
-
-                    string[] firstLineAndRest = str.Split(lineDelimiters, 2, StringSplitOptions.None);
-
-                    Dictionary<string, string> slpHeaderFields, sessionHeaderFields;
-                    string slpBody, sessionBody;
-
-                    ParseHTTPStyle(firstLineAndRest[1], out slpHeaderFields, out slpBody);
-                    ParseHTTPStyle(slpBody, out sessionHeaderFields, out sessionBody);
-
-                    if (slpHeaderFields.ContainsKey("CALL-ID") &&
-                        sessionHeaderFields.ContainsKey("SESSIONID"))
-                    {
-                        string cid = slpHeaderFields["CALL-ID"];
-                        UInt32 sid = Convert.ToUInt32(sessionHeaderFields["SESSIONID"]);
-
-                        if (cidToCall.ContainsKey(cid))
-                        {
-                            call = cidToCall[cid];
-                        }
-                        else
-                        {
-                            call = new MSNSLPCall(cid);
-                            cidToCall[cid] = call;
-                            sidToCall[sid] = call;
-                        }
-                    }
+                    str = str.Substring(0, str.Length - 1);
+                    str += "\\0";
                 }
             }
-            else
+
+            return str;
+        }
+
+        protected override void PostProcessData()
+        {
+            MSNSLPCall call = null;
+
+            if (sidToCall.ContainsKey(sessionID))
             {
-                if (sidToCall.ContainsKey(sessionID))
+                call = sidToCall[sessionID];
+            }
+
+            if (transferred > 0)
+            {
+                int n = (int)transferred;
+                if (n > 128)
+                    n = 128;
+
+                byte[] data = new byte[n];
+                PreviewData.Position = (long)initialOffset;
+                PreviewData.Read(data, 0, data.Length);
+
+                int remaining = 0;
+                if ((int)transferred > data.Length)
+                    remaining = (int)transferred - data.Length;
+
+                SetBodyFromTruncatedPreviewData(data, remaining);
+
+                if (flags == 0x20 && initialOffset + transferred >= dataSize)
                 {
-                    call = sidToCall[sessionID];
-                }
+                    PreviewData.Position = 0;
 
-                if (transferred > 0)
-                {
-                    n = (int)transferred;
-                    if (n > 128)
-                        n = 128;
-
-                    byte[] data = new byte[n];
-                    PreviewData.Position = (long) initialOffset;
-                    PreviewData.Read(data, 0, data.Length);
-
-                    int remaining = 0;
-                    if ((int)transferred > data.Length)
-                        remaining = (int)transferred - data.Length;
-
-                    SetBodyFromTruncatedPreviewData(data, remaining);
-
-                    if (flags == 0x20 && initialOffset + transferred >= dataSize)
+                    try
                     {
-                        PreviewData.Position = 0;
-
-                        try
-                        {
-                            PreviewImage = new Bitmap(PreviewData);
-                        }
-                        catch (ArgumentException) {}
+                        PreviewImage = new Bitmap(PreviewData);
                     }
+                    catch (ArgumentException) { }
                 }
             }
 
             if (call != null)
-            {
                 ContextID = call.CallID;
-            }
-        }
-
-        protected static int unknownImgCount = 0;
-
-        protected static string[] lineDelimiters = new string[] { "\r\n", "\n" };
-        protected static string[] dblLineDelimiters = new string[] { "\r\n\r\n", "\n\n" };
-
-        private void ParseHTTPStyle(string str,
-                                    out Dictionary<string, string> headerFields,
-                                    out string body)
-        {
-
-            string[] headersAndBody = str.Split(dblLineDelimiters, 2, StringSplitOptions.None);
-
-            string[] headerLines = headersAndBody[0].Split(lineDelimiters, StringSplitOptions.RemoveEmptyEntries);
-
-            headerFields = new Dictionary<string, string>(headerLines.Length);
-            foreach (string line in headerLines)
-            {
-                string[] keyValue = line.Split(new char[] { ':' }, 2);
-                if (keyValue.Length > 1)
-                    headerFields[keyValue[0].ToUpper()] = keyValue[1].TrimStart();
-            }
-
-            if (headersAndBody.Length > 1)
-                body = headersAndBody[1];
-            else
-                body = "";
         }
     }
 
@@ -386,7 +461,7 @@ namespace oSpy.Parser
 
         public override VisualTransaction[] GetTransactions(IPSession session)
         {
-            List<MSNP2PMessage> messages = new List<MSNP2PMessage>();
+            List<MSNSessionMessage> messages = new List<MSNSessionMessage>();
             Dictionary<UInt32, MSNP2PMessage> messageFromId = new Dictionary<UInt32, MSNP2PMessage>();
 
             foreach (TransactionNode node in session.Nodes)
@@ -434,14 +509,14 @@ namespace oSpy.Parser
                             maxPreview = 131072;
                         }
 
-                        if (chunkSize > 0 && msg.Transferred < (ulong) maxPreview)
+                        if (chunkSize > 0 && msg.Transferred < (ulong)maxPreview)
                         {
                             TransactionNode content = chunk.FindChild("Content");
-                            string fieldName = (msg.SessionID != 0) ? "Raw" : "MSNSLP";
-                            byte[] bytes = (byte[])content.Fields[fieldName];
+                            //string fieldName = (msg.SessionID != 0) ? "Raw" : "MSNSLP";
+                            byte[] bytes = (byte[])content.Fields[content.FieldNames[0]];
 
                             int n = bytes.Length;
-                            int max = maxPreview - (int) msg.Transferred;
+                            int max = maxPreview - (int)msg.Transferred;
                             if (n > max)
                                 n = max;
 
@@ -451,6 +526,17 @@ namespace oSpy.Parser
                         msg.EndTime = chunk.EndTime;
 
                         msg.Transferred += chunkSize;
+                    }
+                    else
+                    {
+                        TransactionNode bodyNode = node.FindChild("Payload");
+                        if (bodyNode != null && bodyNode.Fields.ContainsKey("MSNSLP"))
+                        {
+                            MSNSLPMessage msg = new MSNSLPMessage(bodyNode.Index,
+                                bodyNode.GetSlicesForFieldPath("MSNSLP")[0].Packet.Direction,
+                                bodyNode.StartTime, (string) bodyNode["MSNSLP"]);
+                            messages.Add(msg);
+                        }
                     }
                 }
             }
