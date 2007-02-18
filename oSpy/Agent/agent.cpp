@@ -20,6 +20,7 @@
 #include "logging.h"
 #include "hooks.h"
 #include "util.h"
+#include "overlapped.h"
 
 #ifdef _MANAGED
 #pragma managed(push, off)
@@ -71,8 +72,8 @@ DllMain(HMODULE hModule,
 		{
 			// Initialize SHM logger
 			message_logger_init();
-
 			CUtil::Init();
+			//COverlappedManager::Init();
 
 			hook_winsock();
 			hook_secur32();
