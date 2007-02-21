@@ -39,18 +39,16 @@ namespace oSpy
             MemoryStream memStream = new MemoryStream();
             BZip2OutputStream bzStream = new BZip2OutputStream(memStream);
             doc.Save(bzStream);
-            bzStream.Flush();
-            byte[] bzBytes = memStream.ToArray();
             bzStream.Close();
             memStream.Close();
 
             try
             {
                 oSpyRepository.RepositoryService svc = new oSpy.oSpyRepository.RepositoryService();
-                svc.SubmitTrace(nameTextBox.Text, descTextBox.Text, bzBytes);
+                string permalink = svc.SubmitTrace(nameTextBox.Text, descTextBox.Text, memStream.ToArray());
 
-                MessageBox.Show("Visualization submitted successfully!\nThanks for sharing!", "Success",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ShareSuccessForm frm = new ShareSuccessForm(permalink);
+                frm.ShowDialog(this);
 
                 Close();
             }

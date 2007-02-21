@@ -101,6 +101,12 @@
     <Compile Include="ProgressForm.Designer.cs">
       <DependentUpon>ProgressForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ShareSuccessForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ShareSuccessForm.Designer.cs">
+      <DependentUpon>ShareSuccessForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="SoftwallForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -201,6 +207,10 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ShareSuccessForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ShareSuccessForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="SoftwallForm.resx">
       <SubType>Designer</SubType>
