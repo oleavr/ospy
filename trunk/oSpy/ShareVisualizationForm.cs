@@ -34,15 +34,20 @@ namespace oSpy
 
         private void submitBtn_Click(object sender, EventArgs e)
         {
-            MemoryStream memStream = new MemoryStream();
-            BZip2OutputStream compStream = new BZip2OutputStream(memStream);
             XmlDocument doc = convForm.ExportToXml();
-            doc.Save(compStream);
+
+            MemoryStream memStream = new MemoryStream();
+            BZip2OutputStream bzStream = new BZip2OutputStream(memStream);
+            doc.Save(bzStream);
+            bzStream.Flush();
+            byte[] bzBytes = memStream.ToArray();
+            bzStream.Close();
+            memStream.Close();
 
             try
             {
                 oSpyRepository.RepositoryService svc = new oSpy.oSpyRepository.RepositoryService();
-                svc.SubmitTrace(nameTextBox.Text, descTextBox.Text, memStream.ToArray());
+                svc.SubmitTrace(nameTextBox.Text, descTextBox.Text, bzBytes);
 
                 MessageBox.Show("Visualization submitted successfully!\nThanks for sharing!", "Success",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
