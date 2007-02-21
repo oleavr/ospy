@@ -27,6 +27,7 @@ extern CHookContext g_connectHookContext;
 extern CHookContext g_encryptMessageHookContext;
 extern CHookContext g_decryptMessageHookContext;
 
+void hook_kernel32();
 void hook_winsock();
 void hook_secur32();
 void hook_crypt();
