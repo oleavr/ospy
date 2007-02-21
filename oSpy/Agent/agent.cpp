@@ -75,6 +75,7 @@ DllMain(HMODULE hModule,
 			CUtil::Init();
 			//COverlappedManager::Init();
 
+			//hook_kernel32();
 			hook_winsock();
 			hook_secur32();
 			hook_crypt();
