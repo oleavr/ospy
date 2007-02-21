@@ -22,5 +22,15 @@ namespace oSpy.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.WebServiceUrl)]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://projects.collabora.co.uk/~oleavr/oSpy/repository/api.php")]
+        public string oSpy_repository_RepositoryService {
+            get {
+                return ((string)(this["oSpy_repository_RepositoryService"]));
+            }
+        }
     }
 }
