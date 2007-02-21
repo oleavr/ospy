@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:tns="urn:Repository" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns="http://schemas.xmlsoap.org/wsdl/" name="Repository" targetNamespace="urn:Repository" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types xmlns="http://schemas.xmlsoap.org/wsdl/" />
+  <wsdl:message name="SubmitTraceRequest">
+    <wsdl:part name="name" type="xsd:string" />
+    <wsdl:part name="email" type="xsd:string" />
+    <wsdl:part name="description" type="xsd:string" />
+    <wsdl:part name="tags" type="xsd:string" />
+    <wsdl:part name="data" type="xsd:base64Binary" />
+  </wsdl:message>
+  <wsdl:message name="SubmitTraceResponse">
+    <wsdl:part name="result" type="xsd:boolean" />
+  </wsdl:message>
+  <wsdl:portType name="RepositoryPort">
+    <wsdl:operation name="SubmitTrace">
+      <wsdl:input message="tns:SubmitTraceRequest" />
+      <wsdl:output message="tns:SubmitTraceResponse" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="RepositoryBinding" type="tns:RepositoryPort">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="rpc" />
+    <wsdl:operation name="SubmitTrace">
+      <soap:operation soapAction="http://schemas.xmlsoap.org/soap/envelope/#repository#SubmitTrace" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://schemas.xmlsoap.org/soap/envelope/" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://schemas.xmlsoap.org/soap/envelope/" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="RepositoryService">
+    <documentation />
+    <wsdl:port name="RepositoryPort" binding="tns:RepositoryBinding">
+      <soap:address location="http://projects.collabora.co.uk/~oleavr/oSpy/repository/api.php" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

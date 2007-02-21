@@ -45,6 +45,9 @@ namespace oSpy
             this.sessions = sessions;
 
             multiStreamView.TransactionDoubleClick += new TransactionDoubleClickHandler(multiStreamView_TransactionDoubleClick);
+
+            exportToXMLToolStripMenuItem.Enabled = false;
+            submitToRepositoryToolStripMenuItem.Enabled = false;
         }
 
         private void multiStreamView_Click(object sender, EventArgs e)
@@ -143,6 +146,9 @@ namespace oSpy
 
                 multiStreamView.Visible = true;
                 multiStreamView.Focus();
+
+                exportToXMLToolStripMenuItem.Enabled = (visSessions.Count > 0);
+                submitToRepositoryToolStripMenuItem.Enabled = (visSessions.Count > 0);
             }
         }
 
@@ -151,6 +157,18 @@ namespace oSpy
             if (exportToXmlFileDialog.ShowDialog() != DialogResult.OK)
                 return;
 
+            XmlDocument doc = ExportToXml();
+            doc.Save(exportToXmlFileDialog.FileName);
+        }
+
+        private void submitToRepositoryToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SubmitVisualizationForm frm = new SubmitVisualizationForm(this);
+            frm.ShowDialog(this);
+        }
+
+        public XmlDocument ExportToXml()
+        {
             XmlDocument doc = new XmlDocument();
 
             XmlElement streamsElement = doc.CreateElement("Streams");
@@ -203,7 +221,7 @@ namespace oSpy
                 }
             }
 
-            doc.Save(exportToXmlFileDialog.FileName);
+            return doc;
         }
     }
 }
