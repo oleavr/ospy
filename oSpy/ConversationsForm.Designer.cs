@@ -36,8 +36,8 @@ namespace oSpy
             this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
             this.loadToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.exportToXMLToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
+            this.exportToXMLToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.submitToRepositoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
             this.closeToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
@@ -93,20 +93,20 @@ namespace oSpy
             // newToolStripMenuItem
             // 
             this.newToolStripMenuItem.Name = "newToolStripMenuItem";
-            this.newToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
+            this.newToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
             this.newToolStripMenuItem.Text = "&New...";
             this.newToolStripMenuItem.Click += new System.EventHandler(this.newToolStripMenuItem_Click);
             // 
             // toolStripMenuItem3
             // 
             this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-            this.toolStripMenuItem3.Size = new System.Drawing.Size(191, 6);
+            this.toolStripMenuItem3.Size = new System.Drawing.Size(161, 6);
             this.toolStripMenuItem3.Visible = false;
             // 
             // loadToolStripMenuItem
             // 
             this.loadToolStripMenuItem.Name = "loadToolStripMenuItem";
-            this.loadToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
+            this.loadToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
             this.loadToolStripMenuItem.Text = "&Open...";
             this.loadToolStripMenuItem.Visible = false;
             this.loadToolStripMenuItem.Click += new System.EventHandler(this.loadToolStripMenuItem_Click);
@@ -114,39 +114,39 @@ namespace oSpy
             // saveToolStripMenuItem
             // 
             this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            this.saveToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
             this.saveToolStripMenuItem.Text = "&Save...";
             this.saveToolStripMenuItem.Visible = false;
             this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
             // 
-            // exportToXMLToolStripMenuItem
-            // 
-            this.exportToXMLToolStripMenuItem.Name = "exportToXMLToolStripMenuItem";
-            this.exportToXMLToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
-            this.exportToXMLToolStripMenuItem.Text = "Export to XML...";
-            this.exportToXMLToolStripMenuItem.Click += new System.EventHandler(this.exportToXMLToolStripMenuItem_Click);
-            // 
             // toolStripMenuItem2
             // 
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(191, 6);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(161, 6);
+            // 
+            // exportToXMLToolStripMenuItem
+            // 
+            this.exportToXMLToolStripMenuItem.Name = "exportToXMLToolStripMenuItem";
+            this.exportToXMLToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.exportToXMLToolStripMenuItem.Text = "Export to XML...";
+            this.exportToXMLToolStripMenuItem.Click += new System.EventHandler(this.exportToXMLToolStripMenuItem_Click);
             // 
             // submitToRepositoryToolStripMenuItem
             // 
             this.submitToRepositoryToolStripMenuItem.Name = "submitToRepositoryToolStripMenuItem";
-            this.submitToRepositoryToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
-            this.submitToRepositoryToolStripMenuItem.Text = "Submit to repository...";
+            this.submitToRepositoryToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.submitToRepositoryToolStripMenuItem.Text = "Share...";
             this.submitToRepositoryToolStripMenuItem.Click += new System.EventHandler(this.submitToRepositoryToolStripMenuItem_Click);
             // 
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(191, 6);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(161, 6);
             // 
             // closeToolStripMenuItem1
             // 
             this.closeToolStripMenuItem1.Name = "closeToolStripMenuItem1";
-            this.closeToolStripMenuItem1.Size = new System.Drawing.Size(194, 22);
+            this.closeToolStripMenuItem1.Size = new System.Drawing.Size(164, 22);
             this.closeToolStripMenuItem1.Text = "&Close";
             this.closeToolStripMenuItem1.Click += new System.EventHandler(this.closeToolStripMenuItem1_Click);
             // 

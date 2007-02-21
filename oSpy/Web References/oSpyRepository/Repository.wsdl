@@ -3,13 +3,11 @@
   <wsdl:types xmlns="http://schemas.xmlsoap.org/wsdl/" />
   <wsdl:message name="SubmitTraceRequest">
     <wsdl:part name="name" type="xsd:string" />
-    <wsdl:part name="email" type="xsd:string" />
     <wsdl:part name="description" type="xsd:string" />
-    <wsdl:part name="tags" type="xsd:string" />
     <wsdl:part name="data" type="xsd:base64Binary" />
   </wsdl:message>
   <wsdl:message name="SubmitTraceResponse">
-    <wsdl:part name="result" type="xsd:boolean" />
+    <wsdl:part name="permalink" type="xsd:string" />
   </wsdl:message>
   <wsdl:portType name="RepositoryPort">
     <wsdl:operation name="SubmitTrace">
