@@ -107,11 +107,11 @@
     <Compile Include="SoftwallForm.Designer.cs">
       <DependentUpon>SoftwallForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="SubmitVisualizationForm.cs">
+    <Compile Include="ShareVisualizationForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="SubmitVisualizationForm.Designer.cs">
-      <DependentUpon>SubmitVisualizationForm.cs</DependentUpon>
+    <Compile Include="ShareVisualizationForm.Designer.cs">
+      <DependentUpon>ShareVisualizationForm.cs</DependentUpon>
     </Compile>
     <Compile Include="TimelineNavigatorForm.cs">
       <SubType>Form</SubType>
@@ -206,9 +206,9 @@
       <SubType>Designer</SubType>
       <DependentUpon>SoftwallForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="SubmitVisualizationForm.resx">
+    <EmbeddedResource Include="ShareVisualizationForm.resx">
       <SubType>Designer</SubType>
-      <DependentUpon>SubmitVisualizationForm.cs</DependentUpon>
+      <DependentUpon>ShareVisualizationForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="TextView.resx">
       <SubType>Designer</SubType>

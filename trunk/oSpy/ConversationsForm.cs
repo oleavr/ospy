@@ -163,7 +163,7 @@ namespace oSpy
 
         private void submitToRepositoryToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            SubmitVisualizationForm frm = new SubmitVisualizationForm(this);
+            ShareVisualizationForm frm = new ShareVisualizationForm(this);
             frm.ShowDialog(this);
         }
 

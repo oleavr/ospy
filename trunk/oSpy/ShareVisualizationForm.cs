@@ -12,13 +12,13 @@ using oSpy.Configuration;
 
 namespace oSpy
 {
-    public partial class SubmitVisualizationForm : Form
+    public partial class ShareVisualizationForm : Form
     {
         protected ConfigContext config;
 
         protected ConversationsForm convForm;
 
-        public SubmitVisualizationForm(ConversationsForm convForm)
+        public ShareVisualizationForm(ConversationsForm convForm)
         {
             InitializeComponent();
 
@@ -28,29 +28,12 @@ namespace oSpy
 
             if (config.HasSetting("Name"))
                 nameTextBox.Text = (string) config["Name"];
-            if (config.HasSetting("E-mail"))
-                emailTextBox.Text = (string) config["E-mail"];
 
             UpdateControls();
         }
 
-        private void tagsAddBtn_Click(object sender, EventArgs e)
-        {
-            tagsListBox.Items.Add(addTagTextBox.Text);
-        }
-
         private void submitBtn_Click(object sender, EventArgs e)
         {
-            oSpyRepository.RepositoryService svc = new oSpy.oSpyRepository.RepositoryService();
-
-            StringBuilder tagsBuilder = new StringBuilder();
-            foreach (string tag in tagsListBox.Items)
-            {
-                if (tagsBuilder.Length > 0)
-                    tagsBuilder.Append(":");
-                tagsBuilder.Append(tag);
-            }
-
             MemoryStream memStream = new MemoryStream();
             BZip2OutputStream compStream = new BZip2OutputStream(memStream);
             XmlDocument doc = convForm.ExportToXml();
@@ -58,10 +41,10 @@ namespace oSpy
 
             try
             {
-                svc.SubmitTrace(nameTextBox.Text, emailTextBox.Text, descTextBox.Text,
-                    tagsBuilder.ToString(), memStream.ToArray());
+                oSpyRepository.RepositoryService svc = new oSpy.oSpyRepository.RepositoryService();
+                svc.SubmitTrace(nameTextBox.Text, descTextBox.Text, memStream.ToArray());
 
-                MessageBox.Show("Visualization submitted successfully!", "Success",
+                MessageBox.Show("Visualization submitted successfully!\nThanks for sharing!", "Success",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 Close();
@@ -73,23 +56,12 @@ namespace oSpy
             }
         }
 
-        private void tagsDelBtn_Click(object sender, EventArgs e)
-        {
-            if (tagsListBox.SelectedIndex >= 0)
-                tagsListBox.Items.RemoveAt(tagsListBox.SelectedIndex);
-        }
-
         private void cancelBtn_Click(object sender, EventArgs e)
         {
             Close();
         }
 
         private void nameTextBox_TextChanged(object sender, EventArgs e)
-        {
-            UpdateControls();
-        }
-
-        private void emailTextBox_TextChanged(object sender, EventArgs e)
         {
             UpdateControls();
         }
@@ -105,10 +77,6 @@ namespace oSpy
 
             if (nameTextBox.Text.Length == 0)
                 enabled = false;
-            if (emailTextBox.Text.Length == 0)
-                enabled = false;
-            if (descTextBox.Text.Length == 0)
-                enabled = false;
             if (descTextBox.Text.Length == 0)
                 enabled = false;
 
@@ -120,7 +88,6 @@ namespace oSpy
             e.Cancel = false;
 
             config["Name"] = nameTextBox.Text;
-            config["E-mail"] = emailTextBox.Text;
         }
     }
 }
