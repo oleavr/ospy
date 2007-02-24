@@ -1480,7 +1480,7 @@ namespace oSpy
 
             if (!viewInternalDebugToolStripMenuItem.Checked)
             {
-                builder.AppendFormat("(NOT FunctionName = 'MsnmsgrDebug')");
+                builder.AppendFormat("(NOT FunctionName LIKE '*Debug*')");
             }
 
             if (!viewWinCryptToolStripMenuItem.Checked)

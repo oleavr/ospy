@@ -32,7 +32,9 @@ typedef enum {
     SIGNATURE_HTTP_REQUEST_FETCHED,
     SIGNATURE_ACTIVESYNC_DEBUG,
     SIGNATURE_WCESMGR_DEBUG2,
+    SIGNATURE_WCESMGR_DEBUG2_ALTERNATE,
     SIGNATURE_WCESMGR_DEBUG3,
+    SIGNATURE_WCESMGR_DEBUG3_ALTERNATE,
     SIGNATURE_WCESCOMM_DEBUG2,
     SIGNATURE_WCESCOMM_DEBUG2_ALTERNATE,
     SIGNATURE_WCESCOMM_DEBUG3,
@@ -116,6 +118,19 @@ static FunctionSignature as_signatures[] = {
         "33 FF",                // xor     edi, edi
     },
 
+	// SIGNATURE_WCESMGR_DEBUG2_ALTERNATE
+    {
+        "wcesmgr.exe",
+		0,
+		"55"					// push    ebp
+		"8B EC"					// mov     ebp, esp
+		"A1 ?? ?? ?? ??"		// mov     eax, dword_5C6668
+		"53"					// push    ebx
+		"33 DB"					// xor     ebx, ebx
+		"85 45 0C"				// test    [ebp+arg_4], eax
+		"74 51"					// jz      short loc_57FF18
+    },
+
     // SIGNATURE_WCESMGR_DEBUG3
     {
         "wcesmgr.exe",
@@ -126,6 +141,18 @@ static FunctionSignature as_signatures[] = {
         "57"                    // push    edi
         "33 FF"                 // xor     edi, edi
         "39 B8 08 01 00 00"     // cmp     [eax+108h], edi
+    },
+
+	// SIGNATURE_WCESMGR_DEBUG3_ALTERNATE
+    {
+        "wcesmgr.exe",
+		0,
+        "55"                    // push    ebp
+        "8B EC"                 // mov     ebp, esp
+        "8B 45 08"              // mov     eax, [ebp+arg_0]
+        "53"                    // push    ebx
+        "33 DB"					// xor     ebx, ebx
+        "39 98 08 01 00 00"		// cmp     [eax+108h], ebx
     },
 
     // SIGNATURE_WCESCOMM_DEBUG2
@@ -660,13 +687,25 @@ hook_activesync()
         if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESMGR_DEBUG2],
                                             wcesmgr_debug_2, NULL, &error))
         {
-            LOG_OVERRIDE_ERROR("SIGNATURE_WCESMGR_DEBUG2", error);
+			sspy_free(error);
+
+			if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESMGR_DEBUG2_ALTERNATE],
+												wcesmgr_debug_2, NULL, &error))
+			{
+	            LOG_OVERRIDE_ERROR("SIGNATURE_WCESMGR_DEBUG2", error);
+			}
         }
 
         if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESMGR_DEBUG3],
                                             wcesmgr_debug_3, NULL, &error))
         {
-            LOG_OVERRIDE_ERROR("SIGNATURE_WCESMGR_DEBUG3", error);
+			sspy_free(error);
+
+			if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESMGR_DEBUG3_ALTERNATE],
+												wcesmgr_debug_3, NULL, &error))
+			{
+	            LOG_OVERRIDE_ERROR("SIGNATURE_WCESMGR_DEBUG3", error);
+			}
         }
     }
     else if (cur_process_is("rapimgr.exe"))
