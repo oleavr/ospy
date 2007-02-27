@@ -52,6 +52,8 @@ class DebugExtractor:
         i = 0
         last_prog_update = 0
 
+        f.write("%s\n" % GetInputFile())
+
         print "Retrieving functions"
         funcs = Functions(*self._range)
 
@@ -59,15 +61,28 @@ class DebugExtractor:
         print "  0%%"
         for ea in funcs:
             func_name = GetFunctionName(ea)
+            chunks = []
             names = []
-            func = idaapi.get_func(ea)
-            limits = idaapi.area_t()
-            idaapi.get_func_limits(func, limits)
 
+            func = idaapi.get_func(ea)
             iter = func_item_iterator_t(func)
+
+            ea = iter.current()
+            prev_chunknum = idaapi.get_func_chunknum(func, ea)
+            cur_chunk = [ ea, ea ]
+            chunks.append(cur_chunk)
 
             while True:
                 ea = iter.current()
+                cur_chunknum = idaapi.get_func_chunknum(func, ea)
+
+                if cur_chunknum != prev_chunknum:
+                    prev_chunknum = cur_chunknum
+                    cur_chunk = [ ea, ea ]
+                    chunks.append(cur_chunk)
+                else:
+                    cur_chunk[1] = ea
+
                 name = GetMnem(ea)
                 for j in xrange(10):
                     op_type = GetOpType(ea, j)
@@ -88,8 +103,9 @@ class DebugExtractor:
 
             if len(names) == 1:
                 real_func_name = self._scrub_func_name(names[0])
-                f.write( "0x%x;0x%x;%s\n" % \
-                    (limits.startEA, limits.endEA, real_func_name))
+                for start_addr, end_addr in chunks:
+                    f.write( "0x%x;0x%x;%s\n" % \
+                        (start_addr, end_addr, real_func_name))
 
             i += 1
 
@@ -142,9 +158,10 @@ class DebugExtractor:
                or (b >= 97 and b <= 122) or b == 95 or b == 126
 
 
-filename = AskFile(1, "*.osym", "Choose a filename for the result:")
-if filename != None:
-    range = (0x0, 0xFFFFFFFF)
-    extractor = DebugExtractor(range)
-    extractor.extract(filename)
+if __name__ == "__main__":
+    filename = AskFile(1, "*.osym", "Choose a filename for the result:")
+    if filename != None:
+        range = (0x0, 0xFFFFFFFF)
+        extractor = DebugExtractor(range)
+        extractor.extract(filename)
 
