@@ -30,10 +30,10 @@
         {
             this.components = new System.ComponentModel.Container();
             this.btListBox = new System.Windows.Forms.ListBox();
-            this.closeBtn = new System.Windows.Forms.Button();
-            this.goToInIdaBtn = new System.Windows.Forms.Button();
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.closeBtn = new System.Windows.Forms.Button();
+            this.goToInIdaBtn = new System.Windows.Forms.Button();
             this.contextMenuStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -46,14 +46,28 @@
             this.btListBox.FormattingEnabled = true;
             this.btListBox.Location = new System.Drawing.Point(12, 12);
             this.btListBox.Name = "btListBox";
-            this.btListBox.Size = new System.Drawing.Size(161, 225);
+            this.btListBox.Size = new System.Drawing.Size(289, 225);
             this.btListBox.TabIndex = 0;
+            // 
+            // contextMenuStrip
+            // 
+            this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.copyToolStripMenuItem});
+            this.contextMenuStrip.Name = "contextMenuStrip";
+            this.contextMenuStrip.Size = new System.Drawing.Size(111, 26);
+            // 
+            // copyToolStripMenuItem
+            // 
+            this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
+            this.copyToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.copyToolStripMenuItem.Text = "&Copy";
+            this.copyToolStripMenuItem.Click += new System.EventHandler(this.copyToolStripMenuItem_Click);
             // 
             // closeBtn
             // 
             this.closeBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.closeBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.closeBtn.Location = new System.Drawing.Point(233, 257);
+            this.closeBtn.Location = new System.Drawing.Point(361, 257);
             this.closeBtn.Name = "closeBtn";
             this.closeBtn.Size = new System.Drawing.Size(75, 23);
             this.closeBtn.TabIndex = 1;
@@ -64,7 +78,7 @@
             // goToInIdaBtn
             // 
             this.goToInIdaBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.goToInIdaBtn.Location = new System.Drawing.Point(179, 12);
+            this.goToInIdaBtn.Location = new System.Drawing.Point(307, 12);
             this.goToInIdaBtn.Name = "goToInIdaBtn";
             this.goToInIdaBtn.Size = new System.Drawing.Size(131, 28);
             this.goToInIdaBtn.TabIndex = 2;
@@ -72,27 +86,13 @@
             this.goToInIdaBtn.UseVisualStyleBackColor = true;
             this.goToInIdaBtn.Click += new System.EventHandler(this.goToInIdaBtn_Click);
             // 
-            // contextMenuStrip
-            // 
-            this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.copyToolStripMenuItem});
-            this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(153, 48);
-            // 
-            // copyToolStripMenuItem
-            // 
-            this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
-            this.copyToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.copyToolStripMenuItem.Text = "&Copy";
-            this.copyToolStripMenuItem.Click += new System.EventHandler(this.copyToolStripMenuItem_Click);
-            // 
             // BacktraceForm
             // 
             this.AcceptButton = this.closeBtn;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.closeBtn;
-            this.ClientSize = new System.Drawing.Size(320, 292);
+            this.ClientSize = new System.Drawing.Size(448, 292);
             this.Controls.Add(this.goToInIdaBtn);
             this.Controls.Add(this.closeBtn);
             this.Controls.Add(this.btListBox);

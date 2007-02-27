@@ -29,7 +29,8 @@ namespace oSpy
         {
             string line = (string) btListBox.SelectedItem;
             string[] tokens = line.Split(new string[] { "::" }, 2, StringSplitOptions.None);
-            Util.IDA.GoToAddressInIDA(tokens[0], Convert.ToUInt32(tokens[1].Substring(2), 16));
+            string[] subTokens = tokens[1].Split(new char[] { ' ' }, 2);
+            Util.IDA.GoToAddressInIDA(tokens[0], Convert.ToUInt32(subTokens[0].Substring(2), 16));
         }
 
         private void closeBtn_Click(object sender, EventArgs e)
