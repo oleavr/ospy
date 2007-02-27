@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,7 +20,7 @@
 import win32clipboard as clip
 import win32con
 
-def parse_signature(sig):    
+def parse_signature(sig):
     tokens = sig.replace("\r\n", "").replace("\n", "").split("(", 2)
 
     subtokens = tokens[0].split(" ")
@@ -47,14 +47,14 @@ def generate_template(sig, type):
         conv = "__stdcall"
 
     fwidth = len(fn_prefix)
-    
+
     s = "static %s %s\r\n%s" % (ret_type, conv, fn_prefix)
 
     if type == TEMPLATE_CALLED:
         s += "BOOL carry_on,\r\n%*sDWORD ret_addr" % (fwidth, "",)
     else:
         s += "%s retval" % ret_type
-    
+
     for arg in args:
         s += ",\r\n%*s%s" % (fwidth, "", arg)
 
@@ -75,7 +75,7 @@ def generate_template(sig, type):
     s += "}\r\n"
 
     return s
-        
+
 
 clip.OpenClipboard()
 sig = clip.GetClipboardData(win32con.CF_TEXT)
