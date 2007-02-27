@@ -607,14 +607,23 @@ namespace oSpy
                             row.Cells[processNameDataGridViewTextBoxColumn.Index].Value;
                         string callerModName = (string)
                             row.Cells[callerModuleNameDataGridViewTextBoxColumn.Index].Value;
+                        string backTrace = (string)
+                            row.Cells[backtraceDataGridViewTextBoxColumn.Index].Value;
+
+                        string retAddrStr = String.Format("0x{0:x8}", retAddr);
+
+                        string firstBtLine = backTrace.Split(new char[] { '\n' }, 2)[0];
+                        string[] tokens = firstBtLine.Split(new char[] { ' ' }, 2);
+                        if (tokens.Length > 1)
+                            retAddrStr = tokens[1].Substring(1, tokens[1].Length - 2);
 
                         if (procName == callerModName)
                         {
-                            e.Value = String.Format("0x{0:x8}", retAddr);
+                            e.Value = retAddrStr;
                         }
                         else
                         {
-                            e.Value = String.Format("0x{0:x8} [{1}]", retAddr, callerModName);
+                            e.Value = String.Format("{0} [{1}]", retAddrStr, callerModName);
                         }
                     }
 
@@ -1836,8 +1845,8 @@ namespace oSpy
             }
 
             char[] lineSplitChars = new char[] { '\n' };
-            char[] btSepCharsNew = new char[] { ';' };
-            string[] btSepStrsOld = new string[] { "::" };
+            string[] btSepStrs = new string[] { "::" };
+            char[] btSubSepChars = new char[] { ' ' };
 
             foreach (DataRow row in dataSet.Tables[0].Rows)
             {
@@ -1845,25 +1854,46 @@ namespace oSpy
                 if (bt == String.Empty)
                     continue;
 
+                StringBuilder builder = new StringBuilder(bt.Length);
+
+                int i = 0;
                 foreach (string line in bt.Split(lineSplitChars))
                 {
-                    string[] tokens = line.Split(btSepCharsNew);
-                    if (tokens.Length == 1)
-                        tokens = line.Split(btSepStrsOld, StringSplitOptions.None);
-
+                    string[] tokens = line.Split(btSepStrs, 2, StringSplitOptions.None);
                     string moduleName = tokens[0].ToLower();
-                    if ((tokens.Length < 3 || tokens[2] == String.Empty) && symbols.ContainsKey(moduleName))
+                    string[] subTokens = tokens[1].Split(btSubSepChars, 2);
+
+                    string funcName = String.Empty;
+                    if (subTokens.Length == 2)
+                        funcName = subTokens[1].Substring(1, subTokens[1].Length - 2);
+
+                    if (symbols.ContainsKey(moduleName))
                     {
-                        uint offset = Convert.ToUInt32(tokens[1].Substring(2), 16);
+                        uint offset = Convert.ToUInt32(subTokens[0].Substring(2), 16);
 
                         FunctionSymbol sym = symbols[moduleName].FindFunction(offset);
                         if (sym != null)
                         {
-                            MessageBox.Show("found '" + sym.Name + "' for '" + line + "'");
+                            funcName = sym.Name;
                         }
                     }
+
+                    if (i > 0)
+                        builder.Append("\n");
+
+                    string suffix = "";
+                    if (funcName != String.Empty)
+                        suffix = String.Format(" ({0})", funcName);
+
+                    builder.AppendFormat("{0}::{1:x}{2}", tokens[0], subTokens[0], suffix);
+
+                    i++;
                 }
+
+                row["Backtrace"] = builder.ToString();
             }
+
+            dataGridView.Refresh();
 
             MessageBox.Show("Symbols applied successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -1893,8 +1923,8 @@ namespace oSpy
                 {
                     string[] tokens = line.Split(new char[] { ';' });
                     functionSyms.Add(new FunctionSymbol(tokens[2],
-                                                        uint.Parse(tokens[0].Substring(2), System.Globalization.NumberStyles.HexNumber),
-                                                        uint.Parse(tokens[1].Substring(2), System.Globalization.NumberStyles.HexNumber)));
+                                                        Convert.ToUInt32(tokens[0].Substring(2), 16),
+                                                        Convert.ToUInt32(tokens[1].Substring(2), 16)));
                 }
                 else
                 {
@@ -1911,7 +1941,7 @@ namespace oSpy
 
             foreach (FunctionSymbol sym in functionSyms)
             {
-                if (sym.Start >= offset && offset <= sym.End)
+                if (offset >= sym.Start && offset <= sym.End)
                 {
                     return sym;
                 }
