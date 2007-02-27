@@ -1801,5 +1801,151 @@ namespace oSpy
         {
             ApplyFilters();
         }
+
+        private void applydebugSymbolsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string appDir =
+                Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetModules()[0].FullyQualifiedName);
+
+            Dictionary<string, DebugSymbols> symbols = new Dictionary<string, DebugSymbols>();
+            foreach (string filename in Directory.GetFiles(appDir, "*.osym"))
+            {
+                string path = appDir + "\\" + filename;
+
+                DebugSymbols sym;
+
+                try
+                {
+                    sym = new DebugSymbols(filename);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(String.Format("Failed to load {0}: {1}", filename, ex.Message),
+                                                  "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    continue;
+                }
+
+                symbols[sym.Filename.ToLower()] = sym;
+            }
+
+            if (symbols.Count == 0)
+            {
+                MessageBox.Show("No symbols found. Place one or more .osym files in the application directory.",
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            char[] lineSplitChars = new char[] { '\n' };
+            char[] btSepCharsNew = new char[] { ';' };
+            string[] btSepStrsOld = new string[] { "::" };
+
+            foreach (DataRow row in dataSet.Tables[0].Rows)
+            {
+                string bt = (string) row["Backtrace"];
+                if (bt == String.Empty)
+                    continue;
+
+                foreach (string line in bt.Split(lineSplitChars))
+                {
+                    string[] tokens = line.Split(btSepCharsNew);
+                    if (tokens.Length == 1)
+                        tokens = line.Split(btSepStrsOld, StringSplitOptions.None);
+
+                    string moduleName = tokens[0].ToLower();
+                    if ((tokens.Length < 3 || tokens[2] == String.Empty) && symbols.ContainsKey(moduleName))
+                    {
+                        uint offset = Convert.ToUInt32(tokens[1].Substring(2), 16);
+
+                        FunctionSymbol sym = symbols[moduleName].FindFunction(offset);
+                        if (sym != null)
+                        {
+                            MessageBox.Show("found '" + sym.Name + "' for '" + line + "'");
+                        }
+                    }
+                }
+            }
+
+            MessageBox.Show("Symbols applied successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+    }
+
+    public class DebugSymbols
+    {
+        protected string filename;
+        public string Filename
+        {
+            get { return filename; }
+        }
+
+        protected List<FunctionSymbol> functionSyms;
+
+        public DebugSymbols(string path)
+        {
+            functionSyms = new List<FunctionSymbol>();
+
+            TextReader reader = new StreamReader(path);
+
+            int i = 0;
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (i > 0)
+                {
+                    string[] tokens = line.Split(new char[] { ';' });
+                    functionSyms.Add(new FunctionSymbol(tokens[2],
+                                                        uint.Parse(tokens[0].Substring(2), System.Globalization.NumberStyles.HexNumber),
+                                                        uint.Parse(tokens[1].Substring(2), System.Globalization.NumberStyles.HexNumber)));
+                }
+                else
+                {
+                    filename = line;
+                }
+
+                i++;
+            }
+        }
+
+        public FunctionSymbol FindFunction(uint offset)
+        {
+            // Safe slow and stupid for now
+
+            foreach (FunctionSymbol sym in functionSyms)
+            {
+                if (sym.Start >= offset && offset <= sym.End)
+                {
+                    return sym;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    public class FunctionSymbol
+    {
+        protected string name;
+        public string Name
+        {
+            get { return name; }
+        }
+
+        protected uint start;
+        public uint Start
+        {
+            get { return start; }
+        }
+
+        protected uint end;
+        public uint End
+        {
+            get { return end; }
+        }
+
+        public FunctionSymbol(string name, uint start, uint end)
+        {
+            this.name = name;
+            this.start = start;
+            this.end = end;
+        }
     }
 }
