@@ -159,6 +159,8 @@ namespace oSpy
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
+            this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.applydebugSymbolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).BeginInit();
             this.menuStrip.SuspendLayout();
@@ -407,6 +409,7 @@ namespace oSpy
             this.captureToolStripMenuItem,
             this.optionsToolStripMenuItem,
             this.analyzeToolStripMenuItem,
+            this.toolsToolStripMenuItem,
             this.helpToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
@@ -430,38 +433,38 @@ namespace oSpy
             // openMenuItem
             // 
             this.openMenuItem.Name = "openMenuItem";
-            this.openMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.openMenuItem.Size = new System.Drawing.Size(152, 22);
             this.openMenuItem.Text = "&Open...";
             this.openMenuItem.Click += new System.EventHandler(this.openMenuItem_Click);
             // 
             // saveMenuItem
             // 
             this.saveMenuItem.Name = "saveMenuItem";
-            this.saveMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.saveMenuItem.Size = new System.Drawing.Size(152, 22);
             this.saveMenuItem.Text = "&Save...";
             this.saveMenuItem.Click += new System.EventHandler(this.saveMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(120, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(149, 6);
             // 
             // clearMenuItem
             // 
             this.clearMenuItem.Name = "clearMenuItem";
-            this.clearMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.clearMenuItem.Size = new System.Drawing.Size(152, 22);
             this.clearMenuItem.Text = "&Clear";
             this.clearMenuItem.Click += new System.EventHandler(this.clearMenuItem_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(120, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(149, 6);
             // 
             // exitMenuItem
             // 
             this.exitMenuItem.Name = "exitMenuItem";
-            this.exitMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.exitMenuItem.Size = new System.Drawing.Size(152, 22);
             this.exitMenuItem.Text = "E&xit";
             this.exitMenuItem.Click += new System.EventHandler(this.exitMenuItem_Click);
             // 
@@ -479,7 +482,7 @@ namespace oSpy
             this.rowsToolStripMenuItem,
             this.transactionsToolStripMenuItem});
             this.selectallToolStripMenuItem.Name = "selectallToolStripMenuItem";
-            this.selectallToolStripMenuItem.Size = new System.Drawing.Size(127, 22);
+            this.selectallToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.selectallToolStripMenuItem.Text = "Select &all";
             // 
             // rowsToolStripMenuItem
@@ -1241,6 +1244,21 @@ namespace oSpy
             this.dumpSaveFileDialog.DefaultExt = "bin";
             this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
             // 
+            // toolsToolStripMenuItem
+            // 
+            this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.applydebugSymbolsToolStripMenuItem});
+            this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
+            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
+            this.toolsToolStripMenuItem.Text = "&Tools";
+            // 
+            // applydebugSymbolsToolStripMenuItem
+            // 
+            this.applydebugSymbolsToolStripMenuItem.Name = "applydebugSymbolsToolStripMenuItem";
+            this.applydebugSymbolsToolStripMenuItem.Size = new System.Drawing.Size(186, 22);
+            this.applydebugSymbolsToolStripMenuItem.Text = "Apply &debug symbols";
+            this.applydebugSymbolsToolStripMenuItem.Click += new System.EventHandler(this.applydebugSymbolsToolStripMenuItem_Click);
+            // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(828, 585);
@@ -1405,6 +1423,8 @@ namespace oSpy
         private System.Windows.Forms.ToolStripMenuItem viewInternalDebugToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem viewWinCryptToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem5;
+        private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem applydebugSymbolsToolStripMenuItem;
     }
 }
 
