@@ -65,6 +65,12 @@
       <DependentUpon>ParserConfigDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="Configuration\ParserConfiguration.cs" />
+    <Compile Include="DataAnalysisForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DataAnalysisForm.Designer.cs">
+      <DependentUpon>DataAnalysisForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Event\SocketEventType.cs" />
     <Compile Include="Event\TCPEvent.cs" />
     <Compile Include="ExtendedGraphics.cs" />
@@ -182,6 +188,10 @@
     <EmbeddedResource Include="ConversationsForm.resx">
       <SubType>Designer</SubType>
       <DependentUpon>ConversationsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DataAnalysisForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>DataAnalysisForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="DebugForm.resx">
       <SubType>Designer</SubType>

@@ -45,8 +45,11 @@ namespace oSpy
         private PacketParser packetParser;
         private List<TCPEvent> tmpEventList;
         private List<IPPacket> tmpPacketList;
+
+        private Dictionary<int, IPPacket> curLinesToPackets;
         private List<IPPacket> curPacketList;
         private TransactionNodeList curNodeList;
+        private MemoryStream curSelBytes;
 
         public enum DisplayMode
         {
@@ -129,6 +132,7 @@ namespace oSpy
             prevSelectedSlices = null;
             curNodeList = null;
             curPacketList = null;
+            curSelBytes = new MemoryStream();
             tmpEventList = new List<TCPEvent>(8);
             tmpPacketList = new List<IPPacket>(32);
             richTextBox.Clear();
@@ -1080,6 +1084,139 @@ namespace oSpy
             UpdateDumpView();
         }
 
+        // FIXME: a really naive implementation done in a hurry
+        private void richTextBox_SelectionChanged(object sender, EventArgs e)
+        {
+            curSelBytes = new MemoryStream();
+            statusBarLabel.Text = "";
+
+            int selLen = richTextBox.SelectionLength;
+            if (selLen == 0)
+            {
+                return;
+            }
+
+            int startGlobalOff = richTextBox.SelectionStart;
+
+            int off = startGlobalOff;
+            int line = richTextBox.GetLineFromCharIndex(startGlobalOff);
+            int lineOff = startGlobalOff - richTextBox.GetFirstCharIndexFromLine(line);
+
+            if (dumpDisplayMode == DisplayMode.HEX)
+            {
+                int hexBytesPerLine = 16;
+                int hexLeftMarginLength = 9;
+                int hexRightMarginLength = 2;
+                int hexAsciiBorder = hexLeftMarginLength + ((hexBytesPerLine * 3) - 1) + (hexRightMarginLength / 2);
+                int hexAsciiStart = hexAsciiBorder + (hexRightMarginLength / 2);
+                int hexLineLength = hexAsciiStart + hexBytesPerLine + 1;
+
+                int delta;
+
+                int charsStart = -1;
+                int charsPerByte = -1;
+                int charSpacing = -1;
+
+                while (selLen > 0)
+                {
+                    // Which packet are we in?
+                    IPPacket pkt = null;
+                    if (curLinesToPackets.ContainsKey(line))
+                    {
+                        pkt = curLinesToPackets[line];
+                    }
+                    else
+                    {
+                        // FIXME: what about the last line?
+                        delta = richTextBox.GetFirstCharIndexFromLine(line + 1) - off;
+
+                        selLen -= delta;
+                        off += delta;
+                        line++;
+                        lineOff = 0;
+
+                        continue;
+                    }
+
+                    // How far into the packet are we?
+                    PacketPosition pktPos = (PacketPosition) pkt.Tag;
+                    int pktLinesSkipped = line - pktPos.LineStart - 1;
+                    int pktOff = pktLinesSkipped * hexBytesPerLine;
+
+                    // First iteration: does the selection start in the hex or in the ASCII area?
+                    if (charsPerByte == -1)
+                    {
+                        if (lineOff < hexAsciiBorder)
+                        {
+                            charsStart = hexLeftMarginLength;
+                            charsPerByte = 2;
+                            charSpacing = 1;
+                        }
+                        else
+                        {
+                            charsStart = hexAsciiStart;
+                            charsPerByte = 1;
+                            charSpacing = 0;
+                        }
+                    }
+
+                    // Skip any irrelevant characters
+                    if (lineOff < charsStart)
+                    {
+                        delta = charsStart - lineOff;
+
+                        selLen -= delta;
+                        off += delta;
+                        lineOff += delta;
+
+                        if (selLen <= 0)
+                            break;
+                    }
+
+                    // What is the byte offset on this line?
+                    int lineCharsOffset = lineOff - charsStart;
+                    int byteCharsWidth = charsPerByte + charSpacing;
+
+                    int byteOff = lineCharsOffset / byteCharsWidth;
+                    if (lineCharsOffset % byteCharsWidth == charsPerByte)
+                        byteOff += charSpacing;
+
+                    pktOff += byteOff;
+
+                    // How many bytes are selected on the current line?
+                    int lineCharsSel = Math.Min(selLen, (hexBytesPerLine - byteOff) * byteCharsWidth);
+
+                    int pktSelLen = lineCharsSel / byteCharsWidth;
+                    if (lineCharsSel % byteCharsWidth == charsPerByte)
+                        pktSelLen += charSpacing;
+
+                    // Store them
+                    if (pktOff < pkt.Bytes.Length)
+                    {
+                        curSelBytes.Write(pkt.Bytes, pktOff, Math.Min(pktSelLen, pkt.Bytes.Length - pktOff));
+                    }
+
+                    // Update the state
+                    delta = hexLineLength - lineOff;
+
+                    selLen -= delta;
+                    off += delta;
+                    line++;
+                    lineOff = 0;
+                }
+            }
+            else
+            {
+                // FIXME
+            }
+
+            if (curSelBytes.Length > 0)
+            {
+                statusBarLabel.Text = String.Format("{0} byte{1} selected",
+                    curSelBytes.Length, (curSelBytes.Length > 1) ? "s" : "");
+            }
+        }
+
         private void UpdateDumpView()
         {
             //
@@ -1099,10 +1236,11 @@ namespace oSpy
             }
             packets.Sort();
 
+            curLinesToPackets = new Dictionary<int, IPPacket>(packets.Count);
             curPacketList = packets;
 
             //
-            // Iterate through the selected packets and add a raw dumps
+            // Iterate through the selected packets and add a raw dump
             // of each, and add each to the list of decoded packets
             //
             StringBuilder dump = new StringBuilder(512);
@@ -1197,7 +1335,12 @@ namespace oSpy
 
                     lineOffsets = tmpList.ToArray();
                 }
-                
+
+                for (int i = 0; i < nLines; i++)
+                {
+                    curLinesToPackets[lineNo + i] = packet;
+                }
+
                 lineNo += nLines;
 
                 packet.Tag = new PacketPosition(packetToRow[packet], lineStart, lineNo, lineOffsets);
@@ -1655,6 +1798,26 @@ namespace oSpy
             richTextBox.Copy();
         }
 
+        private void copyRawToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // FIXME: figure out how to copy raw data to the clipboard
+            byte[] bytes = curSelBytes.ToArray();
+            Clipboard.SetText(StaticUtils.DecodeASCII(bytes));
+        }
+
+        private void selSaveToFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (dumpSaveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                FileStream fs = new FileStream(dumpSaveFileDialog.FileName, FileMode.Create);
+
+                byte[] bytes = curSelBytes.ToArray();
+                fs.Write(bytes, 0, bytes.Length);
+
+                fs.Close();
+            }
+        }
+
         private void findComboBox_Leave(object sender, EventArgs e)
         {
             statusBarLabel.Text = "";
@@ -1874,7 +2037,7 @@ namespace oSpy
                         FunctionSymbol sym = symbols[moduleName].FindFunction(offset);
                         if (sym != null)
                         {
-                            funcName = sym.Name;
+                            funcName = String.Format("{0}+0x{1:x}", sym.Name, offset - sym.Start);
                         }
                     }
 
@@ -1896,6 +2059,11 @@ namespace oSpy
             dataGridView.Refresh();
 
             MessageBox.Show("Symbols applied successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void dumpContextMenuStrip_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            selBytesToolStripMenuItem.Enabled = (curSelBytes.Length > 0);
         }
     }
 
