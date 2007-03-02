@@ -1068,11 +1068,13 @@ namespace oSpy
         {
             public int Start;
             public int Length;
+            public int TermLen;
 
-            public LineOffset(int start, int length)
+            public LineOffset(int start, int length, int termLen)
             {
                 Start = start;
                 Length = length;
+                TermLen = termLen;
             }
         }
 
@@ -1102,50 +1104,53 @@ namespace oSpy
             int line = richTextBox.GetLineFromCharIndex(startGlobalOff);
             int lineOff = startGlobalOff - richTextBox.GetFirstCharIndexFromLine(line);
 
-            if (dumpDisplayMode == DisplayMode.HEX)
+            int hexBytesPerLine = 16;
+            int hexLeftMarginLength = 9;
+            int hexRightMarginLength = 2;
+            int hexAsciiBorder = hexLeftMarginLength + ((hexBytesPerLine * 3) - 1) + (hexRightMarginLength / 2);
+            int hexAsciiStart = hexAsciiBorder + (hexRightMarginLength / 2);
+            int hexLineLength = hexAsciiStart + hexBytesPerLine + 1;
+
+            int asciiLeftMarginLength = 3;
+
+            int delta;
+
+            int charsStart = -1;
+            int charsPerByte = -1;
+            int charSpacing = -1;
+
+            while (selLen > 0)
             {
-                int hexBytesPerLine = 16;
-                int hexLeftMarginLength = 9;
-                int hexRightMarginLength = 2;
-                int hexAsciiBorder = hexLeftMarginLength + ((hexBytesPerLine * 3) - 1) + (hexRightMarginLength / 2);
-                int hexAsciiStart = hexAsciiBorder + (hexRightMarginLength / 2);
-                int hexLineLength = hexAsciiStart + hexBytesPerLine + 1;
-
-                int delta;
-
-                int charsStart = -1;
-                int charsPerByte = -1;
-                int charSpacing = -1;
-
-                while (selLen > 0)
+                // Which packet are we in?
+                IPPacket pkt = null;
+                if (curLinesToPackets.ContainsKey(line))
                 {
-                    // Which packet are we in?
-                    IPPacket pkt = null;
-                    if (curLinesToPackets.ContainsKey(line))
+                    pkt = curLinesToPackets[line];
+                }
+                else
+                {
+                    delta = richTextBox.GetFirstCharIndexFromLine(line + 1) - off;
+                    if (delta == 0)
+                        break;
+
+                    selLen -= delta;
+                    off += delta;
+                    line++;
+                    lineOff = 0;
+
+                    continue;
+                }
+
+                // How far into the packet are we?
+                PacketPosition pktPos = (PacketPosition) pkt.Tag;
+                int pktLinesSkipped = line - pktPos.LineStart - 1;
+                int pktOff = -1, pktSelLen = -1, lineLen = -1;
+
+                if (charsPerByte == -1)
+                {
+                    if (dumpDisplayMode == DisplayMode.HEX)
                     {
-                        pkt = curLinesToPackets[line];
-                    }
-                    else
-                    {
-                        // FIXME: what about the last line?
-                        delta = richTextBox.GetFirstCharIndexFromLine(line + 1) - off;
-
-                        selLen -= delta;
-                        off += delta;
-                        line++;
-                        lineOff = 0;
-
-                        continue;
-                    }
-
-                    // How far into the packet are we?
-                    PacketPosition pktPos = (PacketPosition) pkt.Tag;
-                    int pktLinesSkipped = line - pktPos.LineStart - 1;
-                    int pktOff = pktLinesSkipped * hexBytesPerLine;
-
-                    // First iteration: does the selection start in the hex or in the ASCII area?
-                    if (charsPerByte == -1)
-                    {
+                        // First iteration: does the selection start in the hex or in the ASCII area?
                         if (lineOff < hexAsciiBorder)
                         {
                             charsStart = hexLeftMarginLength;
@@ -1159,19 +1164,30 @@ namespace oSpy
                             charSpacing = 0;
                         }
                     }
-
-                    // Skip any irrelevant characters
-                    if (lineOff < charsStart)
+                    else
                     {
-                        delta = charsStart - lineOff;
-
-                        selLen -= delta;
-                        off += delta;
-                        lineOff += delta;
-
-                        if (selLen <= 0)
-                            break;
+                        charsStart = asciiLeftMarginLength;
+                        charsPerByte = 1;
+                        charSpacing = 0;
                     }
+                }
+
+                // Skip any irrelevant characters
+                if (lineOff < charsStart)
+                {
+                    delta = charsStart - lineOff;
+
+                    selLen -= delta;
+                    off += delta;
+                    lineOff += delta;
+
+                    if (selLen <= 0)
+                        break;
+                }
+
+                if (dumpDisplayMode == DisplayMode.HEX)
+                {
+                    pktOff = pktLinesSkipped * hexBytesPerLine;
 
                     // What is the byte offset on this line?
                     int lineCharsOffset = lineOff - charsStart;
@@ -1186,28 +1202,39 @@ namespace oSpy
                     // How many bytes are selected on the current line?
                     int lineCharsSel = Math.Min(selLen, (hexBytesPerLine - byteOff) * byteCharsWidth);
 
-                    int pktSelLen = lineCharsSel / byteCharsWidth;
+                    pktSelLen = lineCharsSel / byteCharsWidth;
                     if (lineCharsSel % byteCharsWidth == charsPerByte)
                         pktSelLen += charSpacing;
 
-                    // Store them
-                    if (pktOff < pkt.Bytes.Length)
-                    {
-                        curSelBytes.Write(pkt.Bytes, pktOff, Math.Min(pktSelLen, pkt.Bytes.Length - pktOff));
-                    }
-
-                    // Update the state
-                    delta = hexLineLength - lineOff;
-
-                    selLen -= delta;
-                    off += delta;
-                    line++;
-                    lineOff = 0;
+                    lineLen = hexLineLength;
                 }
-            }
-            else
-            {
-                // FIXME
+                else
+                {
+                    LineOffset lo = pktPos.LineOffsets[pktLinesSkipped];
+                    pktOff = lo.Start + (lineOff - charsStart);
+                    pktSelLen = Math.Min(selLen, lo.Length);
+                    lineLen = lo.Length;
+
+                    if (pktSelLen == lo.Length)
+                    {
+                        pktSelLen += lo.TermLen;
+                        selLen -= lo.TermLen;
+                    }
+                }
+
+                // Store them
+                if (pktOff < pkt.Bytes.Length)
+                {
+                    curSelBytes.Write(pkt.Bytes, pktOff, Math.Min(pktSelLen, pkt.Bytes.Length - pktOff));
+                }
+
+                // Update the state
+                delta = lineLen - lineOff;
+
+                selLen -= delta;
+                off += delta;
+                line++;
+                lineOff = 0;
             }
 
             if (curSelBytes.Length > 0)
@@ -1321,17 +1348,18 @@ namespace oSpy
                         if (pos == -1)
                         {
                             pos = str.Length;
+                            termLen = 0;
                         }
 
                         int length = pos - offset;
                         string line = str.Substring(offset, length);
-                        tmpList.Add(new LineOffset(offset, length));
+                        tmpList.Add(new LineOffset(offset, length, termLen));
 
                         dump.AppendFormat("{0}{1}\n", linePrefix, line);
                         nLines++;
 
                         offset += pos - offset + termLen;
-                    } while (offset <= str.Length);
+                    } while (offset < str.Length);
 
                     lineOffsets = tmpList.ToArray();
                 }
