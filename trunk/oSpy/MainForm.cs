@@ -1213,13 +1213,11 @@ namespace oSpy
                     LineOffset lo = pktPos.LineOffsets[pktLinesSkipped];
                     pktOff = lo.Start + (lineOff - charsStart);
                     pktSelLen = Math.Min(selLen, lo.Length);
-                    lineLen = lo.Length;
-
-                    if (pktSelLen == lo.Length)
-                    {
+                    if (selLen > lo.Length)
                         pktSelLen += lo.TermLen;
-                        selLen -= lo.TermLen;
-                    }
+                    lineLen = asciiLeftMarginLength + lo.Length;
+                    if (lo.TermLen > 0)
+                        lineLen++;
                 }
 
                 // Store them
