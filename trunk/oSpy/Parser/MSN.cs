@@ -372,6 +372,8 @@ namespace oSpy.Parser
         {
             List<VisualTransaction> messages = new List<VisualTransaction>();
 
+            char[] bodyTrimChars = new char[] { '\r', '\n' };
+
             foreach (TransactionNode node in session.Nodes)
             {
                 if (node.Name == "MSNSBCommand")
@@ -406,6 +408,25 @@ namespace oSpy.Parser
                         else if (payloadNode.Fields.ContainsKey("MSNSLP"))
                         {
                             body = (string)payloadNode["MSNSLP"];
+                        }
+                        else if (payloadNode.FindChild("Headers") != null)
+                        {
+                            TransactionNode headersNode = payloadNode.FindChild("Headers");
+
+                            vt.HeaderRowsPerCol = Int32.MaxValue;
+
+                            foreach (string name in headersNode.Fields.Keys)
+                            {
+                                vt.AddHeaderField(name, headersNode.Fields[name].ToString());
+                            }
+
+                            TransactionNode bodyNode = payloadNode.FindChild("Body");
+                            if (bodyNode != null)
+                            {
+                                body = bodyNode.Fields[bodyNode.FieldNames[0]].ToString();
+
+                                body = body.TrimEnd(bodyTrimChars);
+                            }
                         }
                         else
                         {
