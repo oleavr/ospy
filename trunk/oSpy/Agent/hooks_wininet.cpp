@@ -194,7 +194,9 @@ static const FunctionSignature signatures_ie7[] = {
 		0,
 		"85 C0"					// test    eax, eax
 		"89 45 08"				// mov     [ebp+arg_0], eax
-		"75 33"					// jnz     short OUT
+		"75 ??"					// jnz     short OUT
+		"8B 1B"					// mov     ebx, [ebx]
+		"?? ??"					// FIXME: work around a bug in the signature matcher :P
     },
 
 	// SIGNATURE_ICASYNCTHREAD_MY_GETADDR
@@ -203,7 +205,9 @@ static const FunctionSignature signatures_ie7[] = {
 		0,
 		"8B F0"					// mov     esi, eax
 		"85 F6"					// test    esi, esi
-		"0F 85 49 21 03 00"		// jnz     loc_771FCD41
+		"0F 85 ?? ?? ?? 00"		// jnz     loc_771FCD41
+		"8B 85 ?? ?? ?? ??"		// mov     eax, [ebp+var_88]
+		"6A 11"					// push    11h
     },
 
 	// SIGNATURE_MY_GETADDR_GETADDRINFO
