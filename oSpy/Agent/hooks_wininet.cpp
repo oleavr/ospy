@@ -413,6 +413,7 @@ hook_wininet()
 	if (!found)
 	{
 		signatures = signatures_ie6;
+		g_icsocketBaseSize -= 4;
 		g_cfsmSecureRecvBaseSize -= 4;
 		g_cfsmSecureSendBaseSize -= 4;
 
