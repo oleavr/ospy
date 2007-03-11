@@ -19,29 +19,7 @@
 
 import idaapi
 from idautils import *
-
-class DataReader:
-    def __init__(self, ea):
-        self._ea = ea
-        self.reset()
-
-    def reset(self):
-        self.set_position(0)
-
-    def set_position(self, pos):
-        self._pos = pos
-
-    def read_u8(self):
-        ea = self._ea + self._pos
-        if isCode(GetFlags(ea)):  return None
-        self._pos += 1
-        return Byte(ea)
-
-    def read_u16_le(self):
-        b1 = self.read_u8()
-        b2 = self.read_u8()
-        if None in (b1, b2):  return None
-        return b1 | (b2 << 8)
+import util
 
 class DebugExtractor:
     def __init__(self, range):
@@ -60,7 +38,6 @@ class DebugExtractor:
         print "Parsing functions"
         print "  0%%"
         for ea in funcs:
-            func_name = GetFunctionName(ea)
             chunks = []
             names = []
 
@@ -83,29 +60,18 @@ class DebugExtractor:
                 else:
                     cur_chunk[1] = ea
 
-                name = GetMnem(ea)
-                for j in xrange(10):
-                    op_type = GetOpType(ea, j)
-                    if op_type <= 0:
-                        break
-                    if op_type == 5: # immediate
-                        op_value = GetOperandValue(ea, j)
-                        if isData(GetFlags(op_value)):
-                            result = self._parse_string(op_value)
-                            if result != None:
-                                s = result.split(" ", 2)[0]
-                                if s.find("::") != -1:
-                                    if not s in names:
-                                        names.append(s)
+                s = util.scan_insn_for_debug_ref(ea)
+                if s != None:
+                    if not s in names:
+                        names.append(s)
 
                 if not iter.next_code():
                     break
 
             if len(names) == 1:
-                real_func_name = self._scrub_func_name(names[0])
                 for start_addr, end_addr in chunks:
-                    f.write( "0x%x;0x%x;%s\n" % \
-                        (start_addr, end_addr, real_func_name))
+                    f.write("0x%x;0x%x;%s\n" % \
+                        (start_addr, end_addr, names[0]))
 
             i += 1
 
@@ -116,46 +82,6 @@ class DebugExtractor:
 
         f.close()
         print "Done"
-
-    def _parse_string(self, ea):
-        reader = DataReader(ea)
-        result = self._do_parse_string(reader.read_u16_le)
-        if result != None:  return result
-
-        reader.reset()
-        return self._do_parse_string(reader.read_u8)
-
-    def _do_parse_string(self, reader_func):
-        s = ""
-
-        while True:
-            value = reader_func()
-            if value == 0:
-                break
-            elif not self._is_plain_ascii(value):
-                s = None
-                break
-
-            s += chr(value)
-
-        return s
-
-    def _scrub_func_name(self, name):
-        name = name.replace("%s", "")
-        pos = name.find("::") + 2
-        result = name[0:pos]
-        for c in name[pos:]:
-            if not self._is_valid_identifier(ord(c)):
-                break
-            result += c
-        return result
-
-    def _is_plain_ascii(self, b):
-        return b in (9, 10, 13) or (b >= 32 and b <= 126)
-
-    def _is_valid_identifier(self, b):
-        return (b >= 48 and b <= 57) or (b >= 65 and b <= 90) \
-               or (b >= 97 and b <= 122) or b == 95 or b == 126
 
 
 if __name__ == "__main__":
