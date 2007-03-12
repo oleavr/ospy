@@ -19,6 +19,7 @@
 #include "stdafx.h"
 #include "hooking.h"
 #include "logging.h"
+#include "vtable.h"
 
 //
 // Signatures
@@ -185,6 +186,8 @@ hook_msn()
     if (!cur_process_is("msnmsgr.exe"))
         return;
 
+	//VTableHooker::Self()->HookVTableAt((void *) 0x484C64, 22);
+
     GetChallengeSecretFunc get_challenge_secret;
 
     if (find_signature(&msn_signatures[SIGNATURE_GET_CHALLENGE_SECRET],
@@ -260,6 +263,8 @@ hook_msn()
             "failed to find SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME: %s", error);
         sspy_free(error);
     }
+
+	
 
     // IDCRL internal debugging function
     /*

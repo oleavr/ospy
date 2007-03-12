@@ -266,6 +266,10 @@
 				RelativePath=".\util.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\vtable.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -310,6 +314,10 @@
 			</File>
 			<File
 				RelativePath=".\util.h"
+				>
+			</File>
+			<File
+				RelativePath=".\vtable.h"
 				>
 			</File>
 		</Filter>
