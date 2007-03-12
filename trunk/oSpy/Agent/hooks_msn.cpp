@@ -186,7 +186,8 @@ hook_msn()
     if (!cur_process_is("msnmsgr.exe"))
         return;
 
-	//VTableHooker::Self()->HookVTableAt((void *) 0x484C64, 22);
+	//VTableSpec vts("CTCPTransportBridge", 0x484C64, 22);
+	//VTableHooker::Self()->HookVTable(vts);
 
     GetChallengeSecretFunc get_challenge_secret;
 
