@@ -205,8 +205,8 @@ hook_msn()
 	vts[19].SetName("OnDataResponse");
 	vts[20].SetName("OnBridgeStateChange");
 
-	VTableInstance *directVTable = new VTableInstance(vtableSpec, 0x484C64);
-	VTableHooker::Self()->HookVTable(directVTable);
+	VTable *directVTable = new VTable(vtableSpec, 0x484C64);
+	directVTable->Hook();
 #endif
 
     GetChallengeSecretFunc get_challenge_secret;

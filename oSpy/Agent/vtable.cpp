@@ -20,23 +20,47 @@
 #include "vtable.h"
 #include "logging.h"
 
-VTableHooker *
-VTableHooker::Self()
+VTableSpec::VTableSpec(const OString &name, int methodCount)
+	: m_name(name), m_methods(methodCount)
 {
-	static VTableHooker *hooker = new VTableHooker();
-	return hooker;
+	for (int i = 0; i < methodCount; i++)
+	{
+		m_methods[i].Initialize(this, i);
+	}
 }
 
 void
-VTableHooker::HookVTable(VTableInstance *vtable)
+VMethodSpec::Initialize(VTableSpec *vtable, int index)
 {
-	VTableSpec *spec = vtable->GetSpec();
+	m_vtable = vtable;
+	m_index = index;
+
+	OStringStream ss;
+	ss << "Method_" << index;
+	m_name = ss.str();
+}
+
+VTable::VTable(VTableSpec *spec, DWORD startOffset)
+	: m_spec(spec), m_startOffset(startOffset), m_methods(spec->GetMethodCount())
+{
+	DWORD *funcs = (DWORD *) startOffset;
+
+	for (int i = 0; i < spec->GetMethodCount(); i++)
+	{
+		m_methods[i].Initialize(&(*spec)[i], this, funcs[i]);
+	}
+}
+
+void
+VTable::Hook()
+{
+	VTableSpec *spec = GetSpec();
 
 	DWORD oldProtect;
-	VirtualProtect((LPVOID) vtable->GetStartOffset(), spec->GetMethodCount() * sizeof(LPVOID),
+	VirtualProtect((LPVOID) m_startOffset, spec->GetMethodCount() * sizeof(LPVOID),
 		PAGE_READWRITE, &oldProtect);
 
-	DWORD *methods = (DWORD *) vtable->GetStartOffset();
+	DWORD *methods = (DWORD *) m_startOffset;
 
 	for (int i = 0; i < spec->GetMethodCount(); i++)
 	{
@@ -44,17 +68,17 @@ VTableHooker::HookVTable(VTableInstance *vtable)
 		int offset = 0;
 
 		trampoline[offset++] = 0xe8;
-		*((DWORD *) (trampoline + offset)) = (DWORD) VTableHooker::VTableProxyFunc - (DWORD) (trampoline + offset + 4);
+		*((DWORD *) (trampoline + offset)) = (DWORD) VTableProxyFunc - (DWORD) (trampoline + offset + 4);
 		offset += sizeof(DWORD);
 
-		*((VMethodInstance **) (trampoline + offset)) = &(*vtable)[i];
+		*((VMethod **) (trampoline + offset)) = &m_methods[i];
 
 		methods[i] = (DWORD) trampoline;
 	}
 }
 
 __declspec(naked) void
-VTableHooker::VTableProxyFunc(CpuContext cpuCtx, VMethodInstance *method)
+VTable::VTableProxyFunc(CpuContext cpuCtx, VMethod *method)
 {
 	VMethodSpec *spec;
 
@@ -63,9 +87,9 @@ VTableHooker::VTableProxyFunc(CpuContext cpuCtx, VMethodInstance *method)
 		push eax;
 		push ebx;
 		mov eax, [esp+12];
-		mov eax, [eax]; // dereference VMethodInstance **
-		mov ebx, eax; // VMethodInstance *
-		mov eax, [eax+VMethodInstance::m_offset];
+		mov eax, [eax]; // dereference VMethod **
+		mov ebx, eax; // VMethod *
+		mov eax, [eax+VMethod::m_offset];
 		mov [esp+12], eax;
 		mov [esp+8], ebx;
 		pop ebx;
@@ -94,36 +118,5 @@ VTableHooker::VTableProxyFunc(CpuContext cpuCtx, VMethodInstance *method)
 
 		add esp, 4;
 		ret;
-	}
-}
-
-VTableSpec::VTableSpec(const OString &name, int methodCount)
-	: m_name(name), m_methods(methodCount)
-{
-	for (int i = 0; i < methodCount; i++)
-	{
-		m_methods[i].Initialize(this, i);
-	}
-}
-
-void
-VMethodSpec::Initialize(VTableSpec *vtable, int index)
-{
-	m_vtable = vtable;
-	m_index = index;
-
-	OStringStream ss;
-	ss << "Method_" << index;
-	m_name = ss.str();
-}
-
-VTableInstance::VTableInstance(VTableSpec *spec, DWORD startOffset)
-	: m_spec(spec), m_startOffset(startOffset), m_methods(spec->GetMethodCount())
-{
-	DWORD *funcs = (DWORD *) startOffset;
-
-	for (int i = 0; i < spec->GetMethodCount(); i++)
-	{
-		m_methods[i].Initialize(&(*spec)[i], this, funcs[i]);
 	}
 }
