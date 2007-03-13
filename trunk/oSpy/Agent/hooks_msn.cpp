@@ -186,8 +186,28 @@ hook_msn()
     if (!cur_process_is("msnmsgr.exe"))
         return;
 
-	//VTableSpec vts("CTCPTransportBridge", 0x484C64, 22);
-	//VTableHooker::Self()->HookVTable(vts);
+#if 0
+	VTableSpec *vtableSpec = new VTableSpec("CTCPTransportBridge", 22);
+	VTableSpec &vts = *vtableSpec;
+	vts[0].SetName("OnBridgePeerConnectingEndpointsUpdated");
+	vts[1].SetName("OnBridgePeerListeningEndpointsUpdated");
+	vts[4].SetName("P2PListen");
+	vts[5].SetName("P2PConnect");
+	vts[7].SetName("Destroy");
+	vts[8].SetName("Shutdown");
+	vts[9].SetName("Init");
+	vts[10].SetName("Send");
+	vts[11].SetName("GetProperties");
+	vts[12].SetName("ReadyToSend");
+	vts[13].SetName("ConnectBridge");
+	vts[17].SetName("OnReceivedConnectRequest");
+	vts[18].SetName("OnDataReceived");
+	vts[19].SetName("OnDataResponse");
+	vts[20].SetName("OnBridgeStateChange");
+
+	VTableInstance *directVTable = new VTableInstance(vtableSpec, 0x484C64);
+	VTableHooker::Self()->HookVTable(directVTable);
+#endif
 
     GetChallengeSecretFunc get_challenge_secret;
 
