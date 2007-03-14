@@ -40,8 +40,8 @@ VMethodSpec::Initialize(VTableSpec *vtable, int index)
 	m_name = ss.str();
 }
 
-VTable::VTable(VTableSpec *spec, DWORD startOffset)
-	: m_spec(spec), m_startOffset(startOffset), m_methods(spec->GetMethodCount())
+VTable::VTable(VTableSpec *spec, const OString &name, DWORD startOffset)
+	: m_spec(spec), m_name(name), m_startOffset(startOffset), m_methods(spec->GetMethodCount())
 {
 	DWORD *funcs = (DWORD *) startOffset;
 
@@ -81,105 +81,118 @@ VMethod::CreateTrampoline()
 }
 
 __declspec(naked) void
-VMethod::OnEnterProxy(CpuContext cpuCtx, VMethod *method)
+VMethod::OnEnterProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
 {
-	void *retAddr;
-	VMethodTrampoline *trampoline;
+	VMethod *method;
+	void *btAddr, *retAddr;
+	VMethodTrampoline *retTrampoline;
 
 	__asm {
 											// *** We're coming in hot from the modified vtable ***
 
-		sub esp, 4;							//  1. Reserve space for the second argument to this function (VMethod *).
-		push eax;							//  2. Don't clobber any registers.
+		sub esp, 4;							//  1. Reserve space for the second argument to this function (VMethodTrampoline *).
+		push eax;
 		push ebx;
-		mov eax, [esp+8+4];					//  3. Get the trampoline returnaddress, which is the address of the VMethod *
-											//     right after the CALL instruction on the trampoline
-		mov eax, [eax];						//  4. Dereference VMethod **.
-		mov ebx, eax;						//  5. Store the VMethod * in ebx.
-		mov eax, [eax+VMethod::m_offset];	//  6. Get the actual method's offset (the method that is about to be called).
-		mov [esp+8+4], eax;					//  7. Replace the trampoline return-address with the actual method's offset.
-		mov [esp+8+0], ebx;					//  8. Store the VMethod * on the reserved spot so that we can access it from
+		mov eax, [esp+8+4];					//  2. Get the trampoline returnaddress, which is the address of the VMethod *
+											//     right after the CALL instruction on the trampoline.
+		mov ebx, eax;						//  3. Store the VMethod ** in ebx.
+		mov ebx, [ebx];						//  4. Dereference the VMethod **.
+		sub eax, 5;							//  5. Rewind the pointer to the start of the VMethodTrampoline structure.
+		mov [esp+8+0], eax;					//  6. Store the VMethodTrampoline * on the reserved spot so that we can access it from
 											//     C++ through the second argument.
+		mov eax, [ebx+VMethod::m_offset];	//  6. Get the actual method's offset (the method that is about to be called).
+		mov [esp+8+4], eax;					//  7. Replace the trampoline return-address with the actual method's offset.
 		pop ebx;
 		pop eax;
 
-		pushad;								//  9. Save all registers and conveniently place them so that they're available
+		pushad;								//  8. Save all registers and conveniently place them so that they're available
 											//     from C++ through the first argument.
 
-		sub esp, 4;							// 10. Padding/fake return address so that ebp+8 refers to the first argument.
-		push ebp;							// 11. Standard prolog.
+		sub esp, 4;							//  9. Padding/fake return address so that ebp+8 refers to the first argument.
+		push ebp;							// 10. Standard prolog.
 		mov ebp, esp;
 		sub esp, __LOCAL_SIZE;
 
-		mov eax, [ebp+8+32+4+4];			// 12. Store the return-address.
+		lea eax, [ebp+8+32+4+4];			// 12. Store the backtrace address and the return-address.
+		mov [btAddr], eax;
+		mov eax, [eax];
 		mov [retAddr], eax;
 	}
 
-	trampoline = method->OnEnterWrapper(retAddr, &cpuCtx);
+	method = (VMethod *) trampoline->data;
+	retTrampoline = method->OnEnterWrapper(&cpuCtx, trampoline, btAddr, retAddr);
 
 	__asm {
 											// *** Bounce off to the actual method ***
 
-		mov eax, [trampoline];
-		mov [ebp+8+32+4+4], eax;
+		mov eax, [retTrampoline];			//  1. Replace the return-address with the address of the trampoline so that
+											//     we'll trap the return.
+		mov [ebp+8+32+4+4], eax;			//
 
-		mov esp, ebp;						//  1. Standard epilog.
+		mov esp, ebp;						//  2. Standard epilog.
 		pop ebp;
-		add esp, 4;							//  2. Remove the padding/fake return address (see step 10 above).
+		add esp, 4;							//  3. Remove the padding/fake return address (see step 10 above).
 
-		popad;								//  3. Clean up the first argument and restore the registers (see step 9 above).
+		popad;								//  4. Clean up the first argument and restore the registers (see step 9 above).
 
-		add esp, 4;							//  4. Clean up the second argument.
-		ret;								//  5. Bounce to the actual method.
+		add esp, 4;							//  5. Clean up the second argument.
+		ret;								//  6. Bounce to the actual method.
 	}
 }
 
 VMethodTrampoline *
-VMethod::OnEnterWrapper(void *retAddr, CpuContext *cpuCtx)
+VMethod::OnEnterWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, void *btAddr, void *retAddr)
 {
-	VMethodCall *call = new VMethodCall(this, retAddr, cpuCtx);
+	// Keep track of the method call
+	VMethodCall *call = new VMethodCall(this, btAddr, retAddr, cpuCtx);
 
 	// Set up a trampoline used to trap the return
-	VMethodTrampoline *trampoline = new VMethodTrampoline;
+	VMethodTrampoline *retTrampoline = new VMethodTrampoline;
 
-	trampoline->CALL_opcode = 0xE8;
-	trampoline->CALL_offset = (DWORD) VMethod::OnLeaveProxy - (DWORD) &(trampoline->data);
-	trampoline->data = call;
+	retTrampoline->CALL_opcode = 0xE8;
+	retTrampoline->CALL_offset = (DWORD) VMethod::OnLeaveProxy - (DWORD) &(retTrampoline->data);
+	retTrampoline->data = call;
 
-	return trampoline;
+	// Finally do some logging
+	OnEnter(call);
+
+	return retTrampoline;
 }
 
 __declspec(naked) void
-VMethod::OnLeaveProxy(CpuContext cpuCtx, VMethodCall *call)
+VMethod::OnLeaveProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
 {
+	VMethodCall *call;
+
 	__asm {
 											// *** We're coming in hot and the method has just been called ***
 
-		sub esp, 4;							//  1. Reserve space for the second argument to this function (VMethodCall *).
-		push eax;							//  2. Don't clobber any registers.
+		sub esp, 4;							//  1. Reserve space for the second argument to this function (VMethodTrampoline *).
+		push eax;
 		push ebx;
-		mov eax, [esp+8+4];					//  3. Get the trampoline returnaddress, which is the address of the VMethodCall *
-											//     right after the CALL instruction on the trampoline
-		mov eax, [eax];						//  4. Dereference VMethodCall **.
-		mov ebx, eax;						//  5. Store the VMethodCall * in ebx.
-		mov eax, [eax+VMethodCall::m_returnAddress];	//  6. Get the return address of the caller.
-		mov [esp+8+4], eax;					//  7. Replace the trampoline return-address with the return address of the caller.
-		mov [esp+8+0], ebx;					//  8. Store the VMethodCall * on the reserved spot so that we can access it from
+		mov eax, [esp+8+4];					//  2. Get the trampoline returnaddress, which is the address of the VMethodCall *
+											//     right after the CALL instruction on the trampoline.
+		mov ebx, eax;						//  3. Store the VMethodCall ** in ebx.
+		mov ebx, [ebx];						//  4. Dereference the VMethodCall **.
+		sub eax, 5;							//  5. Rewind the pointer to the start of the VMethodTrampoline structure.
+		mov [esp+8+0], eax;					//  6. Store the VMethodTrampoline * on the reserved spot so that we can access it from
 											//     C++ through the second argument.
+		mov eax, [ebx+VMethodCall::m_returnAddress];	//  6. Get the return address of the caller.
+		mov [esp+8+4], eax;					//  7. Replace the trampoline return-address with the return address of the caller.
 		pop ebx;
 		pop eax;
 
-		pushad;								//  9. Save all registers and conveniently place them so that they're available
+		pushad;								//  8. Save all registers and conveniently place them so that they're available
 											//     from C++ through the first argument.
 
-		sub esp, 4;							// 10. Padding/fake return address so that ebp+8 refers to the first argument.
-		push ebp;							// 11. Standard prolog.
+		sub esp, 4;							//  9. Padding/fake return address so that ebp+8 refers to the first argument.
+		push ebp;							// 10. Standard prolog.
 		mov ebp, esp;
 		sub esp, __LOCAL_SIZE;
 	}
 
-	call->SetCpuContextLeave(&cpuCtx);
-	call->GetMethod()->OnLeave(call);
+	call = (VMethodCall *) trampoline->data;
+	call->GetMethod()->OnLeaveWrapper(&cpuCtx, trampoline, call);
 
 	__asm {
 											// *** Bounce off back to the caller ***
@@ -196,17 +209,83 @@ VMethod::OnLeaveProxy(CpuContext cpuCtx, VMethodCall *call)
 }
 
 void
+VMethod::OnLeaveWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, VMethodCall *call)
+{
+	// Got this now
+	call->SetCpuContextLeave(cpuCtx);
+
+	// Do some logging
+	OnLeave(call);
+
+	delete trampoline;
+	delete call;
+}
+
+void
 VMethod::OnEnter(VMethodCall *call)
 {
-	message_logger_log_message("VTableProxyFunc", 0, MESSAGE_CTX_INFO,
-		"Index=%d, Offset=0x%08x, Name=%s",
-		m_spec->GetIndex(), GetOffset(), m_spec->GetName().c_str());
+	VMethodCallHandler handler = call->GetMethod()->GetSpec()->GetEnterHandler();
+
+	if (handler == NULL || !handler(call))
+	{
+		message_logger_log_message("VMethod::OnEnter", call->GetBacktraceAddress(),
+			MESSAGE_CTX_INFO, "Entering %s @ 0x%08x, ecx = 0x%08x",
+			call->ToString().c_str(), GetOffset(),
+			call->GetCpuContextEnter()->ecx);
+	}
 }
 
 void
 VMethod::OnLeave(VMethodCall *call)
 {
-	message_logger_log_message("VTableProxyFunc", 0, MESSAGE_CTX_INFO,
-		"Index=%d, Offset=0x%08x, Name=%s",
-		m_spec->GetIndex(), GetOffset(), m_spec->GetName().c_str());
+	VMethodCallHandler handler = call->GetMethod()->GetSpec()->GetLeaveHandler();
+
+	if (handler == NULL || !handler(call))
+	{
+		message_logger_log_message("VMethod::OnLeave", call->GetBacktraceAddress(),
+			MESSAGE_CTX_INFO, "Leaving %s @ 0x%08x, eax = 0x%08x",
+			call->ToString().c_str(), GetOffset(),
+			call->GetCpuContextLeave()->eax);
+	}
+}
+
+OString
+VMethodCall::ToString() const
+{
+	VMethodSpec *spec = m_method->GetSpec();
+
+	OStringStream ss;
+
+	ss << m_method->GetVTable()->GetName();
+	ss << "::";
+	ss << spec->GetName();
+
+	int argsSize = spec->GetArgsSize();
+	if (argsSize != VMETHOD_ARGS_SIZE_UNKNOWN)
+	{
+		if (argsSize % sizeof(DWORD) == 0)
+		{
+			ss << "(";
+
+			DWORD *args = (DWORD *) m_argumentsData.data();
+
+			for (int i = 0; i < argsSize / 4; i++)
+			{
+				if (i)
+					ss << ", ";
+
+				// FIXME: optimize this
+				if (args[i] > 0xFFFF && !IsBadReadPtr((void *) args[i], 1))
+					ss << hex << "0x";
+				else
+					ss << dec;
+
+				ss << args[i];
+			}
+
+			ss << ")";
+		}
+	}
+
+	return ss.str();
 }

@@ -178,6 +178,50 @@ msnmsgr_debug(DWORD domain,
 typedef const char *(__stdcall *GetChallengeSecretFunc) (const char **ret, int which_one);
 typedef const LPWSTR (__stdcall *ContactPropertyIdToNameFunc) (int property_id);
 
+#define HOOK_P2P_TRANSPORT_VTABLES 0
+
+#if HOOK_P2P_TRANSPORT_VTABLES
+
+typedef struct {
+	int field_0;
+	int field_4;
+	int field_8;
+	int field_C;
+	int field_10;
+	int field_14;
+	int field_18;
+	int field_1C;
+	int field_20;
+} P2PTransportProperties;
+
+static bool
+CP2PTransportBridge_GetProperties_OnLeave(VMethodCall *call)
+{
+	void **args = (void **) call->GetArgumentsData().data();
+	P2PTransportProperties *props = (P2PTransportProperties *) args[0];
+
+	OStringStream ss;
+	ss << "field_0 = " << props->field_0 << endl;
+	ss << "field_4 = " << props->field_4 << endl;
+	ss << "field_8 = " << props->field_8 << endl;
+	ss << "field_C = " << props->field_C << endl;
+	ss << "field_10 = " << props->field_10 << endl;
+	ss << "field_14 = " << props->field_14 << endl;
+	ss << "field_18 = " << props->field_18 << endl;
+	ss << "field_1C = " << props->field_1C << endl;
+	ss << "field_20 = " << props->field_20;
+
+	OString str = ss.str();
+
+	message_logger_log("CP2PTransportBridge_GetProperties", call->GetBacktraceAddress(), 0,
+				MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+				NULL, NULL, str.c_str(), str.length(), "");
+
+	return false; // this is just supplemental logging, so let the framework log the leave as well
+}
+
+#endif
+
 void
 hook_msn()
 {
@@ -186,26 +230,39 @@ hook_msn()
     if (!cur_process_is("msnmsgr.exe"))
         return;
 
+#if HOOK_P2P_TRANSPORT_VTABLES
 	VTableSpec *vtableSpec = new VTableSpec("CP2PTransportBridge", 22);
 	VTableSpec &vts = *vtableSpec;
-	vts[0].SetName("OnBridgePeerConnectingEndpointsUpdated");
-	vts[1].SetName("OnBridgePeerListeningEndpointsUpdated");
-	vts[4].SetName("P2PListen");
-	vts[5].SetName("P2PConnect");
-	vts[7].SetName("Destroy");
-	vts[8].SetName("Shutdown");
-	vts[9].SetName("Init");
-	vts[10].SetName("Send");
-	vts[11].SetName("GetProperties");
-	vts[12].SetName("ReadyToSend");
-	vts[13].SetName("ConnectBridge");
-	vts[17].SetName("OnReceivedConnectRequest");
-	vts[18].SetName("OnDataReceived");
-	vts[19].SetName("OnDataResponse");
-	vts[20].SetName("OnBridgeStateChange");
 
-	VTable *directVTable = new VTable(vtableSpec, 0x484C64);
-	directVTable->Hook();
+	vts[0].SetBasicParams("OnBridgePeerConnectingEndpointsUpdated", 8);
+	vts[1].SetBasicParams("OnBridgePeerListeningEndpointsUpdated", 4);
+	vts[4].SetBasicParams("P2PListen", 8);
+	vts[5].SetBasicParams("P2PConnect", 8);
+	vts[7].SetBasicParams("Destroy", 4);
+	vts[8].SetBasicParams("Shutdown", 0);
+	vts[9].SetBasicParams("Init", 4);
+	vts[10].SetBasicParams("Send", 16);
+	vts[11].SetBasicParams("GetProperties", 4);
+	vts[11].SetLeaveHandler(CP2PTransportBridge_GetProperties_OnLeave);
+	vts[12].SetBasicParams("ReadyToSend", 0);
+	vts[13].SetBasicParams("ConnectBridge", 0);
+	vts[17].SetBasicParams("OnReceivedConnectRequest", 4);
+	vts[18].SetBasicParams("OnDataReceived", 16);
+	vts[19].SetBasicParams("OnDataResponse", 12);
+	vts[20].SetBasicParams("OnBridgeStateChange", 8);
+
+	VTable *tcpVTable = new VTable(vtableSpec, "CTCPTransportBridge", 0x484C64);
+	tcpVTable->Hook();
+
+	VTable *udpVTable = new VTable(vtableSpec, "CTrivialUDPTransportBridge", 0x484D94);
+	udpVTable->Hook();
+
+	VTable *turnVTable = new VTable(vtableSpec, "CTurnBridge", 0x4713CC);
+	turnVTable->Hook();
+
+	VTable *sbVTable = new VTable(vtableSpec, "CSBBridge", 0x471354);
+	sbVTable->Hook();
+#endif
 
     GetChallengeSecretFunc get_challenge_secret;
 
