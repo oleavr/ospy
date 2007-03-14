@@ -186,8 +186,7 @@ hook_msn()
     if (!cur_process_is("msnmsgr.exe"))
         return;
 
-#if 0
-	VTableSpec *vtableSpec = new VTableSpec("CTCPTransportBridge", 22);
+	VTableSpec *vtableSpec = new VTableSpec("CP2PTransportBridge", 22);
 	VTableSpec &vts = *vtableSpec;
 	vts[0].SetName("OnBridgePeerConnectingEndpointsUpdated");
 	vts[1].SetName("OnBridgePeerListeningEndpointsUpdated");
@@ -207,7 +206,6 @@ hook_msn()
 
 	VTable *directVTable = new VTable(vtableSpec, 0x484C64);
 	directVTable->Hook();
-#endif
 
     GetChallengeSecretFunc get_challenge_secret;
 

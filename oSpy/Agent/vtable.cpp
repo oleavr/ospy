@@ -64,59 +64,149 @@ VTable::Hook()
 
 	for (int i = 0; i < spec->GetMethodCount(); i++)
 	{
-		unsigned char *trampoline = new unsigned char[5 + sizeof(VMethodSpec *)];
-		int offset = 0;
-
-		trampoline[offset++] = 0xe8;
-		*((DWORD *) (trampoline + offset)) = (DWORD) VTableProxyFunc - (DWORD) (trampoline + offset + 4);
-		offset += sizeof(DWORD);
-
-		*((VMethod **) (trampoline + offset)) = &m_methods[i];
-
-		methods[i] = (DWORD) trampoline;
+		methods[i] = (DWORD) m_methods[i].CreateTrampoline();
 	}
 }
 
-__declspec(naked) void
-VTable::VTableProxyFunc(CpuContext cpuCtx, VMethod *method)
+VMethodTrampoline *
+VMethod::CreateTrampoline()
 {
-	VMethodSpec *spec;
+	VMethodTrampoline *trampoline = new VMethodTrampoline;
+
+	trampoline->CALL_opcode = 0xE8;
+	trampoline->CALL_offset = (DWORD) OnEnterProxy - (DWORD) &(trampoline->data);
+	trampoline->data = this;
+
+	return trampoline;
+}
+
+__declspec(naked) void
+VMethod::OnEnterProxy(CpuContext cpuCtx, VMethod *method)
+{
+	void *retAddr;
+	VMethodTrampoline *trampoline;
 
 	__asm {
-		sub esp, 4;
-		push eax;
+											// *** We're coming in hot from the modified vtable ***
+
+		sub esp, 4;							//  1. Reserve space for the second argument to this function (VMethod *).
+		push eax;							//  2. Don't clobber any registers.
 		push ebx;
-		mov eax, [esp+12];
-		mov eax, [eax]; // dereference VMethod **
-		mov ebx, eax; // VMethod *
-		mov eax, [eax+VMethod::m_offset];
-		mov [esp+12], eax;
-		mov [esp+8], ebx;
+		mov eax, [esp+8+4];					//  3. Get the trampoline returnaddress, which is the address of the VMethod *
+											//     right after the CALL instruction on the trampoline
+		mov eax, [eax];						//  4. Dereference VMethod **.
+		mov ebx, eax;						//  5. Store the VMethod * in ebx.
+		mov eax, [eax+VMethod::m_offset];	//  6. Get the actual method's offset (the method that is about to be called).
+		mov [esp+8+4], eax;					//  7. Replace the trampoline return-address with the actual method's offset.
+		mov [esp+8+0], ebx;					//  8. Store the VMethod * on the reserved spot so that we can access it from
+											//     C++ through the second argument.
 		pop ebx;
 		pop eax;
 
-		pushad;
+		pushad;								//  9. Save all registers and conveniently place them so that they're available
+											//     from C++ through the first argument.
 
-		sub esp, 4; // padding
-		push ebp;
+		sub esp, 4;							// 10. Padding/fake return address so that ebp+8 refers to the first argument.
+		push ebp;							// 11. Standard prolog.
+		mov ebp, esp;
+		sub esp, __LOCAL_SIZE;
+
+		mov eax, [ebp+8+32+4+4];			// 12. Store the return-address.
+		mov [retAddr], eax;
+	}
+
+	trampoline = method->OnEnterWrapper(retAddr, &cpuCtx);
+
+	__asm {
+											// *** Bounce off to the actual method ***
+
+		mov eax, [trampoline];
+		mov [ebp+8+32+4+4], eax;
+
+		mov esp, ebp;						//  1. Standard epilog.
+		pop ebp;
+		add esp, 4;							//  2. Remove the padding/fake return address (see step 10 above).
+
+		popad;								//  3. Clean up the first argument and restore the registers (see step 9 above).
+
+		add esp, 4;							//  4. Clean up the second argument.
+		ret;								//  5. Bounce to the actual method.
+	}
+}
+
+VMethodTrampoline *
+VMethod::OnEnterWrapper(void *retAddr, CpuContext *cpuCtx)
+{
+	VMethodCall *call = new VMethodCall(this, retAddr, cpuCtx);
+
+	// Set up a trampoline used to trap the return
+	VMethodTrampoline *trampoline = new VMethodTrampoline;
+
+	trampoline->CALL_opcode = 0xE8;
+	trampoline->CALL_offset = (DWORD) VMethod::OnLeaveProxy - (DWORD) &(trampoline->data);
+	trampoline->data = call;
+
+	return trampoline;
+}
+
+__declspec(naked) void
+VMethod::OnLeaveProxy(CpuContext cpuCtx, VMethodCall *call)
+{
+	__asm {
+											// *** We're coming in hot and the method has just been called ***
+
+		sub esp, 4;							//  1. Reserve space for the second argument to this function (VMethodCall *).
+		push eax;							//  2. Don't clobber any registers.
+		push ebx;
+		mov eax, [esp+8+4];					//  3. Get the trampoline returnaddress, which is the address of the VMethodCall *
+											//     right after the CALL instruction on the trampoline
+		mov eax, [eax];						//  4. Dereference VMethodCall **.
+		mov ebx, eax;						//  5. Store the VMethodCall * in ebx.
+		mov eax, [eax+VMethodCall::m_returnAddress];	//  6. Get the return address of the caller.
+		mov [esp+8+4], eax;					//  7. Replace the trampoline return-address with the return address of the caller.
+		mov [esp+8+0], ebx;					//  8. Store the VMethodCall * on the reserved spot so that we can access it from
+											//     C++ through the second argument.
+		pop ebx;
+		pop eax;
+
+		pushad;								//  9. Save all registers and conveniently place them so that they're available
+											//     from C++ through the first argument.
+
+		sub esp, 4;							// 10. Padding/fake return address so that ebp+8 refers to the first argument.
+		push ebp;							// 11. Standard prolog.
 		mov ebp, esp;
 		sub esp, __LOCAL_SIZE;
 	}
 
-	spec = method->GetSpec();
-
-	message_logger_log_message("VTableProxyFunc", 0, MESSAGE_CTX_INFO,
-		"Index=%d, Offset=0x%08x, Name=%s",
-		spec->GetIndex(), method->GetOffset(), spec->GetName().c_str());
+	call->SetCpuContextLeave(&cpuCtx);
+	call->GetMethod()->OnLeave(call);
 
 	__asm {
-		mov esp, ebp;
+											// *** Bounce off back to the caller ***
+
+		mov esp, ebp;						//  1. Standard epilog.
 		pop ebp;
-		add esp, 4;
+		add esp, 4;							//  2. Remove the padding/fake return address (see step 10 above).
 
-		popad;
+		popad;								//  3. Clean up the first argument and restore the registers (see step 9 above).
 
-		add esp, 4;
-		ret;
+		add esp, 4;							//  4. Clean up the second argument.
+		ret;								//  5. Bounce to the caller.
 	}
+}
+
+void
+VMethod::OnEnter(VMethodCall *call)
+{
+	message_logger_log_message("VTableProxyFunc", 0, MESSAGE_CTX_INFO,
+		"Index=%d, Offset=0x%08x, Name=%s",
+		m_spec->GetIndex(), GetOffset(), m_spec->GetName().c_str());
+}
+
+void
+VMethod::OnLeave(VMethodCall *call)
+{
+	message_logger_log_message("VTableProxyFunc", 0, MESSAGE_CTX_INFO,
+		"Index=%d, Offset=0x%08x, Name=%s",
+		m_spec->GetIndex(), GetOffset(), m_spec->GetName().c_str());
 }
