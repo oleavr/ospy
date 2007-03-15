@@ -84,9 +84,8 @@ __declspec(naked) void
 VMethod::OnEnterProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
 {
 	VMethod *method;
-	void *btAddr, *nextHopAddr;
-	bool carryOn;
-	int retval;
+	void *btAddr;
+	VMethodTrampoline *nextTrampoline;
 	DWORD lastError;
 
 	__asm {
@@ -122,7 +121,7 @@ VMethod::OnEnterProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
 	lastError = GetLastError();
 
 	method = (VMethod *) trampoline->data;
-	carryOn = method->OnEnterWrapper(&cpuCtx, trampoline, btAddr, &nextHopAddr, &retval, &lastError);
+	nextTrampoline = method->OnEnterWrapper(&cpuCtx, trampoline, btAddr, &lastError);
 
 	SetLastError(lastError);
 
@@ -143,7 +142,7 @@ VMethod::OnEnterProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
 		popad;								//  4. Clean up the first argument and restore the registers (see step 9 above).
 
 		add esp, 4;							//  5. Clean up the second argument.
-		jmp OUT;
+		jmp DONE;
 
 RETURN_TO_CALLER:
 		mov esp, ebp;						//  1. Standard epilog.
@@ -154,18 +153,31 @@ RETURN_TO_CALLER:
 
 		add esp, 4;							//  4. Clean up the second argument.
 
-OUT:
+DONE:
 		ret;
 	}
 }
 
-bool
-VMethod::OnEnterWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, void *btAddr, void **nextHopAddr, int *retval, DWORD *lastError)
+VMethodTrampoline *
+VMethod::OnEnterWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, void *btAddr, DWORD *lastError)
 {
 	// Keep track of the method call
 	VMethodCall *call = new VMethodCall(this, btAddr, cpuCtx);
+	call->SetCpuContextLive(cpuCtx);
+	call->SetLastErrorLive(lastError);
 
-	bool carryOn = OnEnter(call);
+	OnEnter(call);
+
+	bool carryOn = call->GetShouldCarryOn();
+
+	VMethodSpec *spec = call->GetMethod()->GetSpec();
+	CallingConvention conv = spec->GetCallingConvention();
+	if (conv == CALLING_CONV_UNKNOWN ||
+		(conv != CALLING_CONV_CDECL && spec->GetArgsSize == VMETHOD_ARGS_SIZE_UNKNOWN)
+	{
+		// TODO: log a warning here
+		carryOn = true;
+	}
 
 	if (carryOn)
 	{
@@ -289,30 +301,27 @@ VMethodCall::ToString() const
 	ss << spec->GetName();
 
 	int argsSize = spec->GetArgsSize();
-	if (argsSize != VMETHOD_ARGS_SIZE_UNKNOWN)
+	if (argsSize != VMETHOD_ARGS_SIZE_UNKNOWN && argsSize % sizeof(DWORD) == 0)
 	{
-		if (argsSize % sizeof(DWORD) == 0)
+		ss << "(";
+
+		DWORD *args = (DWORD *) m_argumentsData.data();
+
+		for (int i = 0; i < argsSize / sizeof(DWORD); i++)
 		{
-			ss << "(";
+			if (i)
+				ss << ", ";
 
-			DWORD *args = (DWORD *) m_argumentsData.data();
+			// FIXME: optimize this
+			if (args[i] > 0xFFFF && !IsBadReadPtr((void *) args[i], 1))
+				ss << hex << "0x";
+			else
+				ss << dec;
 
-			for (int i = 0; i < argsSize / 4; i++)
-			{
-				if (i)
-					ss << ", ";
-
-				// FIXME: optimize this
-				if (args[i] > 0xFFFF && !IsBadReadPtr((void *) args[i], 1))
-					ss << hex << "0x";
-				else
-					ss << dec;
-
-				ss << args[i];
-			}
-
-			ss << ")";
+			ss << args[i];
 		}
+
+		ss << ")";
 	}
 
 	return ss.str();
