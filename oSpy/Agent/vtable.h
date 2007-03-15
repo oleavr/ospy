@@ -148,7 +148,7 @@ protected:
 
 private:
 	static void OnEnterProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline);
-	bool OnEnterWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, void *btAddr, void **nextHopAddr, int *retval, DWORD *lastError);
+	VMethodTrampoline *OnEnterWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, void *btAddr, DWORD *lastError);
 
 	static void OnLeaveProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline);
 	void OnLeaveWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, VMethodCall *call);
@@ -157,28 +157,19 @@ private:
 class VMethodCall : public BaseObject
 {
 public:
-	VMethodCall(VMethod *method, void *btAddr=NULL,
-				CpuContext *cpuCtxEnter=NULL, CpuContext *cpuCtxLeave=NULL)
-		: m_method(method), m_backtraceAddress(btAddr), m_returnAddress(NULL)
+	VMethodCall(VMethod *method, void *btAddr, CpuContext *cpuCtxEnter)
+		: m_method(method), m_backtraceAddress(btAddr),
+		  m_returnAddress(*((void **) btAddr)),
+		  m_cpuCtxLive(NULL), m_cpuCtxEnter(*cpuCtxEnter),
+		  m_lastErrorLive(NULL), m_shouldCarryOn(true)
 	{
-		if (btAddr != NULL)
-		{
-			m_returnAddress = *((void **) btAddr);
-		}
+		memset(&m_cpuCtxLeave, 0, sizeof(m_cpuCtxLeave));
 
-		if (cpuCtxEnter != NULL)
-			m_cpuCtxEnter = *cpuCtxEnter;
-		if (cpuCtxLeave != NULL)
-			m_cpuCtxLeave = *cpuCtxLeave;
-
-		if (btAddr != NULL)
+		int argsSize = method->GetSpec()->GetArgsSize();
+		if (argsSize != VMETHOD_ARGS_SIZE_UNKNOWN)
 		{
-			int argsSize = method->GetSpec()->GetArgsSize();
-			if (argsSize != VMETHOD_ARGS_SIZE_UNKNOWN)
-			{
-				m_argumentsData.resize(argsSize);
-				memcpy((void *) m_argumentsData.data(), (BYTE *) btAddr + 4, argsSize);
-			}
+			m_argumentsData.resize(argsSize);
+			memcpy((void *) m_argumentsData.data(), (BYTE *) btAddr + 4, argsSize);
 		}
 	}
 
@@ -186,10 +177,17 @@ public:
 	const OString &GetArgumentsData() const { return m_argumentsData; }
 	void *GetBacktraceAddress() const { return m_backtraceAddress; }
 	void *GetReturnAddress() const { return m_returnAddress; }
+	void SetCpuContextLive(CpuContext *cpuCtx) { m_cpuCtxLive = cpuCtx; }
+	CpuContext *GetCpuContextLive() const { return m_cpuCtxLive; }
 	const CpuContext *GetCpuContextEnter() const { return &m_cpuCtxEnter; }
 	const CpuContext *GetCpuContextLeave() const { return &m_cpuCtxLeave; }
 	void SetCpuContextLeave(const CpuContext *ctx) { m_cpuCtxLeave = *ctx; }
+	DWORD *GetLastErrorLive() const { return m_lastErrorLive; }
+	void SetLastErrorLive(DWORD *lastError) { m_lastErrorLive = lastError; }
 	const OString &GetArgumentsData() { return m_argumentsData; }
+
+	bool GetShouldCarryOn() const { return m_shouldCarryOn; }
+	void SetShouldCarryOn(bool carryOn) { m_shouldCarryOn = carryOn; }
 
 	OString ToString() const;
 
@@ -197,7 +195,11 @@ protected:
 	VMethod *m_method;
 	void *m_backtraceAddress;
 	void *m_returnAddress;
+	CpuContext *m_cpuCtxLive;
 	CpuContext m_cpuCtxEnter;
 	CpuContext m_cpuCtxLeave;
+	DWORD *m_lastErrorLive;
 	OString m_argumentsData;
+
+	bool m_shouldCarryOn;
 };
