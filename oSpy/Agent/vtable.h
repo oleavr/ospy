@@ -36,6 +36,13 @@ typedef struct {
 } VMethodTrampoline;
 #pragma pack(pop)
 
+typedef enum {
+	CALLING_CONV_UNKNOWN = 0,
+	CALLING_CONV_STDCALL,
+	CALLING_CONV_THISCALL,
+	CALLING_CONV_CDECL,
+} CallingConvention;
+
 class VTableSpec : public BaseObject
 {
 public:
@@ -59,6 +66,7 @@ class VMethodSpec : public BaseObject
 public:
 	VMethodSpec()
 		: m_vtable(NULL), m_index(-1),
+		  m_callingConvention(CALLING_CONV_UNKNOWN),
 		  m_argsSize(VMETHOD_ARGS_SIZE_UNKNOWN),
 		  m_enterHandler(NULL), m_leaveHandler(NULL)
 	{}
@@ -69,6 +77,9 @@ public:
 
 	const OString &GetName() const { return m_name; }
 	void SetName(const OString &name) { m_name = name; }
+
+	CallingConvention GetCallingConvention() const { return m_callingConvention; }
+	void SetCallingConvention(CallingConvention conv) { m_callingConvention = conv; }
 
 	int GetArgsSize() const { return m_argsSize; }
 	void SetArgsSize(int size) { m_argsSize = size; }
@@ -89,6 +100,7 @@ protected:
 	VTableSpec *m_vtable;
 	int m_index;
 	OString m_name;
+	CallingConvention m_callingConvention;
 	int m_argsSize;
 	VMethodCallHandler m_enterHandler;
 	VMethodCallHandler m_leaveHandler;
@@ -136,7 +148,7 @@ protected:
 
 private:
 	static void OnEnterProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline);
-	VMethodTrampoline *OnEnterWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, void *btAddr, void *retAddr);
+	bool OnEnterWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, void *btAddr, void **nextHopAddr, int *retval, DWORD *lastError);
 
 	static void OnLeaveProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline);
 	void OnLeaveWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, VMethodCall *call);
@@ -145,10 +157,15 @@ private:
 class VMethodCall : public BaseObject
 {
 public:
-	VMethodCall(VMethod *method, void *btAddr=NULL, void *retAddr=NULL,
+	VMethodCall(VMethod *method, void *btAddr=NULL,
 				CpuContext *cpuCtxEnter=NULL, CpuContext *cpuCtxLeave=NULL)
-		: m_method(method), m_backtraceAddress(btAddr), m_returnAddress(retAddr)
+		: m_method(method), m_backtraceAddress(btAddr), m_returnAddress(NULL)
 	{
+		if (btAddr != NULL)
+		{
+			m_returnAddress = *((void **) btAddr);
+		}
+
 		if (cpuCtxEnter != NULL)
 			m_cpuCtxEnter = *cpuCtxEnter;
 		if (cpuCtxLeave != NULL)

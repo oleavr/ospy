@@ -84,11 +84,13 @@ __declspec(naked) void
 VMethod::OnEnterProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
 {
 	VMethod *method;
-	void *btAddr, *retAddr;
-	VMethodTrampoline *retTrampoline;
+	void *btAddr, *nextHopAddr;
+	bool carryOn;
+	int retval;
+	DWORD lastError;
 
 	__asm {
-											// *** We're coming in hot from the modified vtable ***
+											// *** We're coming in hot from the modified vtable through the trampoline ***
 
 		sub esp, 4;							//  1. Reserve space for the second argument to this function (VMethodTrampoline *).
 		push eax;
@@ -113,19 +115,24 @@ VMethod::OnEnterProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
 		mov ebp, esp;
 		sub esp, __LOCAL_SIZE;
 
-		lea eax, [ebp+8+32+4+4];			// 12. Store the backtrace address and the return-address.
+		lea eax, [ebp+8+32+4+4];			// 12. Store the backtrace address and the return address.
 		mov [btAddr], eax;
-		mov eax, [eax];
-		mov [retAddr], eax;
 	}
 
+	lastError = GetLastError();
+
 	method = (VMethod *) trampoline->data;
-	retTrampoline = method->OnEnterWrapper(&cpuCtx, trampoline, btAddr, retAddr);
+	carryOn = method->OnEnterWrapper(&cpuCtx, trampoline, btAddr, &nextHopAddr, &retval, &lastError);
+
+	SetLastError(lastError);
 
 	__asm {
-											// *** Bounce off to the actual method ***
+											// *** Bounce off to the actual method, or straight back to the caller. ***
 
-		mov eax, [retTrampoline];			//  1. Replace the return-address with the address of the trampoline so that
+		cmp [carryOn], 0;
+		jz RETURN_TO_CALLER;
+
+		mov eax, [nextHopAddr];				//  1. Replace the return-address with the address of the trampoline so that
 											//     we'll trap the return.
 		mov [ebp+8+32+4+4], eax;			//
 
@@ -136,27 +143,48 @@ VMethod::OnEnterProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
 		popad;								//  4. Clean up the first argument and restore the registers (see step 9 above).
 
 		add esp, 4;							//  5. Clean up the second argument.
-		ret;								//  6. Bounce to the actual method.
+		jmp OUT;
+
+RETURN_TO_CALLER:
+		mov esp, ebp;						//  1. Standard epilog.
+		pop ebp;
+		add esp, 4;							//  2. Remove the padding/fake return address (see step 10 above).
+
+		popad;								//  3. Clean up the first argument and restore the registers (see step 9 above).
+
+		add esp, 4;							//  4. Clean up the second argument.
+
+OUT:
+		ret;
 	}
 }
 
-VMethodTrampoline *
-VMethod::OnEnterWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, void *btAddr, void *retAddr)
+bool
+VMethod::OnEnterWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, void *btAddr, void **nextHopAddr, int *retval, DWORD *lastError)
 {
 	// Keep track of the method call
-	VMethodCall *call = new VMethodCall(this, btAddr, retAddr, cpuCtx);
+	VMethodCall *call = new VMethodCall(this, btAddr, cpuCtx);
 
-	// Set up a trampoline used to trap the return
-	VMethodTrampoline *retTrampoline = new VMethodTrampoline;
+	bool carryOn = OnEnter(call);
 
-	retTrampoline->CALL_opcode = 0xE8;
-	retTrampoline->CALL_offset = (DWORD) VMethod::OnLeaveProxy - (DWORD) &(retTrampoline->data);
-	retTrampoline->data = call;
+	if (carryOn)
+	{
+		// Set up a trampoline used to trap the return
+		VMethodTrampoline *retTrampoline = new VMethodTrampoline;
 
-	// Finally do some logging
-	OnEnter(call);
+		retTrampoline->CALL_opcode = 0xE8;
+		retTrampoline->CALL_offset = (DWORD) VMethod::OnLeaveProxy - (DWORD) &(retTrampoline->data);
+		retTrampoline->data = call;
 
-	return retTrampoline;
+		*nextHopAddr = retTrampoline;
+	}
+	else
+	{
+		*nextHopAddr = call->GetReturnAddress();
+		delete call;
+	}
+
+	return carryOn;
 }
 
 __declspec(naked) void
