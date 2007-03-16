@@ -106,6 +106,7 @@ VMethod::OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, VMethodTrampol
 		mov [esp+48-8], eax;
 
 		mov eax, [eax];						//  6. Set trampoline to point to the start of the trampoline, ie. *proxyRet - 5.
+        sub eax, 5;
 		mov [esp+48-12], eax;
 
 		sub esp, 4;							//  7. Padding/fake return address so that ebp+8 refers to the first argument.
