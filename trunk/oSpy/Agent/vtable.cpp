@@ -196,6 +196,7 @@ __declspec(naked) void
 VMethod::OnLeaveProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
 {
 	VMethodCall *call;
+	DWORD lastError;
 
 	__asm {
 											// *** We're coming in hot and the method has just been called ***
@@ -224,8 +225,12 @@ VMethod::OnLeaveProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
 		sub esp, __LOCAL_SIZE;
 	}
 
+    lastError = GetLastError();
+
 	call = (VMethodCall *) trampoline->data;
-	call->GetMethod()->OnLeaveWrapper(&cpuCtx, trampoline, call);
+	call->GetMethod()->OnLeaveWrapper(&cpuCtx, trampoline, call, &lastError);
+
+    SetLastError(lastError);
 
 	__asm {
 											// *** Bounce off back to the caller ***
@@ -242,9 +247,12 @@ VMethod::OnLeaveProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
 }
 
 void
-VMethod::OnLeaveWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, VMethodCall *call)
+VMethod::OnLeaveWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, VMethodCall *call, DWORD *lastError)
 {
-	// Got this now
+	call->SetCpuContextLive(cpuCtx);
+	call->SetLastErrorLive(lastError);
+
+    // Got this now
 	call->SetCpuContextLeave(cpuCtx);
 
 	// Do some logging
