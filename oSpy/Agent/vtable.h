@@ -153,7 +153,7 @@ private:
 	VMethodTrampoline *OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, VMethodTrampoline *trampoline, void *btAddr, DWORD *lastError);
 
 	static void OnLeaveProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline);
-	void OnLeaveWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, VMethodCall *call);
+	void OnLeaveWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, VMethodCall *call, DWORD *lastError);
 };
 
 class VMethodCall : public BaseObject
