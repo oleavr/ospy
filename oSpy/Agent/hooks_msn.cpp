@@ -21,6 +21,8 @@
 #include "logging.h"
 #include "vtable.h"
 
+using namespace InterceptLib;
+
 //
 // Signatures
 //
@@ -178,7 +180,7 @@ msnmsgr_debug(DWORD domain,
 typedef const char *(__stdcall *GetChallengeSecretFunc) (const char **ret, int which_one);
 typedef const LPWSTR (__stdcall *ContactPropertyIdToNameFunc) (int property_id);
 
-#define HOOK_P2P_TRANSPORT_VTABLES 0
+#define HOOK_P2P_TRANSPORT_VTABLES 1
 
 #if HOOK_P2P_TRANSPORT_VTABLES
 

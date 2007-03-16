@@ -20,6 +20,8 @@
 
 #include "hooking.h"
 
+namespace InterceptLib {
+
 #define VMETHOD_ARGS_SIZE_UNKNOWN -1
 
 class VTableSpec;
@@ -147,8 +149,8 @@ protected:
 	void OnLeave(VMethodCall *call);
 
 private:
-	static void OnEnterProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline);
-	VMethodTrampoline *OnEnterWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, void *btAddr, DWORD *lastError);
+	static void OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, VMethodTrampoline *trampoline, void **proxyRet, void **finalRet);
+	VMethodTrampoline *OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, VMethodTrampoline *trampoline, void *btAddr, DWORD *lastError);
 
 	static void OnLeaveProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline);
 	void OnLeaveWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, VMethodCall *call);
@@ -202,4 +204,6 @@ protected:
 	OString m_argumentsData;
 
 	bool m_shouldCarryOn;
+};
+
 };
