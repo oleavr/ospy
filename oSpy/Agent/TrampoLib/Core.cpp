@@ -1,79 +1,36 @@
 //
-// Copyright (C) 2007  Ole André Vadla Ravnås <oleavr@gmail.com>
+// Copyright (c) 2007 Ole André Vadla Ravnås <oleavr@gmail.com>
 //
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following
+// conditions:
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WI
 //
 
 #include "stdafx.h"
-#include "vtable.h"
-#include "logging.h"
+#include "Core.h"
 
-namespace InterceptLib {
+namespace TrampoLib {
 
-VTableSpec::VTableSpec(const OString &name, int methodCount)
-	: m_name(name), m_methods(methodCount)
+FunctionTrampoline *
+Function::CreateTrampoline()
 {
-	for (int i = 0; i < methodCount; i++)
-	{
-		m_methods[i].Initialize(this, i);
-	}
-}
-
-void
-VMethodSpec::Initialize(VTableSpec *vtable, int index)
-{
-	m_vtable = vtable;
-	m_index = index;
-
-	OStringStream ss;
-	ss << "Method_" << index;
-	m_name = ss.str();
-}
-
-VTable::VTable(VTableSpec *spec, const OString &name, DWORD startOffset)
-	: m_spec(spec), m_name(name), m_startOffset(startOffset), m_methods(spec->GetMethodCount())
-{
-	DWORD *funcs = (DWORD *) startOffset;
-
-	for (int i = 0; i < spec->GetMethodCount(); i++)
-	{
-		m_methods[i].Initialize(&(*spec)[i], this, funcs[i]);
-	}
-}
-
-void
-VTable::Hook()
-{
-	VTableSpec *spec = GetSpec();
-
-	DWORD oldProtect;
-	VirtualProtect((LPVOID) m_startOffset, spec->GetMethodCount() * sizeof(LPVOID),
-		PAGE_READWRITE, &oldProtect);
-
-	DWORD *methods = (DWORD *) m_startOffset;
-
-	for (int i = 0; i < spec->GetMethodCount(); i++)
-	{
-		methods[i] = (DWORD) m_methods[i].CreateTrampoline();
-	}
-}
-
-VMethodTrampoline *
-VMethod::CreateTrampoline()
-{
-	VMethodTrampoline *trampoline = new VMethodTrampoline;
+	FunctionTrampoline *trampoline = new FunctionTrampoline;
 
 	trampoline->CALL_opcode = 0xE8;
 	trampoline->CALL_offset = (DWORD) OnEnterProxy - (DWORD) &(trampoline->data);
@@ -83,11 +40,11 @@ VMethod::CreateTrampoline()
 }
 
 __declspec(naked) void
-VMethod::OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, VMethodTrampoline *trampoline, void **proxyRet, void **finalRet)
+Function::OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, FunctionTrampoline *trampoline, void **proxyRet, void **finalRet)
 {
 	DWORD lastError;
-	VMethod *method;
-	VMethodTrampoline *nextTrampoline;
+	Function *function;
+	FunctionTrampoline *nextTrampoline;
 
 	__asm {
 											// *** We're coming in hot from the modified vtable through the trampoline ***
@@ -117,11 +74,11 @@ VMethod::OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, VMethodTrampol
 
 	lastError = GetLastError();
 
-	method = static_cast<VMethod *>(trampoline->data);
-	nextTrampoline = method->OnEnterWrapper(&cpuCtx, &unwindSize, trampoline, finalRet, &lastError);
+	function = static_cast<Function *>(trampoline->data);
+	nextTrampoline = function->OnEnterWrapper(&cpuCtx, &unwindSize, trampoline, finalRet, &lastError);
 	if (nextTrampoline != NULL)
 	{
-		*proxyRet = reinterpret_cast<void *>(method->GetOffset());
+		*proxyRet = reinterpret_cast<void *>(function->GetOffset());
 		*finalRet = nextTrampoline;
 	}
 
@@ -142,11 +99,11 @@ VMethod::OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, VMethodTrampol
 	}
 }
 
-VMethodTrampoline *
-VMethod::OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, VMethodTrampoline *trampoline, void *btAddr, DWORD *lastError)
+FunctionTrampoline *
+Function::OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, FunctionTrampoline *trampoline, void *btAddr, DWORD *lastError)
 {
-	// Keep track of the method call
-	VMethodCall *call = new VMethodCall(this, btAddr, cpuCtx);
+	// Keep track of the function call
+	FunctionCall *call = new FunctionCall(this, btAddr, cpuCtx);
 	call->SetCpuContextLive(cpuCtx);
 	call->SetLastErrorLive(lastError);
 
@@ -154,10 +111,10 @@ VMethod::OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, VMethodTra
 
 	bool carryOn = call->GetShouldCarryOn();
 
-	VMethodSpec *spec = call->GetMethod()->GetSpec();
+	FunctionSpec *spec = call->GetFunction()->GetSpec();
 	CallingConvention conv = spec->GetCallingConvention();
 	if (conv == CALLING_CONV_UNKNOWN ||
-		(conv != CALLING_CONV_CDECL && spec->GetArgsSize() == VMETHOD_ARGS_SIZE_UNKNOWN))
+		(conv != CALLING_CONV_CDECL && spec->GetArgsSize() == FUNCTION_ARGS_SIZE_UNKNOWN))
 	{
 		// TODO: log a warning here
 		carryOn = true;
@@ -166,10 +123,10 @@ VMethod::OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, VMethodTra
 	if (carryOn)
 	{
 		// Set up a trampoline used to trap the return
-		VMethodTrampoline *retTrampoline = new VMethodTrampoline;
+		FunctionTrampoline *retTrampoline = new FunctionTrampoline;
 
 		retTrampoline->CALL_opcode = 0xE8;
-		retTrampoline->CALL_offset = (DWORD) VMethod::OnLeaveProxy - (DWORD) &(retTrampoline->data);
+		retTrampoline->CALL_offset = (DWORD) Function::OnLeaveProxy - (DWORD) &(retTrampoline->data);
 		retTrampoline->data = call;
 
 		return retTrampoline;
@@ -193,9 +150,9 @@ VMethod::OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, VMethodTra
 }
 
 __declspec(naked) void
-VMethod::OnLeaveProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
+Function::OnLeaveProxy(CpuContext cpuCtx, FunctionTrampoline *trampoline)
 {
-	VMethodCall *call;
+	FunctionCall *call;
 	DWORD lastError;
 
 	__asm {
@@ -211,7 +168,7 @@ VMethod::OnLeaveProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
 		sub eax, 5;							//  5. Rewind the pointer to the start of the VMethodTrampoline structure.
 		mov [esp+8+0], eax;					//  6. Store the VMethodTrampoline * on the reserved spot so that we can access it from
 											//     C++ through the second argument.
-		mov eax, [ebx+VMethodCall::m_returnAddress];	//  6. Get the return address of the caller.
+		mov eax, [ebx+FunctionCall::m_returnAddress];	//  6. Get the return address of the caller.
 		mov [esp+8+4], eax;					//  7. Replace the trampoline return-address with the return address of the caller.
 		pop ebx;
 		pop eax;
@@ -227,8 +184,8 @@ VMethod::OnLeaveProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
 
     lastError = GetLastError();
 
-	call = (VMethodCall *) trampoline->data;
-	call->GetMethod()->OnLeaveWrapper(&cpuCtx, trampoline, call, &lastError);
+	call = static_cast<FunctionCall *>(trampoline->data);
+	call->GetFunction()->OnLeaveWrapper(&cpuCtx, trampoline, call, &lastError);
 
     SetLastError(lastError);
 
@@ -247,7 +204,7 @@ VMethod::OnLeaveProxy(CpuContext cpuCtx, VMethodTrampoline *trampoline)
 }
 
 void
-VMethod::OnLeaveWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, VMethodCall *call, DWORD *lastError)
+Function::OnLeaveWrapper(CpuContext *cpuCtx, FunctionTrampoline *trampoline, FunctionCall *call, DWORD *lastError)
 {
 	call->SetCpuContextLive(cpuCtx);
 	call->SetLastErrorLive(lastError);
@@ -263,46 +220,54 @@ VMethod::OnLeaveWrapper(CpuContext *cpuCtx, VMethodTrampoline *trampoline, VMeth
 }
 
 void
-VMethod::OnEnter(VMethodCall *call)
+Function::OnEnter(FunctionCall *call)
 {
-	VMethodCallHandler handler = call->GetMethod()->GetSpec()->GetEnterHandler();
+	FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetEnterHandler();
 
 	if (handler == NULL || !handler(call))
 	{
+#if 0
 		message_logger_log_message("VMethod::OnEnter", call->GetBacktraceAddress(),
 			MESSAGE_CTX_INFO, "Entering %s @ 0x%08x, ecx = 0x%08x",
 			call->ToString().c_str(), GetOffset(),
 			call->GetCpuContextEnter()->ecx);
+#endif
 	}
 }
 
 void
-VMethod::OnLeave(VMethodCall *call)
+Function::OnLeave(FunctionCall *call)
 {
-	VMethodCallHandler handler = call->GetMethod()->GetSpec()->GetLeaveHandler();
+	FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetLeaveHandler();
 
 	if (handler == NULL || !handler(call))
 	{
+#if 0
 		message_logger_log_message("VMethod::OnLeave", call->GetBacktraceAddress(),
 			MESSAGE_CTX_INFO, "Leaving %s @ 0x%08x, eax = 0x%08x",
 			call->ToString().c_str(), GetOffset(),
 			call->GetCpuContextLeave()->eax);
+#endif
 	}
 }
 
 OString
-VMethodCall::ToString() const
+FunctionCall::ToString() const
 {
-	VMethodSpec *spec = m_method->GetSpec();
+	FunctionSpec *spec = m_function->GetSpec();
 
 	OStringStream ss;
 
-	ss << m_method->GetVTable()->GetName();
-	ss << "::";
+    const OString &parentName = m_function->GetParentName();
+    if (parentName.length() > 0)
+    {
+        ss << parentName << "::";
+    }
+
 	ss << spec->GetName();
 
 	int argsSize = spec->GetArgsSize();
-	if (argsSize != VMETHOD_ARGS_SIZE_UNKNOWN && argsSize % sizeof(DWORD) == 0)
+	if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN && argsSize % sizeof(DWORD) == 0)
 	{
 		ss << "(";
 
@@ -328,4 +293,4 @@ VMethodCall::ToString() const
 	return ss.str();
 }
 
-};
+} // namespace TrampoLib

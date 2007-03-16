@@ -26,17 +26,9 @@
  */
 
 #include "util.h"
+#include "TrampoLib\TrampoLib.h"
 
-typedef struct {
-	DWORD edi;
-	DWORD esi;
-	DWORD ebp;
-	DWORD esp;
-	DWORD ebx;
-	DWORD edx;
-	DWORD ecx;
-	DWORD eax;
-} CpuContext;
+using namespace TrampoLib;
 
 typedef bool (*HookRetAddrShouldLogFunc) (CpuContext *context, va_list args);
 

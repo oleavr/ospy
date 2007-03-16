@@ -266,10 +266,36 @@
 				RelativePath=".\util.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\vtable.cpp"
+			<Filter
+				Name="TrampoLib"
 				>
-			</File>
+				<File
+					RelativePath=".\TrampoLib\Core.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\TrampoLib\VTable.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -316,10 +342,22 @@
 				RelativePath=".\util.h"
 				>
 			</File>
-			<File
-				RelativePath=".\vtable.h"
+			<Filter
+				Name="TrampoLib"
 				>
-			</File>
+				<File
+					RelativePath=".\TrampoLib\Core.h"
+					>
+				</File>
+				<File
+					RelativePath=".\TrampoLib\TrampoLib.h"
+					>
+				</File>
+				<File
+					RelativePath=".\TrampoLib\VTable.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"
