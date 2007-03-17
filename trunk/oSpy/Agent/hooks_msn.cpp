@@ -19,9 +19,9 @@
 #include "stdafx.h"
 #include "hooking.h"
 #include "logging.h"
-#include "vtable.h"
+#include "TrampoLib\TrampoLib.h"
 
-using namespace InterceptLib;
+using namespace TrampoLib;
 
 //
 // Signatures
@@ -180,7 +180,7 @@ msnmsgr_debug(DWORD domain,
 typedef const char *(__stdcall *GetChallengeSecretFunc) (const char **ret, int which_one);
 typedef const LPWSTR (__stdcall *ContactPropertyIdToNameFunc) (int property_id);
 
-#define HOOK_P2P_TRANSPORT_VTABLES 1
+#define HOOK_P2P_TRANSPORT_VTABLES 0
 
 #if HOOK_P2P_TRANSPORT_VTABLES
 
@@ -197,12 +197,12 @@ typedef struct {
 } P2PTransportProperties;
 
 static bool
-CP2PTransportBridge_GetProperties_OnLeave(VMethodCall *call)
+CP2PTransportBridge_GetProperties_OnLeave(FunctionCall *call)
 {
 	void **args = (void **) call->GetArgumentsData().data();
 	P2PTransportProperties *props = (P2PTransportProperties *) args[0];
 
-	OStringStream ss;
+	OOStringStream ss;
 	ss << "field_0 = " << props->field_0 << endl;
 	ss << "field_4 = " << props->field_4 << endl;
 	ss << "field_8 = " << props->field_8 << endl;
@@ -224,9 +224,49 @@ CP2PTransportBridge_GetProperties_OnLeave(VMethodCall *call)
 
 #endif
 
+#if 0
+static bool
+AbstractObject_Method0_OnEnter(FunctionCall *call)
+{
+    printf("AbstractObject_Method0_OnEnter\n");
+
+    call->SetShouldCarryOn(false);
+
+    return false;
+}
+
+static bool
+AbstractObject_Method1_OnEnter(FunctionCall *call)
+{
+    printf("AbstractObject_Method1_OnEnter\n");
+
+    call->SetShouldCarryOn(false);
+
+    return false;
+}
+#endif
+
 void
 hook_msn()
 {
+#if 0
+    if (cur_process_is("VtableTest.exe"))
+    {
+	    VTableSpec *vtableSpec = new VTableSpec("AbstractObject", 2);
+        VTableSpec &vts = *vtableSpec;
+
+        vts[0].SetCallingConvention(CALLING_CONV_THISCALL);
+        vts[0].SetEnterHandler(AbstractObject_Method0_OnEnter);
+        vts[0].SetArgsSize(8);
+
+        vts[1].SetCallingConvention(CALLING_CONV_CDECL);
+        vts[1].SetEnterHandler(AbstractObject_Method1_OnEnter);
+
+        VTable *objVTable = new VTable(vtableSpec, "Object", 0x417890);
+	    objVTable->Hook();
+    }
+#endif
+
     char *error;
 
     if (!cur_process_is("msnmsgr.exe"))
@@ -271,7 +311,7 @@ hook_msn()
     if (find_signature(&msn_signatures[SIGNATURE_GET_CHALLENGE_SECRET],
         (LPVOID *) &get_challenge_secret, &error))
     {
-		OStringStream s;
+		OOStringStream s;
         const char *product_id, *product_key;
 
         get_challenge_secret(&product_id, 1);
@@ -310,7 +350,7 @@ hook_msn()
 
     if (found)
     {
-		OStringStream s;
+		OOStringStream s;
 
 		for (int i = 0; i < 1024; i++)
 		{

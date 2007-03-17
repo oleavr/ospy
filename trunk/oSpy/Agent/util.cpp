@@ -373,7 +373,7 @@ CUtil::AddressIsWithinExecutableModule(DWORD address)
 OString
 CUtil::CreateBackTrace(void *address)
 {
-	OStringStream s;
+	OOStringStream s;
 	int count = 0;
 	DWORD *p = (DWORD *) address;
 
