@@ -19,41 +19,85 @@
 // NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 // HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WI
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
 //
 
 #pragma once
+
+#include "Core.h"
 
 namespace TrampoLib {
 
 typedef struct {
     OString moduleName;
+    int startOffset;
     OString signature;
 } SignatureSpec;
 
 typedef enum {
-    TOKEN_TYPE_LITERAL = 0,
-    TOKEN_TYPE_IGNORE = 1,
+    TOKEN_TYPE_UNKNOWN = 0,
+    TOKEN_TYPE_LITERAL = 1,
+    TOKEN_TYPE_IGNORE = 2,
 } SignatureTokenType;
 
-typedef struct {
-    SignatureTokenType type;
-    int length;
-    unsigned char *data;
-} SignatureToken;
+class SignatureToken : public BaseObject
+{
+public:
+    SignatureToken(SignatureTokenType type=TOKEN_TYPE_UNKNOWN, int length=0)
+        : m_type(type), m_length(length)
+    {}
 
-class Signature : BaseObject
+    SignatureTokenType GetType() const { return m_type; }
+    void SetType(SignatureTokenType type) { m_type = type; }
+
+    int GetLength() const
+    {
+        if (m_type == TOKEN_TYPE_LITERAL)
+            return m_data.size();
+        else
+            return m_length;
+    }
+    void SetLength(int length) { m_length = length; }
+
+    const char *GetData() const { return m_data.data(); }
+
+    SignatureToken &operator+=(char b) { m_data += b; return *this; }
+
+protected:
+    SignatureTokenType m_type;
+    unsigned int m_length;
+    OString m_data;
+};
+
+class Signature : public BaseObject
 {
 public:
     Signature(const SignatureSpec *spec);
 
     void Initialize(const SignatureSpec *spec);
 
+    unsigned int GetLength() const { return m_length; }
+
+    unsigned int GetTokenCount() const { return m_tokens.size(); }
+    const SignatureToken &GetTokenByIndex(int index) const { return m_tokens[index]; }
+
+    int GetLongestTokenIndex() const { return m_longestIndex; }
+    const SignatureToken &GetLongestToken() const { return m_tokens[m_longestIndex]; }
+    int GetLongestTokenOffset() const { return m_longestOffset; }
+
+    const SignatureToken &operator[](int index) const { return m_tokens[index]; }
+
 protected:
     OVector<SignatureToken>::Type m_tokens;
+    unsigned int m_length;
+    int m_longestIndex;
+    int m_longestOffset;
+
+    void ParseSpec(const SignatureSpec *spec);
 };
 
-class SignatureMatcher : BaseObject
+class SignatureMatcher : public BaseObject
 {
 public:
     static SignatureMatcher *Instance()
@@ -62,11 +106,10 @@ public:
         return matcher;
     }
 
-    unsigned int FindInRange(const SignatureSpec *spec, void *base, unsigned int size, void **firstMatch);
-    /*
-    BOOL find_signature_in_range(const FunctionSignature *sig, LPVOID base, DWORD size, LPVOID *first_match, DWORD *num_matches, char **error);
-BOOL find_unique_signature_in_module(const FunctionSignature *sig, const char *module_name, LPVOID *address, char **error);
-BOOL find_unique_signature(const FunctionSignature *sig, LPVOID *address, char **error);*/
+    OVector<void *>::Type FindInRange(const Signature *sig, void *base, unsigned int size);
+
+protected:
+    bool MatchesSignature(const Signature *sig, void *base);
 };
 
 } // namespace TrampoLib

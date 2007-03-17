@@ -19,7 +19,8 @@
 // NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 // HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WI
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
 //
 
 #include "stdafx.h"
@@ -27,11 +28,11 @@
 
 namespace TrampoLib {
 
-const PrologSignature Function::prologSignatures[] = {
+const PrologSignatureSpec Function::prologSignatures[] = {
 	{
 		{
 			NULL,
-
+            0,
 			"8B FF"					// mov edi, edi
 			"55"					// push ebp
 			"8B EC",				// mov ebp, esp
@@ -43,7 +44,7 @@ const PrologSignature Function::prologSignatures[] = {
 	{
 		{
 			NULL,
-
+            0,
 			"6A ??"					// push ??h
 			"68 ?? ?? ?? ??"		// push offset dword_????????
 			"E8 ?? ?? ?? ??",		// call __SEH_prolog
@@ -55,7 +56,7 @@ const PrologSignature Function::prologSignatures[] = {
 	{
 		{
 			NULL,
-
+            0,
 			"68 ?? ?? ?? ??"		// push ???h
 			"68 ?? ?? ?? ??"		// push offset dword_????????
 			"E8 ?? ?? ?? ??",		// call __SEH_prolog
@@ -67,7 +68,7 @@ const PrologSignature Function::prologSignatures[] = {
 	{
 		{
 			NULL,
-
+            0,
 			"FF 25 ?? ?? ?? ??"		// jmp ds:__imp__*
 		},
 
@@ -77,7 +78,7 @@ const PrologSignature Function::prologSignatures[] = {
 	{
 		{
 			NULL,
-
+            0,
 			"33 C0"		// xor eax, eax
 			"50"		// push eax
 			"50"		// push eax

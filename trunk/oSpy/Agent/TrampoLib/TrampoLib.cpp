@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2006-2007 Ole André Vadla Ravnås <oleavr@gmail.com>
+// Copyright (c) 2007 Ole André Vadla Ravnås <oleavr@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -23,22 +23,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 //
 
-#pragma once
+#include "stdafx.h"
+#include "Util.h"
 
-class CHookContext;
+namespace TrampoLib {
 
-extern CHookContext g_getaddrinfoHookContext;
-extern CHookContext g_recvHookContext;
-extern CHookContext g_sendHookContext;
-extern CHookContext g_connectHookContext;
-extern CHookContext g_encryptMessageHookContext;
-extern CHookContext g_decryptMessageHookContext;
+void Initialize()
+{
+    Util::Initialize();
+}
 
-void hook_kernel32();
-void hook_winsock();
-void hook_secur32();
-void hook_crypt();
-void hook_wininet();
-void hook_httpapi();
-void hook_activesync();
-void hook_msn();
+} // namespace TrampoLib

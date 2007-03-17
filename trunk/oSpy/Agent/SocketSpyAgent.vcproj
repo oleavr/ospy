@@ -187,6 +187,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\alloc.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\byte_buffer.cpp"
 				>
 			</File>
@@ -274,8 +278,38 @@
 					>
 				</File>
 				<File
+					RelativePath=".\TrampoLib\DLL.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\TrampoLib\Signature.cpp"
 					>
+				</File>
+				<File
+					RelativePath=".\TrampoLib\TrampoLib.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\TrampoLib\Util.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\TrampoLib\VTable.cpp"
@@ -363,6 +397,10 @@
 				</File>
 				<File
 					RelativePath=".\TrampoLib\TrampoLib.h"
+					>
+				</File>
+				<File
+					RelativePath=".\TrampoLib\Util.h"
 					>
 				</File>
 				<File

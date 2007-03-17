@@ -11,7 +11,10 @@
 // Adapted to oSpy by Ole André Vadla Ravnås
 // ########################################################
 
+#pragma once
+
 #include "stdafx.h"
+#include <iomanip>
 #include <string>
 #include <sstream>
 #include <vector>

@@ -19,7 +19,8 @@
 // NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 // HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WI
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
 //
 
 #pragma once
@@ -30,36 +31,26 @@ namespace TrampoLib {
 
 class DllModule : BaseObject {
 public:
-    DllModule(const OString &path, const OString &name)
-        : m_path(path), m_name(name)
-    {
-        m_handle = LoadLibrary(path.c_str());
-        if (m_handle == NULL)
-            throw runtime_error("LoadLibrary failed");
-    }
+    DllModule(const OString &path, const OString &name);
 
     const OString &GetPath() const { return m_path; }
     const OString &GetName() const { return m_name; }
     HMODULE GetHandle() const { return m_handle; }
 
+    void *FindUniqueSignature(const Signature *sig);
+
 protected:
     OString m_path;
     OString m_name;
     HMODULE m_handle;
+    void *m_base;
+    DWORD m_size;
 };
 
 class DllFunction : public Function
 {
 public:
-    DllFunction(DllModule *module, FunctionSpec *spec)
-        : m_module(module)
-    {
-        FARPROC offset = GetProcAddress(module->GetHandle(), spec->GetName().c_str());
-        if (offset == NULL)
-            throw runtime_error("GetProcAddress failed");
-
-        Function::Initialize(spec, reinterpret_cast<DWORD>(offset));
-    }
+    DllFunction(DllModule *module, FunctionSpec *spec);
 
     virtual const OString &GetParentName() const { return m_module->GetName(); }
 
