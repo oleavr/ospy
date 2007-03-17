@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2006-2007 Ole André Vadla Ravnås <oleavr@gmail.com>
+// Copyright (c) 2007 Ole André Vadla Ravnås <oleavr@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -25,20 +25,37 @@
 
 #pragma once
 
-class CHookContext;
+namespace TrampoLib {
 
-extern CHookContext g_getaddrinfoHookContext;
-extern CHookContext g_recvHookContext;
-extern CHookContext g_sendHookContext;
-extern CHookContext g_connectHookContext;
-extern CHookContext g_encryptMessageHookContext;
-extern CHookContext g_decryptMessageHookContext;
+typedef struct {
+	OICString name;
+	DWORD preferredStartAddress;
+	DWORD startAddress;
+	DWORD endAddress;
+} OModuleInfo;
 
-void hook_kernel32();
-void hook_winsock();
-void hook_secur32();
-void hook_crypt();
-void hook_wininet();
-void hook_httpapi();
-void hook_activesync();
-void hook_msn();
+class Util
+{
+public:
+	static void Initialize();
+	static void UpdateModuleList();
+
+	static const OString &GetProcessName() { return m_processName; }
+	static OString GetModuleNameForAddress(DWORD address);
+	static OModuleInfo GetModuleInfo(const OICString &name);
+	static OVector<OModuleInfo>::Type GetAllModules();
+	static bool AddressIsWithinExecutableModule(DWORD address);
+
+	static OString CreateBackTrace(void *address);
+
+private:
+	static OModuleInfo *GetModuleInfoForAddress(DWORD address);
+
+	static CRITICAL_SECTION m_cs;
+	static OString m_processName;
+	static OMap<OICString, OModuleInfo>::Type m_modules;
+	static DWORD m_lowestAddress;
+	static DWORD m_highestAddress;
+};
+
+} // namespace TrampoLib

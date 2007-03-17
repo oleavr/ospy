@@ -19,7 +19,8 @@
 // NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 // HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WI
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
 //
 
 #pragma once
@@ -58,7 +59,7 @@ typedef struct {
 	SignatureSpec sig;
 	int sigSize;
 	int numBytesToCopy;
-} PrologSignature;
+} PrologSignatureSpec;
 
 #define FUNCTION_ARGS_SIZE_UNKNOWN -1
 
@@ -123,7 +124,7 @@ public:
 protected:
     FunctionSpec *m_spec;
     DWORD m_offset;
-    static const PrologSignature prologSignatures[];
+    static const PrologSignatureSpec prologSignatures[];
 
     void OnEnter(FunctionCall *call);
     void OnLeave(FunctionCall *call);

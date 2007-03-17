@@ -23,22 +23,34 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 //
 
-#pragma once
+#include "stdafx.h"
 
-class CHookContext;
+void *
+sspy_malloc(size_t size)
+{
+    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
+}
 
-extern CHookContext g_getaddrinfoHookContext;
-extern CHookContext g_recvHookContext;
-extern CHookContext g_sendHookContext;
-extern CHookContext g_connectHookContext;
-extern CHookContext g_encryptMessageHookContext;
-extern CHookContext g_decryptMessageHookContext;
+void *
+sspy_realloc(void *ptr, size_t new_size)
+{
+    return HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, ptr, new_size);
+}
 
-void hook_kernel32();
-void hook_winsock();
-void hook_secur32();
-void hook_crypt();
-void hook_wininet();
-void hook_httpapi();
-void hook_activesync();
-void hook_msn();
+void
+sspy_free(void *ptr)
+{
+    HeapFree(GetProcessHeap(), 0, ptr);
+}
+
+char *
+sspy_strdup(const char *str)
+{
+    char *s;
+    size_t size = strlen(str) + 1;
+
+    s = (char *) sspy_malloc(size);
+    memcpy(s, str, size);
+
+    return s;
+}

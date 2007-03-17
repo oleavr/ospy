@@ -19,7 +19,8 @@
 // NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 // HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WI
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
 //
 
 #pragma once
@@ -37,7 +38,7 @@ public:
 	VTableSpec(const OString &name, int methodCount);
 
 	const OString &GetName() const { return m_name; }
-	int GetMethodCount() const { return (int) m_methods.size(); }
+	unsigned int GetMethodCount() const { return m_methods.size(); }
 	VMethodSpec &GetMethodByIndex(int index) { return m_methods[index]; }
 
 	VMethodSpec &operator[](int index) { return m_methods[index]; }
