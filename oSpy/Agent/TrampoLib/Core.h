@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include "Signature.h"
+
 namespace TrampoLib {
 
 typedef struct {
@@ -51,6 +53,12 @@ typedef struct {
 	void *data;
 } FunctionTrampoline;
 #pragma pack(pop)
+
+typedef struct {
+	SignatureSpec sig;
+	int sigSize;
+	int numBytesToCopy;
+} PrologSignature;
 
 #define FUNCTION_ARGS_SIZE_UNKNOWN -1
 
@@ -110,9 +118,12 @@ public:
     FunctionSpec *GetSpec() const { return m_spec; }
     DWORD GetOffset() const { return m_offset; }
 
+    void Hook();
+
 protected:
     FunctionSpec *m_spec;
     DWORD m_offset;
+    static const PrologSignature prologSignatures[];
 
     void OnEnter(FunctionCall *call);
     void OnLeave(FunctionCall *call);

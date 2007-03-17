@@ -274,6 +274,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\TrampoLib\Signature.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\TrampoLib\VTable.cpp"
 					>
 					<FileConfiguration
@@ -351,6 +355,10 @@
 				</File>
 				<File
 					RelativePath=".\TrampoLib\DLL.h"
+					>
+				</File>
+				<File
+					RelativePath=".\TrampoLib\Signature.h"
 					>
 				</File>
 				<File
