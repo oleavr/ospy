@@ -88,8 +88,12 @@ protected:
 class VMethod : public Function
 {
 public:
+    VMethod(VTable *vtable=NULL, FunctionSpec *spec=NULL, DWORD offset=0)
+    {
+        Initialize(vtable, spec, offset);
+    }
 
-    void Initialize(FunctionSpec *spec, DWORD offset, VTable *vtable)
+    void Initialize(VTable *vtable, FunctionSpec *spec, DWORD offset)
     {
         Function::Initialize(spec, offset);
         m_vtable = vtable;

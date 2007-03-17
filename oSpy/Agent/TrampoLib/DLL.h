@@ -22,57 +22,54 @@
 // FROM, OUT OF OR IN CONNECTION WI
 //
 
-#include "stdafx.h"
-#include "VTable.h"
+#pragma once
+
+#include "Core.h"
 
 namespace TrampoLib {
 
-void
-VMethodSpec::Initialize(VTableSpec *vtable, int index)
+class DllModule : BaseObject {
+public:
+    DllModule(const OString &path, const OString &name)
+        : m_path(path), m_name(name)
+    {
+        m_handle = LoadLibrary(path.c_str());
+        if (m_handle == NULL)
+            throw runtime_error("LoadLibrary failed");
+    }
+
+    const OString &GetPath() const { return m_path; }
+    const OString &GetName() const { return m_name; }
+    HMODULE GetHandle() const { return m_handle; }
+
+protected:
+    OString m_path;
+    OString m_name;
+    HMODULE m_handle;
+};
+
+class DllFunction : public Function
 {
-	m_vtable = vtable;
-	m_index = index;
+public:
+    DLLFunction(DllModule *module, FunctionSpec *spec)
+        : m_module(module), 
+    {
+        void *offset = GetProcAddress(module->GetHandle(), spec->GetName());
+        if (offset == NULL)
+            throw runtime_error("GetProcAddress failed");
 
-	OStringStream ss;
-	ss << "Method_" << index;
-	m_name = ss.str();
-}
+        Function::Initialize(spec, offset);
 
-VTableSpec::VTableSpec(const OString &name, int methodCount)
-	: m_name(name), m_methods(methodCount)
-{
-	for (int i = 0; i < methodCount; i++)
-	{
-		m_methods[i].Initialize(this, i);
-	}
-}
+        m_module = module;
+        m_name = name;
+    }
 
-VTable::VTable(VTableSpec *spec, const OString &name, DWORD startOffset)
-	: m_spec(spec), m_name(name), m_startOffset(startOffset), m_methods(spec->GetMethodCount())
-{
-	DWORD *funcs = (DWORD *) startOffset;
+    virtual const OString &GetParentName() const { return m_module->GetName(); }
 
-	for (int i = 0; i < spec->GetMethodCount(); i++)
-	{
-		m_methods[i].Initialize(this, &(*spec)[i], funcs[i]);
-	}
-}
+    DllModule *GetModule() const { return m_module; }
 
-void
-VTable::Hook()
-{
-	VTableSpec *spec = GetSpec();
-
-	DWORD oldProtect;
-	VirtualProtect((LPVOID) m_startOffset, spec->GetMethodCount() * sizeof(LPVOID),
-		PAGE_READWRITE, &oldProtect);
-
-	DWORD *methods = (DWORD *) m_startOffset;
-
-	for (int i = 0; i < spec->GetMethodCount(); i++)
-	{
-		methods[i] = (DWORD) m_methods[i].CreateTrampoline();
-	}
-}
+protected:
+    DllModule *m_module;
+};
 
 } // namespace TrampoLib

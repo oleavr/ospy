@@ -350,6 +350,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\TrampoLib\DLL.h"
+					>
+				</File>
+				<File
 					RelativePath=".\TrampoLib\TrampoLib.h"
 					>
 				</File>
