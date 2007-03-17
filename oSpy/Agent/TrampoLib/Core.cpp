@@ -323,7 +323,7 @@ FunctionCall::ToString() const
 {
 	FunctionSpec *spec = m_function->GetSpec();
 
-	OStringStream ss;
+	OOStringStream ss;
 
     const OString &parentName = m_function->GetParentName();
     if (parentName.length() > 0)

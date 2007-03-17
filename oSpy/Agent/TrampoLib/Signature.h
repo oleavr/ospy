@@ -27,9 +27,31 @@
 namespace TrampoLib {
 
 typedef struct {
-    char *module_name;
-    char *signature;
+    OString moduleName;
+    OString signature;
 } SignatureSpec;
+
+typedef enum {
+    TOKEN_TYPE_LITERAL = 0,
+    TOKEN_TYPE_IGNORE = 1,
+} SignatureTokenType;
+
+typedef struct {
+    SignatureTokenType type;
+    int length;
+    unsigned char *data;
+} SignatureToken;
+
+class Signature : BaseObject
+{
+public:
+    Signature(const SignatureSpec *spec);
+
+    void Initialize(const SignatureSpec *spec);
+
+protected:
+    OVector<SignatureToken>::Type m_tokens;
+};
 
 class SignatureMatcher : BaseObject
 {

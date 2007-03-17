@@ -28,7 +28,7 @@
 #include "util.h"
 #include "TrampoLib\TrampoLib.h"
 
-using namespace TrampoLib;
+using TrampoLib::CpuContext;
 
 typedef bool (*HookRetAddrShouldLogFunc) (CpuContext *context, va_list args);
 

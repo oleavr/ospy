@@ -27,170 +27,7 @@
 
 namespace TrampoLib {
 
-typedef enum {
-    TOKEN_TYPE_LITERAL = 0,
-    TOKEN_TYPE_IGNORE = 1,
-} SignatureTokenType;
-
-typedef struct {
-    SignatureTokenType type;
-    int length;
-    unsigned char *data;
-} SignatureToken;
-
-unsigned int
-SignatureMatcher::FindInRange(const SignatureSpec *spec, void *base, unsigned int size, void **firstMatch)
-{
-    int numMatches = 0;
-    unsigned char *p, *match;
-    SignatureToken **tokens = NULL, *longestToken;
-    int numTokens, rawSize, longestOffset;
-
-    ParseSignature(spec, &tokens, &numTokens, &rawSize, &longestToken, &longestOffset);
-
-    *firstMatch = NULL;
-    numMatches = 0;
-
-    for (p = (unsigned char *) base; p <= (unsigned char *) base + size - rawSize; p++)
-    {
-        if (memcmp(p, longestToken->data, longestToken->length) == 0)
-        {
-            BOOL matched = scan_against_all_tokens(p - longestOffset, tokens);
-            if (matched == TRUE)
-            {
-                match = p - longestOffset;
-
-				if (*firstMatch == NULL)
-					*firstMatch = match;
-
-				numMatches++;
-
-                /* Skip ahead. */
-                p = p - longestOffset + raw_size;
-            }
-        }
-    }
-
-	result = TRUE;
-
-DONE:
-    if (tokens != NULL)
-    {
-        signature_token_list_free(tokens);
-    }
-
-    return result;
-}
-
 #if 0
-static BOOL
-find_next_token(const char **input, int *num_ignores, char **error)
-{
-    const char *p = *input;
-    int chars_skipped = 0, qms_skipped = 0;
-    *num_ignores = 0;
-
-    for (; *p != '\0'; p++)
-    {
-        if ((*p >= 48 && *p <= 57) ||
-            (*p >= 65 && *p <= 90) ||
-            (*p >= 97 && *p <= 122))
-        {
-            chars_skipped++;
-
-            if (chars_skipped == 3)
-            {
-                goto DONE;
-            }
-        }
-        else if (*p == '?')
-        {
-            qms_skipped++;
-        }
-    }
-
-    if (*p == '\0')
-        p = NULL;
-
-DONE:
-    *input = p;
-    *num_ignores = qms_skipped / 2;
-    return TRUE;
-}
-
-static SignatureToken *
-signature_token_new (SignatureTokenType type, int buffer_size)
-{
-    SignatureToken *token;
-
-    token = (SignatureToken *) ospy_malloc(sizeof(SignatureToken));
-    token->type = type;
-    token->length = 0;
-
-    if (buffer_size > 0)
-        token->data = (unsigned char *) ospy_malloc(buffer_size);
-    else
-        token->data = NULL;
-
-    return token;
-}
-
-static void
-signature_token_free (SignatureToken *token)
-{
-    if (token->data != NULL)
-    {
-        ospy_free(token->data);
-    }
-
-    ospy_free(token);
-}
-
-static void
-signature_token_list_free (SignatureToken **tokens)
-{
-    int i;
-
-    for (i = 0; i; i++)
-    {
-        SignatureToken *cur_token = tokens[i];
-
-        if (cur_token != NULL)
-        {
-            signature_token_free(cur_token);
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    ospy_free(tokens);
-}
-
-static void
-signature_token_print (SignatureToken *token)
-{
-    fprintf(stderr, "type=%s, length=%d",
-        (token->type == TOKEN_TYPE_LITERAL) ? "TOKEN_TYPE_LITERAL" : "TOKEN_TYPE_IGNORE ",
-        token->length);
-
-    if (token->data != NULL)
-    {
-        int j;
-
-        fprintf(stderr, ", data=[");
-        for (j = 0; j < token->length; j++)
-        {
-            fprintf(stderr, " %02hhx", token->data[j]);
-        }
-
-        fprintf(stderr, "]");
-    }
-
-    fprintf(stderr, "\n");
-}
-
 static BOOL
 parse_signature(const FunctionSignature *sig,
                 SignatureToken ***tokens,
@@ -200,16 +37,38 @@ parse_signature(const FunctionSignature *sig,
                 int *longest_offset,
                 char **error)
 {
+#endif
+
+Signature::Signature(const SignatureSpec *spec)
+{
+    Initialize(spec);
+}
+
+void
+Signature::Initialize(const SignatureSpec *spec)
+{
+    m_tokens.clear();
+
+    OIStringStream iss(spec->moduleName);
+    iss.good();
+
+
+
+
+
+
+
+#if 0
     const char *p;
     int sig_len, max_tokens, token_index, buf_pos, i, offset;
     SignatureToken **ret_tokens, *cur_token;
 
     ret_tokens = NULL;
 
-    /* Count the number of '?' characters in order to get
-     * an idea of the maximum number of tokens we're
-     * going to parse, and find the string length while
-     * we're at it. */
+    // Count the number of '?' characters in order to get
+    // an idea of the maximum number of tokens we're
+    // going to parse, and find the string length while
+    // we're at it.
     sig_len = max_tokens = 0;
     for (p = sig->signature; *p != '\0'; p++)
     {
@@ -327,6 +186,164 @@ ERR_OUT:
     }
 
     return FALSE;
+#endif
+}
+
+unsigned int
+SignatureMatcher::FindInRange(const SignatureSpec *spec, void *base, unsigned int size, void **firstMatch)
+{
+    return 0;
+
+#if 0
+    int numMatches = 0;
+    unsigned char *p, *match;
+    SignatureToken **tokens = NULL, *longestToken;
+    int numTokens, rawSize, longestOffset;
+
+    ParseSignature(spec, &tokens, &numTokens, &rawSize, &longestToken, &longestOffset);
+
+    *firstMatch = NULL;
+    numMatches = 0;
+
+    for (p = (unsigned char *) base; p <= (unsigned char *) base + size - rawSize; p++)
+    {
+        if (memcmp(p, longestToken->data, longestToken->length) == 0)
+        {
+            BOOL matched = scan_against_all_tokens(p - longestOffset, tokens);
+            if (matched == TRUE)
+            {
+                match = p - longestOffset;
+
+				if (*firstMatch == NULL)
+					*firstMatch = match;
+
+				numMatches++;
+
+                /* Skip ahead. */
+                p = p - longestOffset + raw_size;
+            }
+        }
+    }
+
+	result = TRUE;
+
+DONE:
+    if (tokens != NULL)
+    {
+        signature_token_list_free(tokens);
+    }
+
+    return result;
+#endif
+}
+
+#if 0
+static BOOL
+find_next_token(const char **input, int *num_ignores, char **error)
+{
+    const char *p = *input;
+    int chars_skipped = 0, qms_skipped = 0;
+    *num_ignores = 0;
+
+    for (; *p != '\0'; p++)
+    {
+        if ((*p >= 48 && *p <= 57) ||
+            (*p >= 65 && *p <= 90) ||
+            (*p >= 97 && *p <= 122))
+        {
+            chars_skipped++;
+
+            if (chars_skipped == 3)
+            {
+                goto DONE;
+            }
+        }
+        else if (*p == '?')
+        {
+            qms_skipped++;
+        }
+    }
+
+    if (*p == '\0')
+        p = NULL;
+
+DONE:
+    *input = p;
+    *num_ignores = qms_skipped / 2;
+    return TRUE;
+}
+
+static SignatureToken *
+signature_token_new (SignatureTokenType type, int buffer_size)
+{
+    SignatureToken *token;
+
+    token = (SignatureToken *) ospy_malloc(sizeof(SignatureToken));
+    token->type = type;
+    token->length = 0;
+
+    if (buffer_size > 0)
+        token->data = (unsigned char *) ospy_malloc(buffer_size);
+    else
+        token->data = NULL;
+
+    return token;
+}
+
+static void
+signature_token_free (SignatureToken *token)
+{
+    if (token->data != NULL)
+    {
+        ospy_free(token->data);
+    }
+
+    ospy_free(token);
+}
+
+static void
+signature_token_list_free (SignatureToken **tokens)
+{
+    int i;
+
+    for (i = 0; i; i++)
+    {
+        SignatureToken *cur_token = tokens[i];
+
+        if (cur_token != NULL)
+        {
+            signature_token_free(cur_token);
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    ospy_free(tokens);
+}
+
+static void
+signature_token_print (SignatureToken *token)
+{
+    fprintf(stderr, "type=%s, length=%d",
+        (token->type == TOKEN_TYPE_LITERAL) ? "TOKEN_TYPE_LITERAL" : "TOKEN_TYPE_IGNORE ",
+        token->length);
+
+    if (token->data != NULL)
+    {
+        int j;
+
+        fprintf(stderr, ", data=[");
+        for (j = 0; j < token->length; j++)
+        {
+            fprintf(stderr, " %02hhx", token->data[j]);
+        }
+
+        fprintf(stderr, "]");
+    }
+
+    fprintf(stderr, "\n");
 }
 
 static BOOL
