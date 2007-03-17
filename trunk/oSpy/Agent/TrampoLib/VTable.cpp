@@ -51,7 +51,7 @@ VTableSpec::VTableSpec(const OString &name, int methodCount)
 VTable::VTable(VTableSpec *spec, const OString &name, DWORD startOffset)
 	: m_spec(spec), m_name(name), m_startOffset(startOffset), m_methods(spec->GetMethodCount())
 {
-	DWORD *funcs = (DWORD *) startOffset;
+	DWORD *funcs = reinterpret_cast<DWORD *>(startOffset);
 
 	for (int i = 0; i < spec->GetMethodCount(); i++)
 	{
@@ -65,15 +65,17 @@ VTable::Hook()
 	VTableSpec *spec = GetSpec();
 
 	DWORD oldProtect;
-	VirtualProtect((LPVOID) m_startOffset, spec->GetMethodCount() * sizeof(LPVOID),
+	VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), spec->GetMethodCount() * sizeof(LPVOID),
 		PAGE_READWRITE, &oldProtect);
 
-	DWORD *methods = (DWORD *) m_startOffset;
+	DWORD *methods = reinterpret_cast<DWORD *>(m_startOffset);
 
 	for (int i = 0; i < spec->GetMethodCount(); i++)
 	{
-		methods[i] = (DWORD) m_methods[i].CreateTrampoline();
+		methods[i] = reinterpret_cast<DWORD>(m_methods[i].CreateTrampoline());
 	}
+
+    FlushInstructionCache(GetCurrentProcess(), NULL, 0);
 }
 
 } // namespace TrampoLib

@@ -28,7 +28,7 @@
 
 namespace TrampoLib {
 
-const PrologSignatureSpec Function::prologSignatures[] = {
+const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 	{
 		{
 			NULL,
@@ -38,7 +38,6 @@ const PrologSignatureSpec Function::prologSignatures[] = {
 			"8B EC",				// mov ebp, esp
 		},
 
-		5,
 		5,
 	},
 	{
@@ -50,7 +49,6 @@ const PrologSignatureSpec Function::prologSignatures[] = {
 			"E8 ?? ?? ?? ??",		// call __SEH_prolog
 		},
 
-		12,
 		7,
 	},
 	{
@@ -62,7 +60,6 @@ const PrologSignatureSpec Function::prologSignatures[] = {
 			"E8 ?? ?? ?? ??",		// call __SEH_prolog
 		},
 
-		15,
 		5,
 	},
 	{
@@ -72,7 +69,6 @@ const PrologSignatureSpec Function::prologSignatures[] = {
 			"FF 25 ?? ?? ?? ??"		// jmp ds:__imp__*
 		},
 
-		6,
 		6,
 	},
 	{
@@ -86,18 +82,37 @@ const PrologSignatureSpec Function::prologSignatures[] = {
 		},
 
 		6,
-		6,
 	},
 };
 
-FunctionTrampoline *
-Function::CreateTrampoline()
+OVector<Signature>::Type Function::prologSignatures;
+
+void
+Function::Initialize()
 {
-	FunctionTrampoline *trampoline = new FunctionTrampoline;
+	for (int i = 0; i < sizeof(prologSignatureSpecs) / sizeof(PrologSignatureSpec); i++)
+	{
+        prologSignatures.push_back(Signature(&prologSignatureSpecs[i].sig));
+    }
+}
+
+FunctionTrampoline *
+Function::CreateTrampoline(unsigned int bytesToCopy)
+{
+    FunctionTrampoline *trampoline = reinterpret_cast<FunctionTrampoline *>(new unsigned char[sizeof(FunctionTrampoline) + bytesToCopy + sizeof(FunctionRedirectStub)]);
 
 	trampoline->CALL_opcode = 0xE8;
 	trampoline->CALL_offset = (DWORD) OnEnterProxy - (DWORD) &(trampoline->data);
 	trampoline->data = this;
+
+    if (bytesToCopy > 0)
+    {
+        memcpy(trampoline->postStub, reinterpret_cast<const void *>(m_offset), bytesToCopy);
+    }
+
+    FunctionRedirectStub *redirStub = reinterpret_cast<FunctionRedirectStub *>(reinterpret_cast<unsigned char *>(&trampoline->postStub) + bytesToCopy);
+    redirStub->JMP_opcode = 0xE9;
+    redirStub->JMP_offset = m_offset - (reinterpret_cast<DWORD>(reinterpret_cast<unsigned char *>(redirStub) + sizeof(FunctionRedirectStub)));
 
 	return trampoline;
 }
@@ -105,6 +120,34 @@ Function::CreateTrampoline()
 void
 Function::Hook()
 {
+    const PrologSignatureSpec *spec = NULL;
+
+    for (int i = 0; i < prologSignatures.size(); i++)
+    {
+        const Signature *sig = &prologSignatures[i];
+
+        OVector<void *>::Type matches = SignatureMatcher::Instance()->FindInRange(sig, reinterpret_cast<void *>(m_offset), sig->GetLength());
+        if (matches.size() == 1)
+        {
+            spec = &prologSignatureSpecs[i];
+            break;
+        }
+    }
+
+    if (spec == NULL)
+        throw runtime_error("none of the supported signatures matched");
+
+    FunctionTrampoline *trampoline = CreateTrampoline(spec->numBytesToCopy);
+
+    DWORD oldProtect;
+    VirtualProtect(reinterpret_cast<LPVOID>(m_offset), 5, PAGE_EXECUTE_WRITECOPY, &oldProtect);
+    // TODO: check that VirtualProtect succeeded
+
+    FunctionRedirectStub *redirStub = reinterpret_cast<FunctionRedirectStub *>(m_offset);
+    redirStub->JMP_opcode = 0xE9;
+    redirStub->JMP_offset = reinterpret_cast<DWORD>(trampoline) - (reinterpret_cast<DWORD>(reinterpret_cast<unsigned char *>(redirStub) + sizeof(FunctionRedirectStub)));
+
+    FlushInstructionCache(GetCurrentProcess(), NULL, 0);
 }
 
 __declspec(naked) void
@@ -146,7 +189,7 @@ Function::OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, FunctionTramp
 	nextTrampoline = function->OnEnterWrapper(&cpuCtx, &unwindSize, trampoline, finalRet, &lastError);
 	if (nextTrampoline != NULL)
 	{
-		*proxyRet = reinterpret_cast<void *>(function->GetOffset());
+		*proxyRet = trampoline->postStub;
 		*finalRet = nextTrampoline;
 	}
 

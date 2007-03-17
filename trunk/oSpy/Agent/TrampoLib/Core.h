@@ -52,12 +52,17 @@ typedef struct {
 	BYTE CALL_opcode;
 	DWORD CALL_offset;
 	void *data;
+    unsigned char postStub[0];
 } FunctionTrampoline;
+
+typedef struct {
+	BYTE JMP_opcode;
+	DWORD JMP_offset;
+} FunctionRedirectStub;
 #pragma pack(pop)
 
 typedef struct {
 	SignatureSpec sig;
-	int sigSize;
 	int numBytesToCopy;
 } PrologSignatureSpec;
 
@@ -110,12 +115,12 @@ class Function : public BaseObject
 public:
     Function(FunctionSpec *spec=NULL, DWORD offset=0) { Initialize(spec, offset); }
 
+    static void Initialize();
     void Initialize(FunctionSpec *spec, DWORD offset) { m_spec = spec; m_offset = offset; }
 
     virtual const OString &GetParentName() const { return ""; }
 
-    FunctionTrampoline *CreateTrampoline();
-
+    FunctionTrampoline *CreateTrampoline(unsigned int bytesToCopy=0);
     FunctionSpec *GetSpec() const { return m_spec; }
     DWORD GetOffset() const { return m_offset; }
 
@@ -124,7 +129,8 @@ public:
 protected:
     FunctionSpec *m_spec;
     DWORD m_offset;
-    static const PrologSignatureSpec prologSignatures[];
+    static const PrologSignatureSpec prologSignatureSpecs[];
+    static OVector<Signature>::Type prologSignatures;
 
     void OnEnter(FunctionCall *call);
     void OnLeave(FunctionCall *call);

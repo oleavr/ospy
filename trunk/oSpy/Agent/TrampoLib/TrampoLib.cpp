@@ -24,6 +24,7 @@
 //
 
 #include "stdafx.h"
+#include "Core.h"
 #include "Util.h"
 
 namespace TrampoLib {
@@ -31,6 +32,7 @@ namespace TrampoLib {
 void Initialize()
 {
     Util::Initialize();
+    Function::Initialize();
 }
 
 } // namespace TrampoLib
