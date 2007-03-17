@@ -25,4 +25,5 @@
 #pragma once
 
 #include "Core.h"
+#include "DLL.h"
 #include "VTable.h"

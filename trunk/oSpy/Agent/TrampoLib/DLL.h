@@ -51,17 +51,14 @@ protected:
 class DllFunction : public Function
 {
 public:
-    DLLFunction(DllModule *module, FunctionSpec *spec)
-        : m_module(module), 
+    DllFunction(DllModule *module, FunctionSpec *spec)
+        : m_module(module)
     {
-        void *offset = GetProcAddress(module->GetHandle(), spec->GetName());
+        FARPROC offset = GetProcAddress(module->GetHandle(), spec->GetName().c_str());
         if (offset == NULL)
             throw runtime_error("GetProcAddress failed");
 
-        Function::Initialize(spec, offset);
-
-        m_module = module;
-        m_name = name;
+        Function::Initialize(spec, reinterpret_cast<DWORD>(offset));
     }
 
     virtual const OString &GetParentName() const { return m_module->GetName(); }
