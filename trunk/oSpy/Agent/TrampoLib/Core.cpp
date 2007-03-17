@@ -27,6 +27,68 @@
 
 namespace TrampoLib {
 
+const PrologSignature Function::prologSignatures[] = {
+	{
+		{
+			NULL,
+
+			"8B FF"					// mov edi, edi
+			"55"					// push ebp
+			"8B EC",				// mov ebp, esp
+		},
+
+		5,
+		5,
+	},
+	{
+		{
+			NULL,
+
+			"6A ??"					// push ??h
+			"68 ?? ?? ?? ??"		// push offset dword_????????
+			"E8 ?? ?? ?? ??",		// call __SEH_prolog
+		},
+
+		12,
+		7,
+	},
+	{
+		{
+			NULL,
+
+			"68 ?? ?? ?? ??"		// push ???h
+			"68 ?? ?? ?? ??"		// push offset dword_????????
+			"E8 ?? ?? ?? ??",		// call __SEH_prolog
+		},
+
+		15,
+		5,
+	},
+	{
+		{
+			NULL,
+
+			"FF 25 ?? ?? ?? ??"		// jmp ds:__imp__*
+		},
+
+		6,
+		6,
+	},
+	{
+		{
+			NULL,
+
+			"33 C0"		// xor eax, eax
+			"50"		// push eax
+			"50"		// push eax
+			"6A ??"		// push ??
+		},
+
+		6,
+		6,
+	},
+};
+
 FunctionTrampoline *
 Function::CreateTrampoline()
 {
@@ -37,6 +99,11 @@ Function::CreateTrampoline()
 	trampoline->data = this;
 
 	return trampoline;
+}
+
+void
+Function::Hook()
+{
 }
 
 __declspec(naked) void
