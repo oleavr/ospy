@@ -38,7 +38,7 @@ public:
 	VTableSpec(const OString &name, int methodCount);
 
 	const OString &GetName() const { return m_name; }
-	unsigned int GetMethodCount() const { return m_methods.size(); }
+	unsigned int GetMethodCount() const { return static_cast<unsigned int>(m_methods.size()); }
 	VMethodSpec &GetMethodByIndex(int index) { return m_methods[index]; }
 
 	VMethodSpec &operator[](int index) { return m_methods[index]; }
@@ -100,7 +100,7 @@ public:
         m_vtable = vtable;
     }
 
-    virtual const OString &GetParentName() const { return m_vtable->GetName(); }
+    virtual const OString GetParentName() const { return m_vtable->GetName(); }
 
 	VTable *GetVTable() const { return m_vtable; }
 

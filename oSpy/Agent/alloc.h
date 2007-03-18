@@ -13,6 +13,8 @@
 
 #pragma once
 
+#pragma warning( disable : 4291 )
+
 #include "stdafx.h"
 #include <iomanip>
 #include <string>
@@ -180,7 +182,7 @@ struct ci_char_traits : public char_traits<char>
 
 	static int compare(const char *s1, const char *s2, size_t n)
 	{
-		return memicmp(s1, s2, n);
+		return _memicmp(s1, s2, n);
 	}
 
 	static const char *find(const char *s, int n, char a)

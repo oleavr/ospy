@@ -419,7 +419,7 @@ hook_wininet()
 	void *retAddr;
 	void **vtableAddr;
 
-	bool found = find_signature(&signatures[SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET],
+	BOOL found = find_signature(&signatures[SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET],
 								(LPVOID *) &vtableAddr, &error);
 	if (!found)
 	{

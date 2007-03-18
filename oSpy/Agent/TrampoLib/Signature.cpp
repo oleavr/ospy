@@ -46,7 +46,7 @@ Signature::Initialize(const SignatureSpec *spec)
 
     int longest = -1;
     int offset = 0;
-    for (int i = 0; i < m_tokens.size(); i++)
+    for (unsigned int i = 0; i < m_tokens.size(); i++)
     {
         SignatureToken &t = m_tokens[i];
         if (t.GetType() == TOKEN_TYPE_LITERAL)
@@ -171,7 +171,7 @@ SignatureMatcher::MatchesSignature(const Signature *sig, void *base)
 {
     unsigned char *p = static_cast<unsigned char *>(base);
 
-    for (int i = 0; i < sig->GetTokenCount(); i++)
+    for (unsigned int i = 0; i < sig->GetTokenCount(); i++)
     {
         const SignatureToken &t = (*sig)[i];
 
