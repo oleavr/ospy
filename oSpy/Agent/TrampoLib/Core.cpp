@@ -25,6 +25,7 @@
 
 #include "stdafx.h"
 #include "Core.h"
+#include "..\logging.h" // FIXME: YUCK
 
 namespace TrampoLib {
 
@@ -112,7 +113,7 @@ Function::CreateTrampoline(unsigned int bytesToCopy)
 
     FunctionRedirectStub *redirStub = reinterpret_cast<FunctionRedirectStub *>(reinterpret_cast<unsigned char *>(trampoline) + sizeof(FunctionTrampoline) + bytesToCopy);
     redirStub->JMP_opcode = 0xE9;
-    redirStub->JMP_offset = m_offset - (reinterpret_cast<DWORD>(reinterpret_cast<unsigned char *>(redirStub) + sizeof(FunctionRedirectStub)));
+    redirStub->JMP_offset = (m_offset + bytesToCopy) - (reinterpret_cast<DWORD>(reinterpret_cast<unsigned char *>(redirStub) + sizeof(FunctionRedirectStub)));
 
 	return trampoline;
 }
@@ -317,6 +318,8 @@ Function::OnLeaveProxy(CpuContext cpuCtx, FunctionTrampoline *trampoline)
 void
 Function::OnLeaveWrapper(CpuContext *cpuCtx, FunctionTrampoline *trampoline, FunctionCall *call, DWORD *lastError)
 {
+    call->SetState(FUNCTION_CALL_STATE_LEAVING);
+
 	call->SetCpuContextLive(cpuCtx);
 	call->SetLastErrorLive(lastError);
 
@@ -333,32 +336,28 @@ Function::OnLeaveWrapper(CpuContext *cpuCtx, FunctionTrampoline *trampoline, Fun
 void
 Function::OnEnter(FunctionCall *call)
 {
-	FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetEnterHandler();
+	FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetHandler();
 
 	if (handler == NULL || !handler(call))
 	{
-#if 0
-		message_logger_log_message("VMethod::OnEnter", call->GetBacktraceAddress(),
+		message_logger_log_message("Function::OnEnter", call->GetBacktraceAddress(),
 			MESSAGE_CTX_INFO, "Entering %s @ 0x%08x, ecx = 0x%08x",
 			call->ToString().c_str(), GetOffset(),
 			call->GetCpuContextEnter()->ecx);
-#endif
 	}
 }
 
 void
 Function::OnLeave(FunctionCall *call)
 {
-	FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetLeaveHandler();
+	FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetHandler();
 
 	if (handler == NULL || !handler(call))
 	{
-#if 0
-		message_logger_log_message("VMethod::OnLeave", call->GetBacktraceAddress(),
+		message_logger_log_message("Function::OnLeave", call->GetBacktraceAddress(),
 			MESSAGE_CTX_INFO, "Leaving %s @ 0x%08x, eax = 0x%08x",
 			call->ToString().c_str(), GetOffset(),
 			call->GetCpuContextLeave()->eax);
-#endif
 	}
 }
 

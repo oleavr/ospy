@@ -47,6 +47,11 @@ typedef enum {
 	CALLING_CONV_CDECL,
 } CallingConvention;
 
+typedef enum {
+    FUNCTION_CALL_STATE_ENTERING,
+    FUNCTION_CALL_STATE_LEAVING,
+} FunctionCallState;
+
 #pragma pack(push, 1)
 typedef struct {
 	BYTE CALL_opcode;
@@ -74,11 +79,26 @@ typedef bool (*FunctionCallHandler) (FunctionCall *call);
 class FunctionSpec : public BaseObject
 {
 public:
-	FunctionSpec()
-		: m_callingConvention(CALLING_CONV_UNKNOWN),
-		  m_argsSize(FUNCTION_ARGS_SIZE_UNKNOWN),
-		  m_enterHandler(NULL), m_leaveHandler(NULL)
+	FunctionSpec(const OString &name="",
+                 CallingConvention conv=CALLING_CONV_UNKNOWN,
+                 int argsSize=FUNCTION_ARGS_SIZE_UNKNOWN,
+                 FunctionCallHandler handler=NULL)
+		: m_name(name),
+          m_callingConvention(conv),
+		  m_argsSize(argsSize),
+		  m_handler(handler)
 	{}
+
+    void SetParams(const OString &name,
+                   CallingConvention conv=CALLING_CONV_UNKNOWN,
+                   int argsSize=FUNCTION_ARGS_SIZE_UNKNOWN,
+                   FunctionCallHandler handler=NULL)
+	{
+		SetName(name);
+        SetCallingConvention(conv);
+		SetArgsSize(argsSize);
+        SetHandler(handler);
+	}
 
 	const OString &GetName() const { return m_name; }
 	void SetName(const OString &name) { m_name = name; }
@@ -89,24 +109,14 @@ public:
 	int GetArgsSize() const { return m_argsSize; }
 	void SetArgsSize(int size) { m_argsSize = size; }
 
-	void SetBasicParams(const OString &name, const int argsSize=FUNCTION_ARGS_SIZE_UNKNOWN)
-	{
-		SetName(name);
-		SetArgsSize(argsSize);
-	}
-
-	FunctionCallHandler GetEnterHandler() const { return m_enterHandler; }
-	void SetEnterHandler(FunctionCallHandler handler) { m_enterHandler = handler; }
-
-	FunctionCallHandler GetLeaveHandler() const { return m_leaveHandler; }
-	void SetLeaveHandler(FunctionCallHandler handler) { m_leaveHandler = handler; }
+	FunctionCallHandler GetHandler() const { return m_handler; }
+	void SetHandler(FunctionCallHandler handler) { m_handler = handler; }
 
 protected:
 	OString m_name;
 	CallingConvention m_callingConvention;
 	int m_argsSize;
-	FunctionCallHandler m_enterHandler;
-	FunctionCallHandler m_leaveHandler;
+	FunctionCallHandler m_handler;
 };
 
 class Function : public BaseObject
@@ -149,7 +159,9 @@ public:
 		: m_function(function), m_backtraceAddress(btAddr),
 		  m_returnAddress(*((void **) btAddr)),
 		  m_cpuCtxLive(NULL), m_cpuCtxEnter(*cpuCtxEnter),
-		  m_lastErrorLive(NULL), m_shouldCarryOn(true)
+		  m_lastErrorLive(NULL),
+          m_state(FUNCTION_CALL_STATE_ENTERING),
+          m_shouldCarryOn(true)
 	{
 		memset(&m_cpuCtxLeave, 0, sizeof(m_cpuCtxLeave));
 
@@ -162,17 +174,24 @@ public:
 	}
 
 	Function *GetFunction() const { return m_function; }
-	const OString &GetArgumentsData() const { return m_argumentsData; }
 	void *GetBacktraceAddress() const { return m_backtraceAddress; }
 	void *GetReturnAddress() const { return m_returnAddress; }
+
+    CpuContext *GetCpuContextLive() const { return m_cpuCtxLive; }
 	void SetCpuContextLive(CpuContext *cpuCtx) { m_cpuCtxLive = cpuCtx; }
-	CpuContext *GetCpuContextLive() const { return m_cpuCtxLive; }
-	const CpuContext *GetCpuContextEnter() const { return &m_cpuCtxEnter; }
+
+    const CpuContext *GetCpuContextEnter() const { return &m_cpuCtxEnter; }
+
 	const CpuContext *GetCpuContextLeave() const { return &m_cpuCtxLeave; }
-	void SetCpuContextLeave(const CpuContext *ctx) { m_cpuCtxLeave = *ctx; }
+    void SetCpuContextLeave(const CpuContext *ctx) { m_cpuCtxLeave = *ctx; }
+
 	DWORD *GetLastErrorLive() const { return m_lastErrorLive; }
 	void SetLastErrorLive(DWORD *lastError) { m_lastErrorLive = lastError; }
-	const OString &GetArgumentsData() { return m_argumentsData; }
+
+    const OString &GetArgumentsData() { return m_argumentsData; }
+
+    FunctionCallState GetState() const { return m_state; }
+    void SetState(FunctionCallState state) { m_state = state; }
 
 	bool GetShouldCarryOn() const { return m_shouldCarryOn; }
 	void SetShouldCarryOn(bool carryOn) { m_shouldCarryOn = carryOn; }
@@ -188,6 +207,8 @@ protected:
 	CpuContext m_cpuCtxLeave;
 	DWORD *m_lastErrorLive;
 	OString m_argumentsData;
+
+    FunctionCallState m_state;
 
 	bool m_shouldCarryOn;
 };

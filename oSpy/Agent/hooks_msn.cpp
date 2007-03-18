@@ -204,27 +204,30 @@ typedef struct {
 } P2PTransportProperties;
 
 static bool
-CP2PTransportBridge_GetProperties_OnLeave(FunctionCall *call)
+CP2PTransportBridge_GetProperties_OnEnterLeave(FunctionCall *call)
 {
-	void **args = (void **) call->GetArgumentsData().data();
-	P2PTransportProperties *props = (P2PTransportProperties *) args[0];
+    if (call->GetState() == FUNCTION_CALL_STATE_LEAVING)
+    {
+	    void **args = (void **) call->GetArgumentsData().data();
+	    P2PTransportProperties *props = (P2PTransportProperties *) args[0];
 
-	OOStringStream ss;
-	ss << "field_0 = " << props->field_0 << endl;
-	ss << "field_4 = " << props->field_4 << endl;
-	ss << "field_8 = " << props->field_8 << endl;
-	ss << "field_C = " << props->field_C << endl;
-	ss << "field_10 = " << props->field_10 << endl;
-	ss << "field_14 = " << props->field_14 << endl;
-	ss << "field_18 = " << props->field_18 << endl;
-	ss << "field_1C = " << props->field_1C << endl;
-	ss << "field_20 = " << props->field_20;
+	    OOStringStream ss;
+	    ss << "field_0 = " << props->field_0 << endl;
+	    ss << "field_4 = " << props->field_4 << endl;
+	    ss << "field_8 = " << props->field_8 << endl;
+	    ss << "field_C = " << props->field_C << endl;
+	    ss << "field_10 = " << props->field_10 << endl;
+	    ss << "field_14 = " << props->field_14 << endl;
+	    ss << "field_18 = " << props->field_18 << endl;
+	    ss << "field_1C = " << props->field_1C << endl;
+	    ss << "field_20 = " << props->field_20;
 
-	OString str = ss.str();
+	    OString str = ss.str();
 
-	message_logger_log("CP2PTransportBridge_GetProperties", call->GetBacktraceAddress(), 0,
-				MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
-				NULL, NULL, str.c_str(), str.length(), "");
+	    message_logger_log("CP2PTransportBridge_GetProperties", call->GetBacktraceAddress(), 0,
+				    MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+				    NULL, NULL, str.c_str(), static_cast<int>(str.length()), "");
+    }
 
 	return false; // this is just supplemental logging, so let the framework log the leave as well
 }
@@ -283,22 +286,21 @@ hook_msn()
 	VTableSpec *vtableSpec = new VTableSpec("CP2PTransportBridge", 22);
 	VTableSpec &vts = *vtableSpec;
 
-	vts[0].SetBasicParams("OnBridgePeerConnectingEndpointsUpdated", 8);
-	vts[1].SetBasicParams("OnBridgePeerListeningEndpointsUpdated", 4);
-	vts[4].SetBasicParams("P2PListen", 8);
-	vts[5].SetBasicParams("P2PConnect", 8);
-	vts[7].SetBasicParams("Destroy", 4);
-	vts[8].SetBasicParams("Shutdown", 0);
-	vts[9].SetBasicParams("Init", 4);
-	vts[10].SetBasicParams("Send", 16);
-	vts[11].SetBasicParams("GetProperties", 4);
-	vts[11].SetLeaveHandler(CP2PTransportBridge_GetProperties_OnLeave);
-	vts[12].SetBasicParams("ReadyToSend", 0);
-	vts[13].SetBasicParams("ConnectBridge", 0);
-	vts[17].SetBasicParams("OnReceivedConnectRequest", 4);
-	vts[18].SetBasicParams("OnDataReceived", 16);
-	vts[19].SetBasicParams("OnDataResponse", 12);
-	vts[20].SetBasicParams("OnBridgeStateChange", 8);
+	vts[0].SetParams("OnBridgePeerConnectingEndpointsUpdated", CALLING_CONV_THISCALL, 8);
+	vts[1].SetParams("OnBridgePeerListeningEndpointsUpdated", CALLING_CONV_THISCALL, 4);
+	vts[4].SetParams("P2PListen", CALLING_CONV_THISCALL, 8);
+	vts[5].SetParams("P2PConnect", CALLING_CONV_THISCALL, 8);
+	vts[7].SetParams("Destroy", CALLING_CONV_THISCALL, 4);
+	vts[8].SetParams("Shutdown", CALLING_CONV_THISCALL, 0);
+	vts[9].SetParams("Init", CALLING_CONV_THISCALL, 4);
+	vts[10].SetParams("Send", CALLING_CONV_THISCALL, 16);
+	vts[11].SetParams("GetProperties", CALLING_CONV_THISCALL, 4, CP2PTransportBridge_GetProperties_OnEnterLeave);
+	vts[12].SetParams("ReadyToSend", CALLING_CONV_THISCALL, 0);
+	vts[13].SetParams("ConnectBridge", CALLING_CONV_THISCALL, 0);
+	vts[17].SetParams("OnReceivedConnectRequest", CALLING_CONV_THISCALL, 4);
+	vts[18].SetParams("OnDataReceived", CALLING_CONV_THISCALL, 16);
+	vts[19].SetParams("OnDataResponse", CALLING_CONV_THISCALL, 12);
+	vts[20].SetParams("OnBridgeStateChange", CALLING_CONV_THISCALL, 8);
 
 	VTable *tcpVTable = new VTable(vtableSpec, "CTCPTransportBridge", 0x484C64);
 	tcpVTable->Hook();
