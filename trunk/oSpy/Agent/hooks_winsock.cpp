@@ -941,18 +941,30 @@ HOOK_GLUE_INTERRUPTIBLE(WSASend, (7 * 4))
 HOOK_GLUE_INTERRUPTIBLE(WSAAccept, WSA_ACCEPT_ARGS_SIZE)
 HOOK_GLUE_INTERRUPTIBLE(wsock32_recv, (4 * 4))
 
+#if 0
+static bool
+winsock_connect_OnEnterLeave(FunctionCall *call)
+{
+    if (call->GetState() == FUNCTION_CALL_STATE_ENTERING)
+    {
+        call->SetShouldCarryOn(false);
+        call->GetCpuContextLive()->eax = SOCKET_ERROR;
+        *(call->GetLastErrorLive()) = WSAECONNREFUSED;
+    }
+
+    return true;
+}
+#endif
+
 void
 hook_winsock()
 {
-    FunctionSpec *funcSpec = new FunctionSpec();
-    funcSpec->SetBasicParams("connect", 12);
-    funcSpec->SetCallingConvention(CALLING_CONV_STDCALL);
-
+#if 0
+    FunctionSpec *funcSpec = new FunctionSpec("connect", CALLING_CONV_STDCALL, 12, winsock_connect_OnEnterLeave);
     DllModule *mod = new DllModule("ws2_32.dll", "ws2_32.dll");
     DllFunction *func = new DllFunction(mod, funcSpec);
     func->Hook();
-
-    return;
+#endif
 
     // Hook the Winsock API
     HMODULE h = LoadLibrary("ws2_32.dll");

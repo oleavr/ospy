@@ -25,7 +25,7 @@
 
 #include "stdafx.h"
 #include <cctype>
-#include "Core.h"
+#include "Signature.h"
 
 namespace TrampoLib {
 

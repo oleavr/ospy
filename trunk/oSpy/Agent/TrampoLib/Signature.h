@@ -25,14 +25,12 @@
 
 #pragma once
 
-#include "Core.h"
-
 namespace TrampoLib {
 
 typedef struct {
-    OString moduleName;
+    char *moduleName;
     int startOffset;
-    OString signature;
+    char *signature;
 } SignatureSpec;
 
 typedef enum {
