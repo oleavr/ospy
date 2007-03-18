@@ -31,7 +31,7 @@ namespace TrampoLib {
 
 class DllModule : public BaseObject {
 public:
-    DllModule(const OString &path, const OString &name);
+    DllModule(const OString &path);
 
     const OString &GetPath() const { return m_path; }
     const OString &GetName() const { return m_name; }
