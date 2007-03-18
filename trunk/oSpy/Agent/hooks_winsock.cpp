@@ -926,6 +926,8 @@ wsock32_recv_done(int retval,
   return retval;
 }
 
+#define TESTING_TRAMPOLIB 0
+
 HOOK_GLUE_EXTENDED(getaddrinfo, (4 * 4))
 
 HOOK_GLUE_INTERRUPTIBLE(closesocket, CLOSESOCKET_ARGS_SIZE)
@@ -935,13 +937,15 @@ HOOK_GLUE_EXTENDED(send, (4 * 4))
 HOOK_GLUE_INTERRUPTIBLE(recvfrom, (6 * 4))
 HOOK_GLUE_INTERRUPTIBLE(sendto, (6 * 4))
 HOOK_GLUE_INTERRUPTIBLE(accept, ACCEPT_ARGS_SIZE)
+#if !TESTING_TRAMPOLIB
 HOOK_GLUE_EXTENDED(connect, CONNECT_ARGS_SIZE)
+#endif
 HOOK_GLUE_EXTENDED(WSARecv, (7 * 4))
 HOOK_GLUE_INTERRUPTIBLE(WSASend, (7 * 4))
 HOOK_GLUE_INTERRUPTIBLE(WSAAccept, WSA_ACCEPT_ARGS_SIZE)
 HOOK_GLUE_INTERRUPTIBLE(wsock32_recv, (4 * 4))
 
-#if 0
+#if TESTING_TRAMPOLIB
 static bool
 winsock_connect_OnEnterLeave(FunctionCall *call)
 {
@@ -959,9 +963,9 @@ winsock_connect_OnEnterLeave(FunctionCall *call)
 void
 hook_winsock()
 {
-#if 0
+#if TESTING_TRAMPOLIB
     FunctionSpec *funcSpec = new FunctionSpec("connect", CALLING_CONV_STDCALL, 12, winsock_connect_OnEnterLeave);
-    DllModule *mod = new DllModule("ws2_32.dll", "ws2_32.dll");
+    DllModule *mod = new DllModule("ws2_32.dll");
     DllFunction *func = new DllFunction(mod, funcSpec);
     func->Hook();
 #endif
@@ -985,7 +989,9 @@ hook_winsock()
     HOOK_FUNCTION(h, recvfrom);
     HOOK_FUNCTION(h, sendto);
     HOOK_FUNCTION(h, accept);
+#if !TESTING_TRAMPOLIB
     HOOK_FUNCTION(h, connect);
+#endif
     HOOK_FUNCTION(h, WSARecv);
     HOOK_FUNCTION(h, WSASend);
     HOOK_FUNCTION(h, WSAAccept);

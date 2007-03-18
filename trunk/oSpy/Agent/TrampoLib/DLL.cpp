@@ -26,17 +26,24 @@
 #include "stdafx.h"
 #include "DLL.h"
 #include "Util.h"
+#include <psapi.h>
 
 namespace TrampoLib {
 
-DllModule::DllModule(const OString &path, const OString &name)
-    : m_path(path), m_name(name)
+DllModule::DllModule(const OString &path)
+    : m_path(path)
 {
     m_handle = LoadLibraryA(path.c_str());
     if (m_handle == NULL)
         throw runtime_error("LoadLibrary failed");
 
-    OModuleInfo mi = Util::GetModuleInfo(name.c_str());
+    char tmp[_MAX_PATH];
+    if (GetModuleBaseName(GetCurrentProcess(), m_handle, tmp, sizeof(tmp)) == 0)
+        throw runtime_error("GetModuleBaseName failed");
+
+    m_name = tmp;
+
+    OModuleInfo mi = Util::GetModuleInfo(m_name.c_str());
     m_base = reinterpret_cast<void *>(mi.startAddress);
     m_size = mi.endAddress - mi.startAddress;
 }
