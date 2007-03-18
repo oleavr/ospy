@@ -29,7 +29,7 @@
 
 namespace TrampoLib {
 
-class DllModule : BaseObject {
+class DllModule : public BaseObject {
 public:
     DllModule(const OString &path, const OString &name);
 
@@ -52,7 +52,7 @@ class DllFunction : public Function
 public:
     DllFunction(DllModule *module, FunctionSpec *spec);
 
-    virtual const OString &GetParentName() const { return m_module->GetName(); }
+    virtual const OString GetParentName() const { return m_module->GetName(); }
 
     DllModule *GetModule() const { return m_module; }
 

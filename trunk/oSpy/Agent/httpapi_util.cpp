@@ -332,7 +332,7 @@ log_http_request(HANDLE queue_handle, HTTP_REQUEST *req,
     }
 
     message_logger_log_packet("HttpRequest",
-        0, req->RequestId, PACKET_DIRECTION_INCOMING,
+        0, static_cast<DWORD>(req->RequestId), PACKET_DIRECTION_INCOMING,
         (const sockaddr_in *) req->Address.pLocalAddress,
         (const sockaddr_in *) req->Address.pRemoteAddress,
         (const char *) buf->buf, (int) buf->offset);
@@ -389,7 +389,7 @@ log_http_response(HANDLE queue_handle,
     }
 
     message_logger_log_packet("HttpResponse",
-        0, req_id, PACKET_DIRECTION_OUTGOING, &local, &remote,
+        0, static_cast<DWORD>(req_id), PACKET_DIRECTION_OUTGOING, &local, &remote,
         (const char *) buf->buf, (int) buf->offset);
 
     byte_buffer_free(buf);

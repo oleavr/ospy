@@ -329,7 +329,7 @@ hook_msn()
 
         message_logger_log("hook_msn", 0, 0, MESSAGE_TYPE_PACKET,
             MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL,
-			s.str().c_str(), s.str().size(), "Product ID and Key");
+			s.str().c_str(), static_cast<int>(s.str().size()), "Product ID and Key");
     }
     else
     {
@@ -346,7 +346,7 @@ hook_msn()
 
 	ContactPropertyIdToNameFunc contact_property_id_to_name;
 
-	bool found = find_signature(&msn_signatures[SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME],
+	BOOL found = find_signature(&msn_signatures[SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME],
 								(LPVOID *) &contact_property_id_to_name, &error);
 	if (!found)
 	{
@@ -368,7 +368,7 @@ hook_msn()
 			if (i != 0)
 				s << "\r\n";
 
-			int bufSize = wcslen(name) + 1;
+			unsigned int bufSize = static_cast<unsigned int>(wcslen(name)) + 1;
 			char *buf = (char *) sspy_malloc(bufSize);
 
 		    WideCharToMultiByte(CP_ACP, 0, name, -1, buf, bufSize, NULL, NULL);
@@ -380,7 +380,7 @@ hook_msn()
 
         message_logger_log("hook_msn", 0, 0, MESSAGE_TYPE_PACKET,
             MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL,
-			s.str().c_str(), s.str().size(), "Contact property id mappings");
+			s.str().c_str(), static_cast<int>(s.str().size()), "Contact property id mappings");
 	}
     else
     {

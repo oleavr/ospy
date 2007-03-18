@@ -53,7 +53,7 @@ VTable::VTable(VTableSpec *spec, const OString &name, DWORD startOffset)
 {
 	DWORD *funcs = reinterpret_cast<DWORD *>(startOffset);
 
-	for (int i = 0; i < spec->GetMethodCount(); i++)
+	for (unsigned int i = 0; i < spec->GetMethodCount(); i++)
 	{
 		m_methods[i].Initialize(this, &(*spec)[i], funcs[i]);
 	}
@@ -70,7 +70,7 @@ VTable::Hook()
 
 	DWORD *methods = reinterpret_cast<DWORD *>(m_startOffset);
 
-	for (int i = 0; i < spec->GetMethodCount(); i++)
+	for (unsigned int i = 0; i < spec->GetMethodCount(); i++)
 	{
 		methods[i] = reinterpret_cast<DWORD>(m_methods[i].CreateTrampoline());
 	}

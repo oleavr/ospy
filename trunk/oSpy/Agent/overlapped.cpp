@@ -67,12 +67,12 @@ COverlappedManager::MonitorThreadFunc(void *arg)
 	{
 		HANDLE *handles;
 		COverlappedOperation **operations;
-		int maxHandleCount, handleCount;
+		unsigned int maxHandleCount, handleCount;
 
 		// Make a list of operations not yet completed
 		ENTER_OPS();
 
-		maxHandleCount = 1 + m_operations.size();
+		maxHandleCount = 1 + static_cast<unsigned int>(m_operations.size());
 		handles = (HANDLE *) sspy_malloc(sizeof(HANDLE) * maxHandleCount);
 		operations = (COverlappedOperation **) sspy_malloc(sizeof(COverlappedOperation *) * maxHandleCount);
 
@@ -81,7 +81,7 @@ COverlappedManager::MonitorThreadFunc(void *arg)
 
 		handleCount = 1;
 
-		for (int i = 0; i < m_operations.size(); i++)
+		for (unsigned int i = 0; i < m_operations.size(); i++)
 		{
 			COverlappedOperation *op = m_operations[i];
 			if (!op->HasCompleted())
@@ -105,7 +105,7 @@ COverlappedManager::MonitorThreadFunc(void *arg)
 			{
 				operationsChanged = true;
 
-				for (int i = result - WAIT_OBJECT_0; i < handleCount; i++)
+				for (unsigned int i = result - WAIT_OBJECT_0; i < handleCount; i++)
 				{
 					if (i > 0 && WaitForSingleObject(handles[i], 0) == WAIT_OBJECT_0)
 					{

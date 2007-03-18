@@ -34,7 +34,7 @@ typedef struct {
 	DWORD endAddress;
 } OModuleInfo;
 
-class Util
+class Util : public BaseObject
 {
 public:
 	static void Initialize();

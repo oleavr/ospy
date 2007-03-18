@@ -52,6 +52,9 @@ static SignatureSpec signatureSpecs[] = {
 
 int main(int argc, char *argv[])
 {
+    LoadLibrary("C:\\Projects\\oSpy\\trunk\\oSpy\\bin\\Debug\\oSpyAgent.dll");
+
+    
     Signature s(&signatureSpecs[SIGNATURE_UI_STATUS_LABEL_SET]);
 
     cout << "all good dude" << endl;

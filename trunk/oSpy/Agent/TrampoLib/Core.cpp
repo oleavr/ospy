@@ -107,10 +107,10 @@ Function::CreateTrampoline(unsigned int bytesToCopy)
 
     if (bytesToCopy > 0)
     {
-        memcpy(trampoline->postStub, reinterpret_cast<const void *>(m_offset), bytesToCopy);
+        memcpy(reinterpret_cast<unsigned char *>(trampoline) + sizeof(FunctionTrampoline), reinterpret_cast<const void *>(m_offset), bytesToCopy);
     }
 
-    FunctionRedirectStub *redirStub = reinterpret_cast<FunctionRedirectStub *>(reinterpret_cast<unsigned char *>(&trampoline->postStub) + bytesToCopy);
+    FunctionRedirectStub *redirStub = reinterpret_cast<FunctionRedirectStub *>(reinterpret_cast<unsigned char *>(trampoline) + sizeof(FunctionTrampoline) + bytesToCopy);
     redirStub->JMP_opcode = 0xE9;
     redirStub->JMP_offset = m_offset - (reinterpret_cast<DWORD>(reinterpret_cast<unsigned char *>(redirStub) + sizeof(FunctionRedirectStub)));
 
@@ -122,7 +122,7 @@ Function::Hook()
 {
     const PrologSignatureSpec *spec = NULL;
 
-    for (int i = 0; i < prologSignatures.size(); i++)
+    for (unsigned int i = 0; i < prologSignatures.size(); i++)
     {
         const Signature *sig = &prologSignatures[i];
 
@@ -189,7 +189,7 @@ Function::OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, FunctionTramp
 	nextTrampoline = function->OnEnterWrapper(&cpuCtx, &unwindSize, trampoline, finalRet, &lastError);
 	if (nextTrampoline != NULL)
 	{
-		*proxyRet = trampoline->postStub;
+		*proxyRet = reinterpret_cast<unsigned char *>(trampoline) + sizeof(FunctionTrampoline);
 		*finalRet = nextTrampoline;
 	}
 
@@ -384,7 +384,7 @@ FunctionCall::ToString() const
 
 		DWORD *args = (DWORD *) m_argumentsData.data();
 
-		for (int i = 0; i < argsSize / sizeof(DWORD); i++)
+		for (unsigned int i = 0; i < argsSize / sizeof(DWORD); i++)
 		{
 			if (i)
 				ss << ", ";

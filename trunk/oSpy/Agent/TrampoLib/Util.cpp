@@ -167,7 +167,6 @@ Util::GetModuleNameForAddress(DWORD address)
 	if (mi != NULL)
 		result = mi->name.c_str();
 
-DONE:
 	LeaveCriticalSection(&m_cs);
 
 	return result;

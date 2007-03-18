@@ -51,10 +51,10 @@ public:
     SignatureTokenType GetType() const { return m_type; }
     void SetType(SignatureTokenType type) { m_type = type; }
 
-    int GetLength() const
+    unsigned int GetLength() const
     {
         if (m_type == TOKEN_TYPE_LITERAL)
-            return m_data.size();
+            return static_cast<unsigned int>(m_data.size());
         else
             return m_length;
     }
@@ -79,7 +79,7 @@ public:
 
     unsigned int GetLength() const { return m_length; }
 
-    unsigned int GetTokenCount() const { return m_tokens.size(); }
+    unsigned int GetTokenCount() const { return static_cast<unsigned int>(m_tokens.size()); }
     const SignatureToken &GetTokenByIndex(int index) const { return m_tokens[index]; }
 
     int GetLongestTokenIndex() const { return m_longestIndex; }

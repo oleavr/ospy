@@ -29,6 +29,9 @@
 #include "overlapped.h"
 #include <Ws2tcpip.h>
 #include <psapi.h>
+#include "TrampoLib\TrampoLib.h"
+
+using namespace TrampoLib;
 
 static MODULEINFO wsock32_info;
 
@@ -635,7 +638,7 @@ wsaRecvCompletedHandler(COverlappedOperation *operation)
         {
 			WSABUF *buf = &ctx->lpBuffers[i];
 
-			int n = bytesLeft;
+			unsigned int n = bytesLeft;
 			if (n > buf->len)
 				n = buf->len;
 
@@ -722,7 +725,7 @@ WSARecv_done(int retval,
         {
             WSABUF *buf = &lpBuffers[i];
 
-			int n = bytes_left;
+			unsigned int n = bytes_left;
 			if (n > buf->len)
 				n = buf->len;
 
@@ -798,7 +801,7 @@ WSASend_done(int retval,
         {
             WSABUF *buf = &lpBuffers[i];
 
-			int n = bytes_left;
+			unsigned int n = bytes_left;
 			if (n > buf->len)
 				n = buf->len;
 
@@ -941,6 +944,16 @@ HOOK_GLUE_INTERRUPTIBLE(wsock32_recv, (4 * 4))
 void
 hook_winsock()
 {
+    FunctionSpec *funcSpec = new FunctionSpec();
+    funcSpec->SetBasicParams("connect", 12);
+    funcSpec->SetCallingConvention(CALLING_CONV_STDCALL);
+
+    DllModule *mod = new DllModule("ws2_32.dll", "ws2_32.dll");
+    DllFunction *func = new DllFunction(mod, funcSpec);
+    func->Hook();
+
+    return;
+
     // Hook the Winsock API
     HMODULE h = LoadLibrary("ws2_32.dll");
     if (h == NULL)

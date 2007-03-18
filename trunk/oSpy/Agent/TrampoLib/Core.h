@@ -52,7 +52,6 @@ typedef struct {
 	BYTE CALL_opcode;
 	DWORD CALL_offset;
 	void *data;
-    unsigned char postStub[0];
 } FunctionTrampoline;
 
 typedef struct {
@@ -118,7 +117,7 @@ public:
     static void Initialize();
     void Initialize(FunctionSpec *spec, DWORD offset) { m_spec = spec; m_offset = offset; }
 
-    virtual const OString &GetParentName() const { return ""; }
+    virtual const OString GetParentName() const { return ""; }
 
     FunctionTrampoline *CreateTrampoline(unsigned int bytesToCopy=0);
     FunctionSpec *GetSpec() const { return m_spec; }
