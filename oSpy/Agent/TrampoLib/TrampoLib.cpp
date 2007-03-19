@@ -32,7 +32,6 @@ namespace TrampoLib {
 void Initialize()
 {
     Util::Initialize();
-    FunctionArgument::Initialize();
     Function::Initialize();
 }
 

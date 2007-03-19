@@ -76,42 +76,56 @@ class FunctionCall;
 
 typedef bool (*FunctionCallHandler) (FunctionCall *call);
 
-class DWordArgument;
-class AsciiStringArgument;
-class UnicodeStringArgument;
+class BaseType : public BaseObject
+{
+public:
+    virtual unsigned int GetSize() const = 0;
+    virtual OString ToString(const void *start) const = 0;
+};
+
+namespace Type {
+
+class UInt32 : public BaseType
+{
+public:
+	virtual unsigned int GetSize() const { return sizeof(DWORD); }
+	virtual OString ToString(const void *start) const;
+};
+
+class AsciiStringPtr : public BaseType
+{
+public:
+    virtual unsigned int GetSize() const { return sizeof(char *); }
+    virtual OString ToString(const void *start) const;
+};
+
+class UnicodeStringPtr : public BaseType
+{
+public:
+    virtual unsigned int GetSize() const { return sizeof(char *); }
+    virtual OString ToString(const void *start) const;
+};
+
+}
+
+typedef enum {
+	ArgumentDirectionIn  = 1,
+	ArgumentDirectionOut = 2,
+} ArgumentDirection;
 
 class FunctionArgument : public BaseObject
 {
 public:
-    static void Initialize();
+	FunctionArgument(const OString &name, ArgumentDirection direction, BaseType *type)
+		: m_name(name), m_direction(direction), m_type(type)
+	{
+	}
+	~FunctionArgument() { delete m_type; }
 
-    virtual unsigned int GetSize() const = 0;
-    virtual OString ToString(const void *start) const = 0;
-
-    static DWordArgument *DWord;
-    static AsciiStringArgument *AsciiString;
-    static UnicodeStringArgument *UnicodeString;
-};
-
-class DWordArgument : public FunctionArgument
-{
-public:
-    virtual unsigned int GetSize() const { return sizeof(DWORD); }
-    virtual OString ToString(const void *start) const;
-};
-
-class AsciiStringArgument : public FunctionArgument
-{
-public:
-    virtual unsigned int GetSize() const { return sizeof(char *); }
-    virtual OString ToString(const void *start) const;
-};
-
-class UnicodeStringArgument : public FunctionArgument
-{
-public:
-    virtual unsigned int GetSize() const { return sizeof(char *); }
-    virtual OString ToString(const void *start) const;
+protected:
+	OString m_name;
+	ArgumentDirection m_direction;
+	BaseType *m_type;
 };
 
 class FunctionArgumentList : public BaseObject
@@ -119,15 +133,16 @@ class FunctionArgumentList : public BaseObject
 public:
     FunctionArgumentList(unsigned int count, ...);
     FunctionArgumentList(unsigned int count, va_list args);
+	~FunctionArgumentList();
 
     unsigned int GetSize() const { return m_size; }
     unsigned int GetCount() const { return static_cast<unsigned int>(m_args.size()); }
 
-    FunctionArgument *operator[](int index) { return m_args[index]; }
+	FunctionArgument *operator[](int index) { return m_args[index]; }
 
 protected:
     unsigned int m_size;
-    OVector<FunctionArgument *>::Type m_args;
+	OVector<FunctionArgument *>::Type m_args;
 
     void Initialize(unsigned int count, va_list args);
 };

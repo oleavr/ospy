@@ -29,10 +29,6 @@
 
 namespace TrampoLib {
 
-DWordArgument *FunctionArgument::DWord = NULL;
-AsciiStringArgument *FunctionArgument::AsciiString = NULL;
-UnicodeStringArgument *FunctionArgument::UnicodeString = NULL;
-
 const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 	{
 		{
@@ -92,16 +88,10 @@ const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 
 OVector<Signature>::Type Function::prologSignatures;
 
-void
-FunctionArgument::Initialize()
-{
-    FunctionArgument::DWord = new DWordArgument();
-    FunctionArgument::AsciiString = new AsciiStringArgument();
-    FunctionArgument::UnicodeString = new UnicodeStringArgument();
-}
+namespace Type {
 
 OString
-DWordArgument::ToString(const void *start) const
+UInt32::ToString(const void *start) const
 {
     OOStringStream ss;
 
@@ -112,7 +102,7 @@ DWordArgument::ToString(const void *start) const
 }
 
 OString
-AsciiStringArgument::ToString(const void *start) const
+AsciiStringPtr::ToString(const void *start) const
 {
     OOStringStream ss;
 
@@ -131,7 +121,7 @@ AsciiStringArgument::ToString(const void *start) const
 }
 
 OString
-UnicodeStringArgument::ToString(const void *start) const
+UnicodeStringPtr::ToString(const void *start) const
 {
     OOStringStream ss;
 
@@ -156,6 +146,8 @@ UnicodeStringArgument::ToString(const void *start) const
     return ss.str();
 }
 
+}
+
 FunctionArgumentList::FunctionArgumentList(unsigned int count, ...)
 {
     va_list args;
@@ -171,6 +163,14 @@ FunctionArgumentList::FunctionArgumentList(unsigned int count, va_list args)
     Initialize(count, args);
 }
 
+FunctionArgumentList::~FunctionArgumentList()
+{
+    for (unsigned int i = 0; i < m_args.size(); i++)
+    {
+		delete m_args[i];
+	}
+}
+
 void
 FunctionArgumentList::Initialize(unsigned int count, va_list args)
 {
@@ -178,7 +178,7 @@ FunctionArgumentList::Initialize(unsigned int count, va_list args)
 
     for (unsigned int i = 0; i < count; i++)
     {
-        FunctionArgument *arg = va_arg(args, FunctionArgument *);
+		FunctionArgument::Base *arg = va_arg(args, FunctionArgument::Base *);
 
         m_args.push_back(arg);
 
@@ -502,7 +502,7 @@ FunctionCall::ToString() const
 
         for (unsigned int i = 0; i < args->GetCount(); i++)
         {
-            FunctionArgument *arg = (*args)[i];
+            FunctionArgument::Base *arg = (*args)[i];
 
             if (i)
 			    ss << ", ";
