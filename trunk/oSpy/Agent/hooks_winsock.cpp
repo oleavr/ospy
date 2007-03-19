@@ -966,11 +966,11 @@ hook_winsock()
 #if 1
     FunctionSpec *openAsciiFuncSpec = new FunctionSpec("RegOpenKeyExA", CALLING_CONV_STDCALL);
     openAsciiFuncSpec->SetArgumentList(5,
-		new FunctionArgument("hKey", ArgumentDirectionIn, new Type::UInt32()),
-		new FunctionArgument("lpSubKey", ArgumentDirectionIn, new Type::AsciiStringPtr()),
-        new FunctionArgument("ulOptions", ArgumentDirectionIn, new Type::UInt32()),
-        new FunctionArgument("samDesired", ArgumentDirectionIn, new Type::UInt32()),
-        new FunctionArgument("phkResult", ArgumentDirectionOut, new Type::UInt32()));
+		new FunctionArgument("hKey", ARG_DIR_IN, new Marshaller::UInt32()),
+		new FunctionArgument("lpSubKey", ARG_DIR_IN, new Marshaller::AsciiStringPtr()),
+        new FunctionArgument("ulOptions", ARG_DIR_IN, new Marshaller::UInt32()),
+        new FunctionArgument("samDesired", ARG_DIR_IN, new Marshaller::UInt32()),
+        new FunctionArgument("phkResult", ARG_DIR_OUT, new Marshaller::UInt32Ptr()));
 
 /*
     FunctionSpec *openUniFuncSpec = new FunctionSpec("RegOpenKeyExW", CALLING_CONV_STDCALL);

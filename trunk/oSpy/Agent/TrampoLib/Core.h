@@ -48,9 +48,14 @@ typedef enum {
 } CallingConvention;
 
 typedef enum {
-    FUNCTION_CALL_STATE_ENTERING,
-    FUNCTION_CALL_STATE_LEAVING,
+    FUNCTION_CALL_ENTERING,
+    FUNCTION_CALL_LEAVING,
 } FunctionCallState;
+
+typedef enum {
+	ARG_DIR_IN  = 1,
+	ARG_DIR_OUT = 2,
+} ArgumentDirection;
 
 #pragma pack(push, 1)
 typedef struct {
@@ -76,30 +81,37 @@ class FunctionCall;
 
 typedef bool (*FunctionCallHandler) (FunctionCall *call);
 
-class BaseType : public BaseObject
+class BaseMarshaller : public BaseObject
 {
 public:
     virtual unsigned int GetSize() const = 0;
     virtual OString ToString(const void *start) const = 0;
 };
 
-namespace Type {
+namespace Marshaller {
 
-class UInt32 : public BaseType
+class UInt32 : public BaseMarshaller
 {
 public:
 	virtual unsigned int GetSize() const { return sizeof(DWORD); }
 	virtual OString ToString(const void *start) const;
 };
 
-class AsciiStringPtr : public BaseType
+class UInt32Ptr : public BaseMarshaller
+{
+public:
+	virtual unsigned int GetSize() const { return sizeof(DWORD *); }
+	virtual OString ToString(const void *start) const;
+};
+
+class AsciiStringPtr : public BaseMarshaller
 {
 public:
     virtual unsigned int GetSize() const { return sizeof(char *); }
     virtual OString ToString(const void *start) const;
 };
 
-class UnicodeStringPtr : public BaseType
+class UnicodeStringPtr : public BaseMarshaller
 {
 public:
     virtual unsigned int GetSize() const { return sizeof(char *); }
@@ -108,24 +120,21 @@ public:
 
 }
 
-typedef enum {
-	ArgumentDirectionIn  = 1,
-	ArgumentDirectionOut = 2,
-} ArgumentDirection;
-
 class FunctionArgument : public BaseObject
 {
 public:
-	FunctionArgument(const OString &name, ArgumentDirection direction, BaseType *type)
-		: m_name(name), m_direction(direction), m_type(type)
+	FunctionArgument(const OString &name, ArgumentDirection direction, BaseMarshaller *marshaller)
+		: m_name(name), m_direction(direction), m_marshaller(marshaller)
 	{
 	}
-	~FunctionArgument() { delete m_type; }
+	~FunctionArgument() { delete m_marshaller; }
+
+    const BaseMarshaller *GetMarshaller() const { return m_marshaller; }
 
 protected:
 	OString m_name;
 	ArgumentDirection m_direction;
-	BaseType *m_type;
+	BaseMarshaller *m_marshaller;
 };
 
 class FunctionArgumentList : public BaseObject
@@ -243,7 +252,7 @@ public:
 		  m_returnAddress(*((void **) btAddr)),
 		  m_cpuCtxLive(NULL), m_cpuCtxEnter(*cpuCtxEnter),
 		  m_lastErrorLive(NULL),
-          m_state(FUNCTION_CALL_STATE_ENTERING),
+          m_state(FUNCTION_CALL_ENTERING),
           m_shouldCarryOn(true)
 	{
 		memset(&m_cpuCtxLeave, 0, sizeof(m_cpuCtxLeave));

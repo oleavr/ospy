@@ -88,7 +88,7 @@ const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 
 OVector<Signature>::Type Function::prologSignatures;
 
-namespace Type {
+namespace Marshaller {
 
 OString
 UInt32::ToString(const void *start) const
@@ -97,6 +97,24 @@ UInt32::ToString(const void *start) const
 
     const DWORD *dwPtr = reinterpret_cast<const DWORD *>(start);
     ss << *dwPtr;
+
+    return ss.str();
+}
+
+OString
+UInt32Ptr::ToString(const void *start) const
+{
+    OOStringStream ss;
+
+    const DWORD **dwPtr = (const DWORD **) start;
+    if (*dwPtr != NULL)
+    {
+        ss << **dwPtr;
+    }
+    else
+    {
+        ss << "NULL";
+    }
 
     return ss.str();
 }
@@ -178,11 +196,11 @@ FunctionArgumentList::Initialize(unsigned int count, va_list args)
 
     for (unsigned int i = 0; i < count; i++)
     {
-		FunctionArgument::Base *arg = va_arg(args, FunctionArgument::Base *);
+        FunctionArgument *arg = va_arg(args, FunctionArgument *);
 
         m_args.push_back(arg);
 
-        m_size += arg->GetSize();
+        m_size += arg->GetMarshaller()->GetSize();
     }
 }
 
@@ -435,7 +453,7 @@ Function::OnLeaveProxy(CpuContext cpuCtx, FunctionTrampoline *trampoline)
 void
 Function::OnLeaveWrapper(CpuContext *cpuCtx, FunctionTrampoline *trampoline, FunctionCall *call, DWORD *lastError)
 {
-    call->SetState(FUNCTION_CALL_STATE_LEAVING);
+    call->SetState(FUNCTION_CALL_LEAVING);
 
 	call->SetCpuContextLive(cpuCtx);
 	call->SetLastErrorLive(lastError);
@@ -502,14 +520,16 @@ FunctionCall::ToString() const
 
         for (unsigned int i = 0; i < args->GetCount(); i++)
         {
-            FunctionArgument::Base *arg = (*args)[i];
+            FunctionArgument *arg = (*args)[i];
 
             if (i)
 			    ss << ", ";
 
-            ss << arg->ToString(argsData);
+            const BaseMarshaller *marshaller = arg->GetMarshaller();
 
-            argsData += arg->GetSize();
+            ss << marshaller->ToString(argsData);
+
+            argsData += marshaller->GetSize();
         }
 
         ss << ")";
