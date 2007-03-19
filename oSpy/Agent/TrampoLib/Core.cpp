@@ -88,85 +88,26 @@ const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 
 OVector<Signature>::Type Function::prologSignatures;
 
-namespace Marshaller {
-
 OString
-UInt32::ToString(const void *start) const
+Argument::ToString(FunctionCallState state) const
 {
-    OOStringStream ss;
+    bool deep;
 
-    const DWORD *dwPtr = reinterpret_cast<const DWORD *>(start);
-    ss << *dwPtr;
+    ArgumentDirection dir = m_spec->GetDirection();
 
-    return ss.str();
-}
-
-OString
-UInt32Ptr::ToString(const void *start) const
-{
-    OOStringStream ss;
-
-    const DWORD **dwPtr = (const DWORD **) start;
-    if (*dwPtr != NULL)
+    if (state == FUNCTION_CALL_ENTERING)
     {
-        ss << **dwPtr;
+        deep = (dir & ARG_DIR_IN) != 0;
     }
     else
     {
-        ss << "NULL";
+        deep = (dir & ARG_DIR_OUT) != 0;
     }
 
-    return ss.str();
+    return m_spec->GetMarshaller()->ToString(m_data, deep);
 }
 
-OString
-AsciiStringPtr::ToString(const void *start) const
-{
-    OOStringStream ss;
-
-    // FIXME: use C++ style cast here
-    const char **strPtr = (const char **) start;
-    if (*strPtr != NULL)
-    {
-        ss << "\"" << *strPtr << "\"";
-    }
-    else
-    {
-        ss << "NULL";
-    }
-
-    return ss.str();
-}
-
-OString
-UnicodeStringPtr::ToString(const void *start) const
-{
-    OOStringStream ss;
-
-    // FIXME: use C++ style cast here
-    const WCHAR **strPtr = (const WCHAR **) start;
-    if (*strPtr != NULL)
-    {
-        int bufSize = static_cast<int>(wcslen(*strPtr)) + 1;
-        char *buf = new char[bufSize];
-
-        WideCharToMultiByte(CP_ACP, 0, *strPtr, -1, buf, bufSize, NULL, NULL);
-
-        ss << "\"" << buf << "\"";
-
-        delete buf;
-    }
-    else
-    {
-        ss << "NULL";
-    }
-
-    return ss.str();
-}
-
-}
-
-FunctionArgumentList::FunctionArgumentList(unsigned int count, ...)
+ArgumentListSpec::ArgumentListSpec(unsigned int count, ...)
 {
     va_list args;
     va_start(args, count);
@@ -176,48 +117,63 @@ FunctionArgumentList::FunctionArgumentList(unsigned int count, ...)
     va_end(args);
 }
 
-FunctionArgumentList::FunctionArgumentList(unsigned int count, va_list args)
+ArgumentListSpec::ArgumentListSpec(unsigned int count, va_list args)
 {
     Initialize(count, args);
 }
 
-FunctionArgumentList::~FunctionArgumentList()
+ArgumentListSpec::~ArgumentListSpec()
 {
-    for (unsigned int i = 0; i < m_args.size(); i++)
+    for (unsigned int i = 0; i < m_arguments.size(); i++)
     {
-		delete m_args[i];
+		delete m_arguments[i];
 	}
 }
 
 void
-FunctionArgumentList::Initialize(unsigned int count, va_list args)
+ArgumentListSpec::Initialize(unsigned int count, va_list args)
 {
     m_size = 0;
 
     for (unsigned int i = 0; i < count; i++)
     {
-        FunctionArgument *arg = va_arg(args, FunctionArgument *);
+        ArgumentSpec *arg = va_arg(args, ArgumentSpec *);
 
-        m_args.push_back(arg);
+        m_arguments.push_back(arg);
 
         m_size += arg->GetMarshaller()->GetSize();
     }
 }
 
+ArgumentList::ArgumentList(ArgumentListSpec *spec, const void *data)
+    : m_spec(spec)
+{
+    const void *p = data;
+
+    for (unsigned int i = 0; i < spec->GetCount(); i++)
+    {
+        ArgumentSpec *argSpec = (*spec)[i];
+
+        m_arguments.push_back(Argument(argSpec, p));
+
+        p = static_cast<const unsigned char *>(p) + argSpec->GetSize();
+    }
+}
+
 void
-FunctionSpec::SetArgumentList(FunctionArgumentList *argList)
+FunctionSpec::SetArguments(ArgumentListSpec *argList)
 {
     m_argsSize = argList->GetSize();
     m_argList = argList;
 }
 
 void
-FunctionSpec::SetArgumentList(unsigned int count, ...)
+FunctionSpec::SetArguments(unsigned int count, ...)
 {
     va_list args;
     va_start(args, count);
 
-    m_argList = new FunctionArgumentList(count, args);
+    m_argList = new ArgumentListSpec(count, args);
     m_argsSize = m_argList->GetSize();
 
     va_end(args);
@@ -496,6 +452,31 @@ Function::OnLeave(FunctionCall *call)
 	}
 }
 
+FunctionCall::FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxEnter)
+    : m_function(function), m_backtraceAddress(btAddr),
+      m_returnAddress(*((void **) btAddr)),
+      m_cpuCtxLive(NULL), m_cpuCtxEnter(*cpuCtxEnter),
+      m_lastErrorLive(NULL),
+      m_arguments(NULL),
+      m_state(FUNCTION_CALL_ENTERING),
+      m_shouldCarryOn(true)
+{
+	memset(&m_cpuCtxLeave, 0, sizeof(m_cpuCtxLeave));
+
+	int argsSize = function->GetSpec()->GetArgsSize();
+	if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN)
+	{
+		m_argumentsData.resize(argsSize);
+		memcpy((void *) m_argumentsData.data(), (BYTE *) btAddr + 4, argsSize);
+
+        ArgumentListSpec *spec = function->GetSpec()->GetArguments();
+        if (spec != NULL)
+        {
+            m_arguments = new ArgumentList(spec, m_argumentsData.data());
+        }
+	}
+}
+
 OString
 FunctionCall::ToString() const
 {
@@ -511,25 +492,19 @@ FunctionCall::ToString() const
 
 	ss << spec->GetName();
 
-    FunctionArgumentList *args = spec->GetArgumentList();
+    const ArgumentList *args = GetArguments();
     if (args != NULL)
     {
         ss << "(";
 
-        const unsigned char *argsData = reinterpret_cast<const unsigned char *>(m_argumentsData.data());
-
         for (unsigned int i = 0; i < args->GetCount(); i++)
         {
-            FunctionArgument *arg = (*args)[i];
+            const Argument &arg = (*args)[i];
 
             if (i)
 			    ss << ", ";
 
-            const BaseMarshaller *marshaller = arg->GetMarshaller();
-
-            ss << marshaller->ToString(argsData);
-
-            argsData += marshaller->GetSize();
+            ss << arg.ToString(m_state);
         }
 
         ss << ")";

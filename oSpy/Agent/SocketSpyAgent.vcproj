@@ -282,6 +282,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\TrampoLib\Marshallers.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\TrampoLib\Signature.cpp"
 					>
 				</File>
@@ -371,6 +375,10 @@
 				</File>
 				<File
 					RelativePath=".\TrampoLib\DLL.h"
+					>
+				</File>
+				<File
+					RelativePath=".\TrampoLib\Marshallers.h"
 					>
 				</File>
 				<File
