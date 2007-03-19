@@ -168,6 +168,64 @@ Enumeration::ToString(const void *start, bool deep) const
     }
 }
 
+StructurePtr::StructurePtr(const char *firstFieldName, ...)
+{
+    va_list args;
+    va_start(args, firstFieldName);
+
+    const char *fieldName = firstFieldName;
+    while (fieldName != NULL)
+    {
+        DWORD offset = va_arg(args, DWORD);
+        BaseMarshaller *marshaller = va_arg(args, BaseMarshaller *);
+
+        m_fields.push_back(StructureField(fieldName, offset, marshaller));
+
+        fieldName = va_arg(args, const char *);
+    }
+
+    va_end(args);
+}
+
+OString
+StructurePtr::ToString(const void *start, bool deep) const
+{
+    OOStringStream ss;
+
+    const void **structPtr = (const void **) start;
+    if (*structPtr != NULL)
+    {
+        if (deep)
+        {
+            ss << "[ ";
+
+            for (unsigned int i = 0; i < m_fields.size(); i++)
+            {
+                const StructureField &field = m_fields[i];
+
+                const void *fieldPtr = reinterpret_cast<const char *>(*structPtr) + field.GetOffset();
+
+                if (i > 0)
+                    ss << ", ";
+
+                ss << field.GetName() << "=" << field.GetMarshaller()->ToString(fieldPtr, true);
+            }
+
+            ss << " ]";
+        }
+        else
+        {
+            ss << "0x" << *structPtr;
+        }
+    }
+    else
+    {
+        ss << "NULL";
+    }
+
+    return ss.str();
+}
+
 } // namespace Marshaller
 
 } // namespace TrampoLib

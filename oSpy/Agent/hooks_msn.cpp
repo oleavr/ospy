@@ -191,6 +191,7 @@ typedef const LPWSTR (__stdcall *ContactPropertyIdToNameFunc) (int property_id);
 
 #if HOOK_P2P_TRANSPORT_VTABLES
 
+#if 0
 typedef struct {
 	int field_0;
 	int field_4;
@@ -231,6 +232,7 @@ CP2PTransportBridge_GetProperties_OnEnterLeave(FunctionCall *call)
 
 	return false; // this is just supplemental logging, so let the framework log the leave as well
 }
+#endif
 
 #endif
 
@@ -294,7 +296,25 @@ hook_msn()
 	vts[8].SetParams("Shutdown", CALLING_CONV_THISCALL, 0);
 	vts[9].SetParams("Init", CALLING_CONV_THISCALL, 4);
 	vts[10].SetParams("Send", CALLING_CONV_THISCALL, 16);
-	vts[11].SetParams("GetProperties", CALLING_CONV_THISCALL, 4, CP2PTransportBridge_GetProperties_OnEnterLeave);
+
+	vts[11].SetParams("GetProperties", CALLING_CONV_THISCALL);
+    vts[11].SetArguments(1,
+        new ArgumentSpec("lpProperties", ARG_DIR_OUT,
+            new Marshaller::StructurePtr(
+                "field_0", 0, new Marshaller::UInt32(),
+                "field_4", 4, new Marshaller::UInt32(),
+                "field_8", 8, new Marshaller::UInt32(),
+                "field_C", 0xC, new Marshaller::UInt32(),
+                "field_10", 0x10, new Marshaller::UInt32(),
+                "field_14", 0x14, new Marshaller::UInt32(),
+                "field_18", 0x18, new Marshaller::UInt32(),
+                "field_1C", 0x1C, new Marshaller::UInt32(),
+                "field_20", 0x20, new Marshaller::UInt32(),
+                NULL
+            )
+        )
+    );
+
 	vts[12].SetParams("ReadyToSend", CALLING_CONV_THISCALL, 0);
 	vts[13].SetParams("ConnectBridge", CALLING_CONV_THISCALL, 0);
 	vts[17].SetParams("OnReceivedConnectRequest", CALLING_CONV_THISCALL, 4);
