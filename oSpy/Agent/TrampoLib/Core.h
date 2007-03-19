@@ -76,6 +76,62 @@ class FunctionCall;
 
 typedef bool (*FunctionCallHandler) (FunctionCall *call);
 
+class DWordArgument;
+class AsciiStringArgument;
+class UnicodeStringArgument;
+
+class FunctionArgument : public BaseObject
+{
+public:
+    static void Initialize();
+
+    virtual unsigned int GetSize() const = 0;
+    virtual OString ToString(const void *start) const = 0;
+
+    static DWordArgument *DWord;
+    static AsciiStringArgument *AsciiString;
+    static UnicodeStringArgument *UnicodeString;
+};
+
+class DWordArgument : public FunctionArgument
+{
+public:
+    virtual unsigned int GetSize() const { return sizeof(DWORD); }
+    virtual OString ToString(const void *start) const;
+};
+
+class AsciiStringArgument : public FunctionArgument
+{
+public:
+    virtual unsigned int GetSize() const { return sizeof(char *); }
+    virtual OString ToString(const void *start) const;
+};
+
+class UnicodeStringArgument : public FunctionArgument
+{
+public:
+    virtual unsigned int GetSize() const { return sizeof(char *); }
+    virtual OString ToString(const void *start) const;
+};
+
+class FunctionArgumentList : public BaseObject
+{
+public:
+    FunctionArgumentList(unsigned int count, ...);
+    FunctionArgumentList(unsigned int count, va_list args);
+
+    unsigned int GetSize() const { return m_size; }
+    unsigned int GetCount() const { return static_cast<unsigned int>(m_args.size()); }
+
+    FunctionArgument *operator[](int index) { return m_args[index]; }
+
+protected:
+    unsigned int m_size;
+    OVector<FunctionArgument *>::Type m_args;
+
+    void Initialize(unsigned int count, va_list args);
+};
+
 class FunctionSpec : public BaseObject
 {
 public:
@@ -86,8 +142,15 @@ public:
 		: m_name(name),
           m_callingConvention(conv),
 		  m_argsSize(argsSize),
+          m_argList(NULL),
 		  m_handler(handler)
 	{}
+
+    ~FunctionSpec()
+    {
+        if (m_argList)
+            delete m_argList;
+    }
 
     void SetParams(const OString &name,
                    CallingConvention conv=CALLING_CONV_UNKNOWN,
@@ -99,6 +162,10 @@ public:
 		SetArgsSize(argsSize);
         SetHandler(handler);
 	}
+
+    FunctionArgumentList *GetArgumentList() const { return m_argList; }
+    void SetArgumentList(FunctionArgumentList *argList);
+    void SetArgumentList(unsigned int count, ...);
 
 	const OString &GetName() const { return m_name; }
 	void SetName(const OString &name) { m_name = name; }
@@ -116,6 +183,7 @@ protected:
 	OString m_name;
 	CallingConvention m_callingConvention;
 	int m_argsSize;
+    FunctionArgumentList *m_argList;
 	FunctionCallHandler m_handler;
 };
 
