@@ -963,7 +963,7 @@ winsock_connect_OnEnterLeave(FunctionCall *call)
 void
 hook_winsock()
 {
-#if 1
+#if 0
     FunctionSpec *openAsciiFuncSpec = new FunctionSpec("RegOpenKeyExA");
     openAsciiFuncSpec->SetArguments(5,
         new ArgumentSpec("hKey", ARG_DIR_IN, new Marshaller::Registry::KeyHandle()),

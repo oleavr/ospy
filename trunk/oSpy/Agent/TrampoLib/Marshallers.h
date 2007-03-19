@@ -96,6 +96,35 @@ protected:
     OMap<DWORD, OString>::Type m_defs;
 };
 
+class StructureField : public BaseObject
+{
+public:
+    StructureField(const OString &name, DWORD offset, BaseMarshaller *marshaller)
+        : m_name(name), m_offset(offset), m_marshaller(marshaller)
+    {}
+
+    const OString &GetName() const { return m_name; }
+    DWORD GetOffset() const { return m_offset; }
+    const BaseMarshaller *GetMarshaller() const { return m_marshaller; }
+
+protected:
+    OString m_name;
+    DWORD m_offset;
+    BaseMarshaller *m_marshaller;
+};
+
+class StructurePtr : public BaseMarshaller
+{
+public:
+    StructurePtr(const char *firstFieldName, ...);
+
+    virtual unsigned int GetSize() const { return sizeof(void *); }
+    virtual OString ToString(const void *start, bool deep) const;
+
+protected:
+    OVector<StructureField>::Type m_fields;
+};
+
 namespace Registry {
 
 class KeyHandle : public Enumeration
