@@ -29,6 +29,10 @@
 
 namespace TrampoLib {
 
+DWordArgument *FunctionArgument::DWord = NULL;
+AsciiStringArgument *FunctionArgument::AsciiString = NULL;
+UnicodeStringArgument *FunctionArgument::UnicodeString = NULL;
+
 const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 	{
 		{
@@ -87,6 +91,119 @@ const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 };
 
 OVector<Signature>::Type Function::prologSignatures;
+
+void
+FunctionArgument::Initialize()
+{
+    FunctionArgument::DWord = new DWordArgument();
+    FunctionArgument::AsciiString = new AsciiStringArgument();
+    FunctionArgument::UnicodeString = new UnicodeStringArgument();
+}
+
+OString
+DWordArgument::ToString(const void *start) const
+{
+    OOStringStream ss;
+
+    const DWORD *dwPtr = reinterpret_cast<const DWORD *>(start);
+    ss << *dwPtr;
+
+    return ss.str();
+}
+
+OString
+AsciiStringArgument::ToString(const void *start) const
+{
+    OOStringStream ss;
+
+    // FIXME: use C++ style cast here
+    const char **strPtr = (const char **) start;
+    if (*strPtr != NULL)
+    {
+        ss << "\"" << *strPtr << "\"";
+    }
+    else
+    {
+        ss << "NULL";
+    }
+
+    return ss.str();
+}
+
+OString
+UnicodeStringArgument::ToString(const void *start) const
+{
+    OOStringStream ss;
+
+    // FIXME: use C++ style cast here
+    const WCHAR **strPtr = (const WCHAR **) start;
+    if (*strPtr != NULL)
+    {
+        int bufSize = static_cast<int>(wcslen(*strPtr)) + 1;
+        char *buf = new char[bufSize];
+
+        WideCharToMultiByte(CP_ACP, 0, *strPtr, -1, buf, bufSize, NULL, NULL);
+
+        ss << "\"" << buf << "\"";
+
+        delete buf;
+    }
+    else
+    {
+        ss << "NULL";
+    }
+
+    return ss.str();
+}
+
+FunctionArgumentList::FunctionArgumentList(unsigned int count, ...)
+{
+    va_list args;
+    va_start(args, count);
+
+    Initialize(count, args);
+
+    va_end(args);
+}
+
+FunctionArgumentList::FunctionArgumentList(unsigned int count, va_list args)
+{
+    Initialize(count, args);
+}
+
+void
+FunctionArgumentList::Initialize(unsigned int count, va_list args)
+{
+    m_size = 0;
+
+    for (unsigned int i = 0; i < count; i++)
+    {
+        FunctionArgument *arg = va_arg(args, FunctionArgument *);
+
+        m_args.push_back(arg);
+
+        m_size += arg->GetSize();
+    }
+}
+
+void
+FunctionSpec::SetArgumentList(FunctionArgumentList *argList)
+{
+    m_argsSize = argList->GetSize();
+    m_argList = argList;
+}
+
+void
+FunctionSpec::SetArgumentList(unsigned int count, ...)
+{
+    va_list args;
+    va_start(args, count);
+
+    m_argList = new FunctionArgumentList(count, args);
+    m_argsSize = m_argList->GetSize();
+
+    va_end(args);
+}
 
 void
 Function::Initialize()
@@ -376,29 +493,53 @@ FunctionCall::ToString() const
 
 	ss << spec->GetName();
 
-	int argsSize = spec->GetArgsSize();
-	if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN && argsSize % sizeof(DWORD) == 0)
-	{
-		ss << "(";
+    FunctionArgumentList *args = spec->GetArgumentList();
+    if (args != NULL)
+    {
+        ss << "(";
 
-		DWORD *args = (DWORD *) m_argumentsData.data();
+        const unsigned char *argsData = reinterpret_cast<const unsigned char *>(m_argumentsData.data());
 
-		for (unsigned int i = 0; i < argsSize / sizeof(DWORD); i++)
-		{
-			if (i)
-				ss << ", ";
+        for (unsigned int i = 0; i < args->GetCount(); i++)
+        {
+            FunctionArgument *arg = (*args)[i];
 
-			// FIXME: optimize this
-			if (args[i] > 0xFFFF && !IsBadReadPtr((void *) args[i], 1))
-				ss << hex << "0x";
-			else
-				ss << dec;
+            if (i)
+			    ss << ", ";
 
-			ss << args[i];
-		}
+            ss << arg->ToString(argsData);
 
-		ss << ")";
-	}
+            argsData += arg->GetSize();
+        }
+
+        ss << ")";
+    }
+    else
+    {
+	    int argsSize = spec->GetArgsSize();
+	    if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN && argsSize % sizeof(DWORD) == 0)
+	    {
+		    ss << "(";
+
+		    DWORD *args = (DWORD *) m_argumentsData.data();
+
+		    for (unsigned int i = 0; i < argsSize / sizeof(DWORD); i++)
+		    {
+			    if (i)
+				    ss << ", ";
+
+			    // FIXME: optimize this
+			    if (args[i] > 0xFFFF && !IsBadReadPtr((void *) args[i], 1))
+				    ss << hex << "0x";
+			    else
+				    ss << dec;
+
+			    ss << args[i];
+		    }
+
+		    ss << ")";
+	    }
+    }
 
 	return ss.str();
 }

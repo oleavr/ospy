@@ -963,6 +963,58 @@ winsock_connect_OnEnterLeave(FunctionCall *call)
 void
 hook_winsock()
 {
+#if 0
+    FunctionSpec *openAsciiFuncSpec = new FunctionSpec("RegOpenKeyExA", CALLING_CONV_STDCALL);
+    openAsciiFuncSpec->SetArgumentList(5,
+        FunctionArgument::DWord,            // hKey
+        FunctionArgument::AsciiString,      // lpSubKey
+        FunctionArgument::DWord,            // ulOptions
+        FunctionArgument::DWord,            // samDesired
+        FunctionArgument::DWord);           // phkResult
+
+    FunctionSpec *openUniFuncSpec = new FunctionSpec("RegOpenKeyExW", CALLING_CONV_STDCALL);
+    openUniFuncSpec->SetArgumentList(5,
+        FunctionArgument::DWord,            // hKey
+        FunctionArgument::UnicodeString,    // lpSubKey
+        FunctionArgument::DWord,            // ulOptions
+        FunctionArgument::DWord,            // samDesired
+        FunctionArgument::DWord);           // phkResult
+
+    FunctionSpec *createAsciiFuncSpec = new FunctionSpec("RegCreateKeyExA", CALLING_CONV_STDCALL);
+    createAsciiFuncSpec->SetArgumentList(9,
+        FunctionArgument::DWord,            // hKey
+        FunctionArgument::AsciiString,      // lpSubKey
+        FunctionArgument::DWord,            // Reserved
+        FunctionArgument::AsciiString,      // lpClass
+        FunctionArgument::DWord,            // dwOptions
+        FunctionArgument::DWord,            // samDesired
+        FunctionArgument::DWord,            // lpSecurityAttributes
+        FunctionArgument::DWord,            // phkResult
+        FunctionArgument::DWord);           // lpdwDisposition
+
+    FunctionSpec *createUniFuncSpec = new FunctionSpec("RegCreateKeyExW", CALLING_CONV_STDCALL);
+    createUniFuncSpec->SetArgumentList(9,
+        FunctionArgument::DWord,            // hKey
+        FunctionArgument::UnicodeString,    // lpSubKey
+        FunctionArgument::DWord,            // Reserved
+        FunctionArgument::UnicodeString,    // lpClass
+        FunctionArgument::DWord,            // dwOptions
+        FunctionArgument::DWord,            // samDesired
+        FunctionArgument::DWord,            // lpSecurityAttributes
+        FunctionArgument::DWord,            // phkResult
+        FunctionArgument::DWord);           // lpdwDisposition
+
+    DllModule *mod = new DllModule("advapi32.dll");
+    DllFunction *openAsciiFunc = new DllFunction(mod, openAsciiFuncSpec);
+    DllFunction *openUniFunc = new DllFunction(mod, openUniFuncSpec);
+    DllFunction *createAsciiFunc = new DllFunction(mod, createAsciiFuncSpec);
+    DllFunction *createUniFunc = new DllFunction(mod, createUniFuncSpec);
+    openAsciiFunc->Hook();
+    openUniFunc->Hook();
+    createAsciiFunc->Hook();
+    createUniFunc->Hook();
+#endif
+
 #if TESTING_TRAMPOLIB
     FunctionSpec *funcSpec = new FunctionSpec("connect", CALLING_CONV_STDCALL, 12, winsock_connect_OnEnterLeave);
     DllModule *mod = new DllModule("ws2_32.dll");
