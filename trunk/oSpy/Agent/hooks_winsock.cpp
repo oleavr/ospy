@@ -964,46 +964,45 @@ void
 hook_winsock()
 {
 #if 1
-    FunctionSpec *openAsciiFuncSpec = new FunctionSpec("RegOpenKeyExA", CALLING_CONV_STDCALL);
-    openAsciiFuncSpec->SetArgumentList(5,
-		new FunctionArgument("hKey", ARG_DIR_IN, new Marshaller::UInt32()),
-		new FunctionArgument("lpSubKey", ARG_DIR_IN, new Marshaller::AsciiStringPtr()),
-        new FunctionArgument("ulOptions", ARG_DIR_IN, new Marshaller::UInt32()),
-        new FunctionArgument("samDesired", ARG_DIR_IN, new Marshaller::UInt32()),
-        new FunctionArgument("phkResult", ARG_DIR_OUT, new Marshaller::UInt32Ptr()));
+    FunctionSpec *openAsciiFuncSpec = new FunctionSpec("RegOpenKeyExA");
+    openAsciiFuncSpec->SetArguments(5,
+        new ArgumentSpec("hKey", ARG_DIR_IN, new Marshaller::Registry::KeyHandle()),
+        new ArgumentSpec("lpSubKey", ARG_DIR_IN, new Marshaller::AsciiStringPtr()),
+        new ArgumentSpec("ulOptions", ARG_DIR_IN, new Marshaller::UInt32()),
+        new ArgumentSpec("samDesired", ARG_DIR_IN, new Marshaller::UInt32(true)),
+        new ArgumentSpec("phkResult", ARG_DIR_OUT, new Marshaller::UInt32Ptr(true)));
 
-/*
-    FunctionSpec *openUniFuncSpec = new FunctionSpec("RegOpenKeyExW", CALLING_CONV_STDCALL);
-    openUniFuncSpec->SetArgumentList(5,
-        new FunctionArgument::DWord(),            // hKey
-        new FunctionArgument::UnicodeString(),    // lpSubKey
-        new FunctionArgument::DWord(),            // ulOptions
-        new FunctionArgument::DWord(),            // samDesired
-        new FunctionArgument::DWord());           // phkResult
+    FunctionSpec *openUniFuncSpec = new FunctionSpec("RegOpenKeyExW");
+    openUniFuncSpec->SetArguments(5,
+        new ArgumentSpec("hKey", ARG_DIR_IN, new Marshaller::Registry::KeyHandle()),
+		new ArgumentSpec("lpSubKey", ARG_DIR_IN, new Marshaller::UnicodeStringPtr()),
+        new ArgumentSpec("ulOptions", ARG_DIR_IN, new Marshaller::UInt32()),
+        new ArgumentSpec("samDesired", ARG_DIR_IN, new Marshaller::UInt32(true)),
+        new ArgumentSpec("phkResult", ARG_DIR_OUT, new Marshaller::UInt32Ptr(true)));
 
     FunctionSpec *createAsciiFuncSpec = new FunctionSpec("RegCreateKeyExA", CALLING_CONV_STDCALL);
-    createAsciiFuncSpec->SetArgumentList(9,
-        new FunctionArgument::DWord(),            // hKey
-        new FunctionArgument::AsciiString(),      // lpSubKey
-        new FunctionArgument::DWord(),            // Reserved
-        new FunctionArgument::AsciiString(),      // lpClass
-        new FunctionArgument::DWord(),            // dwOptions
-        new FunctionArgument::DWord(),            // samDesired
-        new FunctionArgument::DWord(),            // lpSecurityAttributes
-        new FunctionArgument::DWord(),            // phkResult
-        new FunctionArgument::DWord());           // lpdwDisposition
+    createAsciiFuncSpec->SetArguments(9,
+        new ArgumentSpec("hKey", ARG_DIR_IN, new Marshaller::Registry::KeyHandle()),
+        new ArgumentSpec("lpSubKey", ARG_DIR_IN, new Marshaller::AsciiStringPtr()),
+        new ArgumentSpec("Reserved", ARG_DIR_IN, new Marshaller::UInt32()),
+        new ArgumentSpec("lpClass", ARG_DIR_IN, new Marshaller::AsciiStringPtr()),
+        new ArgumentSpec("dwOptions", ARG_DIR_IN, new Marshaller::UInt32()),
+        new ArgumentSpec("samDesired", ARG_DIR_IN, new Marshaller::UInt32(true)),
+        new ArgumentSpec("lpSecurityAttributes", ARG_DIR_IN, new Marshaller::UInt32()),
+        new ArgumentSpec("phkResult", ARG_DIR_OUT, new Marshaller::UInt32Ptr(true)),
+        new ArgumentSpec("lpdwDisposition", ARG_DIR_OUT, new Marshaller::UInt32Ptr()));
 
     FunctionSpec *createUniFuncSpec = new FunctionSpec("RegCreateKeyExW", CALLING_CONV_STDCALL);
-    createUniFuncSpec->SetArgumentList(9,
-        new FunctionArgument::DWord(),            // hKey
-        new FunctionArgument::UnicodeString(),    // lpSubKey
-        new FunctionArgument::DWord(),            // Reserved
-        new FunctionArgument::UnicodeString(),    // lpClass
-        new FunctionArgument::DWord(),            // dwOptions
-        new FunctionArgument::DWord(),            // samDesired
-        new FunctionArgument::DWord(),            // lpSecurityAttributes
-        new FunctionArgument::DWord(),            // phkResult
-        new FunctionArgument::DWord());           // lpdwDisposition
+    createUniFuncSpec->SetArguments(9,
+        new ArgumentSpec("hKey", ARG_DIR_IN, new Marshaller::Registry::KeyHandle()),
+        new ArgumentSpec("lpSubKey", ARG_DIR_IN, new Marshaller::UnicodeStringPtr()),
+        new ArgumentSpec("Reserved", ARG_DIR_IN, new Marshaller::UInt32()),
+        new ArgumentSpec("lpClass", ARG_DIR_IN, new Marshaller::UnicodeStringPtr()),
+        new ArgumentSpec("dwOptions", ARG_DIR_IN, new Marshaller::UInt32()),
+        new ArgumentSpec("samDesired", ARG_DIR_IN, new Marshaller::UInt32(true)),
+        new ArgumentSpec("lpSecurityAttributes", ARG_DIR_IN, new Marshaller::UInt32()),
+        new ArgumentSpec("phkResult", ARG_DIR_OUT, new Marshaller::UInt32Ptr(true)),
+        new ArgumentSpec("lpdwDisposition", ARG_DIR_OUT, new Marshaller::UInt32Ptr()));
 
     DllModule *mod = new DllModule("advapi32.dll");
     DllFunction *openAsciiFunc = new DllFunction(mod, openAsciiFuncSpec);
@@ -1013,7 +1012,7 @@ hook_winsock()
     openAsciiFunc->Hook();
     openUniFunc->Hook();
     createAsciiFunc->Hook();
-    createUniFunc->Hook();*/
+    createUniFunc->Hook();
 #endif
 
 #if TESTING_TRAMPOLIB

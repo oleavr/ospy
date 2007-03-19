@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "Marshallers.h"
 #include "Signature.h"
 
 namespace TrampoLib {
@@ -81,55 +82,20 @@ class FunctionCall;
 
 typedef bool (*FunctionCallHandler) (FunctionCall *call);
 
-class BaseMarshaller : public BaseObject
+class ArgumentSpec : public BaseObject
 {
 public:
-    virtual unsigned int GetSize() const = 0;
-    virtual OString ToString(const void *start) const = 0;
-};
-
-namespace Marshaller {
-
-class UInt32 : public BaseMarshaller
-{
-public:
-	virtual unsigned int GetSize() const { return sizeof(DWORD); }
-	virtual OString ToString(const void *start) const;
-};
-
-class UInt32Ptr : public BaseMarshaller
-{
-public:
-	virtual unsigned int GetSize() const { return sizeof(DWORD *); }
-	virtual OString ToString(const void *start) const;
-};
-
-class AsciiStringPtr : public BaseMarshaller
-{
-public:
-    virtual unsigned int GetSize() const { return sizeof(char *); }
-    virtual OString ToString(const void *start) const;
-};
-
-class UnicodeStringPtr : public BaseMarshaller
-{
-public:
-    virtual unsigned int GetSize() const { return sizeof(char *); }
-    virtual OString ToString(const void *start) const;
-};
-
-}
-
-class FunctionArgument : public BaseObject
-{
-public:
-	FunctionArgument(const OString &name, ArgumentDirection direction, BaseMarshaller *marshaller)
+	ArgumentSpec(const OString &name, ArgumentDirection direction, BaseMarshaller *marshaller)
 		: m_name(name), m_direction(direction), m_marshaller(marshaller)
 	{
 	}
-	~FunctionArgument() { delete m_marshaller; }
+	~ArgumentSpec() { delete m_marshaller; }
 
+    const OString &GetName() const { return m_name; }
+    ArgumentDirection GetDirection() const { return m_direction; }
     const BaseMarshaller *GetMarshaller() const { return m_marshaller; }
+
+    unsigned int GetSize() const { return m_marshaller->GetSize(); }
 
 protected:
 	OString m_name;
@@ -137,23 +103,54 @@ protected:
 	BaseMarshaller *m_marshaller;
 };
 
-class FunctionArgumentList : public BaseObject
+class Argument : public BaseObject
 {
 public:
-    FunctionArgumentList(unsigned int count, ...);
-    FunctionArgumentList(unsigned int count, va_list args);
-	~FunctionArgumentList();
+    Argument(ArgumentSpec *spec, const void *data)
+        : m_spec(spec), m_data(data)
+    {}
+
+    ArgumentSpec *GetSpec() const { return m_spec; }
+
+    OString ToString(FunctionCallState state) const;
+
+protected:
+    ArgumentSpec *m_spec;
+    const void *m_data;
+};
+
+class ArgumentListSpec : public BaseObject
+{
+public:
+    ArgumentListSpec(unsigned int count, ...);
+    ArgumentListSpec(unsigned int count, va_list args);
+	~ArgumentListSpec();
 
     unsigned int GetSize() const { return m_size; }
-    unsigned int GetCount() const { return static_cast<unsigned int>(m_args.size()); }
+    unsigned int GetCount() const { return static_cast<unsigned int>(m_arguments.size()); }
 
-	FunctionArgument *operator[](int index) { return m_args[index]; }
+	ArgumentSpec *operator[](int index) { return m_arguments[index]; }
 
 protected:
     unsigned int m_size;
-	OVector<FunctionArgument *>::Type m_args;
+	OVector<ArgumentSpec *>::Type m_arguments;
 
     void Initialize(unsigned int count, va_list args);
+};
+
+class ArgumentList : public BaseObject
+{
+public:
+    ArgumentList(ArgumentListSpec *spec, const void *data);
+	~ArgumentList();
+
+    unsigned int GetCount() const { return static_cast<unsigned int>(m_arguments.size()); }
+
+	const Argument &operator[](int index) const { return m_arguments[index]; }
+
+protected:
+    ArgumentListSpec *m_spec;
+	OVector<Argument>::Type m_arguments;
 };
 
 class FunctionSpec : public BaseObject
@@ -187,9 +184,9 @@ public:
         SetHandler(handler);
 	}
 
-    FunctionArgumentList *GetArgumentList() const { return m_argList; }
-    void SetArgumentList(FunctionArgumentList *argList);
-    void SetArgumentList(unsigned int count, ...);
+    ArgumentListSpec *GetArguments() const { return m_argList; }
+    void SetArguments(ArgumentListSpec *argList);
+    void SetArguments(unsigned int count, ...);
 
 	const OString &GetName() const { return m_name; }
 	void SetName(const OString &name) { m_name = name; }
@@ -207,7 +204,7 @@ protected:
 	OString m_name;
 	CallingConvention m_callingConvention;
 	int m_argsSize;
-    FunctionArgumentList *m_argList;
+    ArgumentListSpec *m_argList;
 	FunctionCallHandler m_handler;
 };
 
@@ -247,23 +244,7 @@ private:
 class FunctionCall : public BaseObject
 {
 public:
-	FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxEnter)
-		: m_function(function), m_backtraceAddress(btAddr),
-		  m_returnAddress(*((void **) btAddr)),
-		  m_cpuCtxLive(NULL), m_cpuCtxEnter(*cpuCtxEnter),
-		  m_lastErrorLive(NULL),
-          m_state(FUNCTION_CALL_ENTERING),
-          m_shouldCarryOn(true)
-	{
-		memset(&m_cpuCtxLeave, 0, sizeof(m_cpuCtxLeave));
-
-		int argsSize = function->GetSpec()->GetArgsSize();
-		if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN)
-		{
-			m_argumentsData.resize(argsSize);
-			memcpy((void *) m_argumentsData.data(), (BYTE *) btAddr + 4, argsSize);
-		}
-	}
+	FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxEnter);
 
 	Function *GetFunction() const { return m_function; }
 	void *GetBacktraceAddress() const { return m_backtraceAddress; }
@@ -280,7 +261,8 @@ public:
 	DWORD *GetLastErrorLive() const { return m_lastErrorLive; }
 	void SetLastErrorLive(DWORD *lastError) { m_lastErrorLive = lastError; }
 
-    const OString &GetArgumentsData() { return m_argumentsData; }
+    const OString &GetArgumentsData() const { return m_argumentsData; }
+    const ArgumentList *GetArguments() const { return m_arguments; }
 
     FunctionCallState GetState() const { return m_state; }
     void SetState(FunctionCallState state) { m_state = state; }
@@ -298,7 +280,9 @@ protected:
 	CpuContext m_cpuCtxEnter;
 	CpuContext m_cpuCtxLeave;
 	DWORD *m_lastErrorLive;
+
 	OString m_argumentsData;
+    ArgumentList *m_arguments;
 
     FunctionCallState m_state;
 
