@@ -62,10 +62,43 @@ protected:
     bool m_hex;
 };
 
+class UInt16 : public Integer
+{
+public:
+    UInt16(bool hex=false)
+        : Integer(hex)
+    {}
+
+	virtual unsigned int GetSize() const { return sizeof(WORD); }
+	virtual OString ToString(const void *start, bool deep) const;
+};
+
+class UInt16BE : public Integer
+{
+public:
+    UInt16BE(bool hex=false)
+        : Integer(hex)
+    {}
+
+	virtual unsigned int GetSize() const { return sizeof(WORD); }
+	virtual OString ToString(const void *start, bool deep) const;
+};
+
 class UInt32 : public Integer
 {
 public:
     UInt32(bool hex=false)
+        : Integer(hex)
+    {}
+
+	virtual unsigned int GetSize() const { return sizeof(DWORD); }
+	virtual OString ToString(const void *start, bool deep) const;
+};
+
+class UInt32BE : public Integer
+{
+public:
+    UInt32BE(bool hex=false)
         : Integer(hex)
     {}
 
@@ -196,6 +229,36 @@ public:
 };
 
 } // namespace Registry
+
+namespace Winsock {
+
+class Ipv4InAddr : public BaseMarshaller
+{
+public:
+	virtual unsigned int GetSize() const { return sizeof(DWORD); }
+	virtual OString ToString(const void *start, bool deep) const;
+};
+
+class Ipv4Sockaddr : public Structure
+{
+public:
+    Ipv4Sockaddr()
+        : Structure("sin_family", 0, new UInt16(),
+                    "sin_port", 2, new UInt16BE(),
+                    "sin_addr", 4, new Ipv4InAddr(),
+                    NULL)
+    {}
+};
+
+class Ipv4SockaddrPtr : public Pointer
+{
+public:
+    Ipv4SockaddrPtr()
+        : Pointer(new Ipv4Sockaddr())
+    {}
+};
+
+} // namespace Winsock
 
 } // namespace Marshaller
 

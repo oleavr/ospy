@@ -66,11 +66,47 @@ Pointer::ToString(const void *start, bool deep) const
 }
 
 OString
+UInt16::ToString(const void *start, bool deep) const
+{
+    OOStringStream ss;
+
+    const unsigned short *wPtr = reinterpret_cast<const unsigned short *>(start);
+
+    if (m_hex)
+        ss << "0x" << hex;
+    else
+        ss << dec;
+
+    ss << static_cast<unsigned int>(*wPtr);
+
+    return ss.str();
+}
+
+OString
+UInt16BE::ToString(const void *start, bool deep) const
+{
+    OOStringStream ss;
+
+    const unsigned short *wPtr = reinterpret_cast<const unsigned short *>(start);
+
+    if (m_hex)
+        ss << "0x" << hex;
+    else
+        ss << dec;
+
+    unsigned int dw = ((*wPtr >> 8) & 0x00FF) |
+                      ((*wPtr << 8) & 0xFF00);
+    ss << dw;
+
+    return ss.str();
+}
+
+OString
 UInt32::ToString(const void *start, bool deep) const
 {
     OOStringStream ss;
 
-    const DWORD *dwPtr = reinterpret_cast<const DWORD *>(start);
+    const unsigned int *dwPtr = reinterpret_cast<const unsigned int *>(start);
 
     if (m_hex)
         ss << "0x" << hex;
@@ -78,6 +114,27 @@ UInt32::ToString(const void *start, bool deep) const
         ss << dec;
 
     ss << *dwPtr;
+
+    return ss.str();
+}
+
+OString
+UInt32BE::ToString(const void *start, bool deep) const
+{
+    OOStringStream ss;
+
+    const unsigned int *dwPtr = reinterpret_cast<const unsigned int *>(start);
+
+    if (m_hex)
+        ss << "0x" << hex;
+    else
+        ss << dec;
+
+    unsigned int dw = (*dwPtr >> 24) & 0x000000FF |
+                      (*dwPtr >>  8) & 0x0000FF00 |
+                      (*dwPtr <<  8) & 0x00FF0000 |
+                      (*dwPtr << 24) & 0xFF000000;
+    ss << dw;
 
     return ss.str();
 }
@@ -209,6 +266,25 @@ StructurePtr::StructurePtr(const char *firstFieldName, ...)
 
     va_end(args);
 }
+
+namespace Winsock {
+
+OString
+Ipv4InAddr::ToString(const void *start, bool deep) const
+{
+    OOStringStream ss;
+
+    const unsigned char *addr = reinterpret_cast<const unsigned char *>(start);
+
+    ss << (DWORD) addr[0] << "."
+       << (DWORD) addr[1] << "."
+       << (DWORD) addr[2] << "."
+       << (DWORD) addr[3];
+
+    return ss.str();
+}
+
+} // namespace Winsock
 
 } // namespace Marshaller
 
