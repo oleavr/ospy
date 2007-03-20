@@ -945,7 +945,7 @@ HOOK_GLUE_INTERRUPTIBLE(WSASend, (7 * 4))
 HOOK_GLUE_INTERRUPTIBLE(WSAAccept, WSA_ACCEPT_ARGS_SIZE)
 HOOK_GLUE_INTERRUPTIBLE(wsock32_recv, (4 * 4))
 
-#if TESTING_TRAMPOLIB
+#if 0 // TESTING_TRAMPOLIB
 static bool
 winsock_connect_OnEnterLeave(FunctionCall *call)
 {
@@ -963,7 +963,7 @@ winsock_connect_OnEnterLeave(FunctionCall *call)
 void
 hook_winsock()
 {
-#if 1
+#if 0
     FunctionSpec *openAsciiFuncSpec = new FunctionSpec("RegOpenKeyExA");
     openAsciiFuncSpec->SetArguments(5,
         new ArgumentSpec("hKey", ARG_DIR_IN, new Marshaller::Registry::KeyHandle()),
@@ -1016,10 +1016,15 @@ hook_winsock()
 #endif
 
 #if TESTING_TRAMPOLIB
-    FunctionSpec *funcSpec = new FunctionSpec("connect", CALLING_CONV_STDCALL, 12, winsock_connect_OnEnterLeave);
-    DllModule *mod = new DllModule("ws2_32.dll");
-    DllFunction *func = new DllFunction(mod, funcSpec);
-    func->Hook();
+    FunctionSpec *wsFuncSpec = new FunctionSpec("connect");
+    wsFuncSpec->SetArguments(3,
+        new ArgumentSpec("s", ARG_DIR_IN, new Marshaller::UInt32(true)),
+        new ArgumentSpec("name", ARG_DIR_IN, new Marshaller::Winsock::Ipv4SockaddrPtr()),
+        new ArgumentSpec("namelen", ARG_DIR_IN, new Marshaller::UInt32()));
+
+    DllModule *wsMod = new DllModule("ws2_32.dll");
+    DllFunction *wsFunc = new DllFunction(wsMod, wsFuncSpec);
+    wsFunc->Hook();
 #endif
 
     // Hook the Winsock API
