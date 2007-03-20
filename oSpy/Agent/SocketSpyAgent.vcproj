@@ -378,6 +378,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\TrampoLib\Logger.h"
+					>
+				</File>
+				<File
 					RelativePath=".\TrampoLib\Marshallers.h"
 					>
 				</File>
