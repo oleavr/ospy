@@ -38,6 +38,19 @@ public:
 
 namespace Marshaller {
 
+class Pointer : public BaseMarshaller
+{
+public:
+    Pointer(BaseMarshaller *type=NULL);
+    virtual ~Pointer();
+
+    virtual unsigned int GetSize() const { return sizeof(void *); }
+	virtual OString ToString(const void *start, bool deep) const;
+
+protected:
+    BaseMarshaller *m_type;
+};
+
 class Integer : public BaseMarshaller
 {
 public:
@@ -60,29 +73,62 @@ public:
 	virtual OString ToString(const void *start, bool deep) const;
 };
 
-class UInt32Ptr : public Integer
+class UInt32Ptr : public Pointer
 {
 public:
     UInt32Ptr(bool hex=false)
-        : Integer(hex)
+        : Pointer(new UInt32(hex))
+    {}
+};
+
+class CString : public BaseMarshaller
+{
+public:
+    CString(unsigned int elementSize, int length)
+        : m_elementSize(elementSize), m_length(length)
     {}
 
-    virtual unsigned int GetSize() const { return sizeof(DWORD *); }
-	virtual OString ToString(const void *start, bool deep) const;
+    virtual unsigned int GetSize() const { return m_elementSize * (m_length + 1); }
+
+protected:
+    unsigned int m_elementSize;
+    int m_length;
 };
 
-class AsciiStringPtr : public BaseMarshaller
+class AsciiString : public CString
 {
 public:
-    virtual unsigned int GetSize() const { return sizeof(char *); }
+    AsciiString(int length=-1)
+        : CString(sizeof(CHAR), length)
+    {}
+
     virtual OString ToString(const void *start, bool deep) const;
 };
 
-class UnicodeStringPtr : public BaseMarshaller
+class AsciiStringPtr : public Pointer
 {
 public:
-    virtual unsigned int GetSize() const { return sizeof(char *); }
+    AsciiStringPtr()
+        : Pointer(new AsciiString())
+    {}
+};
+
+class UnicodeString : public CString
+{
+public:
+    UnicodeString(int length=-1)
+        : CString(sizeof(WCHAR), length)
+    {}
+
     virtual OString ToString(const void *start, bool deep) const;
+};
+
+class UnicodeStringPtr : public Pointer
+{
+public:
+    UnicodeStringPtr()
+        : Pointer(new UnicodeString())
+    {}
 };
 
 class Enumeration : public UInt32
@@ -113,16 +159,25 @@ protected:
     BaseMarshaller *m_marshaller;
 };
 
-class StructurePtr : public BaseMarshaller
+class Structure : public BaseMarshaller
 {
 public:
-    StructurePtr(const char *firstFieldName, ...);
+    Structure(const char *firstFieldName, ...);
+    Structure(const char *firstFieldName, va_list args);
 
     virtual unsigned int GetSize() const { return sizeof(void *); }
     virtual OString ToString(const void *start, bool deep) const;
 
 protected:
     OVector<StructureField>::Type m_fields;
+
+    void Initialize(const char *firstFieldName, va_list args);
+};
+
+class StructurePtr : public Pointer
+{
+public:
+    StructurePtr(const char *firstFieldName, ...);
 };
 
 namespace Registry {

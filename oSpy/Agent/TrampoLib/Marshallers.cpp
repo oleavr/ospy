@@ -30,6 +30,41 @@ namespace TrampoLib {
 
 namespace Marshaller {
 
+Pointer::Pointer(BaseMarshaller *type)
+    : m_type(type)
+{}
+
+Pointer::~Pointer()
+{
+    if (m_type != NULL)
+        delete m_type;
+}
+
+OString
+Pointer::ToString(const void *start, bool deep) const
+{
+    OOStringStream ss;
+
+    const void **ptr = (const void **) start;
+    if (*ptr != NULL)
+    {
+        if (deep)
+        {
+            ss << m_type->ToString(*ptr, true);
+        }
+        else
+        {
+            ss << "0x" << *ptr;
+        }
+    }
+    else
+    {
+        ss << "NULL";
+    }
+
+    return ss.str();
+}
+
 OString
 UInt32::ToString(const void *start, bool deep) const
 {
@@ -48,87 +83,30 @@ UInt32::ToString(const void *start, bool deep) const
 }
 
 OString
-UInt32Ptr::ToString(const void *start, bool deep) const
+AsciiString::ToString(const void *start, bool deep) const
 {
     OOStringStream ss;
 
-    const DWORD **dwPtr = (const DWORD **) start;
-    if (*dwPtr != NULL)
-    {
-        if (deep)
-        {
-            if (m_hex)
-                ss << "0x" << hex;
-            else
-                ss << dec;
-
-            ss << **dwPtr;
-        }
-        else
-            ss << "0x" << *dwPtr;
-    }
-    else
-    {
-        ss << "NULL";
-    }
+    const char *strPtr = static_cast<const char *>(start);
+    ss << "\"" << *strPtr << "\"";
 
     return ss.str();
 }
 
 OString
-AsciiStringPtr::ToString(const void *start, bool deep) const
+UnicodeString::ToString(const void *start, bool deep) const
 {
     OOStringStream ss;
 
-    const char **strPtr = (const char **) start;
-    if (*strPtr != NULL)
-    {
-        if (deep)
-        {
-            ss << "\"" << *strPtr << "\"";
-        }
-        else
-        {
-            ss << "0x" << strPtr;
-        }
-    }
-    else
-    {
-        ss << "NULL";
-    }
+    const WCHAR *strPtr = static_cast<const WCHAR *>(start);
+    unsigned int bufSize = static_cast<unsigned int>(wcslen(strPtr)) + 1;
+    char *buf = new char[bufSize];
 
-    return ss.str();
-}
+    WideCharToMultiByte(CP_ACP, 0, strPtr, -1, buf, bufSize, NULL, NULL);
 
-OString
-UnicodeStringPtr::ToString(const void *start, bool deep) const
-{
-    OOStringStream ss;
+    ss << "\"" << buf << "\"";
 
-    // FIXME: use C++ style cast here
-    const WCHAR **strPtr = (const WCHAR **) start;
-    if (*strPtr != NULL)
-    {
-        if (deep)
-        {
-            int bufSize = static_cast<int>(wcslen(*strPtr)) + 1;
-            char *buf = new char[bufSize];
-
-            WideCharToMultiByte(CP_ACP, 0, *strPtr, -1, buf, bufSize, NULL, NULL);
-
-            ss << "\"" << buf << "\"";
-
-            delete buf;
-        }
-        else
-        {
-            ss << "0x" << strPtr;
-        }
-    }
-    else
-    {
-        ss << "NULL";
-    }
+    delete buf;
 
     return ss.str();
 }
@@ -168,11 +146,24 @@ Enumeration::ToString(const void *start, bool deep) const
     }
 }
 
-StructurePtr::StructurePtr(const char *firstFieldName, ...)
+Structure::Structure(const char *firstFieldName, ...)
 {
     va_list args;
     va_start(args, firstFieldName);
 
+    Initialize(firstFieldName, args);
+
+    va_end(args);
+}
+
+Structure::Structure(const char *firstFieldName, va_list args)
+{
+    Initialize(firstFieldName, args);
+}
+
+void
+Structure::Initialize(const char *firstFieldName, va_list args)
+{
     const char *fieldName = firstFieldName;
     while (fieldName != NULL)
     {
@@ -183,47 +174,40 @@ StructurePtr::StructurePtr(const char *firstFieldName, ...)
 
         fieldName = va_arg(args, const char *);
     }
-
-    va_end(args);
 }
 
 OString
-StructurePtr::ToString(const void *start, bool deep) const
+Structure::ToString(const void *start, bool deep) const
 {
     OOStringStream ss;
 
-    const void **structPtr = (const void **) start;
-    if (*structPtr != NULL)
+    ss << "[ ";
+
+    for (unsigned int i = 0; i < m_fields.size(); i++)
     {
-        if (deep)
-        {
-            ss << "[ ";
+        const StructureField &field = m_fields[i];
 
-            for (unsigned int i = 0; i < m_fields.size(); i++)
-            {
-                const StructureField &field = m_fields[i];
+        const void *fieldPtr = reinterpret_cast<const char *>(start) + field.GetOffset();
 
-                const void *fieldPtr = reinterpret_cast<const char *>(*structPtr) + field.GetOffset();
+        if (i > 0)
+            ss << ", ";
 
-                if (i > 0)
-                    ss << ", ";
-
-                ss << field.GetName() << "=" << field.GetMarshaller()->ToString(fieldPtr, true);
-            }
-
-            ss << " ]";
-        }
-        else
-        {
-            ss << "0x" << *structPtr;
-        }
+        ss << field.GetName() << "=" << field.GetMarshaller()->ToString(fieldPtr, true);
     }
-    else
-    {
-        ss << "NULL";
-    }
+
+    ss << " ]";
 
     return ss.str();
+}
+
+StructurePtr::StructurePtr(const char *firstFieldName, ...)
+{
+    va_list args;
+    va_start(args, firstFieldName);
+
+    m_type = new Structure(firstFieldName, args);
+
+    va_end(args);
 }
 
 } // namespace Marshaller
