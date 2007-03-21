@@ -25,7 +25,7 @@
 
 #include "stdafx.h"
 #include "byte_buffer.h"
-#include "logging.h"
+#include "logging_old.h"
 
 // FIXME: this code must die (switching to C++)
 

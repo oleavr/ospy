@@ -25,15 +25,24 @@
 
 #pragma once
 
+#include "Logging.h"
+
 namespace TrampoLib {
 
 class BaseMarshaller : public BaseObject
 {
 public:
+    BaseMarshaller(const OString &typeName)
+        : m_typeName(typeName)
+    {}
     virtual ~BaseMarshaller() {};
 
     virtual unsigned int GetSize() const = 0;
+    virtual void AppendToNode(Logging::Node *parentNode, const void *start, bool deep) const;
     virtual OString ToString(const void *start, bool deep) const = 0;
+
+protected:
+    OString m_typeName;
 };
 
 namespace Marshaller {
@@ -45,6 +54,7 @@ public:
     virtual ~Pointer();
 
     virtual unsigned int GetSize() const { return sizeof(void *); }
+    virtual void AppendToNode(Logging::Node *parentNode, const void *start, bool deep) const;
 	virtual OString ToString(const void *start, bool deep) const;
 
 protected:
@@ -54,8 +64,8 @@ protected:
 class Integer : public BaseMarshaller
 {
 public:
-    Integer(bool hex=false)
-        : m_hex(hex)
+    Integer(const OString &typeName, bool hex=false)
+        : BaseMarshaller(typeName), m_hex(hex)
     {}
 
 protected:
@@ -66,7 +76,7 @@ class UInt16 : public Integer
 {
 public:
     UInt16(bool hex=false)
-        : Integer(hex)
+        : Integer("UInt16", hex)
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(WORD); }
@@ -77,7 +87,7 @@ class UInt16BE : public Integer
 {
 public:
     UInt16BE(bool hex=false)
-        : Integer(hex)
+        : Integer("UInt16BE", hex)
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(WORD); }
@@ -88,7 +98,7 @@ class UInt32 : public Integer
 {
 public:
     UInt32(bool hex=false)
-        : Integer(hex)
+        : Integer("UInt32", hex)
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(DWORD); }
@@ -99,7 +109,7 @@ class UInt32BE : public Integer
 {
 public:
     UInt32BE(bool hex=false)
-        : Integer(hex)
+        : Integer("UInt32BE", hex)
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(DWORD); }
@@ -117,8 +127,10 @@ public:
 class CString : public BaseMarshaller
 {
 public:
-    CString(unsigned int elementSize, int length)
-        : m_elementSize(elementSize), m_length(length)
+    CString(const OString &typeName, unsigned int elementSize, int length)
+        : BaseMarshaller(typeName),
+          m_elementSize(elementSize),
+          m_length(length)
     {}
 
     virtual unsigned int GetSize() const { return m_elementSize * (m_length + 1); }
@@ -132,7 +144,7 @@ class AsciiString : public CString
 {
 public:
     AsciiString(int length=-1)
-        : CString(sizeof(CHAR), length)
+        : CString("AsciiString", sizeof(CHAR), length)
     {}
 
     virtual OString ToString(const void *start, bool deep) const;
@@ -150,7 +162,7 @@ class UnicodeString : public CString
 {
 public:
     UnicodeString(int length=-1)
-        : CString(sizeof(WCHAR), length)
+        : CString("AsciiString", sizeof(WCHAR), length)
     {}
 
     virtual OString ToString(const void *start, bool deep) const;
@@ -167,7 +179,7 @@ public:
 class Enumeration : public UInt32
 {
 public:
-    Enumeration(const char *firstName, ...);
+    Enumeration(const char *name, const char *firstName, ...);
 
     virtual OString ToString(const void *start, bool deep) const;
 
@@ -195,10 +207,11 @@ protected:
 class Structure : public BaseMarshaller
 {
 public:
-    Structure(const char *firstFieldName, ...);
-    Structure(const char *firstFieldName, va_list args);
+    Structure(const char *name, const char *firstFieldName, ...);
+    Structure(const char *name, const char *firstFieldName, va_list args);
 
     virtual unsigned int GetSize() const { return sizeof(void *); }
+    virtual void AppendToNode(Logging::Node *parentNode, const void *start, bool deep) const;
     virtual OString ToString(const void *start, bool deep) const;
 
 protected:
@@ -219,7 +232,8 @@ class KeyHandle : public Enumeration
 {
 public:
     KeyHandle()
-        : Enumeration("HKEY_CLASSES_ROOT", 0x80000000,
+        : Enumeration("KeyHandle",
+                      "HKEY_CLASSES_ROOT", 0x80000000,
                       "HKEY_CURRENT_USER", 0x80000001,
                       "HKEY_LOCAL_MACHINE", 0x80000002,
                       "HKEY_USERS", 0x80000003,
@@ -235,6 +249,10 @@ namespace Winsock {
 class Ipv4InAddr : public BaseMarshaller
 {
 public:
+    Ipv4InAddr()
+        : BaseMarshaller("Ipv4InAddr")
+    {}
+
 	virtual unsigned int GetSize() const { return sizeof(DWORD); }
 	virtual OString ToString(const void *start, bool deep) const;
 };
@@ -243,7 +261,8 @@ class Ipv4Sockaddr : public Structure
 {
 public:
     Ipv4Sockaddr()
-        : Structure("sin_family", 0, new UInt16(),
+        : Structure("Ipv4Sockaddr",
+                    "sin_family", 0, new UInt16(),
                     "sin_port", 2, new UInt16BE(),
                     "sin_addr", 4, new Ipv4InAddr(),
                     NULL)

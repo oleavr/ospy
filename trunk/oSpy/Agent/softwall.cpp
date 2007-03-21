@@ -24,7 +24,7 @@
 //
 
 #include "stdafx.h"
-#include "logging.h"
+#include "logging_old.h"
 #include "util.h"
 
 extern MessageQueue *queue;

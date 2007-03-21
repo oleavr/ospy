@@ -23,13 +23,45 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 //
 
-#pragma once
+#include "stdafx.h"
+#include "Logging.h"
 
 namespace TrampoLib {
 
-class Logger
+namespace Logging {
+
+Event *
+NullLogger::NewEvent(const OString &eventType)
 {
-public:
-};
+    return new Event(this, m_id++, eventType);
+}
+
+void
+Node::AddField(const OString &name, const OString &value)
+{
+    m_fields[name] = value;
+}
+
+Node *
+Node::AppendChild(const OString &name)
+{
+    Node *child = new Node(name);
+    AppendChild(child);
+    return child;
+}
+
+void
+Node::AppendChild(Node *node)
+{
+    m_children.push_back(node);
+}
+
+Event::Event(Logger *logger, unsigned int id, const OString &eventType)
+    : Node("Event"), m_logger(logger), m_id(id)
+{
+    AddField("Type", eventType);
+}
+
+} // namespace Logging
 
 } // namespace TrampoLib

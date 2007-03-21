@@ -29,9 +29,3 @@
 #include "DLL.h"
 #include "VTable.h"
 #include "Util.h"
-
-namespace TrampoLib {
-
-void Initialize();
-
-} // namespace TrampoLib

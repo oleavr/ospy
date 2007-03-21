@@ -26,7 +26,7 @@
 #include "stdafx.h"
 #include "hooking.h"
 #include "util.h"
-#include "logging.h"
+#include "logging_old.h"
 
 bool
 CHookContext::ShouldLog(void *returnAddress, CpuContext *ctx, ...)

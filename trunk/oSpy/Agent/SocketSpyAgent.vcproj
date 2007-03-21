@@ -62,7 +62,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:MSVCRTD"
-				AdditionalDependencies="psapi.lib ws2_32.lib"
+				AdditionalDependencies="psapi.lib ws2_32.lib msxml2.lib"
 				LinkIncremental="2"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
@@ -139,7 +139,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="psapi.lib ws2_32.lib"
+				AdditionalDependencies="psapi.lib ws2_32.lib msxml2.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -235,7 +235,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\logging.cpp"
+				RelativePath=".\logging_old.cpp"
 				>
 			</File>
 			<File
@@ -282,15 +282,15 @@
 					>
 				</File>
 				<File
+					RelativePath=".\TrampoLib\Logging.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\TrampoLib\Marshallers.cpp"
 					>
 				</File>
 				<File
 					RelativePath=".\TrampoLib\Signature.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\TrampoLib\TrampoLib.cpp"
 					>
 				</File>
 				<File
@@ -347,7 +347,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\logging.h"
+				RelativePath=".\logging_old.h"
 				>
 			</File>
 			<File
@@ -378,7 +378,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\TrampoLib\Logger.h"
+					RelativePath=".\TrampoLib\Logging.h"
 					>
 				</File>
 				<File

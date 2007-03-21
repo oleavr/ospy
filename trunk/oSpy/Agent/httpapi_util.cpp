@@ -25,7 +25,7 @@
 
 #include "stdafx.h"
 #include "httpapi_util.h"
-#include "logging.h"
+#include "logging_old.h"
 #include "util.h"
 
 static const char *HTTP_VERB_STRINGS[] =

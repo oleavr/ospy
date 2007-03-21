@@ -27,8 +27,15 @@
 
 #include "Marshallers.h"
 #include "Signature.h"
+#include "Logging.h"
 
 namespace TrampoLib {
+
+using Logging::Logger;
+
+void Initialize();
+Logger *GetLogger();
+void SetLogger(Logger *logger);
 
 typedef struct {
 	DWORD edi;
@@ -112,7 +119,8 @@ public:
 
     ArgumentSpec *GetSpec() const { return m_spec; }
 
-    OString ToString(FunctionCallState state) const;
+    Logging::Node *ToNode(bool deep) const;
+    OString ToString(bool deep) const;
 
 protected:
     ArgumentSpec *m_spec;
@@ -217,6 +225,7 @@ public:
     void Initialize(FunctionSpec *spec, DWORD offset) { m_spec = spec; m_offset = offset; }
 
     virtual const OString GetParentName() const { return ""; }
+    OString GetFullName() const;
 
     FunctionTrampoline *CreateTrampoline(unsigned int bytesToCopy=0);
     FunctionSpec *GetSpec() const { return m_spec; }
@@ -270,6 +279,10 @@ public:
 	bool GetShouldCarryOn() const { return m_shouldCarryOn; }
 	void SetShouldCarryOn(bool carryOn) { m_shouldCarryOn = carryOn; }
 
+    void *GetUserData() const { return m_userData; }
+    void SetUserData(void *data) { m_userData = data; }
+
+    void AppendArgumentsToNode(Logging::Node *node);
 	OString ToString() const;
 
 protected:
@@ -287,6 +300,11 @@ protected:
     FunctionCallState m_state;
 
 	bool m_shouldCarryOn;
+
+    void *m_userData;
+
+private:
+    bool ShouldLogArgumentDeep(const Argument *arg) const;
 };
 
 } // namespace TrampoLib

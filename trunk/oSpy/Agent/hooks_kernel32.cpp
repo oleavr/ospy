@@ -25,7 +25,7 @@
 
 #include "stdafx.h"
 #include "hooking.h"
-#include "logging.h"
+#include "logging_old.h"
 
 #define DEVICEIOCONTROL_ARGS_SIZE (8 * 4)
 

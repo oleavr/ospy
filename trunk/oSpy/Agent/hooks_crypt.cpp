@@ -25,7 +25,7 @@
 
 #include "stdafx.h"
 #include "hooking.h"
-#include "logging.h"
+#include "logging_old.h"
 #include <Wincrypt.h>
 #include <psapi.h>
 #include <map>

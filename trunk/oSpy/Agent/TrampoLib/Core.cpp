@@ -25,9 +25,37 @@
 
 #include "stdafx.h"
 #include "Core.h"
-#include "..\logging.h" // FIXME: YUCK
+#include "Util.h"
 
 namespace TrampoLib {
+
+static Logger *g_defaultLogger = NULL;
+static Logger *g_logger = NULL;
+
+void
+Initialize()
+{
+    g_defaultLogger = new Logging::NullLogger();
+
+    Util::Initialize();
+    Function::Initialize();
+    SetLogger(NULL);
+}
+
+Logger *
+GetLogger()
+{
+    return g_logger;
+}
+
+void
+SetLogger(Logger *logger)
+{
+    if (logger != NULL)
+        g_logger = logger;
+    else
+        g_logger = g_defaultLogger;
+}
 
 const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 	{
@@ -88,22 +116,25 @@ const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 
 OVector<Signature>::Type Function::prologSignatures;
 
-OString
-Argument::ToString(FunctionCallState state) const
+Logging::Node *
+Argument::ToNode(bool deep) const
 {
-    bool deep;
+    Logging::Node *node = new Logging::Node("Argument");
+
+    node->AddField("Name", m_spec->GetName());
 
     ArgumentDirection dir = m_spec->GetDirection();
 
-    if (state == FUNCTION_CALL_ENTERING)
-    {
-        deep = (dir & ARG_DIR_IN) != 0;
-    }
-    else
-    {
-        deep = (dir & ARG_DIR_OUT) != 0;
-    }
+    Logging::Node *valueNode = node->AppendChild("Value");
 
+    m_spec->GetMarshaller()->AppendToNode(valueNode, m_data, deep);
+
+    return node;
+}
+
+OString
+Argument::ToString(bool deep) const
+{
     return m_spec->GetMarshaller()->ToString(m_data, deep);
 }
 
@@ -186,6 +217,22 @@ Function::Initialize()
 	{
         prologSignatures.push_back(Signature(&prologSignatureSpecs[i].sig));
     }
+}
+
+OString
+Function::GetFullName() const
+{
+    OOStringStream ss;
+
+    const OString &parentName = GetParentName();
+    if (parentName.length() > 0)
+    {
+        ss << parentName << "::";
+    }
+
+    ss << GetSpec()->GetName();
+
+    return ss.str();
 }
 
 FunctionTrampoline *
@@ -430,11 +477,21 @@ Function::OnEnter(FunctionCall *call)
 	FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetHandler();
 
 	if (handler == NULL || !handler(call))
-	{
+	{        
+        Logging::Event *ev = GetLogger()->NewEvent("FunctionCall");
+        ev->AddField("FunctionName", GetFullName());
+
+        Logging::Node *node = ev->AppendChild("In");
+        call->AppendArgumentsToNode(node);
+
+        call->SetUserData(ev);
+
+#if 0
 		message_logger_log_message("Function::OnEnter", call->GetBacktraceAddress(),
 			MESSAGE_CTX_INFO, "Entering %s @ 0x%08x, ecx = 0x%08x",
 			call->ToString().c_str(), GetOffset(),
 			call->GetCpuContextEnter()->ecx);
+#endif
 	}
 }
 
@@ -445,10 +502,19 @@ Function::OnLeave(FunctionCall *call)
 
 	if (handler == NULL || !handler(call))
 	{
+        Logging::Event *ev = static_cast<Logging::Event *>(call->GetUserData());
+        Logging::Node *node = ev->AppendChild("Out");
+        call->AppendArgumentsToNode(node);
+
+        ev->Submit();
+        delete ev;
+
+#if 0
 		message_logger_log_message("Function::OnLeave", call->GetBacktraceAddress(),
 			MESSAGE_CTX_INFO, "Leaving %s @ 0x%08x, eax = 0x%08x",
 			call->ToString().c_str(), GetOffset(),
 			call->GetCpuContextLeave()->eax);
+#endif
 	}
 }
 
@@ -459,7 +525,8 @@ FunctionCall::FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxE
       m_lastErrorLive(NULL),
       m_arguments(NULL),
       m_state(FUNCTION_CALL_ENTERING),
-      m_shouldCarryOn(true)
+      m_shouldCarryOn(true),
+      m_userData(NULL)
 {
 	memset(&m_cpuCtxLeave, 0, sizeof(m_cpuCtxLeave));
 
@@ -477,6 +544,26 @@ FunctionCall::FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxE
 	}
 }
 
+bool
+FunctionCall::ShouldLogArgumentDeep(const Argument *arg) const
+{
+    ArgumentDirection dir = arg->GetSpec()->GetDirection();
+
+    if (m_state == FUNCTION_CALL_ENTERING)
+    {
+        return (dir & ARG_DIR_IN) != 0;
+    }
+    else
+    {
+        return (dir & ARG_DIR_OUT) != 0;
+    }
+}
+
+void
+FunctionCall::AppendArgumentsToNode(Logging::Node *node)
+{
+}
+
 OString
 FunctionCall::ToString() const
 {
@@ -484,13 +571,7 @@ FunctionCall::ToString() const
 
 	OOStringStream ss;
 
-    const OString &parentName = m_function->GetParentName();
-    if (parentName.length() > 0)
-    {
-        ss << parentName << "::";
-    }
-
-	ss << spec->GetName();
+	ss << m_function->GetFullName();
 
     const ArgumentList *args = GetArguments();
     if (args != NULL)
@@ -504,7 +585,7 @@ FunctionCall::ToString() const
             if (i)
 			    ss << ", ";
 
-            ss << arg.ToString(m_state);
+            ss << arg.ToString(ShouldLogArgumentDeep(&arg));
         }
 
         ss << ")";
