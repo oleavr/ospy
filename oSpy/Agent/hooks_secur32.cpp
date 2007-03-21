@@ -25,7 +25,7 @@
 
 #include "stdafx.h"
 #include "hooking.h"
-#include "logging.h"
+#include "logging_old.h"
 #define SECURITY_WIN32
 #include <security.h>
 #include <psapi.h>

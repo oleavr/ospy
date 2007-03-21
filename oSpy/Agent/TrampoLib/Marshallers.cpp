@@ -28,16 +28,42 @@
 
 namespace TrampoLib {
 
+void
+BaseMarshaller::AppendToNode(Logging::Node *parentNode, const void *start, bool deep) const
+{
+    Logging::Node *node = parentNode->AppendChild(m_typeName);
+    node->AddField("Value", ToString(start, false));
+}
+
 namespace Marshaller {
 
 Pointer::Pointer(BaseMarshaller *type)
-    : m_type(type)
+    : BaseMarshaller("Pointer"), m_type(type)
 {}
 
 Pointer::~Pointer()
 {
     if (m_type != NULL)
         delete m_type;
+}
+
+void
+Pointer::AppendToNode(Logging::Node *parentNode, const void *start, bool deep) const
+{
+    const void **ptr = (const void **) start;
+
+    Logging::Node *node = parentNode->AppendChild("Pointer");
+
+    OOStringStream ss;
+    if (*ptr != NULL)
+        ss << hex << "0x" << *ptr;
+    else
+        ss << "NULL";
+
+    node->AddField("Value", ss.str());
+
+    if (*ptr != NULL && deep)
+        m_type->AppendToNode(node, *ptr, true);
 }
 
 OString
@@ -168,9 +194,11 @@ UnicodeString::ToString(const void *start, bool deep) const
     return ss.str();
 }
 
-Enumeration::Enumeration(const char *firstName, ...)
+Enumeration::Enumeration(const char *name, const char *firstName, ...)
     : UInt32(true)
 {
+    m_typeName = name;
+
     va_list args;
     va_start(args, firstName);
 
@@ -203,7 +231,8 @@ Enumeration::ToString(const void *start, bool deep) const
     }
 }
 
-Structure::Structure(const char *firstFieldName, ...)
+Structure::Structure(const char *name, const char *firstFieldName, ...)
+    : BaseMarshaller(name)
 {
     va_list args;
     va_start(args, firstFieldName);
@@ -213,7 +242,8 @@ Structure::Structure(const char *firstFieldName, ...)
     va_end(args);
 }
 
-Structure::Structure(const char *firstFieldName, va_list args)
+Structure::Structure(const char *name, const char *firstFieldName, va_list args)
+    : BaseMarshaller(name)
 {
     Initialize(firstFieldName, args);
 }
@@ -230,6 +260,24 @@ Structure::Initialize(const char *firstFieldName, va_list args)
         m_fields.push_back(StructureField(fieldName, offset, marshaller));
 
         fieldName = va_arg(args, const char *);
+    }
+}
+
+void
+Structure::AppendToNode(Logging::Node *parentNode, const void *start, bool deep) const
+{
+    const void **ptr = (const void **) start;
+
+    Logging::Node *structNode = parentNode->AppendChild(m_typeName);
+
+    for (unsigned int i = 0; i < m_fields.size(); i++)
+    {
+        const StructureField &field = m_fields[i];
+
+        const void *fieldPtr = reinterpret_cast<const char *>(start) + field.GetOffset();
+
+        Logging::Node *fieldNode = structNode->AppendChild(field.GetName());
+        field.GetMarshaller()->AppendToNode(fieldNode, fieldPtr, true);
     }
 }
 

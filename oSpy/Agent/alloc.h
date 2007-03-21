@@ -21,6 +21,7 @@
 #include <sstream>
 #include <vector>
 #include <stack>
+#include <list>
 #include <map>
 #include <limits>
 
@@ -213,6 +214,12 @@ template <class eT>
 struct OStack
 {
 	typedef std::stack<eT, std::deque<eT, MyAlloc<eT>>> Type;
+};
+
+template <class eT>
+struct OList
+{
+	typedef std::list<eT, MyAlloc<eT>> Type;
 };
 
 template <class kT, class vT>

@@ -24,7 +24,7 @@
 //
 
 #include "stdafx.h"
-#include "logging.h"
+#include "logging_old.h"
 #include "hooking.h"
 #include "util.h"
 #include <psapi.h>

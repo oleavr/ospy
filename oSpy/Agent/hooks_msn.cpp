@@ -25,7 +25,7 @@
 
 #include "stdafx.h"
 #include "hooking.h"
-#include "logging.h"
+#include "logging_old.h"
 #include "TrampoLib\TrampoLib.h"
 
 using namespace TrampoLib;

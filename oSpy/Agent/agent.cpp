@@ -24,14 +24,72 @@
 //
 
 #include "stdafx.h"
-#include "logging.h"
+#include "logging_old.h"
 #include "hooks.h"
 #include "util.h"
 #include "overlapped.h"
 #include "TrampoLib\TrampoLib.h"
+#if 0
+#include <msxml2.h>
+#endif
 
 #ifdef _MANAGED
 #pragma managed(push, off)
+#endif
+
+using namespace TrampoLib;
+
+#if 0
+inline void EVAL_HR(HRESULT _hr)
+{
+    if FAILED(_hr)
+        throw(_hr);
+}
+
+class XMLLogger : public Logging::Logger
+{
+public:
+    XMLLogger(const OString &filename)
+        : m_id(0), m_doc(NULL)
+    {
+        EVAL_HR(CoInitialize(NULL));
+
+        EVAL_HR(CoCreateInstance(CLSID_DOMDocument, NULL, CLSCTX_INPROC_SERVER, 
+                IID_IXMLDOMDocument2, (void **) &m_doc));
+
+        _variant_t varNodeType = (short) NODE_ELEMENT;
+        EVAL_HR(m_doc->createNode(varNodeType, L"e:Events", L"http://www.ospy.org/oSpyAgent/Events", &m_rootNode));
+
+        IXMLDOMNode *node;
+        EVAL_HR(m_doc->appendChild(m_rootNode, &node));
+    }
+
+    virtual Logging::Event *NewEvent(const OString &eventType);
+    virtual void SubmitEvent(Logging::Event *ev);
+
+protected:
+    unsigned int m_id;
+    IXMLDOMDocument2 *m_doc;
+    IXMLDOMNode *m_rootNode;
+};
+
+Logging::Event *
+XMLLogger::NewEvent(const OString &eventType)
+{
+    // TODO: have m_id in shared memory so everything that gets logged
+    //       shares the same namespace.
+    return new Logging::Event(this, m_id++, eventType);
+}
+
+void
+XMLLogger::SubmitEvent(Logging::Event *ev)
+{
+    Logging::Node::FieldMapConstIter iter, endIter = ev->FieldsIterEnd();
+
+    for (iter = ev->FieldsIterBegin(); iter != endIter; iter++)
+    {
+    }
+}
 #endif
 
 BOOL APIENTRY
@@ -53,6 +111,7 @@ DllMain(HMODULE hModule,
 			message_logger_init();
 
             TrampoLib::Initialize();
+            //TrampoLib::SetLogger(new XMLLogger("c:\\test.xml"));
 			//COverlappedManager::Init();
 
 			//hook_kernel32();
