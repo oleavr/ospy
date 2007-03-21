@@ -66,6 +66,9 @@ BinarySerializer::AppendNode(Logging::Node *node)
 		}
 	}
 
+    // Content
+    AppendString(node->GetContent());
+
 	// Children
 	{
 		AppendDWord(node->GetChildCount());
@@ -82,7 +85,8 @@ void
 BinarySerializer::AppendString(const OString &s)
 {
 	AppendDWord(static_cast<DWORD>(s.length()));
-	m_buf.append(s.data(), s.length());
+    if (s.length() > 0)
+	    m_buf.append(s.data(), s.length());
 }
 
 void
@@ -131,8 +135,6 @@ BinaryLogger::SubmitEvent(Logging::Event *ev)
 {
 	BinarySerializer serializer;
 
-	serializer.AppendDWord(ev->GetId());
-	serializer.AppendString(ev->GetName());
 	serializer.AppendNode(ev);
 
 	const OString &buf = serializer.GetData();

@@ -28,6 +28,7 @@
 #include "logging_old.h"
 #include "overlapped.h"
 #include <psapi.h>
+#include <Ws2tcpip.h>
 
 static MODULEINFO wsock32_info;
 
@@ -922,26 +923,30 @@ wsock32_recv_done(int retval,
   return retval;
 }
 
-#define TESTING_TRAMPOLIB 0
+#define TESTING_INTERCEPTPP 0
 
 HOOK_GLUE_EXTENDED(getaddrinfo, (4 * 4))
 
 HOOK_GLUE_INTERRUPTIBLE(closesocket, CLOSESOCKET_ARGS_SIZE)
 
+#if !TESTING_INTERCEPTPP
 HOOK_GLUE_EXTENDED(recv, (4 * 4))
 HOOK_GLUE_EXTENDED(send, (4 * 4))
+#endif
 HOOK_GLUE_INTERRUPTIBLE(recvfrom, (6 * 4))
 HOOK_GLUE_INTERRUPTIBLE(sendto, (6 * 4))
 HOOK_GLUE_INTERRUPTIBLE(accept, ACCEPT_ARGS_SIZE)
-#if !TESTING_TRAMPOLIB
+#if !TESTING_INTERCEPTPP
 HOOK_GLUE_EXTENDED(connect, CONNECT_ARGS_SIZE)
 #endif
 HOOK_GLUE_EXTENDED(WSARecv, (7 * 4))
 HOOK_GLUE_INTERRUPTIBLE(WSASend, (7 * 4))
 HOOK_GLUE_INTERRUPTIBLE(WSAAccept, WSA_ACCEPT_ARGS_SIZE)
+#if !TESTING_INTERCEPTPP
 HOOK_GLUE_INTERRUPTIBLE(wsock32_recv, (4 * 4))
+#endif
 
-#if 0 // TESTING_TRAMPOLIB
+#if 0 // TESTING_INTERCEPTPP
 static bool
 winsock_connect_OnEnterLeave(FunctionCall *call)
 {
@@ -1011,16 +1016,34 @@ hook_winsock()
     createUniFunc->Hook();
 #endif
 
-#if TESTING_TRAMPOLIB
-    FunctionSpec *wsFuncSpec = new FunctionSpec("connect");
-    wsFuncSpec->SetArguments(3,
+#if TESTING_INTERCEPTPP
+    FunctionSpec *connFuncSpec = new FunctionSpec("connect");
+    connFuncSpec->SetArguments(3,
         new ArgumentSpec("s", ARG_DIR_IN, new Marshaller::UInt32(true)),
         new ArgumentSpec("name", ARG_DIR_IN, new Marshaller::Winsock::Ipv4SockaddrPtr()),
         new ArgumentSpec("namelen", ARG_DIR_IN, new Marshaller::UInt32()));
 
+    FunctionSpec *recvFuncSpec = new FunctionSpec("recv");
+    recvFuncSpec->SetArguments(4,
+        new ArgumentSpec("s", ARG_DIR_IN, new Marshaller::UInt32(true)),
+        new ArgumentSpec("buf", ARG_DIR_OUT, new Marshaller::UInt32(true)),
+        new ArgumentSpec("len", ARG_DIR_IN, new Marshaller::UInt32()),
+        new ArgumentSpec("flags", ARG_DIR_IN, new Marshaller::UInt32(true)));
+
+    FunctionSpec *sendFuncSpec = new FunctionSpec("send");
+    sendFuncSpec->SetArguments(4,
+        new ArgumentSpec("s", ARG_DIR_IN, new Marshaller::UInt32(true)),
+        new ArgumentSpec("buf", ARG_DIR_IN, new Marshaller::UInt32(true)),
+        new ArgumentSpec("len", ARG_DIR_IN, new Marshaller::UInt32()),
+        new ArgumentSpec("flags", ARG_DIR_IN, new Marshaller::UInt32(true)));
+
     DllModule *wsMod = new DllModule("ws2_32.dll");
-    DllFunction *wsFunc = new DllFunction(wsMod, wsFuncSpec);
-    wsFunc->Hook();
+    DllFunction *connFunc = new DllFunction(wsMod, connFuncSpec);
+    DllFunction *recvFunc = new DllFunction(wsMod, recvFuncSpec);
+    DllFunction *sendFunc = new DllFunction(wsMod, sendFuncSpec);
+    connFunc->Hook();
+    recvFunc->Hook();
+    sendFunc->Hook();
 #endif
 
     // Hook the Winsock API
@@ -1037,12 +1060,14 @@ hook_winsock()
     HOOK_FUNCTION(h, getaddrinfo);
 
     HOOK_FUNCTION(h, closesocket);
+#if !TESTING_INTERCEPTPP
     HOOK_FUNCTION(h, recv);
     HOOK_FUNCTION(h, send);
+#endif
     HOOK_FUNCTION(h, recvfrom);
     HOOK_FUNCTION(h, sendto);
     HOOK_FUNCTION(h, accept);
-#if !TESTING_TRAMPOLIB
+#if !TESTING_INTERCEPTPP
     HOOK_FUNCTION(h, connect);
 #endif
     HOOK_FUNCTION(h, WSARecv);
@@ -1065,5 +1090,7 @@ hook_winsock()
                                    GetLastError());
     }
 
+#if !TESTING_INTERCEPTPP
     HOOK_FUNCTION_BY_ALIAS(h, recv, wsock32_recv);
+#endif
 }

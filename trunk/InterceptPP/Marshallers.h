@@ -38,7 +38,7 @@ public:
     virtual ~BaseMarshaller() {};
 
     virtual unsigned int GetSize() const = 0;
-    virtual void AppendToNode(Logging::Node *parentNode, const void *start, bool deep) const;
+    virtual void AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const;
     virtual OString ToString(const void *start, bool deep) const = 0;
 
 protected:
@@ -54,7 +54,7 @@ public:
     virtual ~Pointer();
 
     virtual unsigned int GetSize() const { return sizeof(void *); }
-    virtual void AppendToNode(Logging::Node *parentNode, const void *start, bool deep) const;
+    virtual void AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const;
 	virtual OString ToString(const void *start, bool deep) const;
 
 protected:
@@ -79,7 +79,7 @@ class UInt16 : public Integer
 {
 public:
     UInt16(bool hex=false)
-        : Integer("UInt16", hex)
+        : Integer("uint16", hex)
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(WORD); }
@@ -90,7 +90,7 @@ class UInt16BE : public Integer
 {
 public:
     UInt16BE(bool hex=false)
-        : Integer("UInt16BE", hex)
+        : Integer("uint16be", hex)
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(WORD); }
@@ -101,7 +101,7 @@ class UInt32 : public Integer
 {
 public:
     UInt32(bool hex=false)
-        : Integer("UInt32", hex)
+        : Integer("uint32", hex)
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(DWORD); }
@@ -112,7 +112,7 @@ class UInt32BE : public Integer
 {
 public:
     UInt32BE(bool hex=false)
-        : Integer("UInt32BE", hex)
+        : Integer("uint32be", hex)
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(DWORD); }
@@ -147,7 +147,7 @@ class AsciiString : public CString
 {
 public:
     AsciiString(int length=-1)
-        : CString("AsciiString", sizeof(CHAR), length)
+        : CString("asciistring", sizeof(CHAR), length)
     {}
 
     virtual OString ToString(const void *start, bool deep) const;
@@ -165,7 +165,7 @@ class UnicodeString : public CString
 {
 public:
     UnicodeString(int length=-1)
-        : CString("AsciiString", sizeof(WCHAR), length)
+        : CString("unicodestring", sizeof(WCHAR), length)
     {}
 
     virtual OString ToString(const void *start, bool deep) const;
@@ -184,6 +184,7 @@ class Enumeration : public UInt32
 public:
     Enumeration(const char *name, const char *firstName, ...);
 
+    void AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const;
     virtual OString ToString(const void *start, bool deep) const;
 
 protected:
@@ -214,7 +215,7 @@ public:
     Structure(const char *name, const char *firstFieldName, va_list args);
 
     virtual unsigned int GetSize() const { return sizeof(void *); }
-    virtual void AppendToNode(Logging::Node *parentNode, const void *start, bool deep) const;
+    virtual void AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const;
     virtual OString ToString(const void *start, bool deep) const;
 
 protected:
@@ -235,7 +236,7 @@ class KeyHandle : public Enumeration
 {
 public:
     KeyHandle()
-        : Enumeration("KeyHandle",
+        : Enumeration("keyhandle",
                       "HKEY_CLASSES_ROOT", 0x80000000,
                       "HKEY_CURRENT_USER", 0x80000001,
                       "HKEY_LOCAL_MACHINE", 0x80000002,
@@ -253,7 +254,7 @@ class Ipv4InAddr : public BaseMarshaller
 {
 public:
     Ipv4InAddr()
-        : BaseMarshaller("Ipv4InAddr")
+        : BaseMarshaller("ipv4inaddr")
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(DWORD); }
@@ -264,7 +265,7 @@ class Ipv4Sockaddr : public Structure
 {
 public:
     Ipv4Sockaddr()
-        : Structure("Ipv4Sockaddr",
+        : Structure("ipv4sockaddr",
                     "sin_family", 0, new UInt16(),
                     "sin_port", 2, new UInt16BE(),
                     "sin_addr", 4, new Ipv4InAddr(),

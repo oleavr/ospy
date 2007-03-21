@@ -45,8 +45,9 @@
 #define _WIN32_IE 0x0600
 #endif
 
-#include "STL.h"
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 
-// FIXME
-#include <winsock2.h>
-#include <Ws2tcpip.h>
+#include "STL.h"
+#include <windows.h>

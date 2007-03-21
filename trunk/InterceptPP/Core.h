@@ -136,12 +136,14 @@ public:
 
     unsigned int GetSize() const { return m_size; }
     unsigned int GetCount() const { return static_cast<unsigned int>(m_arguments.size()); }
+    bool GetHasOutArgs() const { return m_hasOutArgs; }
 
 	ArgumentSpec *operator[](int index) { return m_arguments[index]; }
 
 protected:
     unsigned int m_size;
 	OVector<ArgumentSpec *>::Type m_arguments;
+    bool m_hasOutArgs;
 
     void Initialize(unsigned int count, va_list args);
 };
@@ -151,6 +153,8 @@ class ArgumentList : public BaseObject
 public:
     ArgumentList(ArgumentListSpec *spec, const void *data);
 	~ArgumentList();
+
+    const ArgumentListSpec *GetSpec() const { return m_spec; }
 
     unsigned int GetCount() const { return static_cast<unsigned int>(m_arguments.size()); }
 
@@ -282,7 +286,8 @@ public:
     void *GetUserData() const { return m_userData; }
     void SetUserData(void *data) { m_userData = data; }
 
-    void AppendArgumentsToNode(Logging::Node *node);
+    void AppendCpuContextToElement(Logging::Element *el);
+    void AppendArgumentsToElement(Logging::Element *el);
 	OString ToString() const;
 
 protected:
@@ -305,6 +310,7 @@ protected:
 
 private:
     bool ShouldLogArgumentDeep(const Argument *arg) const;
+    void AppendCpuRegisterToElement(Logging::Element *el, const char *name, DWORD value);
 };
 
 } // namespace InterceptPP
