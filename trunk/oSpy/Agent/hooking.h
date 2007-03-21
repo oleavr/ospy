@@ -33,9 +33,6 @@
  */
 
 #include "util.h"
-#include "TrampoLib\TrampoLib.h"
-
-using TrampoLib::CpuContext;
 
 typedef bool (*HookRetAddrShouldLogFunc) (CpuContext *context, va_list args);
 
@@ -52,12 +49,15 @@ protected:
 	OMap<void *, HookRetAddrShouldLogFunc>::Type m_retAddrs;
 };
 
+namespace DieDieDie {
+
 typedef struct {
     char *module_name;
 	int start_offset;
     char *signature;
 } FunctionSignature;
 
+} // namespace DieDieDie
 
 /****************************************************************************
  * Useful hooking macros taking care of all the dirty work                  *
@@ -429,7 +429,10 @@ typedef struct {
 void write_byte_to_addr(LPVOID lpAddr, BYTE b);
 void write_dword_to_addr(LPVOID lpAddr, DWORD dw);
 BOOL write_jmp_instruction_to_addr(LPVOID lpOrgProc, LPVOID lpNewProc);
+
+namespace DieDieDie {
 BOOL find_signature(const FunctionSignature *sig, LPVOID *address, char **error);
 BOOL find_signature_in_module(const FunctionSignature *sig, const char *module_name, LPVOID *address, char **error);
 BOOL override_function_by_signature(const FunctionSignature *sig, LPVOID replacement, LPVOID *patched_address, char **error);
 BOOL override_function_by_signature_in_module(const FunctionSignature *sig, const char *module_name, LPVOID replacement, LPVOID *patched_address, char **error);
+} // namespace DieDieDie

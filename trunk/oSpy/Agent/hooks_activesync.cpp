@@ -48,7 +48,7 @@ typedef enum {
     SIGNATURE_WCESCOMM_DEBUG3_ALTERNATE,
 };
 
-static FunctionSignature as_signatures[] = {
+static DieDieDie::FunctionSignature as_signatures[] = {
     // SIGNATURE_UI_STATUS_LABEL_SET
     {
         "wcesmgr.exe",
@@ -590,7 +590,7 @@ rapistub_debug(void *obj,
 #define LOG_OVERRIDE_ERROR(sig, e) \
             message_logger_log_message("hook_activesync", 0, MESSAGE_CTX_ERROR,\
                 "override_function_by_signature for " sig " failed: %s", e);\
-            sspy_free(e)
+            AllocUtils::Free(e)
 
 void
 hook_activesync()
@@ -693,7 +693,7 @@ hook_activesync()
         if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESMGR_DEBUG2],
                                             wcesmgr_debug_2, NULL, &error))
         {
-			sspy_free(error);
+            AllocUtils::Free(error);
 
 			if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESMGR_DEBUG2_ALTERNATE],
 												wcesmgr_debug_2, NULL, &error))
@@ -705,7 +705,7 @@ hook_activesync()
         if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESMGR_DEBUG3],
                                             wcesmgr_debug_3, NULL, &error))
         {
-			sspy_free(error);
+			AllocUtils::Free(error);
 
 			if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESMGR_DEBUG3_ALTERNATE],
 												wcesmgr_debug_3, NULL, &error))
@@ -737,7 +737,7 @@ hook_activesync()
         if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESCOMM_DEBUG2],
                                             wcescomm_debug_2, NULL, &error))
         {
-			sspy_free(error);
+			AllocUtils::Free(error);
 
 			if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESCOMM_DEBUG2_ALTERNATE],
 												wcescomm_debug_2, NULL, &error))
@@ -749,7 +749,7 @@ hook_activesync()
         if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESCOMM_DEBUG3],
                                             wcescomm_debug_3, NULL, &error))
         {
-			sspy_free(error);
+			AllocUtils::Free(error);
 
 			if (!override_function_by_signature(&as_signatures[SIGNATURE_WCESCOMM_DEBUG3_ALTERNATE],
 												wcescomm_debug_3, NULL, &error))

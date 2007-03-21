@@ -25,7 +25,7 @@
 
 #pragma once
 
-namespace TrampoLib {
+namespace InterceptPP {
 
 typedef struct {
     char *moduleName;
@@ -110,4 +110,4 @@ protected:
     bool MatchesSignature(const Signature *sig, void *base);
 };
 
-} // namespace TrampoLib
+} // namespace InterceptPP

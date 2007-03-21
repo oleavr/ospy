@@ -73,8 +73,8 @@ COverlappedManager::MonitorThreadFunc(void *arg)
 		ENTER_OPS();
 
 		maxHandleCount = 1 + static_cast<unsigned int>(m_operations.size());
-		handles = (HANDLE *) sspy_malloc(sizeof(HANDLE) * maxHandleCount);
-		operations = (COverlappedOperation **) sspy_malloc(sizeof(COverlappedOperation *) * maxHandleCount);
+        handles = (HANDLE *) AllocUtils::Malloc(sizeof(HANDLE) * maxHandleCount);
+		operations = (COverlappedOperation **) AllocUtils::Malloc(sizeof(COverlappedOperation *) * maxHandleCount);
 
 		handles[0] = m_opsChanged;
 		operations[0] = NULL;
@@ -115,8 +115,8 @@ COverlappedManager::MonitorThreadFunc(void *arg)
 			}
 		}
 
-		sspy_free(handles);
-		sspy_free(operations);
+		AllocUtils::Free(handles);
+		AllocUtils::Free(operations);
 	}
 
 	return 0;
@@ -125,7 +125,7 @@ COverlappedManager::MonitorThreadFunc(void *arg)
 COverlappedOperation::COverlappedOperation(OVERLAPPED *clientOverlapped, void *data, OperationCompleteHandler handler)
 	: m_clientOverlapped(clientOverlapped), m_data(data), m_completionHandled(false), m_handler(handler)
 {
-	m_realOverlapped = (OVERLAPPED *) sspy_malloc(sizeof(OVERLAPPED));
+	m_realOverlapped = (OVERLAPPED *) AllocUtils::Malloc(sizeof(OVERLAPPED));
 	memset(m_realOverlapped, 0, sizeof(OVERLAPPED));
 	m_realOverlapped->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 }

@@ -41,7 +41,7 @@ typedef enum {
 	SIGNATURE_ICASYNCTHREAD_CONNECT,
 };
 
-static const FunctionSignature signatures_ie6[] = {
+static const DieDieDie::FunctionSignature signatures_ie6[] = {
 	// SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET
 	{
 		"wininet.dll",
@@ -136,7 +136,7 @@ static const FunctionSignature signatures_ie6[] = {
     },
 };
 
-static const FunctionSignature signatures_ie7[] = {
+static const DieDieDie::FunctionSignature signatures_ie7[] = {
 	// SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET
 	{
 		"wininet.dll",
@@ -397,7 +397,7 @@ getaddrinfoFromMyGetaddrShouldLog(CpuContext *context, va_list args)
 #define LOG_OVERRIDE_ERROR(sig, e) \
             message_logger_log_message("hook_wininet", 0, MESSAGE_CTX_ERROR,\
                 "override_function_by_signature for " sig " failed: %s", e);\
-            sspy_free(e)
+            AllocUtils::Free(e)
 
 void
 hook_wininet()
@@ -410,7 +410,7 @@ hook_wininet()
 		return;
     }
 
-	const FunctionSignature *signatures = signatures_ie7;
+	const DieDieDie::FunctionSignature *signatures = signatures_ie7;
 	g_icsocketBaseSize = 0x1c;
 	g_cfsmSecureRecvBaseSize = 0x94;
 	g_cfsmSecureSendBaseSize = 0x78;

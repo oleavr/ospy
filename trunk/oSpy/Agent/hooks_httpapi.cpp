@@ -70,7 +70,7 @@ receive_thread(LPVOID lpParameter)
 
     while (TRUE)
     {
-        HTTP_REQUEST *req = (HTTP_REQUEST *) sspy_malloc(RECEIVE_BUFFER_SIZE);
+        HTTP_REQUEST *req = (HTTP_REQUEST *) AllocUtils::Malloc(RECEIVE_BUFFER_SIZE);
 
         retval = HttpReceiveHttpRequestImpl(queue, HTTP_NULL_ID,
             HTTP_RECEIVE_REQUEST_FLAG_COPY_BODY,

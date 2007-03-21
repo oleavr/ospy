@@ -27,11 +27,7 @@
 #include "hooking.h"
 #include "logging_old.h"
 #include "overlapped.h"
-#include <Ws2tcpip.h>
 #include <psapi.h>
-#include "TrampoLib\TrampoLib.h"
-
-using namespace TrampoLib;
 
 static MODULEINFO wsock32_info;
 

@@ -26,7 +26,7 @@
 #include "stdafx.h"
 #include "Logging.h"
 
-namespace TrampoLib {
+namespace InterceptPP {
 
 namespace Logging {
 
@@ -64,4 +64,4 @@ Event::Event(Logger *logger, unsigned int id, const OString &eventType)
 
 } // namespace Logging
 
-} // namespace TrampoLib
+} // namespace InterceptPP

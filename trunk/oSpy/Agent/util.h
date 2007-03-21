@@ -29,7 +29,7 @@
 #include <map>
 
 template <class T>
-class ContextTracker
+class ContextTracker : public BaseObject
 {
 public:
     ContextTracker()
@@ -79,7 +79,8 @@ public:
 private:
     CRITICAL_SECTION cs;
 
-    typedef map<T, DWORD, less<T>, MyAlloc<pair<T, DWORD>>> ContextMap;
+    typedef std::map<T, DWORD, std::less<T>, MyAlloc<std::pair<T, DWORD>>> ContextMap;
+    //typedef OMap<T, DWORD>::Type ContextMap;
     ContextMap contexts;
 };
 
@@ -90,3 +91,4 @@ BOOL address_has_bytes(LPVOID address, unsigned char *buf, int len);
 bool cur_process_is(const char *name);
 
 DWORD ospy_rand();
+char *ospy_strdup(const char *str);

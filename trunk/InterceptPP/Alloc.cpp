@@ -25,37 +25,26 @@
 
 #pragma once
 
-namespace TrampoLib {
+#include "stdafx.h"
 
-typedef struct {
-	OICString name;
-	DWORD preferredStartAddress;
-	DWORD startAddress;
-	DWORD endAddress;
-} OModuleInfo;
+namespace InterceptPP {
 
-class Util : public BaseObject
+void *
+AllocUtils::Malloc(size_t size)
 {
-public:
-	static void Initialize();
-	static void UpdateModuleList();
+    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
+}
 
-	static const OString &GetProcessName() { return m_processName; }
-	static OString GetModuleNameForAddress(DWORD address);
-	static OModuleInfo GetModuleInfo(const OICString &name);
-	static OVector<OModuleInfo>::Type GetAllModules();
-	static bool AddressIsWithinExecutableModule(DWORD address);
+void *
+AllocUtils::Realloc(void *ptr, size_t new_size)
+{
+    return HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, ptr, new_size);
+}
 
-	static OString CreateBackTrace(void *address);
+void
+AllocUtils::Free(void *ptr)
+{
+    HeapFree(GetProcessHeap(), 0, ptr);
+}
 
-private:
-	static OModuleInfo *GetModuleInfoForAddress(DWORD address);
-
-	static CRITICAL_SECTION m_cs;
-	static OString m_processName;
-	static OMap<OICString, OModuleInfo>::Type m_modules;
-	static DWORD m_lowestAddress;
-	static DWORD m_highestAddress;
-};
-
-} // namespace TrampoLib
+} // namespace InterceptPP

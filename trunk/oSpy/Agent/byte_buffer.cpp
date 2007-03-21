@@ -32,9 +32,9 @@
 ByteBuffer *
 byte_buffer_sized_new(size_t size)
 {
-    ByteBuffer *buf = (ByteBuffer *) sspy_malloc(sizeof(ByteBuffer));
+    ByteBuffer *buf = (ByteBuffer *) AllocUtils::Malloc(sizeof(ByteBuffer));
 
-    buf->buf = sspy_malloc(size);
+    buf->buf = AllocUtils::Malloc(size);
     buf->size = size;
     buf->offset = 0;
 
@@ -44,8 +44,8 @@ byte_buffer_sized_new(size_t size)
 void
 byte_buffer_free(ByteBuffer *buf)
 {
-    sspy_free(buf->buf);
-    sspy_free(buf);
+    AllocUtils::Free(buf->buf);
+    AllocUtils::Free(buf);
 }
 
 void
@@ -59,7 +59,7 @@ byte_buffer_append(ByteBuffer *buf, void *bytes, size_t n)
     {
         size_t new_size = (buf->size * 2) + n;
 
-        void *p = sspy_realloc(buf->buf, new_size);
+        void *p = AllocUtils::Realloc(buf->buf, new_size);
         if (p == NULL)
         {
             /* shouldn't happen */

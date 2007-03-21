@@ -28,7 +28,9 @@
 #include "Util.h"
 #include <psapi.h>
 
-namespace TrampoLib {
+#pragma warning( disable : 4311 4312 )
+
+namespace InterceptPP {
 
 DllModule::DllModule(const OString &path)
     : m_path(path)
@@ -38,7 +40,7 @@ DllModule::DllModule(const OString &path)
         throw runtime_error("LoadLibrary failed");
 
     char tmp[_MAX_PATH];
-    if (GetModuleBaseName(GetCurrentProcess(), m_handle, tmp, sizeof(tmp)) == 0)
+    if (GetModuleBaseNameA(GetCurrentProcess(), m_handle, tmp, sizeof(tmp)) == 0)
         throw runtime_error("GetModuleBaseName failed");
 
     m_name = tmp;
@@ -73,4 +75,4 @@ DllFunction::DllFunction(DllModule *module, FunctionSpec *spec)
 }
 
 
-} // namespace TrampoLib
+} // namespace InterceptPP

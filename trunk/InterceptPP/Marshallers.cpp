@@ -26,7 +26,7 @@
 #include "stdafx.h"
 #include "Marshallers.h"
 
-namespace TrampoLib {
+namespace InterceptPP {
 
 void
 BaseMarshaller::AppendToNode(Logging::Node *parentNode, const void *start, bool deep) const
@@ -336,4 +336,4 @@ Ipv4InAddr::ToString(const void *start, bool deep) const
 
 } // namespace Marshaller
 
-} // namespace TrampoLib
+} // namespace InterceptPP

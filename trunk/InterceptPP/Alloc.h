@@ -25,39 +25,14 @@
 
 #pragma once
 
-#include "Core.h"
+namespace InterceptPP {
 
-namespace TrampoLib {
-
-class DllModule : public BaseObject {
-public:
-    DllModule(const OString &path);
-
-    const OString &GetPath() const { return m_path; }
-    const OString &GetName() const { return m_name; }
-    HMODULE GetHandle() const { return m_handle; }
-
-    void *FindUniqueSignature(const Signature *sig);
-
-protected:
-    OString m_path;
-    OString m_name;
-    HMODULE m_handle;
-    void *m_base;
-    DWORD m_size;
-};
-
-class DllFunction : public Function
+class AllocUtils
 {
 public:
-    DllFunction(DllModule *module, FunctionSpec *spec);
-
-    virtual const OString GetParentName() const { return m_module->GetName(); }
-
-    DllModule *GetModule() const { return m_module; }
-
-protected:
-    DllModule *m_module;
+    static void *Malloc(size_t size);
+    static void *Realloc(void *ptr, size_t new_size);
+    static void Free(void *ptr);
 };
 
-} // namespace TrampoLib
+} // namespace InterceptPP

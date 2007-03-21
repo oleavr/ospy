@@ -108,6 +108,8 @@ write_jmp_instruction_to_addr(LPVOID lpOrgProc, LPVOID lpNewProc)
    return TRUE;
 };
 
+namespace DieDieDie {
+
 typedef enum {
     TOKEN_TYPE_LITERAL = 0,
     TOKEN_TYPE_IGNORE = 1,
@@ -159,12 +161,12 @@ signature_token_new (SignatureTokenType type, int buffer_size)
 {
     SignatureToken *token;
 
-    token = (SignatureToken *) sspy_malloc(sizeof(SignatureToken));
+    token = (SignatureToken *) AllocUtils::Malloc(sizeof(SignatureToken));
     token->type = type;
     token->length = 0;
 
     if (buffer_size > 0)
-        token->data = (unsigned char *) sspy_malloc(buffer_size);
+        token->data = (unsigned char *) AllocUtils::Malloc(buffer_size);
     else
         token->data = NULL;
 
@@ -176,10 +178,10 @@ signature_token_free (SignatureToken *token)
 {
     if (token->data != NULL)
     {
-        sspy_free(token->data);
+        AllocUtils::Free(token->data);
     }
 
-    sspy_free(token);
+    AllocUtils::Free(token);
 }
 
 static void
@@ -201,7 +203,7 @@ signature_token_list_free (SignatureToken **tokens)
         }
     }
 
-    sspy_free(tokens);
+    AllocUtils::Free(tokens);
 }
 
 static void
@@ -263,7 +265,7 @@ parse_signature(const FunctionSignature *sig,
     {
         if (max_tokens % 2 != 0)
         {
-            *error = sspy_strdup("syntax error: unbalanced questionmarks");
+            *error = ospy_strdup("syntax error: unbalanced questionmarks");
             goto ERR_OUT;
         }
 
@@ -274,7 +276,7 @@ parse_signature(const FunctionSignature *sig,
     max_tokens++;
 
     /* Allocate an array of token-pointers. */
-    ret_tokens = (SignatureToken **) sspy_malloc(max_tokens * sizeof(SignatureToken *));
+    ret_tokens = (SignatureToken **) AllocUtils::Malloc(max_tokens * sizeof(SignatureToken *));
     memset(ret_tokens, 0, max_tokens * sizeof(SignatureToken *));
     cur_token = NULL;
     token_index = 0;
@@ -430,12 +432,12 @@ find_signature_in_module(const FunctionSignature *sig, const char *module_name, 
 
     if (num_matches == 0)
     {
-        *error = sspy_strdup("No matches found");
+        *error = ospy_strdup("No matches found");
         goto DONE;
     }
     else if (num_matches > 1)
     {
-        *error = sspy_strdup("More than one match found");
+        *error = ospy_strdup("More than one match found");
         goto DONE;
     }
 
@@ -476,7 +478,7 @@ override_function_by_signature_in_module(const FunctionSignature *sig,
 
     if (!write_jmp_instruction_to_addr(address, replacement))
     {
-        *error = sspy_strdup("write_jmp_instruction_to_addr failed");
+        *error = ospy_strdup("write_jmp_instruction_to_addr failed");
         return FALSE;
     }
 
@@ -485,3 +487,5 @@ override_function_by_signature_in_module(const FunctionSignature *sig,
 
     return TRUE;
 }
+
+} // namespace DieDieDie

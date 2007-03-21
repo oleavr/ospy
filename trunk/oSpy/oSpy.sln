@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oSpyAgent", "Agent\SocketSp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SignatureTest", "Agent\SignatureTest\SignatureTest.vcproj", "{BF9EC593-604C-45AA-865E-D57A0A05C1E9}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InterceptPP", "..\InterceptPP\InterceptPP.vcproj", "{B0F22416-9E7A-4265-B431-520C6ECAFFBA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +61,16 @@ Global
 		{BF9EC593-604C-45AA-865E-D57A0A05C1E9}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{BF9EC593-604C-45AA-865E-D57A0A05C1E9}.Release|Win32.ActiveCfg = Release|Win32
 		{BF9EC593-604C-45AA-865E-D57A0A05C1E9}.Release|Win32.Build.0 = Release|Win32
+		{B0F22416-9E7A-4265-B431-520C6ECAFFBA}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{B0F22416-9E7A-4265-B431-520C6ECAFFBA}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{B0F22416-9E7A-4265-B431-520C6ECAFFBA}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{B0F22416-9E7A-4265-B431-520C6ECAFFBA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B0F22416-9E7A-4265-B431-520C6ECAFFBA}.Debug|Win32.Build.0 = Debug|Win32
+		{B0F22416-9E7A-4265-B431-520C6ECAFFBA}.Release|Any CPU.ActiveCfg = Release|Win32
+		{B0F22416-9E7A-4265-B431-520C6ECAFFBA}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{B0F22416-9E7A-4265-B431-520C6ECAFFBA}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{B0F22416-9E7A-4265-B431-520C6ECAFFBA}.Release|Win32.ActiveCfg = Release|Win32
+		{B0F22416-9E7A-4265-B431-520C6ECAFFBA}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
