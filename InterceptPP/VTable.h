@@ -27,7 +27,7 @@
 
 #include "Core.h"
 
-namespace TrampoLib {
+namespace InterceptPP {
 
 class VMethodSpec;
 class VMethod;
@@ -108,4 +108,4 @@ protected:
 	VTable *m_vtable;
 };
 
-} // namespace TrampoLib
+} // namespace InterceptPP

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2006-2007 Ole André Vadla Ravnås <oleavr@gmail.com>
+// Copyright (c) 2007 Ole André Vadla Ravnås <oleavr@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -23,34 +23,30 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 //
 
-#include "stdafx.h"
+#pragma once
 
-void *
-sspy_malloc(size_t size)
-{
-    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
-}
+#ifndef VC_EXTRALEAN
+#define VC_EXTRALEAN
+#endif
 
-void *
-sspy_realloc(void *ptr, size_t new_size)
-{
-    return HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, ptr, new_size);
-}
+#ifndef WINVER
+#define WINVER 0x0501
+#endif
 
-void
-sspy_free(void *ptr)
-{
-    HeapFree(GetProcessHeap(), 0, ptr);
-}
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0501
+#endif						
 
-char *
-sspy_strdup(const char *str)
-{
-    char *s;
-    size_t size = strlen(str) + 1;
+#ifndef _WIN32_WINDOWS
+#define _WIN32_WINDOWS 0x0410
+#endif
 
-    s = (char *) sspy_malloc(size);
-    memcpy(s, str, size);
+#ifndef _WIN32_IE
+#define _WIN32_IE 0x0600
+#endif
 
-    return s;
-}
+#include "STL.h"
+
+// FIXME
+#include <winsock2.h>
+#include <Ws2tcpip.h>

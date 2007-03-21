@@ -26,7 +26,9 @@
 #include "stdafx.h"
 #include "VTable.h"
 
-namespace TrampoLib {
+#pragma warning( disable : 4311 4312 )
+
+namespace InterceptPP {
 
 void
 VMethodSpec::Initialize(VTableSpec *vtable, int index)
@@ -78,4 +80,4 @@ VTable::Hook()
     FlushInstructionCache(GetCurrentProcess(), NULL, 0);
 }
 
-} // namespace TrampoLib
+} // namespace InterceptPP

@@ -27,7 +27,7 @@
 #include <cctype>
 #include "Signature.h"
 
-namespace TrampoLib {
+namespace InterceptPP {
 
 Signature::Signature(const SignatureSpec *spec)
 {
@@ -187,4 +187,4 @@ SignatureMatcher::MatchesSignature(const Signature *sig, void *base)
     return true;
 }
 
-} // namespace TrampoLib
+} // namespace InterceptPP

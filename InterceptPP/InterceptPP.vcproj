@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
-	Name="oSpyAgent"
-	ProjectGUID="{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}"
-	RootNamespace="SocketSpyAgent"
+	Name="InterceptPP"
+	ProjectGUID="{B0F22416-9E7A-4265-B431-520C6ECAFFBA}"
+	RootNamespace="InterceptPP"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -17,11 +17,10 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\bin\Debug"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="2"
-			UseOfMFC="0"
-			CharacterSet="0"
+			ConfigurationType="4"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -41,8 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\"
-				PreprocessorDefinitions="WIN32;_WINDOWS;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;SocketSpyAgent_EXPORTS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -61,21 +59,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/NODEFAULTLIB:MSVCRTD"
-				AdditionalDependencies="psapi.lib ws2_32.lib"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories=""
-				IgnoreAllDefaultLibraries="false"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				TargetMachine="1"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -87,23 +74,15 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\SocketSpyLogger\bin\Debug"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="2"
-			UseOfMFC="0"
-			CharacterSet="0"
+			ConfigurationType="4"
+			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -123,8 +102,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;SocketSpyAgent_EXPORTS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
@@ -141,21 +119,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="psapi.lib ws2_32.lib"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories=""
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				TargetMachine="1"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -167,22 +134,11 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine=""
 			/>
 		</Configuration>
 	</Configurations>
 	<References>
-		<ProjectReference
-			ReferencedProjectIdentifier="{B0F22416-9E7A-4265-B431-520C6ECAFFBA}"
-			RelativePathToProject="..\InterceptPP\InterceptPP.vcproj"
-		/>
 	</References>
 	<Files>
 		<Filter
@@ -191,63 +147,27 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\agent.cpp"
+				RelativePath=".\Alloc.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\byte_buffer.cpp"
+				RelativePath=".\Core.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\hooking.cpp"
+				RelativePath=".\DLL.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\hooks_activesync.cpp"
+				RelativePath=".\Logging.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\hooks_crypt.cpp"
+				RelativePath=".\Marshallers.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\hooks_httpapi.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hooks_kernel32.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hooks_msn.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hooks_secur32.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hooks_wininet.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hooks_winsock.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\httpapi_util.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\logging_old.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\overlapped.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\softwall.cpp"
+				RelativePath=".\Signature.cpp"
 				>
 			</File>
 			<File
@@ -271,7 +191,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\util.cpp"
+				RelativePath=".\Util.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\VTable.cpp"
 				>
 			</File>
 		</Filter>
@@ -281,31 +205,31 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\byte_buffer.h"
+				RelativePath=".\Alloc.h"
 				>
 			</File>
 			<File
-				RelativePath=".\hooking.h"
+				RelativePath=".\Core.h"
 				>
 			</File>
 			<File
-				RelativePath=".\hooks.h"
+				RelativePath=".\DLL.h"
 				>
 			</File>
 			<File
-				RelativePath=".\httpapi_util.h"
+				RelativePath=".\InterceptPP.h"
 				>
 			</File>
 			<File
-				RelativePath=".\logging_old.h"
+				RelativePath=".\Logging.h"
 				>
 			</File>
 			<File
-				RelativePath=".\overlapped.h"
+				RelativePath=".\Marshallers.h"
 				>
 			</File>
 			<File
-				RelativePath=".\softwall.h"
+				RelativePath=".\Signature.h"
 				>
 			</File>
 			<File
@@ -313,7 +237,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\util.h"
+				RelativePath=".\STL.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Util.h"
+				>
+			</File>
+			<File
+				RelativePath=".\VTable.h"
 				>
 			</File>
 		</Filter>
@@ -323,10 +255,6 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
-		<File
-			RelativePath=".\hookgenerator.pyw"
-			>
-		</File>
 		<File
 			RelativePath=".\ReadMe.txt"
 			>

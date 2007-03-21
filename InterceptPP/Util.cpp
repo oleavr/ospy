@@ -25,10 +25,11 @@
 
 #include "stdafx.h"
 #include "Util.h"
-#include "..\hooking.h" // FIXME: yuck, use TrampoLib's hooking instead
 #include <psapi.h>
 
-namespace TrampoLib {
+#pragma warning( disable : 4311 4312 )
+
+namespace InterceptPP {
 
 static HMODULE __cdecl
 LoadLibraryA_called(BOOL carry_on,
@@ -70,8 +71,10 @@ LoadLibraryW_done(HMODULE retval,
     return retval;
 }
 
+/*
 HOOK_GLUE_INTERRUPTIBLE(LoadLibraryA, (1 * 4))
 HOOK_GLUE_INTERRUPTIBLE(LoadLibraryW, (1 * 4))
+*/
 
 CRITICAL_SECTION Util::m_cs = { 0, };
 OString Util::m_processName = "";
@@ -90,11 +93,12 @@ Util::Initialize()
 		m_processName = buf;
 	}
 
-	HMODULE h = LoadLibrary("kernel32.dll");
+	HMODULE h = LoadLibraryA("kernel32.dll");
     if (h != NULL)
 	{
+        /*
 		HOOK_FUNCTION(h, LoadLibraryA);
-		HOOK_FUNCTION(h, LoadLibraryW);
+		HOOK_FUNCTION(h, LoadLibraryW);*/
 	}
 
 	UpdateModuleList();
@@ -297,4 +301,4 @@ Util::GetModuleInfoForAddress(DWORD address)
 	return NULL;
 }
 
-} // namespace TrampoLib
+} // namespace InterceptPP

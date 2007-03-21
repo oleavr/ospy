@@ -25,7 +25,37 @@
 
 #pragma once
 
-#include "Core.h"
-#include "DLL.h"
-#include "VTable.h"
-#include "Util.h"
+namespace InterceptPP {
+
+typedef struct {
+	OICString name;
+	DWORD preferredStartAddress;
+	DWORD startAddress;
+	DWORD endAddress;
+} OModuleInfo;
+
+class Util : public BaseObject
+{
+public:
+	static void Initialize();
+	static void UpdateModuleList();
+
+	static const OString &GetProcessName() { return m_processName; }
+	static OString GetModuleNameForAddress(DWORD address);
+	static OModuleInfo GetModuleInfo(const OICString &name);
+	static OVector<OModuleInfo>::Type GetAllModules();
+	static bool AddressIsWithinExecutableModule(DWORD address);
+
+	static OString CreateBackTrace(void *address);
+
+private:
+	static OModuleInfo *GetModuleInfoForAddress(DWORD address);
+
+	static CRITICAL_SECTION m_cs;
+	static OString m_processName;
+	static OMap<OICString, OModuleInfo>::Type m_modules;
+	static DWORD m_lowestAddress;
+	static DWORD m_highestAddress;
+};
+
+} // namespace InterceptPP

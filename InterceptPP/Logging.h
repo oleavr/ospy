@@ -25,7 +25,7 @@
 
 #pragma once
 
-namespace TrampoLib {
+namespace InterceptPP {
 
 namespace Logging {
 
@@ -99,4 +99,4 @@ protected:
 
 } // namespace Logging
 
-} // namespace TrampoLib
+} // namespace InterceptPP

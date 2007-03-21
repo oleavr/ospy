@@ -29,7 +29,7 @@
 #include "Signature.h"
 #include "Logging.h"
 
-namespace TrampoLib {
+namespace InterceptPP {
 
 using Logging::Logger;
 
@@ -307,4 +307,4 @@ private:
     bool ShouldLogArgumentDeep(const Argument *arg) const;
 };
 
-} // namespace TrampoLib
+} // namespace InterceptPP

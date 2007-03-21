@@ -1,21 +1,32 @@
-// ########################################################
-// Custom allocator sample code for vector
-// ========================================================
-// The following code example is taken from
-// http://www.josuttis.com/libbook/memory/myalloc.hpp.html
-// http://www.josuttis.com/libbook/memory/myalloc1.cpp.html
-// The code has been written by Nicolai M. Josuttis
-// --------------------------------------------------------
-// File myalloc.h
-// Cosmetic changes have been done by Alex Vinokur
-// Adapted to oSpy by Ole André Vadla Ravnås
-// ########################################################
+//
+// Copyright (c) 2007 Ole André Vadla Ravnås <oleavr@gmail.com>
+//
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following
+// conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+//
 
 #pragma once
 
-#pragma warning( disable : 4291 )
+#pragma warning( disable : 4291 4996 )
 
-#include "stdafx.h"
 #include <iomanip>
 #include <string>
 #include <sstream>
@@ -24,8 +35,11 @@
 #include <list>
 #include <map>
 #include <limits>
+#include "Alloc.h"
 
 using namespace std;
+
+namespace InterceptPP {
 
 class BaseObject
 {
@@ -37,13 +51,13 @@ public:
 
     void *operator new(size_t size)
     {
-        return sspy_malloc(size);
+        return AllocUtils::Malloc(size);
     }
 
     void operator delete(void *an_address)
     {
         if (an_address)
-            sspy_free(an_address);
+            AllocUtils::Free(an_address);
     }
 };
 
@@ -227,3 +241,5 @@ struct OMap
 {
 	typedef std::map<kT, vT, std::less<kT>, MyAlloc<std::pair<kT, vT>>> Type;
 };
+
+} // namespace InterceptPP

@@ -27,7 +27,9 @@
 #include "Core.h"
 #include "Util.h"
 
-namespace TrampoLib {
+#pragma warning( disable : 4311 4312 )
+
+namespace InterceptPP {
 
 static Logger *g_defaultLogger = NULL;
 static Logger *g_logger = NULL;
@@ -662,4 +664,4 @@ FunctionCall::ToString() const
 	return ss.str();
 }
 
-} // namespace TrampoLib
+} // namespace InterceptPP

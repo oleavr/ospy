@@ -26,9 +26,6 @@
 #include "stdafx.h"
 #include "hooking.h"
 #include "logging_old.h"
-#include "TrampoLib\TrampoLib.h"
-
-using namespace TrampoLib;
 
 //
 // Signatures
@@ -42,7 +39,7 @@ typedef enum {
 	SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME_2,
 };
 
-static FunctionSignature msn_signatures[] = {
+static DieDieDie::FunctionSignature msn_signatures[] = {
     // SIGNATURE_GET_CHALLENGE_SECRET
     {
         "msnmsgr.exe",
@@ -151,7 +148,7 @@ idcrl_debug(void *obj,
     if (size <= sizeof(WCHAR))
         return;
 
-    buf = (LPWSTR) sspy_malloc(size);
+    buf = (LPWSTR) AllocUtils::Malloc(size);
     wsprintfW(buf, L"%s%s%s",
         (function_name != NULL) ? function_name : L"",
         (function_name != NULL && message != NULL) ? L": " : L"",
@@ -160,7 +157,7 @@ idcrl_debug(void *obj,
     va_start(args, message);
     log_debug_w("MSNIDCRL", (char *) &obj - 4, buf, args);
 
-    sspy_free(buf);
+    AllocUtils::Free(buf);
 }
 
 static void __stdcall
@@ -182,7 +179,7 @@ msnmsgr_debug(DWORD domain,
 #define LOG_OVERRIDE_ERROR(e) \
             message_logger_log_message("hook_msn", 0, MESSAGE_CTX_ERROR,\
                 "override_function_by_signature failed: %s", e);\
-            sspy_free(e)
+            AllocUtils::Free(e)
 
 typedef const char *(__stdcall *GetChallengeSecretFunc) (const char **ret, int which_one);
 typedef const LPWSTR (__stdcall *ContactPropertyIdToNameFunc) (int property_id);
@@ -357,7 +354,7 @@ hook_msn()
     {
         message_logger_log_message("hook_msn", 0, MESSAGE_CTX_WARNING,
             "failed to find SIGNATURE_GET_CHALLENGE_SECRET: %s", error);
-        sspy_free(error);
+        AllocUtils::Free(error);
     }
 
 	if (!override_function_by_signature(&msn_signatures[SIGNATURE_MSNMSGR_DEBUG],
@@ -372,7 +369,7 @@ hook_msn()
 								(LPVOID *) &contact_property_id_to_name, &error);
 	if (!found)
 	{
-		sspy_free(error);
+		AllocUtils::Free(error);
 		found = find_signature(&msn_signatures[SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME_2],
 							   (LPVOID *) &contact_property_id_to_name, &error);
 	}
@@ -391,13 +388,13 @@ hook_msn()
 				s << "\r\n";
 
 			unsigned int bufSize = static_cast<unsigned int>(wcslen(name)) + 1;
-			char *buf = (char *) sspy_malloc(bufSize);
+			char *buf = (char *) AllocUtils::Malloc(bufSize);
 
 		    WideCharToMultiByte(CP_ACP, 0, name, -1, buf, bufSize, NULL, NULL);
 
 			s << i << " => " << buf;
 
-			sspy_free(buf);
+			AllocUtils::Free(buf);
 		}
 
         message_logger_log("hook_msn", 0, 0, MESSAGE_TYPE_PACKET,
@@ -408,7 +405,7 @@ hook_msn()
     {
         message_logger_log_message("hook_msn", 0, MESSAGE_CTX_WARNING,
             "failed to find SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME: %s", error);
-        sspy_free(error);
+        AllocUtils::Free(error);
     }
 
 	

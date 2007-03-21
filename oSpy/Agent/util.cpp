@@ -110,7 +110,7 @@ get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, cha
                            sizeof(modules), &bytes_needed) == 0)
     {
         if (error)
-            *error = sspy_strdup("EnumProcessModules failed");
+            *error = ospy_strdup("EnumProcessModules failed");
         return FALSE;
     }
 
@@ -134,7 +134,7 @@ get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, cha
             if (GetModuleBaseName(process, modules[i], buf, 32) == 0)
             {
                 if (error)
-                    *error = sspy_strdup("GetModuleBaseName failed");
+                    *error = ospy_strdup("GetModuleBaseName failed");
                 return FALSE;
             }
 
@@ -149,7 +149,7 @@ get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, cha
     }
 
     if (error)
-        *error = sspy_strdup("module not found");
+        *error = ospy_strdup("module not found");
     return FALSE;
 }
 
@@ -197,4 +197,16 @@ ospy_rand()
     srand(seed.LowPart);
 
     return 1 + rand();
+}
+
+char *
+ospy_strdup(const char *str)
+{
+    char *s;
+    size_t size = strlen(str) + 1;
+
+    s = (char *) AllocUtils::Malloc(size);
+    memcpy(s, str, size);
+
+    return s;
 }

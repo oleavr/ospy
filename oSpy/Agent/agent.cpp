@@ -28,13 +28,12 @@
 #include "hooks.h"
 #include "util.h"
 #include "overlapped.h"
-#include "TrampoLib\TrampoLib.h"
 
 #ifdef _MANAGED
 #pragma managed(push, off)
 #endif
 
-using namespace TrampoLib;
+using namespace InterceptPP;
 
 class BinarySerializer : public BaseObject
 {
@@ -164,8 +163,8 @@ DllMain(HMODULE hModule,
 			// Initialize SHM logger
 			message_logger_init();
 
-            TrampoLib::Initialize();
-            TrampoLib::SetLogger(new BinaryLogger("c:\\oSpyAgentLog.bin"));
+            InterceptPP::Initialize();
+            InterceptPP::SetLogger(new BinaryLogger("c:\\oSpyAgentLog.bin"));
 			//COverlappedManager::Init();
 
 			//hook_kernel32();

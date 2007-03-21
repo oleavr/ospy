@@ -27,7 +27,7 @@
 
 #include "Logging.h"
 
-namespace TrampoLib {
+namespace InterceptPP {
 
 class BaseMarshaller : public BaseObject
 {
@@ -284,4 +284,4 @@ public:
 
 } // namespace Marshaller
 
-} // namespace TrampoLib
+} // namespace InterceptPP
