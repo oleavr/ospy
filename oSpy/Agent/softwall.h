@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <winsock2.h>
+
 #define SOFTWALL_CONDITION_PROCESS_NAME    1
 #define SOFTWALL_CONDITION_FUNCTION_NAME   2
 #define SOFTWALL_CONDITION_RETURN_ADDRESS  4

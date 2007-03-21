@@ -121,17 +121,15 @@ OVector<Signature>::Type Function::prologSignatures;
 Logging::Node *
 Argument::ToNode(bool deep) const
 {
-    Logging::Node *node = new Logging::Node("Argument");
+    Logging::Element *el = new Logging::Element("argument");
 
-    node->AddField("Name", m_spec->GetName());
+    el->AddField("name", m_spec->GetName());
 
     ArgumentDirection dir = m_spec->GetDirection();
 
-    Logging::Node *valueNode = node->AppendChild("Value");
+    m_spec->GetMarshaller()->AppendToElement(el, m_data, deep);
 
-    m_spec->GetMarshaller()->AppendToNode(valueNode, m_data, deep);
-
-    return node;
+    return el;
 }
 
 OString
@@ -167,12 +165,16 @@ void
 ArgumentListSpec::Initialize(unsigned int count, va_list args)
 {
     m_size = 0;
+    m_hasOutArgs = false;
 
     for (unsigned int i = 0; i < count; i++)
     {
         ArgumentSpec *arg = va_arg(args, ArgumentSpec *);
 
         m_arguments.push_back(arg);
+
+        if ((arg->GetDirection() & ARG_DIR_OUT) != 0)
+            m_hasOutArgs = true;
 
         m_size += arg->GetMarshaller()->GetSize();
     }
@@ -480,11 +482,14 @@ Function::OnEnter(FunctionCall *call)
 
 	if (handler == NULL || !handler(call))
 	{        
-        Logging::Event *ev = GetLogger()->NewEvent("FunctionCall");
-        ev->AddField("FunctionName", GetFullName());
+        Logging::Event *ev = GetLogger()->NewEvent("functioncall");
 
-        Logging::Node *node = ev->AppendChild("In");
-        call->AppendArgumentsToNode(node);
+        Logging::TextNode *textNode = new Logging::TextNode("name");
+        textNode->SetContent(GetFullName());
+        ev->AppendChild(textNode);
+
+        call->AppendCpuContextToElement(ev);
+        call->AppendArgumentsToElement(ev);
 
         call->SetUserData(ev);
 
@@ -505,8 +510,9 @@ Function::OnLeave(FunctionCall *call)
 	if (handler == NULL || !handler(call))
 	{
         Logging::Event *ev = static_cast<Logging::Event *>(call->GetUserData());
-        Logging::Node *node = ev->AppendChild("Out");
-        call->AppendArgumentsToNode(node);
+
+        call->AppendCpuContextToElement(ev);
+        call->AppendArgumentsToElement(ev);
 
         ev->Submit();
         delete ev;
@@ -562,22 +568,77 @@ FunctionCall::ShouldLogArgumentDeep(const Argument *arg) const
 }
 
 void
-FunctionCall::AppendArgumentsToNode(Logging::Node *node)
+FunctionCall::AppendCpuContextToElement(Logging::Element *el)
+{
+    Logging::Element *ctxEl = new Logging::Element("cpucontext");
+
+    ctxEl->AddField("direction", (m_state == FUNCTION_CALL_ENTERING) ? "in" : "out");
+
+    AppendCpuRegisterToElement(ctxEl, "eax", m_cpuCtxLive->eax);
+    AppendCpuRegisterToElement(ctxEl, "ebx", m_cpuCtxLive->ebx);
+    AppendCpuRegisterToElement(ctxEl, "ecx", m_cpuCtxLive->ecx);
+    AppendCpuRegisterToElement(ctxEl, "edx", m_cpuCtxLive->edx);
+    AppendCpuRegisterToElement(ctxEl, "edi", m_cpuCtxLive->edi);
+    AppendCpuRegisterToElement(ctxEl, "esi", m_cpuCtxLive->esi);
+    AppendCpuRegisterToElement(ctxEl, "ebp", m_cpuCtxLive->ebp);
+    AppendCpuRegisterToElement(ctxEl, "esp", m_cpuCtxLive->esp);
+
+    el->AppendChild(ctxEl);
+}
+
+void
+FunctionCall::AppendCpuRegisterToElement(Logging::Element *el, const char *name, DWORD value)
+{
+    Logging::Element *regEl = new Logging::Element("register");
+    el->AppendChild(regEl);
+    regEl->AddField("name", name);
+
+    OOStringStream ss;
+    ss << "0x" << hex << value;
+    regEl->AddField("value", ss.str());
+}
+
+void
+FunctionCall::AppendArgumentsToElement(Logging::Element *el)
 {
 	FunctionSpec *spec = m_function->GetSpec();
 
     const ArgumentList *args = GetArguments();
     if (args != NULL)
     {
-        for (unsigned int i = 0; i < args->GetCount(); i++)
-        {
-            const Argument &arg = (*args)[i];
+        bool logIt = true;
 
-			node->AppendChild(arg.ToNode(ShouldLogArgumentDeep(&arg)));
+        // Do we have any out arguments?
+        if (m_state == FUNCTION_CALL_LEAVING && !args->GetSpec()->GetHasOutArgs())
+        {
+            logIt = false;
+        }
+
+        if (logIt)
+        {
+            Logging::Element *argsEl = new Logging::Element("arguments");
+            el->AppendChild(argsEl);
+            argsEl->AddField("direction", (m_state == FUNCTION_CALL_ENTERING) ? "in" : "out");
+
+            for (unsigned int i = 0; i < args->GetCount(); i++)
+            {
+                const Argument &arg = (*args)[i];
+
+                if (!(m_state == FUNCTION_CALL_LEAVING && arg.GetSpec()->GetDirection() == ARG_DIR_IN))
+			        argsEl->AppendChild(arg.ToNode(ShouldLogArgumentDeep(&arg)));
+            }
         }
     }
     else
     {
+        // No point in logging for this state in this case
+        if (m_state == FUNCTION_CALL_LEAVING)
+            return;
+
+        Logging::Element *argsEl = new Logging::Element("arguments");
+        el->AppendChild(argsEl);
+        argsEl->AddField("direction", "in");
+
 	    int argsSize = spec->GetArgsSize();
 	    if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN && argsSize % sizeof(DWORD) == 0)
 	    {
@@ -587,11 +648,12 @@ FunctionCall::AppendArgumentsToNode(Logging::Node *node)
 
 		    for (unsigned int i = 0; i < argsSize / sizeof(DWORD); i++)
 		    {
-				Logging::Node *argNode = node->AppendChild("Argument");
+				Logging::Element *argElement = new Logging::Element("argument");
+                argsEl->AppendChild(argElement);
 
 				OOStringStream ss;
-				ss << "Arg" << (i + 1);
-				argNode->AddField("Name", ss.str());
+				ss << "arg" << (i + 1);
+				argElement->AddField("name", ss.str());
 
 				bool hex = false;
 
@@ -601,8 +663,9 @@ FunctionCall::AppendArgumentsToNode(Logging::Node *node)
 
 				marshaller.SetFormatHex(hex);
 
-				Logging::Node *valueNode = argNode->AppendChild("Value");
-				marshaller.AppendToNode(valueNode, &args[i], true);
+				Logging::Element *valueElement = new Logging::Element("value");
+                argElement->AppendChild(valueElement);
+				marshaller.AppendToElement(valueElement, &args[i], true);
 		    }
 	    }
     }

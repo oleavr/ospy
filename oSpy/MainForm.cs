@@ -99,6 +99,8 @@ namespace oSpy
         {
             InitializeComponent();
 
+            XmlUtils.BinaryLogToXml("c:\\oSpyAgentLog.bin");
+
             config = ConfigManager.GetContext("MainForm");
 
             colorPool = new ColorPool();

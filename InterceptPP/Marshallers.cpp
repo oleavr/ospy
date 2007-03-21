@@ -29,16 +29,18 @@
 namespace InterceptPP {
 
 void
-BaseMarshaller::AppendToNode(Logging::Node *parentNode, const void *start, bool deep) const
+BaseMarshaller::AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const
 {
-    Logging::Node *node = parentNode->AppendChild(m_typeName);
-    node->AddField("Value", ToString(start, false));
+    Logging::Element *el = new Logging::Element("value");
+    parentElement->AppendChild(el);
+    el->AddField("type", m_typeName);
+    el->AddField("value", ToString(start, false));
 }
 
 namespace Marshaller {
 
 Pointer::Pointer(BaseMarshaller *type)
-    : BaseMarshaller("Pointer"), m_type(type)
+    : BaseMarshaller("pointer"), m_type(type)
 {}
 
 Pointer::~Pointer()
@@ -48,11 +50,14 @@ Pointer::~Pointer()
 }
 
 void
-Pointer::AppendToNode(Logging::Node *parentNode, const void *start, bool deep) const
+Pointer::AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const
 {
     const void **ptr = (const void **) start;
 
-    Logging::Node *node = parentNode->AppendChild("Pointer");
+    Logging::Element *el = new Logging::Element("value");
+    parentElement->AppendChild(el);
+
+    el->AddField("type", m_typeName);
 
     OOStringStream ss;
     if (*ptr != NULL)
@@ -60,10 +65,10 @@ Pointer::AppendToNode(Logging::Node *parentNode, const void *start, bool deep) c
     else
         ss << "NULL";
 
-    node->AddField("Value", ss.str());
+    el->AddField("value", ss.str());
 
     if (*ptr != NULL && deep)
-        m_type->AppendToNode(node, *ptr, true);
+        m_type->AppendToElement(el, *ptr, true);
 }
 
 OString
@@ -215,6 +220,16 @@ Enumeration::Enumeration(const char *name, const char *firstName, ...)
     va_end(args);
 }
 
+void
+Enumeration::AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const
+{
+    Logging::Element *el = new Logging::Element("value");
+    parentElement->AppendChild(el);
+    el->AddField("type", "enum");
+    el->AddField("subtype", m_typeName);
+    el->AddField("value", ToString(start, false));
+}
+
 OString
 Enumeration::ToString(const void *start, bool deep) const
 {
@@ -264,11 +279,15 @@ Structure::Initialize(const char *firstFieldName, va_list args)
 }
 
 void
-Structure::AppendToNode(Logging::Node *parentNode, const void *start, bool deep) const
+Structure::AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const
 {
     const void **ptr = (const void **) start;
 
-    Logging::Node *structNode = parentNode->AppendChild(m_typeName);
+    Logging::Element *structElement = new Logging::Element("value");
+    parentElement->AppendChild(structElement);
+
+    structElement->AddField("type", "struct");
+    structElement->AddField("subtype", m_typeName);
 
     for (unsigned int i = 0; i < m_fields.size(); i++)
     {
@@ -276,8 +295,11 @@ Structure::AppendToNode(Logging::Node *parentNode, const void *start, bool deep)
 
         const void *fieldPtr = reinterpret_cast<const char *>(start) + field.GetOffset();
 
-        Logging::Node *fieldNode = structNode->AppendChild(field.GetName());
-        field.GetMarshaller()->AppendToNode(fieldNode, fieldPtr, true);
+        Logging::Element *fieldElement = new Logging::Element("field");
+        structElement->AppendChild(fieldElement);
+        fieldElement->AddField("name", field.GetName());
+
+        field.GetMarshaller()->AppendToElement(fieldElement, fieldPtr, true);
     }
 }
 

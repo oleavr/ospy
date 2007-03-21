@@ -36,30 +36,34 @@ NullLogger::NewEvent(const OString &eventType)
     return new Event(this, m_id++, eventType);
 }
 
+Node::Node(const OString &name)
+    : m_name(name)
+{
+}
+
+Node::~Node()
+{
+    ChildListConstIter iter, endIter = m_children.end();
+    for (iter = m_children.begin(); iter != endIter; iter++)
+    {
+        delete *iter;
+    }
+}
+
 void
 Node::AddField(const OString &name, const OString &value)
 {
     m_fields[name] = value;
 }
 
-Node *
-Node::AppendChild(const OString &name)
-{
-    Node *child = new Node(name);
-    AppendChild(child);
-    return child;
-}
-
-void
-Node::AppendChild(Node *node)
-{
-    m_children.push_back(node);
-}
-
 Event::Event(Logger *logger, unsigned int id, const OString &eventType)
-    : Node("Event"), m_logger(logger), m_id(id)
+    : Element("event"), m_logger(logger)
 {
-    AddField("Type", eventType);
+    AddField("type", eventType);
+
+    OOStringStream ss;
+    ss << id;
+    AddField("id", ss.str());
 }
 
 } // namespace Logging

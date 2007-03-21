@@ -61,11 +61,12 @@ public:
     typedef OList<Node *>::Type ChildList;
     typedef ChildList::const_iterator ChildListConstIter;
 
-    Node(const OString &name)
-        : m_name(name)
-    {}
+    Node(const OString &name);
+    ~Node();
 
     const OString &GetName() const { return m_name; }
+
+    const OString &GetContent() const { return m_content; }
 
 	unsigned int GetFieldCount() const { return static_cast<unsigned int>(m_fields.size()); }
     FieldMapConstIter FieldsIterBegin() const { return m_fields.begin(); }
@@ -75,26 +76,43 @@ public:
 	unsigned int GetChildCount() const { return static_cast<unsigned int>(m_children.size()); }
     ChildListConstIter ChildrenIterBegin() const { return m_children.begin(); }
     ChildListConstIter ChildrenIterEnd() const { return m_children.end(); }
-    Node *AppendChild(const OString &name);
-    void AppendChild(Node *node);
 
 protected:
     OString m_name;
+    OString m_content;
     FieldMap m_fields;
     ChildList m_children;
 };
 
-class Event : public Node
+class Element : public Node
+{
+public:
+    Element(const OString &name)
+        : Node(name)
+    {}
+
+    void AppendChild(Node *node) { m_children.push_back(node); }
+};
+
+class TextNode : public Node
+{
+public:
+    TextNode(const OString &name)
+        : Node(name)
+    {}
+
+    void SetContent(const OString &content) { m_content = content; }
+};
+
+class Event : public Element
 {
 public:
     Event(Logger *logger, unsigned int id, const OString &eventType);
 
-    unsigned int GetId() const { return m_id; }
     void Submit() { m_logger->SubmitEvent(this); }
 
 protected:
     Logger *m_logger;
-    unsigned int m_id;
 };
 
 } // namespace Logging
