@@ -29,9 +29,6 @@
 #include "util.h"
 #include "overlapped.h"
 #include "TrampoLib\TrampoLib.h"
-#if 0
-#include <msxml2.h>
-#endif
 
 #ifdef _MANAGED
 #pragma managed(push, off)
@@ -39,42 +36,91 @@
 
 using namespace TrampoLib;
 
-#if 0
-inline void EVAL_HR(HRESULT _hr)
-{
-    if FAILED(_hr)
-        throw(_hr);
-}
-
-class XMLLogger : public Logging::Logger
+class BinarySerializer : public BaseObject
 {
 public:
-    XMLLogger(const OString &filename)
-        : m_id(0), m_doc(NULL)
-    {
-        EVAL_HR(CoInitialize(NULL));
+	const OString &GetData() { return m_buf; }
 
-        EVAL_HR(CoCreateInstance(CLSID_DOMDocument, NULL, CLSCTX_INPROC_SERVER, 
-                IID_IXMLDOMDocument2, (void **) &m_doc));
+	void AppendNode(Logging::Node *node);
+	void AppendString(const OString &s);
+	void AppendDWord(DWORD dw);
 
-        _variant_t varNodeType = (short) NODE_ELEMENT;
-        EVAL_HR(m_doc->createNode(varNodeType, L"e:Events", L"http://www.ospy.org/oSpyAgent/Events", &m_rootNode));
+protected:
+	OString m_buf;
+};
 
-        IXMLDOMNode *node;
-        EVAL_HR(m_doc->appendChild(m_rootNode, &node));
-    }
+void
+BinarySerializer::AppendNode(Logging::Node *node)
+{
+	// Name
+	AppendString(node->GetName());
+
+	// Fields
+	{
+		AppendDWord(node->GetFieldCount());
+		Logging::Node::FieldMapConstIter iter, endIter = node->FieldsIterEnd();
+
+		for (iter = node->FieldsIterBegin(); iter != endIter; iter++)
+		{
+			AppendString(iter->first);
+			AppendString(iter->second);
+		}
+	}
+
+	// Children
+	{
+		AppendDWord(node->GetChildCount());
+		Logging::Node::ChildListConstIter iter, endIter = node->ChildrenIterEnd();
+
+		for (iter = node->ChildrenIterBegin(); iter != endIter; iter++)
+		{
+			AppendNode(*iter);
+		}
+	}
+}
+
+void
+BinarySerializer::AppendString(const OString &s)
+{
+	AppendDWord(static_cast<DWORD>(s.length()));
+	m_buf.append(s.data(), s.length());
+}
+
+void
+BinarySerializer::AppendDWord(DWORD dw)
+{
+	m_buf.append(reinterpret_cast<const char *>(&dw), sizeof(dw));
+}
+
+class BinaryLogger : public Logging::Logger
+{
+public:
+    BinaryLogger(const OString &filename);
+	virtual ~BinaryLogger();
 
     virtual Logging::Event *NewEvent(const OString &eventType);
     virtual void SubmitEvent(Logging::Event *ev);
 
 protected:
+	HANDLE m_handle;
     unsigned int m_id;
-    IXMLDOMDocument2 *m_doc;
-    IXMLDOMNode *m_rootNode;
 };
 
+BinaryLogger::BinaryLogger(const OString &filename)
+    : m_id(0)
+{
+	m_handle = CreateFile(filename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (m_handle == INVALID_HANDLE_VALUE)
+		throw runtime_error("CreateFile failed");
+}
+
+BinaryLogger::~BinaryLogger()
+{
+	CloseHandle(m_handle);
+}
+
 Logging::Event *
-XMLLogger::NewEvent(const OString &eventType)
+BinaryLogger::NewEvent(const OString &eventType)
 {
     // TODO: have m_id in shared memory so everything that gets logged
     //       shares the same namespace.
@@ -82,15 +128,23 @@ XMLLogger::NewEvent(const OString &eventType)
 }
 
 void
-XMLLogger::SubmitEvent(Logging::Event *ev)
+BinaryLogger::SubmitEvent(Logging::Event *ev)
 {
-    Logging::Node::FieldMapConstIter iter, endIter = ev->FieldsIterEnd();
+	BinarySerializer serializer;
 
-    for (iter = ev->FieldsIterBegin(); iter != endIter; iter++)
-    {
-    }
+	serializer.AppendDWord(ev->GetId());
+	serializer.AppendString(ev->GetName());
+	serializer.AppendNode(ev);
+
+	const OString &buf = serializer.GetData();
+
+	DWORD bytesWritten;
+	if (!WriteFile(m_handle, buf.data(), static_cast<DWORD>(buf.size()), &bytesWritten, NULL))
+		throw runtime_error("WriteFile failed");
+
+	if (bytesWritten != buf.size())
+		throw runtime_error("short write");
 }
-#endif
 
 BOOL APIENTRY
 DllMain(HMODULE hModule,
@@ -111,7 +165,7 @@ DllMain(HMODULE hModule,
 			message_logger_init();
 
             TrampoLib::Initialize();
-            //TrampoLib::SetLogger(new XMLLogger("c:\\test.xml"));
+            TrampoLib::SetLogger(new BinaryLogger("c:\\oSpyAgentLog.bin"));
 			//COverlappedManager::Init();
 
 			//hook_kernel32();

@@ -67,10 +67,12 @@ public:
 
     const OString &GetName() const { return m_name; }
 
+	unsigned int GetFieldCount() const { return static_cast<unsigned int>(m_fields.size()); }
     FieldMapConstIter FieldsIterBegin() const { return m_fields.begin(); }
     FieldMapConstIter FieldsIterEnd() const { return m_fields.end(); }
     void AddField(const OString &name, const OString &value);
 
+	unsigned int GetChildCount() const { return static_cast<unsigned int>(m_children.size()); }
     ChildListConstIter ChildrenIterBegin() const { return m_children.begin(); }
     ChildListConstIter ChildrenIterEnd() const { return m_children.end(); }
     Node *AppendChild(const OString &name);

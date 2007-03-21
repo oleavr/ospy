@@ -562,6 +562,48 @@ FunctionCall::ShouldLogArgumentDeep(const Argument *arg) const
 void
 FunctionCall::AppendArgumentsToNode(Logging::Node *node)
 {
+	FunctionSpec *spec = m_function->GetSpec();
+
+    const ArgumentList *args = GetArguments();
+    if (args != NULL)
+    {
+        for (unsigned int i = 0; i < args->GetCount(); i++)
+        {
+            const Argument &arg = (*args)[i];
+
+			node->AppendChild(arg.ToNode(ShouldLogArgumentDeep(&arg)));
+        }
+    }
+    else
+    {
+	    int argsSize = spec->GetArgsSize();
+	    if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN && argsSize % sizeof(DWORD) == 0)
+	    {
+		    DWORD *args = (DWORD *) m_argumentsData.data();
+
+			Marshaller::UInt32 marshaller;
+
+		    for (unsigned int i = 0; i < argsSize / sizeof(DWORD); i++)
+		    {
+				Logging::Node *argNode = node->AppendChild("Argument");
+
+				OOStringStream ss;
+				ss << "Arg" << (i + 1);
+				argNode->AddField("Name", ss.str());
+
+				bool hex = false;
+
+				// FIXME: optimize this
+				if (args[i] > 0xFFFF && !IsBadReadPtr((void *) args[i], 1))
+					hex = true;
+
+				marshaller.SetFormatHex(hex);
+
+				Logging::Node *valueNode = argNode->AppendChild("Value");
+				marshaller.AppendToNode(valueNode, &args[i], true);
+		    }
+	    }
+    }
 }
 
 OString

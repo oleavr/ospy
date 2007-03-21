@@ -68,6 +68,9 @@ public:
         : BaseMarshaller(typeName), m_hex(hex)
     {}
 
+	bool GetFormatHex() const { return m_hex; }
+	void SetFormatHex(bool hex) { m_hex = hex; }
+
 protected:
     bool m_hex;
 };
