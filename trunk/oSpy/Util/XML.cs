@@ -209,7 +209,7 @@ namespace oSpy.Util
 
             XmlDocument doc = new XmlDocument();
 
-            XmlElement rootElement = doc.CreateElement("events");
+            XmlElement rootElement = doc.CreateElement("Events");
             doc.AppendChild(rootElement);
 
             FileStream fs = new FileStream(path, FileMode.Open);
@@ -249,6 +249,15 @@ namespace oSpy.Util
             return StaticUtils.DecodeASCII(buf);
         }
 
+        private static byte[] ReadByteArray(Stream s)
+        {
+            UInt32 len = ReadUInt32LE(s);
+            if (len == 0)
+                return new byte[0];
+
+            return ReadBytes(s, len);
+        }
+
         private static XmlElement ReadElement(Stream s, XmlDocument doc)
         {
             XmlElement el = doc.CreateElement(ReadString(s));
@@ -259,7 +268,22 @@ namespace oSpy.Util
                 el.SetAttribute(ReadString(s), ReadString(s));
             }
 
-            string content = ReadString(s);
+            UInt32 contentIsRaw = ReadUInt32LE(s);
+            string content = "";
+
+            if (contentIsRaw != 0)
+            {
+                byte[] bytes = ReadByteArray(s);
+                if (bytes.Length > 0)
+                {
+                    content = Convert.ToBase64String(bytes, Base64FormattingOptions.None);
+                }
+            }
+            else
+            {
+                content = ReadString(s);
+            }
+
             if (content != String.Empty)
             {
                 XmlText textNode = doc.CreateTextNode(content);

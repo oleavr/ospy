@@ -57,7 +57,7 @@ BinarySerializer::AppendNode(Logging::Node *node)
 	// Fields
 	{
 		AppendDWord(node->GetFieldCount());
-		Logging::Node::FieldMapConstIter iter, endIter = node->FieldsIterEnd();
+		Logging::Node::FieldListConstIter iter, endIter = node->FieldsIterEnd();
 
 		for (iter = node->FieldsIterBegin(); iter != endIter; iter++)
 		{
@@ -67,6 +67,7 @@ BinarySerializer::AppendNode(Logging::Node *node)
 	}
 
     // Content
+    AppendDWord(node->GetContentIsRaw());
     AppendString(node->GetContent());
 
 	// Children
@@ -84,9 +85,9 @@ BinarySerializer::AppendNode(Logging::Node *node)
 void
 BinarySerializer::AppendString(const OString &s)
 {
-	AppendDWord(static_cast<DWORD>(s.length()));
-    if (s.length() > 0)
-	    m_buf.append(s.data(), s.length());
+	AppendDWord(static_cast<DWORD>(s.size()));
+    if (s.size() > 0)
+	    m_buf.append(s.data(), s.size());
 }
 
 void

@@ -33,8 +33,21 @@ BaseMarshaller::BaseMarshaller(const OString &typeName)
 {
 }
 
+bool
+BaseMarshaller::HasPropertyBinding(const OString &propName) const
+{
+    return (m_propBindings.find(propName) != m_propBindings.end());
+}
+
+const OString &
+BaseMarshaller::GetPropertyBinding(const OString &propName) const
+{
+    PropBindingsMap::const_iterator iter = m_propBindings.find(propName);
+    return iter->second;
+}
+
 void
-BaseMarshaller::SetProperties(const char *firstPropName, ...)
+BaseMarshaller::SetPropertyBindings(const char *firstPropName, ...)
 {
     va_list args;
     va_start(args, firstPropName);
@@ -44,7 +57,7 @@ BaseMarshaller::SetProperties(const char *firstPropName, ...)
     {
 		const char *propValue = va_arg(args, const char *);
 
-		m_props[propName] = propValue;
+		m_propBindings[propName] = propValue;
 
         propName = va_arg(args, const char *);
     }
@@ -52,19 +65,21 @@ BaseMarshaller::SetProperties(const char *firstPropName, ...)
     va_end(args);
 }
 
-void
-BaseMarshaller::AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const
+Logging::Node *
+BaseMarshaller::ToNode(const void *start, bool deep, IPropertyProvider *propProv) const
 {
-    Logging::Element *el = new Logging::Element("value");
-    parentElement->AppendChild(el);
-    el->AddField("type", m_typeName);
-    el->AddField("value", ToString(start, false));
+    Logging::Element *el = new Logging::Element("Value");
+
+    el->AddField("Type", m_typeName);
+    el->AddField("Value", ToString(start, false, propProv));
+
+    return el;
 }
 
 namespace Marshaller {
 
 Pointer::Pointer(BaseMarshaller *type)
-    : BaseMarshaller("pointer"), m_type(type)
+    : BaseMarshaller("Pointer"), m_type(type)
 {}
 
 Pointer::~Pointer()
@@ -73,15 +88,14 @@ Pointer::~Pointer()
         delete m_type;
 }
 
-void
-Pointer::AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const
+Logging::Node *
+Pointer::ToNode(const void *start, bool deep, IPropertyProvider *propProv) const
 {
     const void **ptr = (const void **) start;
 
-    Logging::Element *el = new Logging::Element("value");
-    parentElement->AppendChild(el);
+    Logging::Element *el = new Logging::Element("Value");
 
-    el->AddField("type", m_typeName);
+    el->AddField("Type", m_typeName);
 
     OOStringStream ss;
     if (*ptr != NULL)
@@ -89,14 +103,18 @@ Pointer::AppendToElement(Logging::Element *parentElement, const void *start, boo
     else
         ss << "NULL";
 
-    el->AddField("value", ss.str());
+    el->AddField("Value", ss.str());
 
     if (*ptr != NULL && deep)
-        m_type->AppendToElement(el, *ptr, true);
+    {
+        el->AppendChild(m_type->ToNode(*ptr, true, propProv));
+    }
+
+    return el;
 }
 
 OString
-Pointer::ToString(const void *start, bool deep) const
+Pointer::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
@@ -105,7 +123,7 @@ Pointer::ToString(const void *start, bool deep) const
     {
         if (deep)
         {
-            ss << m_type->ToString(*ptr, true);
+            ss << m_type->ToString(*ptr, true, propProv);
         }
         else
         {
@@ -121,7 +139,7 @@ Pointer::ToString(const void *start, bool deep) const
 }
 
 OString
-UInt16::ToString(const void *start, bool deep) const
+UInt16::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
@@ -138,7 +156,7 @@ UInt16::ToString(const void *start, bool deep) const
 }
 
 OString
-UInt16BE::ToString(const void *start, bool deep) const
+UInt16BE::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
@@ -157,7 +175,7 @@ UInt16BE::ToString(const void *start, bool deep) const
 }
 
 OString
-UInt32::ToString(const void *start, bool deep) const
+UInt32::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
@@ -173,8 +191,18 @@ UInt32::ToString(const void *start, bool deep) const
     return ss.str();
 }
 
+bool
+UInt32::ToInt(const void *start, int &result) const
+{
+    const int *dwPtr = reinterpret_cast<const int *>(start);
+    
+    result = *dwPtr;
+
+    return true;
+}
+
 OString
-UInt32BE::ToString(const void *start, bool deep) const
+UInt32BE::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
@@ -194,8 +222,53 @@ UInt32BE::ToString(const void *start, bool deep) const
     return ss.str();
 }
 
+ByteArray::ByteArray(int size)
+    : BaseMarshaller("ByteArray"), m_size(size)
+{
+}
+
+ByteArray::ByteArray(const OString &sizePropertyBinding)
+    : BaseMarshaller("ByteArray"), m_size(0)
+{
+    SetPropertyBinding("Size", sizePropertyBinding);
+}
+
+Logging::Node *
+ByteArray::ToNode(const void *start, bool deep, IPropertyProvider *propProv) const
+{
+    int size = m_size;
+
+    if (size <= 0)
+    {
+        if (HasPropertyBinding("Size"))
+        {
+            propProv->QueryForProperty(GetPropertyBinding("Size"), size);
+        }
+    }
+
+    Logging::DataNode *node = new Logging::DataNode("Value");
+    node->AddField("Type", "ByteArray");
+
+    OOStringStream ss;
+    ss << size;
+    node->AddField("Size", ss.str());
+
+    if (size > 0)
+    {
+        node->SetData(start, size);
+    }
+
+    return node;
+}
+
 OString
-AsciiString::ToString(const void *start, bool deep) const
+ByteArray::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
+{
+    return "TODO";
+}
+
+OString
+AsciiString::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
@@ -206,7 +279,7 @@ AsciiString::ToString(const void *start, bool deep) const
 }
 
 OString
-UnicodeString::ToString(const void *start, bool deep) const
+UnicodeString::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
@@ -244,18 +317,20 @@ Enumeration::Enumeration(const char *name, const char *firstName, ...)
     va_end(args);
 }
 
-void
-Enumeration::AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const
+Logging::Node *
+Enumeration::ToNode(const void *start, bool deep, IPropertyProvider *propProv) const
 {
-    Logging::Element *el = new Logging::Element("value");
-    parentElement->AppendChild(el);
-    el->AddField("type", "enum");
-    el->AddField("subtype", m_typeName);
-    el->AddField("value", ToString(start, false));
+    Logging::Element *el = new Logging::Element("Value");
+
+    el->AddField("Type", "Enum");
+    el->AddField("SubType", m_typeName);
+    el->AddField("Value", ToString(start, false, propProv));
+
+    return el;
 }
 
 OString
-Enumeration::ToString(const void *start, bool deep) const
+Enumeration::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
 {
     const DWORD *dwPtr = reinterpret_cast<const DWORD *>(start);
 
@@ -266,7 +341,7 @@ Enumeration::ToString(const void *start, bool deep) const
     }
     else
     {
-        return UInt32::ToString(start, deep);
+        return UInt32::ToString(start, deep, propProv);
     }
 }
 
@@ -302,16 +377,15 @@ Structure::Initialize(const char *firstFieldName, va_list args)
     }
 }
 
-void
-Structure::AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const
+Logging::Node *
+Structure::ToNode(const void *start, bool deep, IPropertyProvider *propProv) const
 {
     const void **ptr = (const void **) start;
 
-    Logging::Element *structElement = new Logging::Element("value");
-    parentElement->AppendChild(structElement);
+    Logging::Element *structElement = new Logging::Element("Value");
 
-    structElement->AddField("type", "struct");
-    structElement->AddField("subtype", m_typeName);
+    structElement->AddField("Type", "Struct");
+    structElement->AddField("SubType", m_typeName);
 
     for (unsigned int i = 0; i < m_fields.size(); i++)
     {
@@ -319,16 +393,18 @@ Structure::AppendToElement(Logging::Element *parentElement, const void *start, b
 
         const void *fieldPtr = reinterpret_cast<const char *>(start) + field.GetOffset();
 
-        Logging::Element *fieldElement = new Logging::Element("field");
+        Logging::Element *fieldElement = new Logging::Element("Field");
         structElement->AppendChild(fieldElement);
-        fieldElement->AddField("name", field.GetName());
 
-        field.GetMarshaller()->AppendToElement(fieldElement, fieldPtr, true);
+        fieldElement->AddField("Name", field.GetName());
+        fieldElement->AppendChild(field.GetMarshaller()->ToNode(fieldPtr, true, propProv));
     }
+
+    return structElement;
 }
 
 OString
-Structure::ToString(const void *start, bool deep) const
+Structure::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
@@ -343,7 +419,7 @@ Structure::ToString(const void *start, bool deep) const
         if (i > 0)
             ss << ", ";
 
-        ss << field.GetName() << "=" << field.GetMarshaller()->ToString(fieldPtr, true);
+        ss << field.GetName() << "=" << field.GetMarshaller()->ToString(fieldPtr, true, propProv);
     }
 
     ss << " ]";
@@ -364,7 +440,7 @@ StructurePtr::StructurePtr(const char *firstFieldName, ...)
 namespace Winsock {
 
 OString
-Ipv4InAddr::ToString(const void *start, bool deep) const
+Ipv4InAddr::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
