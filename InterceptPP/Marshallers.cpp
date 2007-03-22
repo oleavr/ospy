@@ -107,7 +107,9 @@ Pointer::ToNode(const void *start, bool deep, IPropertyProvider *propProv) const
 
     if (*ptr != NULL && deep)
     {
-        el->AppendChild(m_type->ToNode(*ptr, true, propProv));
+        Logging::Node *node = m_type->ToNode(*ptr, true, propProv);
+        if (node != NULL)
+            el->AppendChild(node);
     }
 
     return el;
@@ -246,15 +248,17 @@ ByteArray::ToNode(const void *start, bool deep, IPropertyProvider *propProv) con
         }
     }
 
-    Logging::DataNode *node = new Logging::DataNode("Value");
-    node->AddField("Type", "ByteArray");
-
-    OOStringStream ss;
-    ss << size;
-    node->AddField("Size", ss.str());
-
+    Logging::DataNode *node = NULL;
+    
     if (size > 0)
     {
+        node = new Logging::DataNode("Value");
+        node->AddField("Type", "ByteArray");
+
+        OOStringStream ss;
+        ss << size;
+        node->AddField("Size", ss.str());
+
         node->SetData(start, size);
     }
 
@@ -397,7 +401,9 @@ Structure::ToNode(const void *start, bool deep, IPropertyProvider *propProv) con
         structElement->AppendChild(fieldElement);
 
         fieldElement->AddField("Name", field.GetName());
-        fieldElement->AppendChild(field.GetMarshaller()->ToNode(fieldPtr, true, propProv));
+        Logging::Node *valueNode = field.GetMarshaller()->ToNode(fieldPtr, true, propProv);
+        if (valueNode != NULL)
+            fieldElement->AppendChild(valueNode);
     }
 
     return structElement;

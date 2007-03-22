@@ -122,12 +122,11 @@ Logging::Node *
 Argument::ToNode(bool deep, IPropertyProvider *propProv) const
 {
     Logging::Element *el = new Logging::Element("Argument");
-
     el->AddField("Name", m_spec->GetName());
 
-    ArgumentDirection dir = m_spec->GetDirection();
-
-    el->AppendChild(m_spec->GetMarshaller()->ToNode(m_data, deep, propProv));
+    Logging::Node *valueNode = m_spec->GetMarshaller()->ToNode(m_data, deep, propProv);
+    if (valueNode != NULL)
+        el->AppendChild(valueNode);
 
     return el;
 }
@@ -668,9 +667,9 @@ FunctionCall::AppendArgumentsToElement(Logging::Element *el)
 
 				marshaller.SetFormatHex(hex);
 
-				Logging::Element *valueElement = new Logging::Element("Value");
-                argElement->AppendChild(valueElement);
-                valueElement->AppendChild(marshaller.ToNode(&args[i], true, this));
+                Logging::Node *valueNode = marshaller.ToNode(&args[i], true, this);
+                if (valueNode != NULL)
+                    argElement->AppendChild(valueNode);
 		    }
 	    }
     }
