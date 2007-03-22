@@ -55,8 +55,8 @@ protected:
 class Node : public BaseObject
 {
 public:
-    typedef OMap<OString, OString>::Type FieldMap;
-    typedef FieldMap::const_iterator FieldMapConstIter;
+    typedef OList<pair<OString, OString>>::Type FieldList;
+    typedef FieldList::const_iterator FieldListConstIter;
 
     typedef OList<Node *>::Type ChildList;
     typedef ChildList::const_iterator ChildListConstIter;
@@ -66,11 +66,12 @@ public:
 
     const OString &GetName() const { return m_name; }
 
+    bool GetContentIsRaw() const { return m_contentIsRaw; }
     const OString &GetContent() const { return m_content; }
 
 	unsigned int GetFieldCount() const { return static_cast<unsigned int>(m_fields.size()); }
-    FieldMapConstIter FieldsIterBegin() const { return m_fields.begin(); }
-    FieldMapConstIter FieldsIterEnd() const { return m_fields.end(); }
+    FieldListConstIter FieldsIterBegin() const { return m_fields.begin(); }
+    FieldListConstIter FieldsIterEnd() const { return m_fields.end(); }
     void AddField(const OString &name, const OString &value);
 
 	unsigned int GetChildCount() const { return static_cast<unsigned int>(m_children.size()); }
@@ -79,8 +80,9 @@ public:
 
 protected:
     OString m_name;
+    bool m_contentIsRaw;
     OString m_content;
-    FieldMap m_fields;
+    FieldList m_fields;
     ChildList m_children;
 };
 
@@ -97,11 +99,22 @@ public:
 class TextNode : public Node
 {
 public:
-    TextNode(const OString &name)
+    TextNode(const OString &name, const OString &text="")
         : Node(name)
-    {}
+    {
+        m_content = text;
+    }
 
-    void SetContent(const OString &content) { m_content = content; }
+    void SetText(const OString &text) { m_content = text; }
+};
+
+class DataNode : public Node
+{
+public:
+    DataNode(const OString &name);
+
+    void SetData(const OString &data);
+    void SetData(const void *buf, int size);
 };
 
 class Event : public Element

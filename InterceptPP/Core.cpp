@@ -119,23 +119,29 @@ const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 OVector<Signature>::Type Function::prologSignatures;
 
 Logging::Node *
-Argument::ToNode(bool deep) const
+Argument::ToNode(bool deep, IPropertyProvider *propProv) const
 {
-    Logging::Element *el = new Logging::Element("argument");
+    Logging::Element *el = new Logging::Element("Argument");
 
-    el->AddField("name", m_spec->GetName());
+    el->AddField("Name", m_spec->GetName());
 
     ArgumentDirection dir = m_spec->GetDirection();
 
-    m_spec->GetMarshaller()->AppendToElement(el, m_data, deep);
+    el->AppendChild(m_spec->GetMarshaller()->ToNode(m_data, deep, propProv));
 
     return el;
 }
 
 OString
-Argument::ToString(bool deep) const
+Argument::ToString(bool deep, IPropertyProvider *propProv) const
 {
-    return m_spec->GetMarshaller()->ToString(m_data, deep);
+    return m_spec->GetMarshaller()->ToString(m_data, deep, propProv);
+}
+
+bool
+Argument::ToInt(int &result) const
+{
+    return m_spec->GetMarshaller()->ToInt(m_data, result);
 }
 
 ArgumentListSpec::ArgumentListSpec(unsigned int count, ...)
@@ -482,10 +488,9 @@ Function::OnEnter(FunctionCall *call)
 
 	if (handler == NULL || !handler(call))
 	{        
-        Logging::Event *ev = GetLogger()->NewEvent("functioncall");
+        Logging::Event *ev = GetLogger()->NewEvent("FunctionCall");
 
-        Logging::TextNode *textNode = new Logging::TextNode("name");
-        textNode->SetContent(GetFullName());
+        Logging::TextNode *textNode = new Logging::TextNode("Name", GetFullName());
         ev->AppendChild(textNode);
 
         call->AppendCpuContextToElement(ev);
@@ -570,9 +575,9 @@ FunctionCall::ShouldLogArgumentDeep(const Argument *arg) const
 void
 FunctionCall::AppendCpuContextToElement(Logging::Element *el)
 {
-    Logging::Element *ctxEl = new Logging::Element("cpucontext");
+    Logging::Element *ctxEl = new Logging::Element("CpuContext");
 
-    ctxEl->AddField("direction", (m_state == FUNCTION_CALL_ENTERING) ? "in" : "out");
+    ctxEl->AddField("Direction", (m_state == FUNCTION_CALL_ENTERING) ? "In" : "Out");
 
     AppendCpuRegisterToElement(ctxEl, "eax", m_cpuCtxLive->eax);
     AppendCpuRegisterToElement(ctxEl, "ebx", m_cpuCtxLive->ebx);
@@ -589,13 +594,13 @@ FunctionCall::AppendCpuContextToElement(Logging::Element *el)
 void
 FunctionCall::AppendCpuRegisterToElement(Logging::Element *el, const char *name, DWORD value)
 {
-    Logging::Element *regEl = new Logging::Element("register");
+    Logging::Element *regEl = new Logging::Element("Register");
     el->AppendChild(regEl);
-    regEl->AddField("name", name);
+    regEl->AddField("Name", name);
 
     OOStringStream ss;
     ss << "0x" << hex << value;
-    regEl->AddField("value", ss.str());
+    regEl->AddField("Value", ss.str());
 }
 
 void
@@ -616,16 +621,16 @@ FunctionCall::AppendArgumentsToElement(Logging::Element *el)
 
         if (logIt)
         {
-            Logging::Element *argsEl = new Logging::Element("arguments");
+            Logging::Element *argsEl = new Logging::Element("Arguments");
             el->AppendChild(argsEl);
-            argsEl->AddField("direction", (m_state == FUNCTION_CALL_ENTERING) ? "in" : "out");
+            argsEl->AddField("Direction", (m_state == FUNCTION_CALL_ENTERING) ? "In" : "Out");
 
             for (unsigned int i = 0; i < args->GetCount(); i++)
             {
                 const Argument &arg = (*args)[i];
 
                 if (!(m_state == FUNCTION_CALL_LEAVING && arg.GetSpec()->GetDirection() == ARG_DIR_IN))
-			        argsEl->AppendChild(arg.ToNode(ShouldLogArgumentDeep(&arg)));
+			        argsEl->AppendChild(arg.ToNode(ShouldLogArgumentDeep(&arg), this));
             }
         }
     }
@@ -635,9 +640,9 @@ FunctionCall::AppendArgumentsToElement(Logging::Element *el)
         if (m_state == FUNCTION_CALL_LEAVING)
             return;
 
-        Logging::Element *argsEl = new Logging::Element("arguments");
+        Logging::Element *argsEl = new Logging::Element("Arguments");
         el->AppendChild(argsEl);
-        argsEl->AddField("direction", "in");
+        argsEl->AddField("Direction", "In");
 
 	    int argsSize = spec->GetArgsSize();
 	    if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN && argsSize % sizeof(DWORD) == 0)
@@ -648,12 +653,12 @@ FunctionCall::AppendArgumentsToElement(Logging::Element *el)
 
 		    for (unsigned int i = 0; i < argsSize / sizeof(DWORD); i++)
 		    {
-				Logging::Element *argElement = new Logging::Element("argument");
+				Logging::Element *argElement = new Logging::Element("Argument");
                 argsEl->AppendChild(argElement);
 
 				OOStringStream ss;
-				ss << "arg" << (i + 1);
-				argElement->AddField("name", ss.str());
+				ss << "Arg" << (i + 1);
+				argElement->AddField("Name", ss.str());
 
 				bool hex = false;
 
@@ -663,16 +668,16 @@ FunctionCall::AppendArgumentsToElement(Logging::Element *el)
 
 				marshaller.SetFormatHex(hex);
 
-				Logging::Element *valueElement = new Logging::Element("value");
+				Logging::Element *valueElement = new Logging::Element("Value");
                 argElement->AppendChild(valueElement);
-				marshaller.AppendToElement(valueElement, &args[i], true);
+                valueElement->AppendChild(marshaller.ToNode(&args[i], true, this));
 		    }
 	    }
     }
 }
 
 OString
-FunctionCall::ToString() const
+FunctionCall::ToString()
 {
 	FunctionSpec *spec = m_function->GetSpec();
 
@@ -692,7 +697,7 @@ FunctionCall::ToString() const
             if (i)
 			    ss << ", ";
 
-            ss << arg.ToString(ShouldLogArgumentDeep(&arg));
+            ss << arg.ToString(ShouldLogArgumentDeep(&arg), this);
         }
 
         ss << ")";
@@ -730,7 +735,32 @@ FunctionCall::ToString() const
 bool
 FunctionCall::QueryForProperty(const OString &query, int &result)
 {
-	return true;
+    OString propObj = query.substr(0, 4);
+    OString propArg = query.substr(4);
+
+    if (propObj == "reg.")
+    {
+        if (propArg == "eax")
+        {
+            result = m_cpuCtxLive->eax;
+            return true;
+        }
+        // TODO: complete this and make it somewhat more elegant
+    }
+    else if (propObj == "arg.")
+    {
+        for (unsigned int i = 0; i < m_arguments->GetCount(); i++)
+        {
+            const Argument &arg = (*m_arguments)[i];
+
+            if (arg.GetSpec()->GetName() == propArg)
+            {
+                return arg.ToInt(result);
+            }
+        }
+    }
+
+	return false;
 }
 
 } // namespace InterceptPP

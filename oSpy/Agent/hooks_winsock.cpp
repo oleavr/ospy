@@ -923,7 +923,7 @@ wsock32_recv_done(int retval,
   return retval;
 }
 
-#define TESTING_INTERCEPTPP 0
+#define TESTING_INTERCEPTPP 1
 
 HOOK_GLUE_EXTENDED(getaddrinfo, (4 * 4))
 
@@ -1026,14 +1026,14 @@ hook_winsock()
     FunctionSpec *recvFuncSpec = new FunctionSpec("recv");
     recvFuncSpec->SetArguments(4,
         new ArgumentSpec("s", ARG_DIR_IN, new Marshaller::UInt32(true)),
-        new ArgumentSpec("buf", ARG_DIR_OUT, new Marshaller::UInt32(true)),
+        new ArgumentSpec("buf", ARG_DIR_OUT, new Marshaller::ByteArrayPtr("reg.eax")),
         new ArgumentSpec("len", ARG_DIR_IN, new Marshaller::UInt32()),
         new ArgumentSpec("flags", ARG_DIR_IN, new Marshaller::UInt32(true)));
 
     FunctionSpec *sendFuncSpec = new FunctionSpec("send");
     sendFuncSpec->SetArguments(4,
         new ArgumentSpec("s", ARG_DIR_IN, new Marshaller::UInt32(true)),
-        new ArgumentSpec("buf", ARG_DIR_IN, new Marshaller::UInt32(true)),
+        new ArgumentSpec("buf", ARG_DIR_IN, new Marshaller::ByteArrayPtr("arg.len")),
         new ArgumentSpec("len", ARG_DIR_IN, new Marshaller::UInt32()),
         new ArgumentSpec("flags", ARG_DIR_IN, new Marshaller::UInt32(true)));
 

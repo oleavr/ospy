@@ -37,7 +37,7 @@ NullLogger::NewEvent(const OString &eventType)
 }
 
 Node::Node(const OString &name)
-    : m_name(name)
+    : m_name(name), m_contentIsRaw(false)
 {
 }
 
@@ -53,17 +53,36 @@ Node::~Node()
 void
 Node::AddField(const OString &name, const OString &value)
 {
-    m_fields[name] = value;
+    m_fields.push_back(pair<OString, OString>(name, value));
+}
+
+DataNode::DataNode(const OString &name)
+    : Node(name)
+{
+    m_contentIsRaw = true;
+}
+
+void
+DataNode::SetData(const OString &data)
+{
+    m_content = data;
+}
+
+void
+DataNode::SetData(const void *buf, int size)
+{
+    m_content.resize(size);
+    memcpy(const_cast<char *>(m_content.data()), buf, size);
 }
 
 Event::Event(Logger *logger, unsigned int id, const OString &eventType)
-    : Element("event"), m_logger(logger)
+    : Element("Event"), m_logger(logger)
 {
-    AddField("type", eventType);
-
     OOStringStream ss;
     ss << id;
-    AddField("id", ss.str());
+    AddField("Id", ss.str());
+
+    AddField("Type", eventType);
 }
 
 } // namespace Logging

@@ -29,23 +29,32 @@
 
 namespace InterceptPP {
 
+class IPropertyProvider
+{
+public:
+	virtual bool QueryForProperty(const OString &query, int &result) = 0;
+};
+
 class BaseMarshaller : public BaseObject
 {
 public:
     BaseMarshaller(const OString &typeName);
     virtual ~BaseMarshaller() {};
 
-	const OString &GetProperty(const OString &key) { return m_props[key]; }
-	void SetProperty(const OString &key, const OString &value) { m_props[key] = value; }
-	void SetProperties(const char *firstPropName, ...);
+    bool HasPropertyBinding(const OString &propName) const;
+	const OString &GetPropertyBinding(const OString &propName) const;
+	void SetPropertyBinding(const OString &propName, const OString &value) { m_propBindings[propName] = value; }
+	void SetPropertyBindings(const char *firstPropName, ...);
 
     virtual unsigned int GetSize() const = 0;
-    virtual void AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const;
-    virtual OString ToString(const void *start, bool deep) const = 0;
+    virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const = 0;
+    virtual bool ToInt(const void *start, int &result) const { return false; }
 
 protected:
     OString m_typeName;
-	OMap<OString, OString>::Type m_props;
+    typedef OMap<OString, OString>::Type PropBindingsMap;
+	PropBindingsMap m_propBindings;
 };
 
 namespace Marshaller {
@@ -57,8 +66,8 @@ public:
     virtual ~Pointer();
 
     virtual unsigned int GetSize() const { return sizeof(void *); }
-    virtual void AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const;
-	virtual OString ToString(const void *start, bool deep) const;
+    virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
 
 protected:
     BaseMarshaller *m_type;
@@ -86,7 +95,7 @@ public:
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(WORD); }
-	virtual OString ToString(const void *start, bool deep) const;
+	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
 };
 
 class UInt16BE : public Integer
@@ -97,7 +106,7 @@ public:
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(WORD); }
-	virtual OString ToString(const void *start, bool deep) const;
+	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
 };
 
 class UInt32 : public Integer
@@ -108,7 +117,8 @@ public:
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(DWORD); }
-	virtual OString ToString(const void *start, bool deep) const;
+	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
+    virtual bool ToInt(const void *start, int &result) const;
 };
 
 class UInt32BE : public Integer
@@ -119,7 +129,7 @@ public:
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(DWORD); }
-	virtual OString ToString(const void *start, bool deep) const;
+	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
 };
 
 class UInt32Ptr : public Pointer
@@ -133,8 +143,27 @@ public:
 class ByteArray : public BaseMarshaller
 {
 public:
-	ByteArray(int size=-1);
-	ByteArray(const OString &sizePropertyQuery);
+	ByteArray(int size=0);
+	ByteArray(const OString &sizePropertyBinding);
+
+    virtual unsigned int GetSize() const { return m_size; }
+    virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
+
+protected:
+    int m_size;
+};
+
+class ByteArrayPtr : public Pointer
+{
+public:
+    ByteArrayPtr(int size=0)
+        : Pointer(new ByteArray(size))
+    {}
+
+	ByteArrayPtr(const OString &sizePropertyBinding)
+        : Pointer(new ByteArray(sizePropertyBinding))
+    {}
 };
 
 class CString : public BaseMarshaller
@@ -160,7 +189,7 @@ public:
         : CString("AsciiString", sizeof(CHAR), length)
     {}
 
-    virtual OString ToString(const void *start, bool deep) const;
+	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
 };
 
 class AsciiStringPtr : public Pointer
@@ -178,7 +207,7 @@ public:
         : CString("UnicodeString", sizeof(WCHAR), length)
     {}
 
-    virtual OString ToString(const void *start, bool deep) const;
+	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
 };
 
 class UnicodeStringPtr : public Pointer
@@ -194,8 +223,8 @@ class Enumeration : public UInt32
 public:
     Enumeration(const char *name, const char *firstName, ...);
 
-    void AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const;
-    virtual OString ToString(const void *start, bool deep) const;
+    virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
 
 protected:
     OMap<DWORD, OString>::Type m_defs;
@@ -226,8 +255,8 @@ public:
 
 	// TODO: fix GetSize
     virtual unsigned int GetSize() const { return sizeof(void *); }
-    virtual void AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const;
-    virtual OString ToString(const void *start, bool deep) const;
+    virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
 
 protected:
     OVector<StructureField>::Type m_fields;
@@ -265,11 +294,11 @@ class Ipv4InAddr : public BaseMarshaller
 {
 public:
     Ipv4InAddr()
-        : BaseMarshaller("ipv4inaddr")
+        : BaseMarshaller("Ipv4InAddr")
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(DWORD); }
-	virtual OString ToString(const void *start, bool deep) const;
+	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
 };
 
 class Ipv4Sockaddr : public Structure

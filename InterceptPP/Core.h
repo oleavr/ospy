@@ -89,12 +89,6 @@ class FunctionCall;
 
 typedef bool (*FunctionCallHandler) (FunctionCall *call);
 
-class IPropertyProvider
-{
-public:
-	virtual bool QueryForProperty(const OString &query, int &result) = 0;
-};
-
 class ArgumentSpec : public BaseObject
 {
 public:
@@ -125,8 +119,9 @@ public:
 
     ArgumentSpec *GetSpec() const { return m_spec; }
 
-    Logging::Node *ToNode(bool deep) const;
-    OString ToString(bool deep) const;
+    Logging::Node *ToNode(bool deep, IPropertyProvider *propProv) const;
+    OString ToString(bool deep, IPropertyProvider *propProv) const;
+    bool ToInt(int &result) const;
 
 protected:
     ArgumentSpec *m_spec;
@@ -294,7 +289,7 @@ public:
 
     void AppendCpuContextToElement(Logging::Element *el);
     void AppendArgumentsToElement(Logging::Element *el);
-	OString ToString() const;
+	OString ToString();
 
 	virtual bool QueryForProperty(const OString &query, int &result);
 
