@@ -89,6 +89,12 @@ class FunctionCall;
 
 typedef bool (*FunctionCallHandler) (FunctionCall *call);
 
+class IPropertyProvider
+{
+public:
+	virtual bool QueryForProperty(const OString &query, int &result) = 0;
+};
+
 class ArgumentSpec : public BaseObject
 {
 public:
@@ -254,7 +260,7 @@ private:
     void OnLeaveWrapper(CpuContext *cpuCtx, FunctionTrampoline *trampoline, FunctionCall *call, DWORD *lastError);
 };
 
-class FunctionCall : public BaseObject
+class FunctionCall : public BaseObject, IPropertyProvider
 {
 public:
 	FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxEnter);
@@ -289,6 +295,8 @@ public:
     void AppendCpuContextToElement(Logging::Element *el);
     void AppendArgumentsToElement(Logging::Element *el);
 	OString ToString() const;
+
+	virtual bool QueryForProperty(const OString &query, int &result);
 
 protected:
 	Function *m_function;

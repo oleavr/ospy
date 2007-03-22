@@ -727,4 +727,10 @@ FunctionCall::ToString() const
 	return ss.str();
 }
 
+bool
+FunctionCall::QueryForProperty(const OString &query, int &result)
+{
+	return true;
+}
+
 } // namespace InterceptPP

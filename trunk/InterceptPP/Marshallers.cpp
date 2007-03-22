@@ -28,6 +28,30 @@
 
 namespace InterceptPP {
 
+BaseMarshaller::BaseMarshaller(const OString &typeName)
+	: m_typeName(typeName)
+{
+}
+
+void
+BaseMarshaller::SetProperties(const char *firstPropName, ...)
+{
+    va_list args;
+    va_start(args, firstPropName);
+
+    const char *propName = firstPropName;
+    while (propName != NULL)
+    {
+		const char *propValue = va_arg(args, const char *);
+
+		m_props[propName] = propValue;
+
+        propName = va_arg(args, const char *);
+    }
+
+    va_end(args);
+}
+
 void
 BaseMarshaller::AppendToElement(Logging::Element *parentElement, const void *start, bool deep) const
 {
