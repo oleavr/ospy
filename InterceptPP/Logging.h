@@ -36,6 +36,10 @@ class Logger : public BaseObject
 public:
     virtual Event *NewEvent(const OString &eventType) = 0;
     virtual void SubmitEvent(Event *ev) = 0;
+
+    void LogInfo(const char *format, ...);
+    void LogWarning(const char *format, ...);
+    void LogError(const char *format, ...);
 };
 
 class NullLogger : public Logger
