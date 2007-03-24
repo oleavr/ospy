@@ -24,6 +24,8 @@
 //
 
 #include "stdafx.h"
+#include "BinaryLogger.h"
+#include "HookManager.h"
 #include "logging_old.h"
 #include "hooks.h"
 #include "util.h"
@@ -32,121 +34,6 @@
 #ifdef _MANAGED
 #pragma managed(push, off)
 #endif
-
-using namespace InterceptPP;
-
-class BinarySerializer : public BaseObject
-{
-public:
-	const OString &GetData() { return m_buf; }
-
-	void AppendNode(Logging::Node *node);
-	void AppendString(const OString &s);
-	void AppendDWord(DWORD dw);
-
-protected:
-	OString m_buf;
-};
-
-void
-BinarySerializer::AppendNode(Logging::Node *node)
-{
-	// Name
-	AppendString(node->GetName());
-
-	// Fields
-	{
-		AppendDWord(node->GetFieldCount());
-		Logging::Node::FieldListConstIter iter, endIter = node->FieldsIterEnd();
-
-		for (iter = node->FieldsIterBegin(); iter != endIter; iter++)
-		{
-			AppendString(iter->first);
-			AppendString(iter->second);
-		}
-	}
-
-    // Content
-    AppendDWord(node->GetContentIsRaw());
-    AppendString(node->GetContent());
-
-	// Children
-	{
-		AppendDWord(node->GetChildCount());
-		Logging::Node::ChildListConstIter iter, endIter = node->ChildrenIterEnd();
-
-		for (iter = node->ChildrenIterBegin(); iter != endIter; iter++)
-		{
-			AppendNode(*iter);
-		}
-	}
-}
-
-void
-BinarySerializer::AppendString(const OString &s)
-{
-	AppendDWord(static_cast<DWORD>(s.size()));
-    if (s.size() > 0)
-	    m_buf.append(s.data(), s.size());
-}
-
-void
-BinarySerializer::AppendDWord(DWORD dw)
-{
-	m_buf.append(reinterpret_cast<const char *>(&dw), sizeof(dw));
-}
-
-class BinaryLogger : public Logging::Logger
-{
-public:
-    BinaryLogger(const OString &filename);
-	virtual ~BinaryLogger();
-
-    virtual Logging::Event *NewEvent(const OString &eventType);
-    virtual void SubmitEvent(Logging::Event *ev);
-
-protected:
-	HANDLE m_handle;
-    unsigned int m_id;
-};
-
-BinaryLogger::BinaryLogger(const OString &filename)
-    : m_id(0)
-{
-	m_handle = CreateFile(filename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (m_handle == INVALID_HANDLE_VALUE)
-		throw runtime_error("CreateFile failed");
-}
-
-BinaryLogger::~BinaryLogger()
-{
-	CloseHandle(m_handle);
-}
-
-Logging::Event *
-BinaryLogger::NewEvent(const OString &eventType)
-{
-    // TODO: have m_id in shared memory so everything that gets logged
-    //       shares the same namespace.
-    return new Logging::Event(this, m_id++, eventType);
-}
-
-void
-BinaryLogger::SubmitEvent(Logging::Event *ev)
-{
-	BinarySerializer serializer;
-
-	serializer.AppendNode(ev);
-
-	const OString &buf = serializer.GetData();
-
-	DWORD bytesWritten;
-	if (!WriteFile(m_handle, buf.data(), static_cast<DWORD>(buf.size()), &bytesWritten, NULL))
-		throw runtime_error("WriteFile failed");
-
-	if (bytesWritten != buf.size())
-		throw runtime_error("short write");
-}
 
 BOOL APIENTRY
 DllMain(HMODULE hModule,
@@ -169,6 +56,16 @@ DllMain(HMODULE hModule,
             InterceptPP::Initialize();
             InterceptPP::SetLogger(new BinaryLogger("c:\\oSpyAgentLog.bin"));
 			//COverlappedManager::Init();
+
+            HookManager *mgr = HookManager::Instance();
+            try
+            {
+                mgr->LoadDefinitions();
+            }
+            catch (exception &e)
+            {
+                message_logger_log_message("LoadDefinitions", NULL, MESSAGE_CTX_ERROR, "LoadDefinitions failed: %s", e.what());
+            }
 
 			//hook_kernel32();
 			hook_winsock();

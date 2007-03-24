@@ -195,11 +195,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\BinaryLogger.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\byte_buffer.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\hooking.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\HookManager.cpp"
 				>
 			</File>
 			<File
@@ -281,11 +289,19 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\BinaryLogger.h"
+				>
+			</File>
+			<File
 				RelativePath=".\byte_buffer.h"
 				>
 			</File>
 			<File
 				RelativePath=".\hooking.h"
+				>
+			</File>
+			<File
+				RelativePath=".\HookManager.h"
 				>
 			</File>
 			<File

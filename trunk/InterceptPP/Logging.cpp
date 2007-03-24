@@ -30,6 +30,21 @@ namespace InterceptPP {
 
 namespace Logging {
 
+void
+Logger::LogInfo(const char *format, ...)
+{
+}
+
+void
+Logger::LogWarning(const char *format, ...)
+{
+}
+
+void
+Logger::LogError(const char *format, ...)
+{
+}
+
 Event *
 NullLogger::NewEvent(const OString &eventType)
 {
