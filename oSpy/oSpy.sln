@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestPacketStream", "Tests\P
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oSpyAgent", "Agent\SocketSpyAgent.vcproj", "{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SignatureTest", "Agent\SignatureTest\SignatureTest.vcproj", "{BF9EC593-604C-45AA-865E-D57A0A05C1E9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InterceptPPTest", "Agent\InterceptPPTest\InterceptPPTest.vcproj", "{BF9EC593-604C-45AA-865E-D57A0A05C1E9}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InterceptPP", "..\InterceptPP\InterceptPP.vcproj", "{B0F22416-9E7A-4265-B431-520C6ECAFFBA}"
 EndProject

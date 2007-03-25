@@ -25,6 +25,7 @@
 
 #include "stdafx.h"
 #include "Logging.h"
+#include <strsafe.h>
 
 namespace InterceptPP {
 
@@ -33,16 +34,47 @@ namespace Logging {
 void
 Logger::LogInfo(const char *format, ...)
 {
+    va_list args;
+    va_start(args, format);
+
+    LogMessage("Info", format, args);
+
+    va_end(args);
 }
 
 void
 Logger::LogWarning(const char *format, ...)
 {
+    va_list args;
+    va_start(args, format);
+
+    LogMessage("Warning", format, args);
+
+    va_end(args);
 }
 
 void
 Logger::LogError(const char *format, ...)
 {
+    va_list args;
+    va_start(args, format);
+
+    LogMessage("Error", format, args);
+
+    va_end(args);
+}
+
+#define LOG_BUFFER_SIZE 2048
+
+void
+Logger::LogMessage(const char *type, const char *format, va_list args)
+{
+    char buf[LOG_BUFFER_SIZE];
+    StringCbVPrintfA(buf, sizeof(buf), format, args);
+
+    Event *ev = NewEvent(type);
+    ev->AddField("Message", buf);
+    ev->Submit();
 }
 
 Event *

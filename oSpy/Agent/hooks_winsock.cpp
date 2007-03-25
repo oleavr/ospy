@@ -1017,6 +1017,8 @@ hook_winsock()
 #endif
 
 #if TESTING_INTERCEPTPP
+
+    /*
     FunctionSpec *connFuncSpec = new FunctionSpec("connect");
     connFuncSpec->SetArguments(3,
         new ArgumentSpec("s", ARG_DIR_IN, new Marshaller::UInt32(true)),
@@ -1043,7 +1045,8 @@ hook_winsock()
     DllFunction *sendFunc = new DllFunction(wsMod, sendFuncSpec);
     connFunc->Hook();
     recvFunc->Hook();
-    sendFunc->Hook();
+    sendFunc->Hook();*/
+
 #endif
 
     // Hook the Winsock API

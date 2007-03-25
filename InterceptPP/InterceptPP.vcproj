@@ -151,11 +151,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ConsoleLogger.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Core.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\DLL.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\HookManager.cpp"
 				>
 			</File>
 			<File
@@ -209,11 +217,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ConsoleLogger.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Core.h"
 				>
 			</File>
 			<File
 				RelativePath=".\DLL.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Errors.h"
+				>
+			</File>
+			<File
+				RelativePath=".\HookManager.h"
 				>
 			</File>
 			<File

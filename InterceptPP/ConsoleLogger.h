@@ -25,11 +25,26 @@
 
 #pragma once
 
-class HookManager {
+namespace InterceptPP {
+
+namespace Logging {
+
+class ConsoleLogger : public Logger
+{
 public:
-	HookManager();
+    ConsoleLogger()
+        : m_id(0)
+    {}
 
-    static HookManager *Instance();
+    virtual Event *NewEvent(const OString &eventType);
+    virtual void SubmitEvent(Event *ev);
 
-    void LoadDefinitions();
+protected:
+    unsigned int m_id;
+
+    void PrintNode(Node *node, int level=0);
 };
+
+} // namespace Logging
+
+} // namespace InterceptPP

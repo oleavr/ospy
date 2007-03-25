@@ -25,6 +25,7 @@
 
 #include "stdafx.h"
 #include <cctype>
+#include "Core.h"
 #include "Signature.h"
 
 namespace InterceptPP {
@@ -64,7 +65,7 @@ Signature::Initialize(const SignatureSpec *spec)
     }
 
     if (m_longestIndex < 0)
-        throw runtime_error("no tokens found");
+        throw Error("no tokens found");
 }
 
 void
@@ -99,7 +100,7 @@ Signature::ParseSpec(const SignatureSpec *spec)
 
             int length = token.GetLength();
             if (length == 0)
-                throw runtime_error("invalid signature spec");
+                throw Error("invalid signature spec");
 
             m_length += token.GetLength();
             m_tokens.push_back(token);
@@ -127,7 +128,7 @@ Signature::ParseSpec(const SignatureSpec *spec)
             if (ignores > 0)
             {
                 if (ignores % 2 != 0)
-                    throw runtime_error("unbalanced questionmarks");
+                    throw Error("unbalanced questionmarks");
 
                 SignatureToken token(TOKEN_TYPE_IGNORE, ignores / 2);
 

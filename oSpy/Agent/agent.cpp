@@ -25,7 +25,6 @@
 
 #include "stdafx.h"
 #include "BinaryLogger.h"
-#include "HookManager.h"
 #include "logging_old.h"
 #include "hooks.h"
 #include "util.h"
@@ -60,11 +59,15 @@ DllMain(HMODULE hModule,
             HookManager *mgr = HookManager::Instance();
             try
             {
-                mgr->LoadDefinitions();
+                mgr->LoadDefinitions("c:\\hooks.xml");
             }
-            catch (exception &e)
+            catch (Error &e)
             {
-                message_logger_log_message("LoadDefinitions", NULL, MESSAGE_CTX_ERROR, "LoadDefinitions failed: %s", e.what());
+                GetLogger()->LogError("LoadDefinitions failed: %s", e.what());
+            }
+            catch (...)
+            {
+                GetLogger()->LogError("LoadDefinitions failed: unknown error");
             }
 
 			//hook_kernel32();

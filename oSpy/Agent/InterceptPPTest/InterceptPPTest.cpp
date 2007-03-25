@@ -1,12 +1,9 @@
-// SignatureTest.cpp : Defines the entry point for the console application.
-//
-
-#include <stdafx.h>
+#include <InterceptPP/InterceptPP.h>
+#include <InterceptPP/ConsoleLogger.h>
 #include <iostream>
-#include <TrampoLib.h>
 
 using namespace std;
-using namespace TrampoLib;
+using namespace InterceptPP;
 
 typedef enum {
     SIGNATURE_UI_STATUS_LABEL_SET = 0,
@@ -50,12 +47,35 @@ static SignatureSpec signatureSpecs[] = {
     },
 };
 
+#define DEBUG 1
+
 int main(int argc, char *argv[])
 {
-    LoadLibrary("C:\\Projects\\oSpy\\trunk\\oSpy\\bin\\Debug\\oSpyAgent.dll");
+    InterceptPP::Initialize();
+    InterceptPP::SetLogger(new Logging::ConsoleLogger());
 
-    
-    Signature s(&signatureSpecs[SIGNATURE_UI_STATUS_LABEL_SET]);
+    HookManager *mgr = HookManager::Instance();
+#if !DEBUG
+    try
+    {
+#endif
+        mgr->LoadDefinitions("c:\\hooks.xml");
+
+        cout << mgr->GetFunctionSpecCount() << " functionspecs loaded" << endl;
+#if !DEBUG
+    }
+    catch (ParserError &e)
+    {
+        GetLogger()->LogError("LoadDefinitions failed: %s", e.what());
+    }
+    catch (...)
+    {
+        GetLogger()->LogError("LoadDefinitions failed: unknown error");
+    }
+#endif
+
+    //LoadLibrary("C:\\Projects\\oSpy\\trunk\\oSpy\\bin\\Debug\\oSpyAgent.dll");
+    //Signature s(&signatureSpecs[SIGNATURE_UI_STATUS_LABEL_SET]);
 
     cout << "all good dude" << endl;
     OString str;

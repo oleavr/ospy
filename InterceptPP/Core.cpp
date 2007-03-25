@@ -283,7 +283,7 @@ Function::Hook()
     }
 
     if (spec == NULL)
-        throw runtime_error("none of the supported signatures matched");
+        throw Error("none of the supported signatures matched");
 
     FunctionTrampoline *trampoline = CreateTrampoline(spec->numBytesToCopy);
 

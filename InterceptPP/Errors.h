@@ -25,9 +25,46 @@
 
 #pragma once
 
-#include "stdafx.h"
-#include "Core.h"
-#include "DLL.h"
-#include "VTable.h"
-#include "HookManager.h"
-#include "Util.h"
+namespace InterceptPP {
+
+//
+// We can't use std::runtime_error because it uses std::string with the default allocator...
+//
+class Error : public exception
+{
+public:
+    Error(const OString &message)
+    {
+        m_what = message;
+    }
+
+    Error(const WCHAR *message)
+    {
+        char buf[2048];
+        WideCharToMultiByte(CP_ACP, 0, message, -1, buf, sizeof(buf), NULL, NULL);
+
+        m_what = buf;
+    }
+
+    virtual const char* what() const throw()
+    {
+        return m_what.c_str();
+    }
+
+protected:
+    OString m_what;
+};
+
+class ParserError : public Error
+{
+public:
+    ParserError(const OString &message)
+        : Error(message)
+    {}
+
+    ParserError(const WCHAR *message)
+        : Error(message)
+    {}
+};
+
+};

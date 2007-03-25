@@ -207,10 +207,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\HookManager.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\hooks_activesync.cpp"
 				>
 			</File>
@@ -298,10 +294,6 @@
 			</File>
 			<File
 				RelativePath=".\hooking.h"
-				>
-			</File>
-			<File
-				RelativePath=".\HookManager.h"
 				>
 			</File>
 			<File
