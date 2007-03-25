@@ -41,11 +41,14 @@ public:
     BaseMarshaller(const OString &typeName);
     virtual ~BaseMarshaller() {};
 
+    virtual bool SetProperty(const OString &name, const OString &value) { return false; }
+
     bool HasPropertyBinding(const OString &propName) const;
 	const OString &GetPropertyBinding(const OString &propName) const;
 	void SetPropertyBinding(const OString &propName, const OString &value) { m_propBindings[propName] = value; }
 	void SetPropertyBindings(const char *firstPropName, ...);
 
+    virtual const OString &GetName() const { return m_typeName; }
     virtual unsigned int GetSize() const = 0;
     virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
 	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const = 0;
@@ -58,6 +61,22 @@ protected:
 };
 
 namespace Marshaller {
+
+typedef BaseMarshaller *(*CreateMarshallerFunc) ();
+
+class Factory : public BaseObject
+{
+public:
+    static Factory *Instance();
+    Factory();
+
+    BaseMarshaller *CreateMarshaller(const OString &name);
+
+protected:
+    OMap<OString, CreateMarshallerFunc>::Type m_marshallers;
+
+    template<class T> static BaseMarshaller *CreateMarshallerInstance();
+};
 
 class Pointer : public BaseMarshaller
 {
@@ -79,6 +98,8 @@ public:
     Integer(const OString &typeName, bool hex=false)
         : BaseMarshaller(typeName), m_hex(hex)
     {}
+
+    virtual bool SetProperty(const OString &name, const OString &value);
 
 	bool GetFormatHex() const { return m_hex; }
 	void SetFormatHex(bool hex) { m_hex = hex; }
@@ -146,6 +167,8 @@ public:
 	ByteArray(int size=0);
 	ByteArray(const OString &sizePropertyBinding);
 
+    virtual bool SetProperty(const OString &name, const OString &value);
+
     virtual unsigned int GetSize() const { return m_size; }
     virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
 	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
@@ -164,6 +187,8 @@ public:
 	ByteArrayPtr(const OString &sizePropertyBinding)
         : Pointer(new ByteArray(sizePropertyBinding))
     {}
+
+    virtual bool SetProperty(const OString &name, const OString &value) { return m_type->SetProperty(name, value); }
 };
 
 class CString : public BaseMarshaller

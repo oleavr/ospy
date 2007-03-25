@@ -52,7 +52,7 @@ protected:
     DllFunctionList m_dllFunctions;
 
     void ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode);
-    void ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLDOMNodePtr &argNode, int argIndex);
+    ArgumentSpec *ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLDOMNodePtr &argNode, int argIndex);
     void ParseDllModuleNode(MSXML2::IXMLDOMNodePtr &dllModNode);
     void ParseDllFunctionNode(DllModule *dllMod, MSXML2::IXMLDOMNodePtr &dllFuncNode);
 };

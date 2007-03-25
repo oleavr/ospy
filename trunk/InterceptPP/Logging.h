@@ -80,6 +80,10 @@ public:
     FieldListConstIter FieldsIterBegin() const { return m_fields.begin(); }
     FieldListConstIter FieldsIterEnd() const { return m_fields.end(); }
     void AddField(const OString &name, const OString &value);
+    void AddField(const OString &name, int value);
+    void AddField(const OString &name, unsigned int value);
+    void AddField(const OString &name, unsigned long value);
+    void AddField(const OString &name, unsigned long long value);
 
 	unsigned int GetChildCount() const { return static_cast<unsigned int>(m_children.size()); }
     ChildListConstIter ChildrenIterBegin() const { return m_children.begin(); }

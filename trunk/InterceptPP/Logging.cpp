@@ -25,6 +25,7 @@
 
 #include "stdafx.h"
 #include "Logging.h"
+#include "Util.h"
 #include <strsafe.h>
 
 namespace InterceptPP {
@@ -73,7 +74,7 @@ Logger::LogMessage(const char *type, const char *format, va_list args)
     StringCbVPrintfA(buf, sizeof(buf), format, args);
 
     Event *ev = NewEvent(type);
-    ev->AddField("Message", buf);
+    ev->AppendChild(new TextNode("Message", buf));
     ev->Submit();
 }
 
@@ -103,6 +104,38 @@ Node::AddField(const OString &name, const OString &value)
     m_fields.push_back(pair<OString, OString>(name, value));
 }
 
+void
+Node::AddField(const OString &name, int value)
+{
+    OOStringStream ss;
+    ss << value;
+    AddField(name, ss.str());
+}
+
+void
+Node::AddField(const OString &name, unsigned int value)
+{
+    OOStringStream ss;
+    ss << value;
+    AddField(name, ss.str());
+}
+
+void
+Node::AddField(const OString &name, unsigned long value)
+{
+    OOStringStream ss;
+    ss << value;
+    AddField(name, ss.str());
+}
+
+void
+Node::AddField(const OString &name, unsigned long long value)
+{
+    OOStringStream ss;
+    ss << value;
+    AddField(name, ss.str());
+}
+
 DataNode::DataNode(const OString &name)
     : Node(name)
 {
@@ -125,11 +158,18 @@ DataNode::SetData(const void *buf, int size)
 Event::Event(Logger *logger, unsigned int id, const OString &eventType)
     : Element("Event"), m_logger(logger)
 {
-    OOStringStream ss;
-    ss << id;
-    AddField("Id", ss.str());
+    AddField("Id", id);
 
     AddField("Type", eventType);
+
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft);
+    unsigned long long stamp = (((unsigned long long) ft.dwHighDateTime) << 32) | ((unsigned long long) ft.dwLowDateTime);
+    AddField("Timestamp", stamp);
+
+    AddField("ProcessName", Util::GetProcessName());
+    AddField("ProcessId", GetCurrentProcessId());
+    AddField("ThreadId", GetCurrentThreadId());
 }
 
 } // namespace Logging

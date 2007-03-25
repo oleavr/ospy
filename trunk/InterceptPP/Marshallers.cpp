@@ -78,6 +78,54 @@ BaseMarshaller::ToNode(const void *start, bool deep, IPropertyProvider *propProv
 
 namespace Marshaller {
 
+Factory *
+Factory::Instance()
+{
+    static Factory *fact = NULL;
+
+    if (fact == NULL)
+        fact = new Factory();
+
+    return fact;
+}
+
+#define REGISTER_MARSHALLER(m) m_marshallers[#m] = CreateMarshallerInstance<m>
+
+Factory::Factory()
+{
+    REGISTER_MARSHALLER(Pointer);
+    REGISTER_MARSHALLER(UInt16);
+    REGISTER_MARSHALLER(UInt16BE);
+    REGISTER_MARSHALLER(UInt32);
+    REGISTER_MARSHALLER(UInt32BE);
+    REGISTER_MARSHALLER(UInt32Ptr);
+    REGISTER_MARSHALLER(ByteArray);
+    REGISTER_MARSHALLER(ByteArrayPtr);
+    REGISTER_MARSHALLER(AsciiString);
+    REGISTER_MARSHALLER(AsciiStringPtr);
+    REGISTER_MARSHALLER(UnicodeString);
+    REGISTER_MARSHALLER(UnicodeStringPtr);
+    REGISTER_MARSHALLER(Registry::KeyHandle);
+    REGISTER_MARSHALLER(Winsock::Ipv4InAddr);
+    REGISTER_MARSHALLER(Winsock::Ipv4Sockaddr);
+    REGISTER_MARSHALLER(Winsock::Ipv4SockaddrPtr);
+}
+
+template<class T> BaseMarshaller *
+Factory::CreateMarshallerInstance()
+{
+    return new T();
+}
+
+BaseMarshaller *
+Factory::CreateMarshaller(const OString &name)
+{
+    if (m_marshallers.find(name) != m_marshallers.end())
+        return m_marshallers[name]();
+    else
+        return NULL;
+}
+
 Pointer::Pointer(BaseMarshaller *type)
     : BaseMarshaller("Pointer"), m_type(type)
 {}
@@ -138,6 +186,22 @@ Pointer::ToString(const void *start, bool deep, IPropertyProvider *propProv) con
     }
 
     return ss.str();
+}
+
+bool
+Integer::SetProperty(const OString &name, const OString &value)
+{
+    if (name != "Hex")
+        return false;
+
+    if (value == "true")
+        m_hex = true;
+    else if (value == "false")
+        m_hex = false;
+    else
+        return false;
+
+    return true;
 }
 
 OString
@@ -233,6 +297,26 @@ ByteArray::ByteArray(const OString &sizePropertyBinding)
     : BaseMarshaller("ByteArray"), m_size(0)
 {
     SetPropertyBinding("Size", sizePropertyBinding);
+}
+
+bool
+ByteArray::SetProperty(const OString &name, const OString &value)
+{
+    if (name != "Size")
+        return false;
+
+    char *endPtr = NULL;
+    int iVal = strtol(value.c_str(), &endPtr, 0);
+    if (endPtr == value.c_str())
+    {
+        SetPropertyBinding("Size", value);
+    }
+    else
+    {
+        m_size = iVal;
+    }
+
+    return true;
 }
 
 Logging::Node *
