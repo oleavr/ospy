@@ -23,55 +23,38 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 //
 
-#include "stdafx.h"
-#include "HookManager.h"
-#import <msxml4.dll>
+#pragma once
 
-using namespace MSXML2;
+#include "Core.h"
+#include "DLL.h"
+#import <msxml6.dll>
 
-HookManager::HookManager()
-{
-}
+namespace InterceptPP {
 
-HookManager *
-HookManager::Instance()
-{
-    static HookManager *mgr = NULL;
+class HookManager : public BaseObject {
+public:
+	HookManager();
+    ~HookManager();
 
-    if (mgr == NULL)
-        mgr = new HookManager();
+    static HookManager *Instance();
 
-    return mgr;
-}
+    void LoadDefinitions(const OString &path);
 
-void
-HookManager::LoadDefinitions()
-{
-    CoInitialize(NULL);
+    unsigned int GetFunctionSpecCount() const { return static_cast<unsigned int>(m_funcSpecs.size()); }
 
-    IXMLDOMDocument2Ptr doc;
-    HRESULT hr = doc.CreateInstance(__uuidof(DOMDocument40));
-    if (FAILED(hr))
-        throw runtime_error("CreateInstance failed");
+protected:
+    typedef OMap<OString, FunctionSpec *>::Type FunctionSpecMap;
+    typedef OMap<OICString, DllModule *>::Type DllModuleMap;
+    typedef OList<DllFunction *>::Type DllFunctionList;
 
-    doc->async = VARIANT_FALSE;
+    FunctionSpecMap m_funcSpecs;
+    DllModuleMap m_dllModules;
+    DllFunctionList m_dllFunctions;
 
-    if(doc->load("c:\\hooks.xml") != VARIANT_TRUE)
-        throw runtime_error("failed to load specs.xml");
+    void ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode);
+    void ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLDOMNodePtr &argNode, int argIndex);
+    void ParseDllModuleNode(MSXML2::IXMLDOMNodePtr &dllModNode);
+    void ParseDllFunctionNode(DllModule *dllMod, MSXML2::IXMLDOMNodePtr &dllFuncNode);
+};
 
-    Logging::Logger *logger = GetLogger();
-
-    IXMLDOMNodePtr node;
-    IXMLDOMNodeListPtr nodeList = doc->selectNodes("/Hooks/Specs/*");
-    for (int i = 0; i < nodeList->length; i++)
-    {
-        node = nodeList->item[i];
-
-
-        printf("Node (%d), <%s>:\n\t%s\n", 
-        i, (LPCSTR)pNode->nodeName, (LPCSTR)pnl->item[i]->xml);
-    }
-    nodeList.Release();
-
-    doc.Release();
-}
+} // namespace InterceptPP

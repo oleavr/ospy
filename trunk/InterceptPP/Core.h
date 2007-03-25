@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "Errors.h"
 #include "Marshallers.h"
 #include "Signature.h"
 #include "Logging.h"
@@ -61,8 +62,9 @@ typedef enum {
 } FunctionCallState;
 
 typedef enum {
-	ARG_DIR_IN  = 1,
-	ARG_DIR_OUT = 2,
+    ARG_DIR_UNKNOWN = 0,
+	ARG_DIR_IN      = 1,
+	ARG_DIR_OUT     = 2,
 } ArgumentDirection;
 
 #pragma pack(push, 1)

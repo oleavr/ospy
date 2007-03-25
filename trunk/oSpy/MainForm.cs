@@ -99,8 +99,6 @@ namespace oSpy
         {
             InitializeComponent();
 
-            XmlUtils.BinaryLogToXml("c:\\oSpyAgentLog.bin");
-
             config = ConfigManager.GetContext("MainForm");
 
             colorPool = new ColorPool();
@@ -2099,6 +2097,11 @@ namespace oSpy
         private void dumpContextMenuStrip_Opening(object sender, System.ComponentModel.CancelEventArgs e)
         {
             selBytesToolStripMenuItem.Enabled = (curSelBytes.Length > 0);
+        }
+
+        private void convertTraceToXMLToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            XmlUtils.BinaryLogToXml("c:\\oSpyAgentLog.bin");
         }
     }
 

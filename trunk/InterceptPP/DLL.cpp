@@ -37,11 +37,11 @@ DllModule::DllModule(const OString &path)
 {
     m_handle = LoadLibraryA(path.c_str());
     if (m_handle == NULL)
-        throw runtime_error("LoadLibrary failed");
+        throw Error("LoadLibrary failed");
 
     char tmp[_MAX_PATH];
     if (GetModuleBaseNameA(GetCurrentProcess(), m_handle, tmp, sizeof(tmp)) == 0)
-        throw runtime_error("GetModuleBaseName failed");
+        throw Error("GetModuleBaseName failed");
 
     m_name = tmp;
 
@@ -57,9 +57,9 @@ DllModule::FindUniqueSignature(const Signature *sig)
 
     OVector<void *>::Type matches = sm->FindInRange(sig, m_base, m_size);
     if (matches.size() == 0)
-        throw runtime_error("no matches found");
+        throw Error("no matches found");
     else if (matches.size() > 1)
-        throw runtime_error("more than one match found");
+        throw Error("more than one match found");
 
     return matches[0];
 }
@@ -69,7 +69,7 @@ DllFunction::DllFunction(DllModule *module, FunctionSpec *spec)
 {
     FARPROC offset = GetProcAddress(module->GetHandle(), spec->GetName().c_str());
     if (offset == NULL)
-        throw runtime_error("GetProcAddress failed");
+        throw Error("GetProcAddress failed");
 
     Function::Initialize(spec, reinterpret_cast<DWORD>(offset));
 }

@@ -40,6 +40,9 @@ public:
     void LogInfo(const char *format, ...);
     void LogWarning(const char *format, ...);
     void LogError(const char *format, ...);
+
+protected:
+    void LogMessage(const char *type, const char *format, va_list args);
 };
 
 class NullLogger : public Logger
