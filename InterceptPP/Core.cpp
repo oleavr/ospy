@@ -143,6 +143,11 @@ Argument::ToInt(int &result) const
     return m_spec->GetMarshaller()->ToInt(m_data, result);
 }
 
+ArgumentListSpec::ArgumentListSpec()
+{
+    Initialize(0, NULL);
+}
+
 ArgumentListSpec::ArgumentListSpec(unsigned int count, ...)
 {
     va_list args;
@@ -176,13 +181,19 @@ ArgumentListSpec::Initialize(unsigned int count, va_list args)
     {
         ArgumentSpec *arg = va_arg(args, ArgumentSpec *);
 
-        m_arguments.push_back(arg);
-
-        if ((arg->GetDirection() & ARG_DIR_OUT) != 0)
-            m_hasOutArgs = true;
-
-        m_size += arg->GetMarshaller()->GetSize();
+        AddArgument(arg);
     }
+}
+
+void
+ArgumentListSpec::AddArgument(ArgumentSpec *arg)
+{
+    m_arguments.push_back(arg);
+
+    if ((arg->GetDirection() & ARG_DIR_OUT) != 0)
+        m_hasOutArgs = true;
+
+    m_size += arg->GetMarshaller()->GetSize();
 }
 
 ArgumentList::ArgumentList(ArgumentListSpec *spec, const void *data)
@@ -492,17 +503,11 @@ Function::OnEnter(FunctionCall *call)
         Logging::TextNode *textNode = new Logging::TextNode("Name", GetFullName());
         ev->AppendChild(textNode);
 
+        call->AppendBacktraceToElement(ev);
         call->AppendCpuContextToElement(ev);
         call->AppendArgumentsToElement(ev);
 
         call->SetUserData(ev);
-
-#if 0
-		message_logger_log_message("Function::OnEnter", call->GetBacktraceAddress(),
-			MESSAGE_CTX_INFO, "Entering %s @ 0x%08x, ecx = 0x%08x",
-			call->ToString().c_str(), GetOffset(),
-			call->GetCpuContextEnter()->ecx);
-#endif
 	}
 }
 
@@ -520,13 +525,6 @@ Function::OnLeave(FunctionCall *call)
 
         ev->Submit();
         delete ev;
-
-#if 0
-		message_logger_log_message("Function::OnLeave", call->GetBacktraceAddress(),
-			MESSAGE_CTX_INFO, "Leaving %s @ 0x%08x, eax = 0x%08x",
-			call->ToString().c_str(), GetOffset(),
-			call->GetCpuContextLeave()->eax);
-#endif
 	}
 }
 
@@ -568,6 +566,16 @@ FunctionCall::ShouldLogArgumentDeep(const Argument *arg) const
     else
     {
         return (dir & ARG_DIR_OUT) != 0;
+    }
+}
+
+void
+FunctionCall::AppendBacktraceToElement(Logging::Element *el)
+{
+    Logging::Node *btNode = Util::CreateBacktraceNode(m_backtraceAddress);
+    if (btNode != NULL)
+    {
+        el->AppendChild(btNode);
     }
 }
 

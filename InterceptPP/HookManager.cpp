@@ -207,25 +207,46 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode)
             OString nodeName = node->nodeName;
             if (nodeName == "Arguments")
             {
+                ArgumentListSpec *argList = new ArgumentListSpec();
+                bool argsOk = true;
+
                 MSXML2::IXMLDOMNodePtr subNode;
                 MSXML2::IXMLDOMNodeListPtr subNodeList;
 
                 subNodeList = node->childNodes;
                 int argIndex = 0;
-                for (int i = 0; i < subNodeList->length; i++)
+                for (int i = 0; i < subNodeList->length && argsOk; i++)
                 {
                     subNode = subNodeList->item[i];
 
                     OString subNodeName = subNode->nodeName;
                     if (subNodeName == "Argument")
                     {
-                        ParseFunctionSpecArgumentNode(funcSpec, subNode, argIndex);
+                        ArgumentSpec *arg = ParseFunctionSpecArgumentNode(funcSpec, subNode, argIndex);
+                        if (arg != NULL)
+                        {
+                            argList->AddArgument(arg);
+                        }
+                        else
+                        {
+                            argsOk = false;
+                        }
+
                         argIndex++;
                     }
                     else
                     {
                         GetLogger()->LogWarning("Unknown Arguments subelement '%s'", subNodeName.c_str());
                     }
+                }
+
+                if (argsOk)
+                {
+                    funcSpec->SetArguments(argList);
+                }
+                else
+                {
+                    delete argList;
                 }
             }
             else
@@ -242,13 +263,13 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode)
     }
 }
 
-void
+ArgumentSpec *
 HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLDOMNodePtr &argNode, int argIndex)
 {
     OString argName;
     ArgumentDirection argDir = ARG_DIR_UNKNOWN;
     OString argType;
-    OMap<OString, OString>::Type argTypeOpts;
+    OMap<OString, OString>::Type argTypeProps;
 
     MSXML2::IXMLDOMNamedNodeMapPtr attrs = argNode->attributes;
 
@@ -282,7 +303,7 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
         }
         else
         {
-            argTypeOpts[attrName] = static_cast<bstr_t>(attrNode->nodeTypedValue);
+            argTypeProps[attrName] = static_cast<bstr_t>(attrNode->nodeTypedValue);
         }
     }
 
@@ -298,15 +319,32 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
     if (argDir == ARG_DIR_UNKNOWN)
     {
         GetLogger()->LogError("Argument direction not specified");
-        return;
+        return NULL;
     }
     else if (argType.size() == 0)
     {
         GetLogger()->LogError("Argument type not specified");
-        return;
+        return NULL;
     }
 
+    BaseMarshaller *marshaller = Marshaller::Factory::Instance()->CreateMarshaller(argType);
+    if (marshaller == NULL)
+    {
+        GetLogger()->LogError("Argument type '%s' is unknown", argType.c_str());
+        return NULL;
+    }
 
+    OMap<OString, OString>::Type::iterator iter;
+    for (iter = argTypeProps.begin(); iter != argTypeProps.end(); iter++)
+    {
+        if (!marshaller->SetProperty(iter->first, iter->second))
+        {
+            GetLogger()->LogWarning("Failed to set property '%s' to '%s' on Marshaller::%s",
+                iter->first.c_str(), iter->second.c_str(), argType.c_str());
+        }
+    }
+
+    return new ArgumentSpec(argName, argDir, marshaller);
 }
 
 void

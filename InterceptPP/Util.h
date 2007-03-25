@@ -25,6 +25,9 @@
 
 #pragma once
 
+#include "Core.h"
+#include "Logging.h"
+
 namespace InterceptPP {
 
 typedef struct {
@@ -46,9 +49,11 @@ public:
 	static OVector<OModuleInfo>::Type GetAllModules();
 	static bool AddressIsWithinExecutableModule(DWORD address);
 
-	static OString CreateBackTrace(void *address);
+    static Logging::Node *CreateBacktraceNode(void *address);
+	static OString CreateBacktrace(void *address);
 
 private:
+    static bool OnLoadLibrary(FunctionCall *call);
 	static OModuleInfo *GetModuleInfoForAddress(DWORD address);
 
 	static CRITICAL_SECTION m_cs;

@@ -133,9 +133,12 @@ protected:
 class ArgumentListSpec : public BaseObject
 {
 public:
+    ArgumentListSpec();
     ArgumentListSpec(unsigned int count, ...);
     ArgumentListSpec(unsigned int count, va_list args);
 	~ArgumentListSpec();
+
+    void AddArgument(ArgumentSpec *arg);
 
     unsigned int GetSize() const { return m_size; }
     unsigned int GetCount() const { return static_cast<unsigned int>(m_arguments.size()); }
@@ -289,6 +292,7 @@ public:
     void *GetUserData() const { return m_userData; }
     void SetUserData(void *data) { m_userData = data; }
 
+    void AppendBacktraceToElement(Logging::Element *el);
     void AppendCpuContextToElement(Logging::Element *el);
     void AppendArgumentsToElement(Logging::Element *el);
 	OString ToString();

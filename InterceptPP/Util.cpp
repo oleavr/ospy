@@ -25,56 +25,12 @@
 
 #include "stdafx.h"
 #include "Util.h"
+#include "DLL.h"
 #include <psapi.h>
 
 #pragma warning( disable : 4311 4312 )
 
 namespace InterceptPP {
-
-static HMODULE __cdecl
-LoadLibraryA_called(BOOL carry_on,
-                    DWORD ret_addr,
-                    LPCSTR lpFileName)
-{
-    return 0;
-}
-
-static HMODULE __stdcall
-LoadLibraryA_done(HMODULE retval,
-                  LPCSTR lpFileName)
-{
-    DWORD err = GetLastError();
-
-	Util::UpdateModuleList();
-
-    SetLastError(err);
-    return retval;
-}
-
-static HMODULE __cdecl
-LoadLibraryW_called(BOOL carry_on,
-                    DWORD ret_addr,
-                    LPCWSTR lpFileName)
-{
-    return 0;
-}
-
-static HMODULE __stdcall
-LoadLibraryW_done(HMODULE retval,
-                  LPCWSTR lpFileName)
-{
-    DWORD err = GetLastError();
-
-	Util::UpdateModuleList();
-
-    SetLastError(err);
-    return retval;
-}
-
-/*
-HOOK_GLUE_INTERRUPTIBLE(LoadLibraryA, (1 * 4))
-HOOK_GLUE_INTERRUPTIBLE(LoadLibraryW, (1 * 4))
-*/
 
 CRITICAL_SECTION Util::m_cs = { 0, };
 OString Util::m_processName = "";
@@ -88,20 +44,36 @@ Util::Initialize()
 	InitializeCriticalSection(&m_cs);
 
 	char buf[_MAX_PATH];
-	if (GetModuleBaseNameA(NULL, NULL, buf, sizeof(buf)) > 0)
+	if (GetModuleBaseNameA(GetCurrentProcess(), NULL, buf, sizeof(buf)) > 0)
 	{
 		m_processName = buf;
 	}
 
-	HMODULE h = LoadLibraryA("kernel32.dll");
-    if (h != NULL)
-	{
-        /*
-		HOOK_FUNCTION(h, LoadLibraryA);
-		HOOK_FUNCTION(h, LoadLibraryW);*/
-	}
+    FunctionSpec *asciiFuncSpec = new FunctionSpec("LoadLibraryA");
+    asciiFuncSpec->SetHandler(OnLoadLibrary);
+
+    FunctionSpec *uniFuncSpec = new FunctionSpec("LoadLibraryW");
+    uniFuncSpec->SetHandler(OnLoadLibrary);
+
+    DllModule *mod = new DllModule("kernel32.dll");
+    DllFunction *asciiFunc = new DllFunction(mod, asciiFuncSpec);
+    DllFunction *uniFunc = new DllFunction(mod, uniFuncSpec);
+
+    asciiFunc->Hook();
+    uniFunc->Hook();
 
 	UpdateModuleList();
+}
+
+bool
+Util::OnLoadLibrary(FunctionCall *call)
+{
+    if (call->GetState() == FUNCTION_CALL_LEAVING)
+    {
+        UpdateModuleList();
+    }
+
+    return true;
 }
 
 void
@@ -225,8 +197,76 @@ Util::AddressIsWithinExecutableModule(DWORD address)
 #define OPCODE_CALL_NEAR_RELATIVE     0xE8
 #define OPCODE_CALL_NEAR_ABS_INDIRECT 0xFF
 
+Logging::Node *
+Util::CreateBacktraceNode(void *address)
+{
+    Logging::Element *btNode = NULL;
+
+	int count = 0;
+	DWORD *p = reinterpret_cast<DWORD *>(address);
+
+	EnterCriticalSection(&m_cs);
+
+	for (; count < 8 && (char *) p < (char *) address + 16384; p++)
+	{
+		if (IsBadReadPtr(p, 4))
+			break;
+
+		DWORD value = *p;
+
+		if (value >= m_lowestAddress && value <= m_highestAddress)
+		{
+			bool isRetAddr = false;
+			unsigned char *codeAddr = (unsigned char *) value;
+			unsigned char *p1 = codeAddr - 5;
+			unsigned char *p2 = codeAddr - 6;
+			unsigned char *p3 = codeAddr - 3;
+
+			// FIXME: add the other CALL variations
+			if ((!IsBadCodePtr((FARPROC) p1) && *p1 == OPCODE_CALL_NEAR_RELATIVE) ||
+				(!IsBadCodePtr((FARPROC) p2) && *p2 == OPCODE_CALL_NEAR_ABS_INDIRECT) ||
+				(!IsBadCodePtr((FARPROC) p3) && *p3 == OPCODE_CALL_NEAR_ABS_INDIRECT))
+			{
+				isRetAddr = true;
+			}
+
+			if (isRetAddr)
+			{
+				OModuleInfo *mi = GetModuleInfoForAddress(value);
+
+				if (mi != NULL)
+				{
+                    // FIXME
+					if (mi->name == "oSpyAgent.dll")
+						break;
+
+					DWORD canonicalAddress = mi->preferredStartAddress + (value - mi->startAddress);
+
+                    Logging::TextNode *entry = new Logging::TextNode("Entry");
+                    entry->AddField("ModuleName", mi->name.c_str());
+
+                    OOStringStream ss;
+                    ss << "0x" << hex << canonicalAddress;
+
+                    entry->SetText(ss.str());
+
+                    if (btNode == NULL)
+                        btNode = new Logging::Element("Backtrace");
+                    btNode->AppendChild(entry);
+
+					count++;
+				}
+			}
+		}
+	}
+
+	LeaveCriticalSection(&m_cs);
+
+	return btNode;
+}
+
 OString
-Util::CreateBackTrace(void *address)
+Util::CreateBacktrace(void *address)
 {
 	OOStringStream s;
 	int count = 0;

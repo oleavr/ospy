@@ -96,7 +96,7 @@ message_element_init(MessageQueueElement *el,
     strncpy(el->function_name, function_name, sizeof(el->function_name));
 	if (bt_address != NULL)
 	{
-        OString backtrace = Util::CreateBackTrace(bt_address);
+        OString backtrace = Util::CreateBacktrace(bt_address);
 		strncpy(el->backtrace, backtrace.c_str(), sizeof(el->backtrace));
 		el->backtrace[sizeof(el->backtrace) - 1] = '\0';
 	}
