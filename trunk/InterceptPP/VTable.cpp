@@ -41,6 +41,36 @@ VMethodSpec::Initialize(VTableSpec *vtable, int index)
 	m_name = ss.str();
 }
 
+void
+VMethodSpec::StealFrom(FunctionSpec *funcSpec)
+{
+    if (funcSpec->GetName().size() > 0)
+    {
+        m_name = funcSpec->GetName();
+    }
+
+    if (funcSpec->GetCallingConvention() != CALLING_CONV_UNKNOWN)
+    {
+        m_callingConvention = funcSpec->GetCallingConvention();
+    }
+
+    if (funcSpec->GetArgsSize() != FUNCTION_ARGS_SIZE_UNKNOWN)
+    {
+        m_argsSize = funcSpec->GetArgsSize();
+    }
+
+    if (funcSpec->GetHandler() != NULL)
+    {
+        m_handler = funcSpec->GetHandler();
+    }
+
+    if (funcSpec->GetArguments() != NULL)
+    {
+        m_argList = funcSpec->GetArguments();
+        funcSpec->SetArguments(static_cast<ArgumentListSpec *>(NULL));
+    }
+}
+
 VTableSpec::VTableSpec(const OString &name, int methodCount)
 	: m_name(name), m_methods(methodCount)
 {

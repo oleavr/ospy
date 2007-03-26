@@ -39,8 +39,8 @@ Initialize()
 {
     g_defaultLogger = new Logging::NullLogger();
 
-    Util::Initialize();
     Function::Initialize();
+    Util::Initialize();
     SetLogger(NULL);
 }
 
@@ -214,8 +214,16 @@ ArgumentList::ArgumentList(ArgumentListSpec *spec, const void *data)
 void
 FunctionSpec::SetArguments(ArgumentListSpec *argList)
 {
-    m_argsSize = argList->GetSize();
-    m_argList = argList;
+    if (argList != NULL)
+    {
+        m_argsSize = argList->GetSize();
+        m_argList = argList;
+    }
+    else
+    {
+        m_argsSize = FUNCTION_ARGS_SIZE_UNKNOWN;
+        m_argList = NULL;
+    }
 }
 
 void
