@@ -62,7 +62,7 @@ protected:
 
 namespace Marshaller {
 
-typedef BaseMarshaller *(*CreateMarshallerFunc) ();
+typedef BaseMarshaller *(*CreateMarshallerFunc) (const OString &name);
 
 class Factory : public BaseObject
 {
@@ -72,10 +72,15 @@ public:
 
     BaseMarshaller *CreateMarshaller(const OString &name);
 
-protected:
-    OMap<OString, CreateMarshallerFunc>::Type m_marshallers;
+    bool HasMarshaller(const OString &name);
+    void RegisterMarshaller(const OString &name, CreateMarshallerFunc createFunc);
+    void UnregisterMarshaller(const OString &name);
 
-    template<class T> static BaseMarshaller *CreateMarshallerInstance();
+protected:
+    typedef OMap<OString, CreateMarshallerFunc>::Type MarshallerMap;
+    MarshallerMap m_marshallers;
+
+    template<class T> static BaseMarshaller *CreateMarshallerInstance(const OString &name);
 };
 
 class Pointer : public BaseMarshaller
@@ -277,14 +282,19 @@ class Structure : public BaseMarshaller
 public:
     Structure(const char *name, const char *firstFieldName, ...);
     Structure(const char *name, const char *firstFieldName, va_list args);
+    ~Structure();
 
-	// TODO: fix GetSize
-    virtual unsigned int GetSize() const { return sizeof(void *); }
+    void AddField(StructureField *field);
+
+    virtual unsigned int GetSize() const { return m_size; }
     virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
 	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
 
 protected:
-    OVector<StructureField>::Type m_fields;
+    unsigned int m_size;
+
+    typedef OVector<StructureField *>::Type FieldsVector;
+    FieldsVector m_fields;
 
     void Initialize(const char *firstFieldName, va_list args);
 };

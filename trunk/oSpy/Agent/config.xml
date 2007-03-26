@@ -1,4 +1,16 @@
 <HookManager>
+    <Types>
+        <Structure Name="P2PBridgeProperties">
+            <Field Name="field_0" Offset="0" Type="UInt32"/>
+            <Field Name="field_4" Offset="4" Type="UInt32"/>
+            <Field Name="field_8" Offset="8" Type="UInt32"/>
+            <Field Name="field_C" Offset="0xC" Type="UInt32"/>
+            <Field Name="field_10" Offset="0x10" Type="UInt32"/>
+            <Field Name="field_14" Offset="0x14" Type="UInt32"/>
+            <Field Name="field_18" Offset="0x18" Type="UInt32"/>
+            <Field Name="field_20" Offset="0x20" Type="UInt32"/>
+        </Structure>
+    </Types>
     <Specs>
         <Functions>
             <Function Name="connect">
@@ -35,7 +47,11 @@
                 <Method Index="8" Name="Shutdown" CallingConvention="thiscall" ArgsSize="0"/>
                 <Method Index="9" Name="Init" CallingConvention="thiscall" ArgsSize="4"/>
                 <Method Index="10" Name="Send" CallingConvention="thiscall" ArgsSize="16"/>
-                <Method Index="11" Name="GetProperties" CallingConvention="thiscall" ArgsSize="4"/>
+                <Method Index="11" Name="GetProperties" CallingConvention="thiscall">
+                    <Arguments>
+                        <Argument Name="lpProperties" Direction="out" Type="P2PBridgePropertiesPtr"/>
+                    </Arguments>
+                </Method>
                 <Method Index="12" Name="ReadyToSend" CallingConvention="thiscall" ArgsSize="0"/>
                 <Method Index="13" Name="ConnectBridge" CallingConvention="thiscall" ArgsSize="0"/>
                 <Method Index="17" Name="OnReceivedConnectRequest" CallingConvention="thiscall" ArgsSize="4"/>

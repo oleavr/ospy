@@ -41,7 +41,7 @@ DllMain(HMODULE hModule,
 {
     if (ul_reason_for_call == DLL_PROCESS_ATTACH)
     {
-        __asm int 3;
+        //__asm int 3;
 
 		// Just to make sure that floating point support is dynamically loaded...
 		float dummy_float = 1.0f;
