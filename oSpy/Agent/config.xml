@@ -1,5 +1,12 @@
 <HookManager>
     <Types>
+        <Enumeration Name="RegKeyHandle">
+            <Member Name="HKEY_CLASSES_ROOT" Value="0x80000000"/>
+            <Member Name="HKEY_CURRENT_USER" Value="0x80000001"/>
+            <Member Name="HKEY_LOCAL_MACHINE" Value="0x80000002"/>
+            <Member Name="HKEY_USERS" Value="0x80000003"/>
+            <Member Name="HKEY_DYN_DATA" Value="0x80000006"/>
+        </Enumeration>
         <Structure Name="P2PBridgeProperties">
             <Field Name="field_0" Offset="0" Type="UInt32"/>
             <Field Name="field_4" Offset="4" Type="UInt32"/>
@@ -36,6 +43,16 @@
                     <Argument Name="flags" Direction="in" Type="UInt32" Hex="true"/>
                 </Arguments>
             </Function>
+
+            <Function Name="RegOpenKeyExW">
+                <Arguments>
+                    <Argument Name="hKey" Direction="in" Type="RegKeyHandle"/>
+                    <Argument Name="lpSubKey" Direction="in" Type="UnicodeStringPtr"/>
+                    <Argument Name="ulOptions" Direction="in" Type="UInt32"/>
+                    <Argument Name="samDesired" Direction="in" Type="UInt32" Hex="true"/>
+                    <Argument Name="phkResult" Direction="out" Type="UInt32Ptr" Hex="true"/>
+                </Arguments>
+            </Function>
         </Functions>
         <VTables>
             <VTable Id="CP2PTransportBridge" MethodCount="22">
@@ -66,6 +83,9 @@
             <Function SpecId="connect"/>
             <Function SpecId="recv"/>
             <Function SpecId="send"/>
+        </DllModule>
+        <DllModule Name="advapi32.dll">
+            <Function SpecId="RegOpenKeyExW"/>
         </DllModule>
         <VTables ProcessName="msnmsgr.exe">
             <VTable SpecId="CP2PTransportBridge" Name="CTCPTransportBridge" Offset="0x484C64"/>

@@ -159,6 +159,15 @@ Pointer::~Pointer()
         delete m_type;
 }
 
+bool
+Pointer::SetProperty(const OString &name, const OString &value)
+{
+    if (m_type == NULL)
+        return false;
+
+    return m_type->SetProperty(name, value);
+}
+
 Logging::Node *
 Pointer::ToNode(const void *start, bool deep, IPropertyProvider *propProv) const
 {
@@ -384,9 +393,8 @@ AsciiString::ToString(const void *start, bool deep, IPropertyProvider *propProv)
     OOStringStream ss;
 
     const char *strPtr = static_cast<const char *>(start);
-    ss << "\"" << *strPtr << "\"";
 
-    return ss.str();
+    return strPtr;
 }
 
 OString
@@ -396,15 +404,12 @@ UnicodeString::ToString(const void *start, bool deep, IPropertyProvider *propPro
 
     const WCHAR *strPtr = static_cast<const WCHAR *>(start);
     unsigned int bufSize = static_cast<unsigned int>(wcslen(strPtr)) + 1;
-    char *buf = new char[bufSize];
 
-    WideCharToMultiByte(CP_ACP, 0, strPtr, -1, buf, bufSize, NULL, NULL);
+    OString result;
+    result.resize(bufSize);
+    WideCharToMultiByte(CP_ACP, 0, strPtr, -1, const_cast<char *>(result.data()), result.size(), NULL, NULL);
 
-    ss << "\"" << buf << "\"";
-
-    delete buf;
-
-    return ss.str();
+    return result;
 }
 
 Enumeration::Enumeration(const char *name, const char *firstName, ...)
