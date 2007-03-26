@@ -155,14 +155,25 @@ void
 HookManager::ParseTypeNode(MSXML2::IXMLDOMNodePtr &typeNode)
 {
     OString typeName = typeNode->nodeName;
-    if (typeName != "Structure")
+    if (typeName == "Structure")
+    {
+        ParseStructureNode(typeNode);
+    }
+    else if (typeName == "Enumeration")
+    {
+        ParseEnumerationNode(typeNode);
+    }
+    else
     {
         GetLogger()->LogWarning("Unknown type '%s'", typeName.c_str());
-        return;
     }
+}
 
+void
+HookManager::ParseStructureNode(MSXML2::IXMLDOMNodePtr &structNode)
+{
     OString name;
-    MSXML2::IXMLDOMNodePtr attr = typeNode->attributes->getNamedItem("Name");
+    MSXML2::IXMLDOMNodePtr attr = structNode->attributes->getNamedItem("Name");
     if (attr == NULL)
     {
         GetLogger()->LogError("Name not specified for Structure");
@@ -182,7 +193,7 @@ HookManager::ParseTypeNode(MSXML2::IXMLDOMNodePtr &typeNode)
     
     bool allGood = true;
     int fieldCount = 0;
-    nodeList = typeNode->childNodes;
+    nodeList = structNode->childNodes;
     for (int i = 0; i < nodeList->length && allGood; i++)
     {
         MSXML2::IXMLDOMNodePtr node = nodeList->item[i];
@@ -272,6 +283,96 @@ HookManager::ParseStructureFieldNode(MSXML2::IXMLDOMNodePtr &fieldNode)
     }
 
     return new StructureFieldDef(name, offset, typeName);
+}
+
+void
+HookManager::ParseEnumerationNode(MSXML2::IXMLDOMNodePtr &enumNode)
+{
+    OString name;
+    MSXML2::IXMLDOMNodePtr attr = enumNode->attributes->getNamedItem("Name");
+    if (attr == NULL)
+    {
+        GetLogger()->LogError("Name not specified for Enumeration");
+        return;
+    }
+
+    name = static_cast<bstr_t>(attr->nodeTypedValue);
+    if (name.size() == 0)
+    {
+        GetLogger()->LogError("Empty name specified for Enumeration");
+        return;
+    }
+
+    Marshaller::Enumeration *enumTpl = new Marshaller::Enumeration(name.c_str(), NULL);
+
+    MSXML2::IXMLDOMNodeListPtr nodeList;
+
+    nodeList = enumNode->childNodes;
+    for (int i = 0; i < nodeList->length; i++)
+    {
+        MSXML2::IXMLDOMNodePtr node = nodeList->item[i];
+
+        OString nodeName = node->nodeName;
+        if (nodeName == "Member")
+        {
+            OString memberName;
+            DWORD memberValue;
+
+            if (ParseEnumerationMemberNode(node, memberName, memberValue))
+            {
+                enumTpl->AddMember(memberName, memberValue);
+            }
+        }
+        else
+        {
+            GetLogger()->LogWarning("Unknown Enumeration subelement '%s'", nodeName.c_str());
+        }
+    }
+    nodeList.Release();
+
+    if (enumTpl->GetMemberCount() > 0)
+    {
+        EnumerationBuilder::Instance()->AddEnumeration(enumTpl);
+    }
+    else
+    {
+        GetLogger()->LogError("No valid members defined for Enumeration '%s'", name.c_str());
+        delete enumTpl;
+    }
+}
+
+bool
+HookManager::ParseEnumerationMemberNode(MSXML2::IXMLDOMNodePtr &enumMemberNode, OString &memberName, DWORD &memberValue)
+{
+    MSXML2::IXMLDOMNamedNodeMapPtr attrs = enumMemberNode->attributes;
+    MSXML2::IXMLDOMNodePtr attr;
+
+    attr = attrs->getNamedItem("Name");
+    if (attr == NULL)
+    {
+        GetLogger()->LogError("Name not specified for Enumeration member");
+        return false;
+    }
+    memberName = static_cast<bstr_t>(attr->nodeTypedValue);
+
+    attr = attrs->getNamedItem("Value");
+    if (attr == NULL)
+    {
+        GetLogger()->LogError("Offset not specified for Enumeration member");
+        return NULL;
+    }
+    OString valStr = static_cast<bstr_t>(attr->nodeTypedValue);
+
+    // FIXME: there's gotta be a more sensible way to do this
+    char *endPtr = NULL;
+    memberValue = strtol(valStr.c_str(), &endPtr, 0);
+    if (endPtr == valStr.c_str())
+    {
+        GetLogger()->LogError("Invalid offset specified for Enumeration member");
+        return false;
+    }
+
+    return true;
 }
 
 FunctionSpec *
@@ -740,6 +841,49 @@ HookManager::ParseVTableNode(MSXML2::IXMLDOMNodePtr &vtNode)
     VTable *vtable = new VTable(m_vtableSpecs[specId], name, offset);
     m_vtables.push_back(vtable);
     vtable->Hook();
+}
+
+EnumerationBuilder *
+EnumerationBuilder::Instance()
+{
+    static EnumerationBuilder *builder = NULL;
+
+    if (builder == NULL)
+        builder = new EnumerationBuilder();
+
+    return builder;
+}
+
+EnumerationBuilder::~EnumerationBuilder()
+{
+    for (EnumTypeMap::iterator iter = m_enumTypes.begin(); iter != m_enumTypes.end(); iter++)
+    {
+        Marshaller::Factory::Instance()->UnregisterMarshaller(iter->first);
+        delete iter->second;
+    }
+}
+
+void
+EnumerationBuilder::AddEnumeration(Marshaller::Enumeration *enumTemplate)
+{
+    m_enumTypes[enumTemplate->GetName()] = enumTemplate;
+    Marshaller::Factory::Instance()->RegisterMarshaller(enumTemplate->GetName(), BuildEnumerationWrapper);
+}
+
+BaseMarshaller *
+EnumerationBuilder::BuildEnumerationWrapper(const OString &name)
+{
+    return Instance()->BuildEnumeration(name);
+}
+
+BaseMarshaller *
+EnumerationBuilder::BuildEnumeration(const OString &name)
+{
+    EnumTypeMap::iterator iter = m_enumTypes.find(name);
+    if (iter == m_enumTypes.end())
+        return NULL;
+
+    return new Marshaller::Enumeration(*(iter->second));
 }
 
 StructureDef::~StructureDef()

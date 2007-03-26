@@ -64,7 +64,10 @@ protected:
     VTableList m_vtables;
 
     void ParseTypeNode(MSXML2::IXMLDOMNodePtr &typeNode);
+    void ParseStructureNode(MSXML2::IXMLDOMNodePtr &structNode);
     StructureFieldDef *ParseStructureFieldNode(MSXML2::IXMLDOMNodePtr &fieldNode);
+    void ParseEnumerationNode(MSXML2::IXMLDOMNodePtr &enumNode);
+    bool ParseEnumerationMemberNode(MSXML2::IXMLDOMNodePtr &enumMemberNode, OString &memberName, DWORD &memberValue);
 
     FunctionSpec *ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString &id, bool nameRequired=true, bool ignoreUnknown=false);
     ArgumentSpec *ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLDOMNodePtr &argNode, int argIndex);
@@ -73,6 +76,26 @@ protected:
     void ParseDllModuleNode(MSXML2::IXMLDOMNodePtr &dllModNode);
     void ParseDllFunctionNode(DllModule *dllMod, MSXML2::IXMLDOMNodePtr &dllFuncNode);
     void ParseVTableNode(MSXML2::IXMLDOMNodePtr &vtNode);
+};
+
+// TODO: refactor the mess below
+
+class EnumerationBuilder
+{
+public:
+    static EnumerationBuilder *Instance();
+    ~EnumerationBuilder();
+
+    void AddEnumeration(Marshaller::Enumeration *enumTemplate);
+
+    unsigned int GetEnumerationCount() const { return static_cast<unsigned int>(m_enumTypes.size()); }
+
+protected:
+    typedef OMap<OString, Marshaller::Enumeration *>::Type EnumTypeMap;
+    EnumTypeMap m_enumTypes;
+
+    static BaseMarshaller *BuildEnumerationWrapper(const OString &name);
+    BaseMarshaller *BuildEnumeration(const OString &name);
 };
 
 class StructureDef

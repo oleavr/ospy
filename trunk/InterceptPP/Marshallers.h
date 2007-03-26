@@ -89,6 +89,8 @@ public:
     Pointer(BaseMarshaller *type=NULL);
     virtual ~Pointer();
 
+    virtual bool SetProperty(const OString &name, const OString &value);
+
     virtual unsigned int GetSize() const { return sizeof(void *); }
     virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
 	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
@@ -192,8 +194,6 @@ public:
 	ByteArrayPtr(const OString &sizePropertyBinding)
         : Pointer(new ByteArray(sizePropertyBinding))
     {}
-
-    virtual bool SetProperty(const OString &name, const OString &value) { return m_type->SetProperty(name, value); }
 };
 
 class CString : public BaseMarshaller
@@ -252,6 +252,9 @@ class Enumeration : public UInt32
 {
 public:
     Enumeration(const char *name, const char *firstName, ...);
+
+    void AddMember(const OString &name, DWORD value) { m_defs[value] = name; }
+    unsigned int GetMemberCount() const { return static_cast<unsigned int>(m_defs.size()); }
 
     virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
 	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
