@@ -81,6 +81,8 @@ public:
     const VTableSpec *GetVTable() { return m_vtable; }
 	int GetIndex() const { return m_index; }
 
+    void StealFrom(FunctionSpec *funcSpec);
+
 protected:
 	VTableSpec *m_vtable;
 	int m_index;

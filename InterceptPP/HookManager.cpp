@@ -25,6 +25,7 @@
 
 #include "stdafx.h"
 #include "HookManager.h"
+#include "Util.h"
 
 namespace InterceptPP {
 
@@ -34,10 +35,10 @@ HookManager::HookManager()
 
 HookManager::~HookManager()
 {
-    FunctionSpecMap::iterator fsIter;
-    for (fsIter = m_funcSpecs.begin(); fsIter != m_funcSpecs.end(); fsIter++)
+    VTableList::iterator vtIter;
+    for (vtIter = m_vtables.begin(); vtIter != m_vtables.end(); vtIter++)
     {
-        delete fsIter->second;
+        delete *vtIter;
     }
 
     DllFunctionList::iterator dfIter;
@@ -50,6 +51,18 @@ HookManager::~HookManager()
     for (dmIter = m_dllModules.begin(); dmIter != m_dllModules.end(); dmIter++)
     {
         delete dmIter->second;
+    }
+
+    FunctionSpecMap::iterator fsIter;
+    for (fsIter = m_funcSpecs.begin(); fsIter != m_funcSpecs.end(); fsIter++)
+    {
+        delete fsIter->second;
+    }
+
+    VTableSpecMap::iterator vtsIter;
+    for (vtsIter = m_vtableSpecs.begin(); vtsIter != m_vtableSpecs.end(); vtsIter++)
+    {
+        delete vtsIter->second;
     }
 }
 
@@ -81,46 +94,47 @@ HookManager::LoadDefinitions(const OString &path)
         if(doc->load(path.c_str()) != VARIANT_TRUE)
             throw ParserError("IXMLDOMDocument::load() failed");
 
-        Logger *logger = GetLogger();
-
-        MSXML2::IXMLDOMNodePtr node;
         MSXML2::IXMLDOMNodeListPtr nodeList;
-        
-        nodeList = doc->selectNodes("/HookManager/Specs/Functions/*");
+        MSXML2::IXMLDOMNodePtr node;
+
+        nodeList = doc->selectNodes("/HookManager/Specs/Functions/Function");
         for (int i = 0; i < nodeList->length; i++)
         {
-            node = nodeList->item[i];
+            OString id;
 
-            OString nodeName = node->nodeName;
-            if (nodeName == "Function")
+            FunctionSpec *funcSpec = ParseFunctionSpecNode(nodeList->item[i], id);
+            if (funcSpec != NULL)
             {
-                ParseFunctionSpecNode(node);
-            }
-            else
-            {
-                logger->LogWarning("Unknown element '%s'", nodeName.c_str());
+                m_funcSpecs[id] = funcSpec;
             }
         }
         nodeList.Release();
-        nodeList = NULL;
 
-        nodeList = doc->selectNodes("/HookManager/Hooks/*");
+        nodeList = doc->selectNodes("/HookManager/Specs/VTables/VTable");
         for (int i = 0; i < nodeList->length; i++)
         {
-            node = nodeList->item[i];
-
-            OString nodeName = node->nodeName;
-            if (nodeName == "DllModule")
-            {
-                ParseDllModuleNode(node);
-            }
-            else
-            {
-                logger->LogWarning("Unknown hook element '%s'", nodeName.c_str());
-            }
+            ParseVTableSpecNode(nodeList->item[i]);
         }
         nodeList.Release();
-        nodeList = NULL;
+
+        nodeList = doc->selectNodes("/HookManager/Hooks/DllModule");
+        for (int i = 0; i < nodeList->length; i++)
+        {
+            ParseDllModuleNode(nodeList->item[i]);
+        }
+        nodeList.Release();
+
+        OOStringStream ss;
+        ss << "/HookManager/Hooks/VTables[@ProcessName = translate('";
+        ss << Util::GetProcessName();
+        ss << "', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')]/VTable";
+
+        nodeList = doc->selectNodes(ss.str().c_str());
+        for (int i = 0; i < nodeList->length; i++)
+        {
+            ParseVTableNode(nodeList->item[i]);
+        }
+        nodeList.Release();
 
         doc.Release();
     }
@@ -130,10 +144,11 @@ HookManager::LoadDefinitions(const OString &path)
     }
 }
 
-void
-HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode)
+FunctionSpec *
+HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString &id, bool nameRequired, bool ignoreUnknown)
 {
-    OString id, name;
+    FunctionSpec *funcSpec = NULL;
+    OString name;
     CallingConvention conv = CALLING_CONV_UNKNOWN;
     int argsSize = -1;
 
@@ -181,20 +196,23 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode)
         }
         else
         {
-            GetLogger()->LogWarning("Unknown FunctionSpec attribute '%s'", attrName.c_str());
+            if (!ignoreUnknown)
+            {
+                GetLogger()->LogWarning("Unknown FunctionSpec attribute '%s'", attrName.c_str());
+            }
+
             continue;
         }
     }
 
     attrs.Release();
     
-    if (name.size() > 0)
+    if (name.size() > 0 || !nameRequired)
     {
         if (id.size() == 0)
             id = name;
 
-        FunctionSpec *funcSpec = new FunctionSpec(name, conv, argsSize);
-        m_funcSpecs[id] = funcSpec;
+        funcSpec = new FunctionSpec(name, conv, argsSize);
 
         MSXML2::IXMLDOMNodePtr node;
         MSXML2::IXMLDOMNodeListPtr nodeList;
@@ -259,8 +277,10 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode)
     }
     else
     {
-        GetLogger()->LogError("Name not specified for FunctionSpec");
+        GetLogger()->LogError("Name is blank or not specified for FunctionSpec");
     }
+
+    return funcSpec;
 }
 
 ArgumentSpec *
@@ -323,7 +343,7 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
     }
     else if (argType.size() == 0)
     {
-        GetLogger()->LogError("Argument type not specified");
+        GetLogger()->LogError("Argument type is blank or not specified");
         return NULL;
     }
 
@@ -345,6 +365,96 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
     }
 
     return new ArgumentSpec(argName, argDir, marshaller);
+}
+
+void
+HookManager::ParseVTableSpecNode(MSXML2::IXMLDOMNodePtr &vtSpecNode)
+{
+    OString id;
+    int methodCount = -1;
+
+    MSXML2::IXMLDOMNamedNodeMapPtr attrs = vtSpecNode->attributes;
+
+    MSXML2::IXMLDOMNodePtr attrNode;
+    while ((attrNode = attrs->nextNode()) != NULL)
+    {
+        OString attrName = static_cast<OString>(attrNode->nodeName);
+
+        if (attrName == "Id")
+        {
+            id = static_cast<bstr_t>(attrNode->nodeTypedValue);
+        }
+        else if (attrName == "MethodCount")
+        {
+            methodCount = attrNode->nodeTypedValue;
+        }
+        else
+        {
+            GetLogger()->LogWarning("Unknown VTableSpec attribute '%s'", attrName.c_str());
+            continue;
+        }
+    }
+
+    attrs.Release();
+    attrs = NULL;
+
+    if (id.size() == 0)
+    {
+        GetLogger()->LogError("VTableSpec Id is blank or not specified");
+        return;
+    }
+    else if (methodCount <= 0)
+    {
+        GetLogger()->LogError("VTableSpec MethodCount is invalid or not specified");
+        return;
+    }
+
+    VTableSpec *vtSpec = new VTableSpec(id, methodCount);
+    m_vtableSpecs[id] = vtSpec;
+
+    MSXML2::IXMLDOMNodeListPtr nodeList;
+    MSXML2::IXMLDOMNodePtr node;
+    
+    nodeList = vtSpecNode->childNodes;
+    for (int i = 0; i < nodeList->length; i++)
+    {
+        node = nodeList->item[i];
+
+        OString nodeName = node->nodeName;
+        if (nodeName == "Method")
+        {
+            MSXML2::IXMLDOMNamedNodeMapPtr attrs = node->attributes;
+            MSXML2::IXMLDOMNodePtr indexAttr = attrs->getNamedItem("Index");
+
+            int index = -1;
+            if (indexAttr != NULL)
+            {
+                index = indexAttr->nodeTypedValue;
+            }
+
+            if (index >= 0 && index < static_cast<int>(vtSpec->GetMethodCount()))
+            {
+                OString id;
+                FunctionSpec *funcSpec = ParseFunctionSpecNode(node, id, false, true);
+                if (funcSpec != NULL)
+                {
+                    (*vtSpec)[index].StealFrom(funcSpec);
+                    delete funcSpec;
+                }
+            }
+            else
+            {
+                GetLogger()->LogWarning("Required VMethodSpec attribute 'Index' is invalid or not specified");
+            }
+
+            attrs.Release();
+        }
+        else
+        {
+            GetLogger()->LogWarning("Unknown VTableSpec subelement '%s'", nodeName.c_str());
+        }
+    }
+    nodeList.Release();
 }
 
 void
@@ -448,6 +558,58 @@ HookManager::ParseDllFunctionNode(DllModule *dllMod, MSXML2::IXMLDOMNodePtr &dll
     {
         GetLogger()->LogError("SpecId not specified for DllFunction");
     }
+}
+
+void
+HookManager::ParseVTableNode(MSXML2::IXMLDOMNodePtr &vtNode)
+{
+    OString specId, name, offsetStr;
+
+    MSXML2::IXMLDOMNamedNodeMapPtr attrs = vtNode->attributes;
+    MSXML2::IXMLDOMNodePtr attr;
+
+    attr = attrs->getNamedItem("SpecId");
+    if (attr == NULL)
+    {
+        GetLogger()->LogError("SpecId not specified for VTable");
+        return;
+    }
+    specId = static_cast<bstr_t>(attr->nodeTypedValue);
+
+    if (m_vtableSpecs.find(specId) == m_vtableSpecs.end())
+    {
+        GetLogger()->LogError("Invalid SpecId specified for VTable");
+        return;
+    }
+
+    attr = attrs->getNamedItem("Name");
+    if (attr == NULL)
+    {
+        GetLogger()->LogError("Name not specified for VTable");
+        return;
+    }
+    name = static_cast<bstr_t>(attr->nodeTypedValue);
+
+    attr = attrs->getNamedItem("Offset");
+    if (attr == NULL)
+    {
+        GetLogger()->LogError("Offset not specified for VTable");
+        return;
+    }
+    offsetStr = static_cast<bstr_t>(attr->nodeTypedValue);
+
+    // FIXME: there's gotta be a more sensible way to do this
+    char *endPtr = NULL;
+    DWORD offset = strtol(offsetStr.c_str(), &endPtr, 0);
+    if (endPtr == offsetStr.c_str())
+    {
+        GetLogger()->LogError("Invalid offset specified for VTable");
+        return;
+    }
+
+    VTable *vtable = new VTable(m_vtableSpecs[specId], name, offset);
+    m_vtables.push_back(vtable);
+    vtable->Hook();
 }
 
 } // namespace InterceptPP

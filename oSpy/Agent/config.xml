@@ -1,0 +1,61 @@
+<HookManager>
+    <Specs>
+        <Functions>
+            <Function Name="connect">
+                <Arguments>
+                    <Argument Name="s" Direction="in" Type="UInt32" Hex="true"/>
+                    <Argument Name="name" Direction="in" Type="Winsock::Ipv4SockaddrPtr"/>
+                    <Argument Name="namelen" Direction="in" Type="UInt32"/>
+                </Arguments>
+            </Function>
+            <Function Name="recv">
+                <Arguments>
+                    <Argument Name="s" Direction="in" Type="UInt32" Hex="true"/>
+                    <Argument Name="buf" Direction="out" Type="ByteArrayPtr" Size="reg.eax"/>
+                    <Argument Name="len" Direction="in" Type="UInt32"/>
+                    <Argument Name="flags" Direction="in" Type="UInt32" Hex="true"/>
+                </Arguments>
+            </Function>
+            <Function Name="send">
+                <Arguments>
+                    <Argument Name="s" Direction="in" Type="UInt32" Hex="true"/>
+                    <Argument Name="buf" Direction="in" Type="ByteArrayPtr" Size="arg.len"/>
+                    <Argument Name="len" Direction="in" Type="UInt32"/>
+                    <Argument Name="flags" Direction="in" Type="UInt32" Hex="true"/>
+                </Arguments>
+            </Function>
+        </Functions>
+        <VTables>
+            <VTable Id="CP2PTransportBridge" MethodCount="22">
+                <Method Index="0" Name="OnBridgePeerConnectingEndpointsUpdated" CallingConvention="thiscall" ArgsSize="8"/>
+                <Method Index="1" Name="OnBridgePeerListeningEndpointsUpdated" CallingConvention="thiscall" ArgsSize="4"/>
+                <Method Index="4" Name="P2PListen" CallingConvention="thiscall" ArgsSize="8"/>
+                <Method Index="5" Name="P2PConnect" CallingConvention="thiscall" ArgsSize="8"/>
+                <Method Index="7" Name="Destroy" CallingConvention="thiscall" ArgsSize="4"/>
+                <Method Index="8" Name="Shutdown" CallingConvention="thiscall" ArgsSize="0"/>
+                <Method Index="9" Name="Init" CallingConvention="thiscall" ArgsSize="4"/>
+                <Method Index="10" Name="Send" CallingConvention="thiscall" ArgsSize="16"/>
+                <Method Index="11" Name="GetProperties" CallingConvention="thiscall" ArgsSize="4"/>
+                <Method Index="12" Name="ReadyToSend" CallingConvention="thiscall" ArgsSize="0"/>
+                <Method Index="13" Name="ConnectBridge" CallingConvention="thiscall" ArgsSize="0"/>
+                <Method Index="17" Name="OnReceivedConnectRequest" CallingConvention="thiscall" ArgsSize="4"/>
+                <Method Index="18" Name="OnDataReceived" CallingConvention="thiscall" ArgsSize="16"/>
+                <Method Index="19" Name="OnDataResponse" CallingConvention="thiscall" ArgsSize="12"/>
+                <Method Index="20" Name="OnBridgeStateChange" CallingConvention="thiscall" ArgsSize="8"/>
+            </VTable>
+        </VTables>
+    </Specs>
+    <Hooks>
+        <DllModule Name="ws2_32.dll">
+            <Function SpecId="connect"/>
+            <Function SpecId="recv"/>
+            <Function SpecId="send"/>
+        </DllModule>
+        <VTables ProcessName="msnmsgr.exe">
+            <VTable SpecId="CP2PTransportBridge" Name="CTCPTransportBridge" Offset="0x484C64"/>
+            <VTable SpecId="CP2PTransportBridge" Name="CTrivialUDPTransportBridge" Offset="0x484D94"/>
+            <VTable SpecId="CP2PTransportBridge" Name="CTurnBridge" Offset="0x4713CC"/>
+            <VTable SpecId="CP2PTransportBridge" Name="CSBBridge" Offset="0x471354"/>
+        </VTables>
+    </Hooks>
+</HookManager>

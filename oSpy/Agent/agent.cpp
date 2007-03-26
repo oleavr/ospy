@@ -41,7 +41,7 @@ DllMain(HMODULE hModule,
 {
     if (ul_reason_for_call == DLL_PROCESS_ATTACH)
     {
-        //__asm int 3;
+        __asm int 3;
 
 		// Just to make sure that floating point support is dynamically loaded...
 		float dummy_float = 1.0f;
@@ -52,14 +52,17 @@ DllMain(HMODULE hModule,
 			// Initialize SHM logger
 			message_logger_init();
 
+            //COverlappedManager::Init();
+
             InterceptPP::Initialize();
+            // FIXME: don't hardcode this...
             InterceptPP::SetLogger(new BinaryLogger("c:\\oSpyAgentLog.bin"));
-			//COverlappedManager::Init();
 
             HookManager *mgr = HookManager::Instance();
             try
             {
-                mgr->LoadDefinitions("c:\\hooks.xml");
+                // FIXME: don't hardcode this...
+                mgr->LoadDefinitions("C:\\Projects\\oSpy\\trunk\\oSpy\\Agent\\config.xml");
             }
             catch (Error &e)
             {

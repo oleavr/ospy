@@ -26,6 +26,7 @@
 #pragma once
 
 #include "Core.h"
+#include "VTable.h"
 #include "DLL.h"
 #import <msxml6.dll>
 
@@ -41,20 +42,31 @@ public:
     void LoadDefinitions(const OString &path);
 
     unsigned int GetFunctionSpecCount() const { return static_cast<unsigned int>(m_funcSpecs.size()); }
+    unsigned int GetVTableSpecCount() const { return static_cast<unsigned int>(m_vtableSpecs.size()); }
+    unsigned int GetDllModuleCount() const { return static_cast<unsigned int>(m_dllModules.size()); }
+    unsigned int GetDllFunctionCount() const { return static_cast<unsigned int>(m_dllFunctions.size()); }
+    unsigned int GetVTableCount() const { return static_cast<unsigned int>(m_vtables.size()); }
 
 protected:
     typedef OMap<OString, FunctionSpec *>::Type FunctionSpecMap;
+    typedef OMap<OString, VTableSpec *>::Type VTableSpecMap;
     typedef OMap<OICString, DllModule *>::Type DllModuleMap;
     typedef OList<DllFunction *>::Type DllFunctionList;
+    typedef OList<VTable *>::Type VTableList;
 
     FunctionSpecMap m_funcSpecs;
+    VTableSpecMap m_vtableSpecs;
     DllModuleMap m_dllModules;
     DllFunctionList m_dllFunctions;
+    VTableList m_vtables;
 
-    void ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode);
+    FunctionSpec *ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString &id, bool nameRequired=true, bool ignoreUnknown=false);
     ArgumentSpec *ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLDOMNodePtr &argNode, int argIndex);
+    void ParseVTableSpecNode(MSXML2::IXMLDOMNodePtr &vtSpecNode);
+
     void ParseDllModuleNode(MSXML2::IXMLDOMNodePtr &dllModNode);
     void ParseDllFunctionNode(DllModule *dllMod, MSXML2::IXMLDOMNodePtr &dllFuncNode);
+    void ParseVTableNode(MSXML2::IXMLDOMNodePtr &vtNode);
 };
 
 } // namespace InterceptPP
