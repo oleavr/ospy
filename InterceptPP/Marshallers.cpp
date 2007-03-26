@@ -112,16 +112,39 @@ Factory::Factory()
 }
 
 template<class T> BaseMarshaller *
-Factory::CreateMarshallerInstance()
+Factory::CreateMarshallerInstance(const OString &name)
 {
     return new T();
+}
+
+bool
+Factory::HasMarshaller(const OString &name)
+{
+    MarshallerMap::iterator iter = m_marshallers.find(name);
+    return (iter != m_marshallers.end());
+}
+
+void
+Factory::RegisterMarshaller(const OString &name, CreateMarshallerFunc createFunc)
+{
+    m_marshallers[name] = createFunc;
+}
+
+void
+Factory::UnregisterMarshaller(const OString &name)
+{
+    MarshallerMap::iterator iter = m_marshallers.find(name);
+    if (iter != m_marshallers.end())
+    {
+        m_marshallers.erase(iter);
+    }
 }
 
 BaseMarshaller *
 Factory::CreateMarshaller(const OString &name)
 {
     if (m_marshallers.find(name) != m_marshallers.end())
-        return m_marshallers[name]();
+        return m_marshallers[name](name);
     else
         return NULL;
 }
@@ -445,9 +468,17 @@ Structure::Structure(const char *name, const char *firstFieldName, ...)
 }
 
 Structure::Structure(const char *name, const char *firstFieldName, va_list args)
-    : BaseMarshaller(name)
+    : BaseMarshaller(name), m_size(0)
 {
     Initialize(firstFieldName, args);
+}
+
+Structure::~Structure()
+{
+    for (FieldsVector::iterator iter = m_fields.begin(); iter != m_fields.end(); iter++)
+    {
+        delete *iter;
+    }
 }
 
 void
@@ -459,10 +490,17 @@ Structure::Initialize(const char *firstFieldName, va_list args)
         DWORD offset = va_arg(args, DWORD);
         BaseMarshaller *marshaller = va_arg(args, BaseMarshaller *);
 
-        m_fields.push_back(StructureField(fieldName, offset, marshaller));
+        AddField(new StructureField(fieldName, offset, marshaller));
 
         fieldName = va_arg(args, const char *);
     }
+}
+
+void
+Structure::AddField(StructureField *field)
+{
+    m_fields.push_back(field);
+    m_size += field->GetMarshaller()->GetSize();
 }
 
 Logging::Node *
@@ -477,15 +515,15 @@ Structure::ToNode(const void *start, bool deep, IPropertyProvider *propProv) con
 
     for (unsigned int i = 0; i < m_fields.size(); i++)
     {
-        const StructureField &field = m_fields[i];
+        const StructureField *field = m_fields[i];
 
-        const void *fieldPtr = reinterpret_cast<const char *>(start) + field.GetOffset();
+        const void *fieldPtr = reinterpret_cast<const char *>(start) + field->GetOffset();
 
         Logging::Element *fieldElement = new Logging::Element("Field");
         structElement->AppendChild(fieldElement);
 
-        fieldElement->AddField("Name", field.GetName());
-        Logging::Node *valueNode = field.GetMarshaller()->ToNode(fieldPtr, true, propProv);
+        fieldElement->AddField("Name", field->GetName());
+        Logging::Node *valueNode = field->GetMarshaller()->ToNode(fieldPtr, true, propProv);
         if (valueNode != NULL)
             fieldElement->AppendChild(valueNode);
     }
@@ -502,14 +540,14 @@ Structure::ToString(const void *start, bool deep, IPropertyProvider *propProv) c
 
     for (unsigned int i = 0; i < m_fields.size(); i++)
     {
-        const StructureField &field = m_fields[i];
+        const StructureField *field = m_fields[i];
 
-        const void *fieldPtr = reinterpret_cast<const char *>(start) + field.GetOffset();
+        const void *fieldPtr = reinterpret_cast<const char *>(start) + field->GetOffset();
 
         if (i > 0)
             ss << ", ";
 
-        ss << field.GetName() << "=" << field.GetMarshaller()->ToString(fieldPtr, true, propProv);
+        ss << field->GetName() << "=" << field->GetMarshaller()->ToString(fieldPtr, true, propProv);
     }
 
     ss << " ]";

@@ -26,11 +26,14 @@
 #pragma once
 
 #include "Core.h"
+#include "Marshallers.h"
 #include "VTable.h"
 #include "DLL.h"
 #import <msxml6.dll>
 
 namespace InterceptPP {
+
+class StructureFieldDef;
 
 class HookManager : public BaseObject {
 public:
@@ -60,6 +63,9 @@ protected:
     DllFunctionList m_dllFunctions;
     VTableList m_vtables;
 
+    void ParseTypeNode(MSXML2::IXMLDOMNodePtr &typeNode);
+    StructureFieldDef *ParseStructureFieldNode(MSXML2::IXMLDOMNodePtr &fieldNode);
+
     FunctionSpec *ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString &id, bool nameRequired=true, bool ignoreUnknown=false);
     ArgumentSpec *ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLDOMNodePtr &argNode, int argIndex);
     void ParseVTableSpecNode(MSXML2::IXMLDOMNodePtr &vtSpecNode);
@@ -67,6 +73,59 @@ protected:
     void ParseDllModuleNode(MSXML2::IXMLDOMNodePtr &dllModNode);
     void ParseDllFunctionNode(DllModule *dllMod, MSXML2::IXMLDOMNodePtr &dllFuncNode);
     void ParseVTableNode(MSXML2::IXMLDOMNodePtr &vtNode);
+};
+
+class StructureDef
+{
+public:
+    StructureDef(const OString &name) { m_name = name; }
+    ~StructureDef();
+
+    const OString &GetName() const { return m_name; }
+
+    void AddField(StructureFieldDef *field) { m_fields.push_back(field); }
+
+    Marshaller::Structure *CreateInstance() const;
+
+protected:
+    OString m_name;
+
+    typedef OVector<StructureFieldDef *>::Type FieldDefList;
+    FieldDefList m_fields;
+};
+
+class StructureFieldDef
+{
+public:
+    StructureFieldDef(const OString &name, DWORD offset, const OString &typeName);
+
+    Marshaller::StructureField *CreateInstance();
+
+protected:
+    OString m_name;
+    DWORD m_offset;
+    OString m_typeName;
+};
+
+class StructureBuilder
+{
+public:
+    static StructureBuilder *Instance();
+    ~StructureBuilder();
+
+    void AddStructure(StructureDef *structDef);
+
+    unsigned int GetStructCount() const { return static_cast<unsigned int>(m_structDefs.size()); }
+
+protected:
+    typedef OMap<OString, StructureDef *>::Type StructDefMap;
+    StructDefMap m_structDefs;
+
+    static BaseMarshaller *BuildStructureWrapper(const OString &name);
+    BaseMarshaller *BuildStructure(const OString &name);
+
+    static BaseMarshaller *BuildStructurePtrWrapper(const OString &name);
+    BaseMarshaller *BuildStructurePtr(const OString &name);
 };
 
 } // namespace InterceptPP

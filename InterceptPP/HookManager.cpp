@@ -97,6 +97,13 @@ HookManager::LoadDefinitions(const OString &path)
         MSXML2::IXMLDOMNodeListPtr nodeList;
         MSXML2::IXMLDOMNodePtr node;
 
+        nodeList = doc->selectNodes("/HookManager/Types/*");
+        for (int i = 0; i < nodeList->length; i++)
+        {
+            ParseTypeNode(nodeList->item[i]);
+        }
+        nodeList.Release();
+
         nodeList = doc->selectNodes("/HookManager/Specs/Functions/Function");
         for (int i = 0; i < nodeList->length; i++)
         {
@@ -142,6 +149,129 @@ HookManager::LoadDefinitions(const OString &path)
     {
         throw ParserError(e.ErrorMessage());
     }
+}
+
+void
+HookManager::ParseTypeNode(MSXML2::IXMLDOMNodePtr &typeNode)
+{
+    OString typeName = typeNode->nodeName;
+    if (typeName != "Structure")
+    {
+        GetLogger()->LogWarning("Unknown type '%s'", typeName.c_str());
+        return;
+    }
+
+    OString name;
+    MSXML2::IXMLDOMNodePtr attr = typeNode->attributes->getNamedItem("Name");
+    if (attr == NULL)
+    {
+        GetLogger()->LogError("Name not specified for Structure");
+        return;
+    }
+
+    name = static_cast<bstr_t>(attr->nodeTypedValue);
+    if (name.size() == 0)
+    {
+        GetLogger()->LogError("Empty name specified for Structure");
+        return;
+    }
+
+    StructureDef *structDef = new StructureDef(name);
+
+    MSXML2::IXMLDOMNodeListPtr nodeList;
+    
+    bool allGood = true;
+    int fieldCount = 0;
+    nodeList = typeNode->childNodes;
+    for (int i = 0; i < nodeList->length && allGood; i++)
+    {
+        MSXML2::IXMLDOMNodePtr node = nodeList->item[i];
+
+        OString nodeName = node->nodeName;
+        if (nodeName == "Field")
+        {
+            StructureFieldDef *fieldDef = ParseStructureFieldNode(node);
+            if (fieldDef != NULL)
+            {
+                structDef->AddField(fieldDef);
+                fieldCount++;
+            }
+            else
+            {
+                allGood = false;
+            }
+        }
+        else
+        {
+            GetLogger()->LogWarning("Unknown Structure subelement '%s'", nodeName.c_str());
+        }
+    }
+    nodeList.Release();
+    nodeList = NULL;
+
+    if (allGood && fieldCount == 0)
+    {
+        GetLogger()->LogError("No fields defined for structure '%s'", name.c_str());
+        allGood = false;
+    }
+
+    if (!allGood)
+    {
+        delete structDef;
+        return;
+    }
+
+    StructureBuilder::Instance()->AddStructure(structDef);
+}
+
+StructureFieldDef *
+HookManager::ParseStructureFieldNode(MSXML2::IXMLDOMNodePtr &fieldNode)
+{
+    OString name, offsetStr, typeName;
+
+    MSXML2::IXMLDOMNamedNodeMapPtr attrs = fieldNode->attributes;
+    MSXML2::IXMLDOMNodePtr attr;
+
+    attr = attrs->getNamedItem("Name");
+    if (attr == NULL)
+    {
+        GetLogger()->LogError("Name not specified for Structure field");
+        return NULL;
+    }
+    name = static_cast<bstr_t>(attr->nodeTypedValue);
+
+    attr = attrs->getNamedItem("Offset");
+    if (attr == NULL)
+    {
+        GetLogger()->LogError("Offset not specified for Structure field");
+        return NULL;
+    }
+    offsetStr = static_cast<bstr_t>(attr->nodeTypedValue);
+
+    // FIXME: there's gotta be a more sensible way to do this
+    char *endPtr = NULL;
+    DWORD offset = strtol(offsetStr.c_str(), &endPtr, 0);
+    if (endPtr == offsetStr.c_str())
+    {
+        GetLogger()->LogError("Invalid offset specified for Structure field");
+        return NULL;
+    }
+
+    attr = attrs->getNamedItem("Type");
+    if (attr == NULL)
+    {
+        GetLogger()->LogError("Type not specified for Structure field");
+        return NULL;
+    }
+    typeName = static_cast<bstr_t>(attr->nodeTypedValue);
+
+    if (!Marshaller::Factory::Instance()->HasMarshaller(typeName))
+    {
+        GetLogger()->LogError("Unknown type '%s' specified for Structure field", typeName.c_str());
+        return NULL;
+    }
+
+    return new StructureFieldDef(name, offset, typeName);
 }
 
 FunctionSpec *
@@ -610,6 +740,104 @@ HookManager::ParseVTableNode(MSXML2::IXMLDOMNodePtr &vtNode)
     VTable *vtable = new VTable(m_vtableSpecs[specId], name, offset);
     m_vtables.push_back(vtable);
     vtable->Hook();
+}
+
+StructureDef::~StructureDef()
+{
+    for (FieldDefList::iterator iter = m_fields.begin(); iter != m_fields.end(); iter++)
+    {
+        delete *iter;
+    }
+}
+
+Marshaller::Structure *
+StructureDef::CreateInstance() const
+{
+    Marshaller::Structure *structMarshaller = new Marshaller::Structure(m_name.c_str(), NULL);
+
+    for (FieldDefList::const_iterator iter = m_fields.begin(); iter != m_fields.end(); iter++)
+    {
+        structMarshaller->AddField((*iter)->CreateInstance());
+    }
+
+    return structMarshaller;
+}
+
+StructureFieldDef::StructureFieldDef(const OString &name, DWORD offset, const OString &typeName)
+    : m_name(name), m_offset(offset), m_typeName(typeName)
+{
+}
+
+Marshaller::StructureField *
+StructureFieldDef::CreateInstance()
+{
+    BaseMarshaller *marshaller = Marshaller::Factory::Instance()->CreateMarshaller(m_typeName);
+    if (marshaller == NULL)
+        return NULL;
+
+    return new Marshaller::StructureField(m_name, m_offset, marshaller);
+}
+
+StructureBuilder *
+StructureBuilder::Instance()
+{
+    static StructureBuilder *builder = NULL;
+
+    if (builder == NULL)
+        builder = new StructureBuilder();
+
+    return builder;
+}
+
+StructureBuilder::~StructureBuilder()
+{
+    for (StructDefMap::iterator iter = m_structDefs.begin(); iter != m_structDefs.end(); iter++)
+    {
+        Marshaller::Factory::Instance()->UnregisterMarshaller(iter->second->GetName());
+        delete iter->second;
+    }
+}
+
+void
+StructureBuilder::AddStructure(StructureDef *structDef)
+{
+    m_structDefs[structDef->GetName()] = structDef;
+    Marshaller::Factory::Instance()->RegisterMarshaller(structDef->GetName(), BuildStructureWrapper);
+    Marshaller::Factory::Instance()->RegisterMarshaller(structDef->GetName() + "Ptr", BuildStructurePtrWrapper);
+}
+
+BaseMarshaller *
+StructureBuilder::BuildStructureWrapper(const OString &name)
+{
+    return Instance()->BuildStructure(name);
+}
+
+BaseMarshaller *
+StructureBuilder::BuildStructure(const OString &name)
+{
+    StructDefMap::iterator iter = m_structDefs.find(name);
+    if (iter == m_structDefs.end())
+        return NULL;
+
+    return iter->second->CreateInstance();
+}
+
+BaseMarshaller *
+StructureBuilder::BuildStructurePtrWrapper(const OString &name)
+{
+    return Instance()->BuildStructurePtr(name);
+}
+
+BaseMarshaller *
+StructureBuilder::BuildStructurePtr(const OString &name)
+{
+    OString typeName = name.substr(0, name.size() - 3);
+
+    StructDefMap::iterator iter = m_structDefs.find(typeName);
+    if (iter == m_structDefs.end())
+        return NULL;
+
+    return new Marshaller::Pointer(iter->second->CreateInstance());
 }
 
 } // namespace InterceptPP
