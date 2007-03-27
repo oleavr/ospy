@@ -53,7 +53,7 @@ public:
     {}
 
     virtual Event *NewEvent(const OString &eventType);
-    virtual void SubmitEvent(Event *ev) {}
+    virtual void SubmitEvent(Event *ev) { delete ev; }
 
 protected:
     unsigned int m_id;

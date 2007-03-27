@@ -42,6 +42,7 @@ void
 ConsoleLogger::SubmitEvent(Event *ev)
 {
     PrintNode(ev);
+    delete ev;
 }
 
 void

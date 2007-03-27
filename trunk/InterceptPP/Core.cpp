@@ -532,7 +532,6 @@ Function::OnLeave(FunctionCall *call)
         call->AppendArgumentsToElement(ev);
 
         ev->Submit();
-        delete ev;
 	}
 }
 
