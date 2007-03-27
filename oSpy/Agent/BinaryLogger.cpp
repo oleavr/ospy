@@ -26,12 +26,21 @@
 #include "stdafx.h"
 #include "BinaryLogger.h"
 
+typedef struct {
+    SLIST_ENTRY entry;
+    Logging::Event *ev;
+} PendingEvent;
+
 BinaryLogger::BinaryLogger(const OString &filename)
-    : m_id(0)
+    : m_id(0), m_running(true)
 {
 	m_handle = CreateFile(filename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (m_handle == INVALID_HANDLE_VALUE)
 		throw runtime_error("CreateFile failed");
+
+    InitializeSListHead(&m_pendingEvents);
+
+    CreateThread(NULL, 0, LoggingThreadFuncWrapper, this, 0, NULL);
 }
 
 BinaryLogger::~BinaryLogger()
@@ -50,18 +59,45 @@ BinaryLogger::NewEvent(const OString &eventType)
 void
 BinaryLogger::SubmitEvent(Logging::Event *ev)
 {
-	BinarySerializer serializer;
+    PendingEvent *pe = new PendingEvent;
+    pe->ev = ev;
+    InterlockedPushEntrySList(&m_pendingEvents, &pe->entry);
+}
 
-	serializer.AppendNode(ev);
+DWORD WINAPI
+BinaryLogger::LoggingThreadFuncWrapper(LPVOID param)
+{
+    BinaryLogger *instance = reinterpret_cast<BinaryLogger *>(param);
+    instance->LoggingThreadFunc();
+    return 0;
+}
 
-	const OString &buf = serializer.GetData();
+void
+BinaryLogger::LoggingThreadFunc()
+{
+    while (m_running)
+    {
+        PendingEvent *pe = reinterpret_cast<PendingEvent *>(InterlockedPopEntrySList(&m_pendingEvents));
+        if (pe == NULL)
+        {
+            Sleep(5000);
+            continue;
+        }
 
-	DWORD bytesWritten;
-	if (!WriteFile(m_handle, buf.data(), static_cast<DWORD>(buf.size()), &bytesWritten, NULL))
-		throw runtime_error("WriteFile failed");
+	    BinarySerializer serializer;
+        serializer.AppendNode(pe->ev);
+        delete pe->ev;
+        delete pe;
 
-	if (bytesWritten != buf.size())
-		throw runtime_error("short write");
+	    const OString &buf = serializer.GetData();
+
+	    DWORD bytesWritten;
+	    if (!WriteFile(m_handle, buf.data(), static_cast<DWORD>(buf.size()), &bytesWritten, NULL))
+		    throw Error("WriteFile failed");
+
+	    if (bytesWritten != buf.size())
+		    throw Error("short write");
+    }
 }
 
 void

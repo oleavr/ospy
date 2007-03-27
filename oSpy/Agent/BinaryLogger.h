@@ -37,6 +37,11 @@ public:
 protected:
 	HANDLE m_handle;
     unsigned int m_id;
+    bool m_running;
+    SLIST_HEADER m_pendingEvents;
+
+    static DWORD WINAPI LoggingThreadFuncWrapper(LPVOID param);
+    void LoggingThreadFunc();
 };
 
 class BinarySerializer : public BaseObject
