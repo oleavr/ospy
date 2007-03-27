@@ -167,7 +167,7 @@ Event::Event(Logger *logger, unsigned int id, const OString &eventType)
     unsigned long long stamp = (((unsigned long long) ft.dwHighDateTime) << 32) | ((unsigned long long) ft.dwLowDateTime);
     AddField("Timestamp", stamp);
 
-    AddField("ProcessName", Util::GetProcessName());
+    AddField("ProcessName", Util::Instance()->GetProcessName());
     AddField("ProcessId", GetCurrentProcessId());
     AddField("ThreadId", GetCurrentThreadId());
 }
