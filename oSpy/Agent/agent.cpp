@@ -62,7 +62,7 @@ DllMain(HMODULE hModule,
             try
             {
                 // FIXME: don't hardcode this...
-                mgr->LoadDefinitions("D:\\Projects\\oSpy\\trunk\\oSpy\\Agent\\config.xml");
+                mgr->LoadDefinitions("C:\\Projects\\oSpy\\trunk\\oSpy\\Agent\\config.xml");
             }
             catch (Error &e)
             {
