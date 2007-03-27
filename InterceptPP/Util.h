@@ -31,7 +31,9 @@
 namespace InterceptPP {
 
 typedef struct {
+    HMODULE handle;
 	OICString name;
+    OString directory;
 	DWORD preferredStartAddress;
 	DWORD startAddress;
 	DWORD endAddress;
@@ -40,27 +42,33 @@ typedef struct {
 class Util : public BaseObject
 {
 public:
-	static void Initialize();
-	static void UpdateModuleList();
+    Util();
 
-	static const OString &GetProcessName() { return m_processName; }
-	static OString GetModuleNameForAddress(DWORD address);
-	static OModuleInfo GetModuleInfo(const OICString &name);
-	static OVector<OModuleInfo>::Type GetAllModules();
-	static bool AddressIsWithinExecutableModule(DWORD address);
+    static Util *Instance();
 
-    static Logging::Node *CreateBacktraceNode(void *address);
-	static OString CreateBacktrace(void *address);
+    void Initialize();
+	void UpdateModuleList();
+
+	const OString &GetProcessName() { return m_processName; }
+	OModuleInfo GetModuleInfo(const OICString &name);
+    OModuleInfo GetModuleInfo(void *address);
+	OVector<OModuleInfo>::Type GetAllModules();
+	bool AddressIsWithinExecutableModule(DWORD address);
+
+    OString GetDirectory(const OModuleInfo &mi);
+
+    Logging::Node *CreateBacktraceNode(void *address);
+	OString CreateBacktrace(void *address);
 
 private:
     static bool OnLoadLibrary(FunctionCall *call);
-	static OModuleInfo *GetModuleInfoForAddress(DWORD address);
+	OModuleInfo *GetModuleInfoForAddress(DWORD address);
 
-	static CRITICAL_SECTION m_cs;
-	static OString m_processName;
-	static OMap<OICString, OModuleInfo>::Type m_modules;
-	static DWORD m_lowestAddress;
-	static DWORD m_highestAddress;
+	CRITICAL_SECTION m_cs;
+	OString m_processName;
+	OMap<OICString, OModuleInfo>::Type m_modules;
+	DWORD m_lowestAddress;
+	DWORD m_highestAddress;
 };
 
 } // namespace InterceptPP

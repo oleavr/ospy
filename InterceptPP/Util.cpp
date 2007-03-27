@@ -27,16 +27,30 @@
 #include "Util.h"
 #include "DLL.h"
 #include <psapi.h>
+#include <shlwapi.h>
 
 #pragma warning( disable : 4311 4312 )
 
 namespace InterceptPP {
 
-CRITICAL_SECTION Util::m_cs = { 0, };
-OString Util::m_processName = "";
-OMap<OICString, OModuleInfo>::Type Util::m_modules;
-DWORD Util::m_lowestAddress = 0xFFFFFFFF;
-DWORD Util::m_highestAddress = 0;
+Util::Util()
+    : m_lowestAddress(0xFFFFFFFF),
+      m_highestAddress(0)
+{
+}
+
+Util *
+Util::Instance()
+{
+    static Util *util = NULL;
+
+    if (util == NULL)
+    {
+        util = new Util();
+    }
+
+    return util;
+}
 
 void
 Util::Initialize()
@@ -70,7 +84,7 @@ Util::OnLoadLibrary(FunctionCall *call)
 {
     if (call->GetState() == FUNCTION_CALL_LEAVING)
     {
-        UpdateModuleList();
+        Instance()->UpdateModuleList();
     }
 
     return true;
@@ -115,6 +129,7 @@ Util::UpdateModuleList()
 				IMAGE_DOS_HEADER *dosHeader = (IMAGE_DOS_HEADER *) modules[i];
 				IMAGE_NT_HEADERS *peHeader = (IMAGE_NT_HEADERS *) ((char *) modules[i] + dosHeader->e_lfanew);
 
+                modInfo.handle = modules[i];
 				modInfo.preferredStartAddress = peHeader->OptionalHeader.ImageBase;
 				modInfo.startAddress = (DWORD) mi.lpBaseOfDll;
 				modInfo.endAddress = (DWORD) mi.lpBaseOfDll + mi.SizeOfImage - 1;
@@ -132,22 +147,6 @@ DONE:
 	LeaveCriticalSection(&m_cs);
 }
 
-OString
-Util::GetModuleNameForAddress(DWORD address)
-{
-	OString result = "";
-
-	EnterCriticalSection(&m_cs);
-
-	OModuleInfo *mi = Util::GetModuleInfoForAddress(address);
-	if (mi != NULL)
-		result = mi->name.c_str();
-
-	LeaveCriticalSection(&m_cs);
-
-	return result;
-}
-
 OModuleInfo
 Util::GetModuleInfo(const OICString &name)
 {
@@ -160,6 +159,29 @@ Util::GetModuleInfo(const OICString &name)
     LeaveCriticalSection(&m_cs);
 
     return mi;
+}
+
+OModuleInfo
+Util::GetModuleInfo(void *address)
+{
+    OModuleInfo result;
+
+	EnterCriticalSection(&m_cs);
+
+    bool found = false;
+	OModuleInfo *mi = Util::GetModuleInfoForAddress(reinterpret_cast<DWORD>(address));
+	if (mi != NULL)
+    {
+        found = true;
+		result = *mi;
+    }
+
+	LeaveCriticalSection(&m_cs);
+
+    if (!found)
+        throw Error("No module found");
+
+    return result;
 }
 
 OVector<OModuleInfo>::Type
@@ -192,6 +214,20 @@ Util::AddressIsWithinExecutableModule(DWORD address)
 	LeaveCriticalSection(&m_cs);
 
 	return result;
+}
+
+OString
+Util::GetDirectory(const OModuleInfo &mi)
+{
+    // FIXME: should really use unicode strings
+
+    char buf[MAX_PATH];
+    if (GetModuleFileNameA(mi.handle, buf, sizeof(buf)) == 0)
+        throw Error("GetModuleFileNameA failed");
+
+    PathRemoveFileSpecA(buf);
+
+    return buf;
 }
 
 #define OPCODE_CALL_NEAR_RELATIVE     0xE8

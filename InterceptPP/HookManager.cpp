@@ -133,7 +133,7 @@ HookManager::LoadDefinitions(const OString &path)
 
         OOStringStream ss;
         ss << "/HookManager/Hooks/VTables[@ProcessName = translate('";
-        ss << Util::GetProcessName();
+        ss << Util::Instance()->GetProcessName();
         ss << "', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')]/VTable";
 
         nodeList = doc->selectNodes(ss.str().c_str());

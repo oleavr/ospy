@@ -55,14 +55,17 @@ DllMain(HMODULE hModule,
             //COverlappedManager::Init();
 
             InterceptPP::Initialize();
-            // FIXME: don't hardcode this...
-            InterceptPP::SetLogger(new BinaryLogger("c:\\oSpyAgentLog.bin"));
+
+            OModuleInfo mi = Util::Instance()->GetModuleInfo(DllMain);
+            OString ourDir = Util::Instance()->GetDirectory(mi);
+
+            InterceptPP::SetLogger(new BinaryLogger(ourDir + "\\oSpyAgentLog.bin"));
 
             HookManager *mgr = HookManager::Instance();
             try
             {
                 // FIXME: don't hardcode this...
-                mgr->LoadDefinitions("C:\\Projects\\oSpy\\trunk\\oSpy\\Agent\\config.xml");
+                mgr->LoadDefinitions(ourDir + "\\config.xml");
             }
             catch (Error &e)
             {

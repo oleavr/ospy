@@ -40,7 +40,7 @@ Initialize()
     g_defaultLogger = new Logging::NullLogger();
 
     Function::Initialize();
-    Util::Initialize();
+    Util::Instance()->Initialize();
     SetLogger(NULL);
 }
 
@@ -580,7 +580,7 @@ FunctionCall::ShouldLogArgumentDeep(const Argument *arg) const
 void
 FunctionCall::AppendBacktraceToElement(Logging::Element *el)
 {
-    Logging::Node *btNode = Util::CreateBacktraceNode(m_backtraceAddress);
+    Logging::Node *btNode = Util::Instance()->CreateBacktraceNode(m_backtraceAddress);
     if (btNode != NULL)
     {
         el->AppendChild(btNode);

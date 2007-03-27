@@ -45,7 +45,7 @@ DllModule::DllModule(const OString &path)
 
     m_name = tmp;
 
-    OModuleInfo mi = Util::GetModuleInfo(m_name.c_str());
+    OModuleInfo mi = Util::Instance()->GetModuleInfo(m_name.c_str());
     m_base = reinterpret_cast<void *>(mi.startAddress);
     m_size = mi.endAddress - mi.startAddress;
 }

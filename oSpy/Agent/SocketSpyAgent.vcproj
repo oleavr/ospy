@@ -63,7 +63,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:MSVCRTD"
-				AdditionalDependencies="psapi.lib ws2_32.lib"
+				AdditionalDependencies="psapi.lib ws2_32.lib shlwapi.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
 				IgnoreAllDefaultLibraries="false"
@@ -142,7 +142,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="psapi.lib ws2_32.lib"
+				AdditionalDependencies="psapi.lib ws2_32.lib shlwapi.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
