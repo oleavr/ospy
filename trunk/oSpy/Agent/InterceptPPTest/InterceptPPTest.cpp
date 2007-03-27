@@ -61,8 +61,7 @@ int main(int argc, char *argv[])
 #endif
         mgr->LoadDefinitions("D:\\Projects\\oSpy\\trunk\\oSpy\\Agent\\config.xml");
 
-        cout << EnumerationBuilder::Instance()->GetEnumerationCount() << " Enumeration objects loaded" << endl;
-        cout << StructureBuilder::Instance()->GetStructCount() << " StructureDef objects loaded" << endl;
+        cout << TypeBuilder::Instance()->GetTypeCount() << " types loaded" << endl;
         cout << mgr->GetFunctionSpecCount() << " FunctionSpec objects loaded" << endl;
         cout << mgr->GetVTableSpecCount() << " VTableSpec objects loaded" << endl;
         cout << mgr->GetDllModuleCount() << " DllModule objects loaded" << endl;

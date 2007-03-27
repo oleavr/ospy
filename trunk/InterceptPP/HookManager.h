@@ -80,22 +80,22 @@ protected:
 
 // TODO: refactor the mess below
 
-class EnumerationBuilder
+class TypeBuilder
 {
 public:
-    static EnumerationBuilder *Instance();
-    ~EnumerationBuilder();
+    static TypeBuilder *Instance();
+    ~TypeBuilder();
 
-    void AddEnumeration(Marshaller::Enumeration *enumTemplate);
+    void AddType(BaseMarshaller *tpl);
 
-    unsigned int GetEnumerationCount() const { return static_cast<unsigned int>(m_enumTypes.size()); }
+    unsigned int GetTypeCount() const { return static_cast<unsigned int>(m_types.size()); }
 
 protected:
-    typedef OMap<OString, Marshaller::Enumeration *>::Type EnumTypeMap;
-    EnumTypeMap m_enumTypes;
+    typedef OMap<OString, BaseMarshaller *>::Type TypeMap;
+    TypeMap m_types;
 
-    static BaseMarshaller *BuildEnumerationWrapper(const OString &name);
-    BaseMarshaller *BuildEnumeration(const OString &name);
+    static BaseMarshaller *BuildTypeWrapper(const OString &name);
+    BaseMarshaller *BuildType(const OString &name);
 };
 
 class StructureDef
