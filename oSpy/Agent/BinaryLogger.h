@@ -37,8 +37,10 @@ public:
 protected:
 	HANDLE m_handle;
     unsigned int m_id;
-    bool m_running;
+    volatile bool m_running;
     SLIST_HEADER m_pendingEvents;
+
+    void FlushPending();
 
     static DWORD WINAPI LoggingThreadFuncWrapper(LPVOID param);
     void LoggingThreadFunc();

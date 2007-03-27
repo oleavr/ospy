@@ -59,9 +59,38 @@ BinaryLogger::NewEvent(const OString &eventType)
 void
 BinaryLogger::SubmitEvent(Logging::Event *ev)
 {
-    PendingEvent *pe = new PendingEvent;
-    pe->ev = ev;
-    InterlockedPushEntrySList(&m_pendingEvents, &pe->entry);
+    if (m_running)
+    {
+        PendingEvent *pe = new PendingEvent;
+        pe->ev = ev;
+        InterlockedPushEntrySList(&m_pendingEvents, &pe->entry);
+    }
+    else
+    {
+        delete ev;
+        FlushPending();
+    }
+}
+
+void
+BinaryLogger::FlushPending()
+{
+    PendingEvent *pe;
+    while ((pe = reinterpret_cast<PendingEvent *>(InterlockedFlushSList(&m_pendingEvents))) != NULL)
+    {
+        PendingEvent *cur = pe;
+
+        do
+        {
+            PendingEvent *next = reinterpret_cast<PendingEvent *>(cur->entry.Next);
+
+            delete cur->ev;
+            delete cur;
+
+            cur = next;
+        }
+        while (cur != NULL);
+    }
 }
 
 DWORD WINAPI
@@ -77,26 +106,27 @@ BinaryLogger::LoggingThreadFunc()
 {
     while (m_running)
     {
-        PendingEvent *pe = reinterpret_cast<PendingEvent *>(InterlockedPopEntrySList(&m_pendingEvents));
-        if (pe == NULL)
+        PendingEvent *pe;
+
+        while ((pe = reinterpret_cast<PendingEvent *>(InterlockedPopEntrySList(&m_pendingEvents))) != NULL)
         {
-            Sleep(5000);
-            continue;
+	        BinarySerializer serializer;
+            serializer.AppendNode(pe->ev);
+            delete pe->ev;
+            delete pe;
+
+	        const OString &buf = serializer.GetData();
+
+	        DWORD bytesWritten;
+	        if (!WriteFile(m_handle, buf.data(), static_cast<DWORD>(buf.size()), &bytesWritten, NULL))
+		        throw Error("WriteFile failed");
+
+	        if (bytesWritten != buf.size())
+		        throw Error("short write");
         }
 
-	    BinarySerializer serializer;
-        serializer.AppendNode(pe->ev);
-        delete pe->ev;
-        delete pe;
-
-	    const OString &buf = serializer.GetData();
-
-	    DWORD bytesWritten;
-	    if (!WriteFile(m_handle, buf.data(), static_cast<DWORD>(buf.size()), &bytesWritten, NULL))
-		    throw Error("WriteFile failed");
-
-	    if (bytesWritten != buf.size())
-		    throw Error("short write");
+        if (m_running)
+            Sleep(5000);
     }
 }
 
