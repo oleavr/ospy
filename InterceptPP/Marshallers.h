@@ -41,6 +41,8 @@ public:
     BaseMarshaller(const OString &typeName);
     virtual ~BaseMarshaller() {};
 
+    virtual BaseMarshaller *Clone() const { return NULL; }
+
     virtual bool SetProperty(const OString &name, const OString &value) { return false; }
 
     bool HasPropertyBinding(const OString &propName) const;

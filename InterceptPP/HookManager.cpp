@@ -261,7 +261,7 @@ HookManager::ParseStructureFieldNode(MSXML2::IXMLDOMNodePtr &fieldNode)
 
     // FIXME: there's gotta be a more sensible way to do this
     char *endPtr = NULL;
-    DWORD offset = strtol(offsetStr.c_str(), &endPtr, 0);
+    DWORD offset = strtoul(offsetStr.c_str(), &endPtr, 0);
     if (endPtr == offsetStr.c_str())
     {
         GetLogger()->LogError("Invalid offset specified for Structure field");
@@ -332,7 +332,7 @@ HookManager::ParseEnumerationNode(MSXML2::IXMLDOMNodePtr &enumNode)
 
     if (enumTpl->GetMemberCount() > 0)
     {
-        EnumerationBuilder::Instance()->AddEnumeration(enumTpl);
+        TypeBuilder::Instance()->AddType(enumTpl);
     }
     else
     {
@@ -365,7 +365,7 @@ HookManager::ParseEnumerationMemberNode(MSXML2::IXMLDOMNodePtr &enumMemberNode, 
 
     // FIXME: there's gotta be a more sensible way to do this
     char *endPtr = NULL;
-    memberValue = strtol(valStr.c_str(), &endPtr, 0);
+    memberValue = strtoul(valStr.c_str(), &endPtr, 0);
     if (endPtr == valStr.c_str())
     {
         GetLogger()->LogError("Invalid offset specified for Enumeration member");
@@ -831,7 +831,7 @@ HookManager::ParseVTableNode(MSXML2::IXMLDOMNodePtr &vtNode)
 
     // FIXME: there's gotta be a more sensible way to do this
     char *endPtr = NULL;
-    DWORD offset = strtol(offsetStr.c_str(), &endPtr, 0);
+    DWORD offset = strtoul(offsetStr.c_str(), &endPtr, 0);
     if (endPtr == offsetStr.c_str())
     {
         GetLogger()->LogError("Invalid offset specified for VTable");
@@ -843,20 +843,20 @@ HookManager::ParseVTableNode(MSXML2::IXMLDOMNodePtr &vtNode)
     vtable->Hook();
 }
 
-EnumerationBuilder *
-EnumerationBuilder::Instance()
+TypeBuilder *
+TypeBuilder::Instance()
 {
-    static EnumerationBuilder *builder = NULL;
+    static TypeBuilder *builder = NULL;
 
     if (builder == NULL)
-        builder = new EnumerationBuilder();
+        builder = new TypeBuilder();
 
     return builder;
 }
 
-EnumerationBuilder::~EnumerationBuilder()
+TypeBuilder::~TypeBuilder()
 {
-    for (EnumTypeMap::iterator iter = m_enumTypes.begin(); iter != m_enumTypes.end(); iter++)
+    for (TypeMap::iterator iter = m_types.begin(); iter != m_types.end(); iter++)
     {
         Marshaller::Factory::Instance()->UnregisterMarshaller(iter->first);
         delete iter->second;
@@ -864,26 +864,26 @@ EnumerationBuilder::~EnumerationBuilder()
 }
 
 void
-EnumerationBuilder::AddEnumeration(Marshaller::Enumeration *enumTemplate)
+TypeBuilder::AddType(BaseMarshaller *tpl)
 {
-    m_enumTypes[enumTemplate->GetName()] = enumTemplate;
-    Marshaller::Factory::Instance()->RegisterMarshaller(enumTemplate->GetName(), BuildEnumerationWrapper);
+    m_types[tpl->GetName()] = tpl;
+    Marshaller::Factory::Instance()->RegisterMarshaller(tpl->GetName(), BuildTypeWrapper);
 }
 
 BaseMarshaller *
-EnumerationBuilder::BuildEnumerationWrapper(const OString &name)
+TypeBuilder::BuildTypeWrapper(const OString &name)
 {
-    return Instance()->BuildEnumeration(name);
+    return Instance()->BuildType(name);
 }
 
 BaseMarshaller *
-EnumerationBuilder::BuildEnumeration(const OString &name)
+TypeBuilder::BuildType(const OString &name)
 {
-    EnumTypeMap::iterator iter = m_enumTypes.find(name);
-    if (iter == m_enumTypes.end())
+    TypeMap::iterator iter = m_types.find(name);
+    if (iter == m_types.end())
         return NULL;
 
-    return new Marshaller::Enumeration(*(iter->second));
+    return iter->second->Clone();
 }
 
 StructureDef::~StructureDef()
