@@ -149,14 +149,24 @@ Factory::CreateMarshaller(const OString &name)
         return NULL;
 }
 
-Pointer::Pointer(BaseMarshaller *type)
-    : BaseMarshaller("Pointer"), m_type(type)
+Pointer::Pointer(BaseMarshaller *type, const OString &ptrTypeName)
+    : BaseMarshaller(ptrTypeName), m_type(type)
 {}
 
 Pointer::~Pointer()
 {
     if (m_type != NULL)
         delete m_type;
+}
+
+BaseMarshaller *
+Pointer::Clone() const
+{
+    BaseMarshaller *typeClone = NULL;
+    if (m_type)
+        typeClone = m_type->Clone();
+
+    return new Pointer(typeClone, m_typeName);
 }
 
 bool
@@ -403,11 +413,12 @@ UnicodeString::ToString(const void *start, bool deep, IPropertyProvider *propPro
     OOStringStream ss;
 
     const WCHAR *strPtr = static_cast<const WCHAR *>(start);
-    unsigned int bufSize = static_cast<unsigned int>(wcslen(strPtr)) + 1;
+    unsigned int len = static_cast<unsigned int>(wcslen(strPtr));
 
     OString result;
-    result.resize(bufSize);
-    WideCharToMultiByte(CP_ACP, 0, strPtr, -1, const_cast<char *>(result.data()), result.size(), NULL, NULL);
+    result.resize(len);
+    WideCharToMultiByte(CP_ACP, 0, strPtr, -1, const_cast<char *>(result.data()),
+                        static_cast<int>(result.size()), NULL, NULL);
 
     return result;
 }
@@ -499,6 +510,19 @@ Structure::Initialize(const char *firstFieldName, va_list args)
 
         fieldName = va_arg(args, const char *);
     }
+}
+
+BaseMarshaller *
+Structure::Clone() const
+{
+    Structure *clone = new Structure(m_typeName.c_str(), NULL);
+
+    for (FieldsVector::const_iterator iter = m_fields.begin(); iter != m_fields.end(); iter++)
+    {
+        clone->AddField(new StructureField(**iter));
+    }
+
+    return clone;
 }
 
 void

@@ -88,8 +88,10 @@ protected:
 class Pointer : public BaseMarshaller
 {
 public:
-    Pointer(BaseMarshaller *type=NULL);
+    Pointer(BaseMarshaller *type=NULL, const OString &ptrTypeName="Pointer");
     virtual ~Pointer();
+
+    virtual BaseMarshaller *Clone() const;
 
     virtual bool SetProperty(const OString &name, const OString &value);
 
@@ -255,6 +257,8 @@ class Enumeration : public UInt32
 public:
     Enumeration(const char *name, const char *firstName, ...);
 
+    virtual BaseMarshaller *Clone() const { return new Enumeration(*this); }
+
     void AddMember(const OString &name, DWORD value) { m_defs[value] = name; }
     unsigned int GetMemberCount() const { return static_cast<unsigned int>(m_defs.size()); }
 
@@ -289,7 +293,10 @@ public:
     Structure(const char *name, const char *firstFieldName, va_list args);
     ~Structure();
 
+    virtual BaseMarshaller *Clone() const;
+
     void AddField(StructureField *field);
+    unsigned int GetFieldCount() const { return static_cast<unsigned int>(m_fields.size()); }
 
     virtual unsigned int GetSize() const { return m_size; }
     virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
