@@ -243,7 +243,7 @@ Function::Initialize()
 {
 	for (int i = 0; i < sizeof(prologSignatureSpecs) / sizeof(PrologSignatureSpec); i++)
 	{
-        prologSignatures.push_back(Signature(&prologSignatureSpecs[i].sig));
+        prologSignatures.push_back(Signature(prologSignatureSpecs[i].sig.signature));
     }
 }
 
