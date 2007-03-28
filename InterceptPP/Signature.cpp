@@ -149,13 +149,16 @@ SignatureMatcher::FindInRange(const Signature &sig, void *base, unsigned int siz
     unsigned char *p = static_cast<unsigned char *>(base);
     unsigned char *maxP = p + size - sig.GetLength();
 
+    const SignatureToken &t = sig.GetLongestToken();
+    const char *longestTokenData = t.GetData();
+    unsigned int longestTokenLen = t.GetLength();
+    int longestTokenOffset = sig.GetLongestTokenOffset();
+
     for (; p <= maxP; p++)
     {
-        const SignatureToken &t = sig.GetLongestToken();
-
-        if (memcmp(p, t.GetData(), t.GetLength()) == 0)
+        if (memcmp(p, longestTokenData, longestTokenLen) == 0)
         {
-            void *candidateBase = p - sig.GetLongestTokenOffset();
+            void *candidateBase = p - longestTokenOffset;
 
             if (MatchesSignature(sig, candidateBase))
             {
