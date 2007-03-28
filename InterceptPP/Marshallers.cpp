@@ -95,9 +95,7 @@ Factory::Factory()
 {
     REGISTER_MARSHALLER(Pointer);
     REGISTER_MARSHALLER(UInt16);
-    REGISTER_MARSHALLER(UInt16BE);
     REGISTER_MARSHALLER(UInt32);
-    REGISTER_MARSHALLER(UInt32BE);
     REGISTER_MARSHALLER(UInt32Ptr);
     REGISTER_MARSHALLER(ByteArray);
     REGISTER_MARSHALLER(ByteArrayPtr);
@@ -230,15 +228,28 @@ Pointer::ToString(const void *start, bool deep, IPropertyProvider *propProv) con
 bool
 Integer::SetProperty(const OString &name, const OString &value)
 {
-    if (name != "Hex")
-        return false;
-
-    if (value == "true")
-        m_hex = true;
-    else if (value == "false")
-        m_hex = false;
+    if (name == "Hex")
+    {
+        if (value == "true")
+            m_hex = true;
+        else if (value == "false")
+            m_hex = false;
+        else
+            return false;
+    }
+    else if (name == "Endian")
+    {
+        if (value == "big")
+            m_bigEndian = true;
+        else if (value == "little")
+            m_bigEndian = false;
+        else
+            return false;
+    }
     else
+    {
         return false;
+    }
 
     return true;
 }
@@ -248,35 +259,33 @@ UInt16::ToString(const void *start, bool deep, IPropertyProvider *propProv) cons
 {
     OOStringStream ss;
 
-    const unsigned short *wPtr = reinterpret_cast<const unsigned short *>(start);
+    int v;
+    ToInt(start, v);
 
     if (m_hex)
         ss << "0x" << hex;
     else
         ss << dec;
 
-    ss << static_cast<unsigned int>(*wPtr);
+    ss << static_cast<unsigned int>(v);
 
     return ss.str();
 }
 
-OString
-UInt16BE::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
+bool
+UInt16::ToInt(const void *start, int &result) const
 {
-    OOStringStream ss;
-
     const unsigned short *wPtr = reinterpret_cast<const unsigned short *>(start);
+    unsigned short w = *wPtr;
 
-    if (m_hex)
-        ss << "0x" << hex;
-    else
-        ss << dec;
+    if (m_bigEndian)
+    {
+        w = ((w >> 8) & 0x00FF) |
+            ((w << 8) & 0xFF00);
+    }
 
-    unsigned int dw = ((*wPtr >> 8) & 0x00FF) |
-                      ((*wPtr << 8) & 0xFF00);
-    ss << dw;
-
-    return ss.str();
+    result = w;
+    return true;
 }
 
 OString
@@ -284,14 +293,15 @@ UInt32::ToString(const void *start, bool deep, IPropertyProvider *propProv) cons
 {
     OOStringStream ss;
 
-    const unsigned int *dwPtr = reinterpret_cast<const unsigned int *>(start);
+    int v;
+    ToInt(start, v);
 
     if (m_hex)
         ss << "0x" << hex;
     else
         ss << dec;
 
-    ss << *dwPtr;
+    ss << static_cast<unsigned int>(v);
 
     return ss.str();
 }
@@ -299,32 +309,19 @@ UInt32::ToString(const void *start, bool deep, IPropertyProvider *propProv) cons
 bool
 UInt32::ToInt(const void *start, int &result) const
 {
-    const int *dwPtr = reinterpret_cast<const int *>(start);
-    
-    result = *dwPtr;
-
-    return true;
-}
-
-OString
-UInt32BE::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
-{
-    OOStringStream ss;
-
     const unsigned int *dwPtr = reinterpret_cast<const unsigned int *>(start);
+    unsigned int dw = *dwPtr;
 
-    if (m_hex)
-        ss << "0x" << hex;
-    else
-        ss << dec;
+    if (m_bigEndian)
+    {
+        dw = (dw >> 24) & 0x000000FF |
+             (dw >>  8) & 0x0000FF00 |
+             (dw <<  8) & 0x00FF0000 |
+             (dw << 24) & 0xFF000000;
+    }
 
-    unsigned int dw = (*dwPtr >> 24) & 0x000000FF |
-                      (*dwPtr >>  8) & 0x0000FF00 |
-                      (*dwPtr <<  8) & 0x00FF0000 |
-                      (*dwPtr << 24) & 0xFF000000;
-    ss << dw;
-
-    return ss.str();
+    result = *dwPtr;
+    return true;
 }
 
 ByteArray::ByteArray(int size)

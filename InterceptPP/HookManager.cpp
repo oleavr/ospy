@@ -218,12 +218,23 @@ HookManager::ParseStructureNode(MSXML2::IXMLDOMNodePtr &structNode)
         if (nodeName == "Field")
         {
             OString fieldName, fieldType;
-            DWORD fieldOffset;
+            int fieldOffset;
+            PropertyList typeProps;
 
-            if (ParseStructureFieldNode(node, fieldName, fieldOffset, fieldType))
+            if (ParseStructureFieldNode(node, fieldName, fieldOffset, fieldType, typeProps))
             {
-                structTpl->AddField(new Marshaller::StructureField(fieldName, fieldOffset,
-                    Marshaller::Factory::Instance()->CreateMarshaller(fieldType)));
+                BaseMarshaller *marshaller = Marshaller::Factory::Instance()->CreateMarshaller(fieldType);
+
+                for (PropertyList::const_iterator iter = typeProps.begin(); iter != typeProps.end(); iter++)
+                {
+                    if (!marshaller->SetProperty(iter->first, iter->second))
+                    {
+                        GetLogger()->LogWarning("Failed to set property '%s' to '%s' on Marshaller::%s",
+                            iter->first.c_str(), iter->second.c_str(), fieldType.c_str());
+                    }
+                }
+
+                structTpl->AddField(new Marshaller::StructureField(fieldName, fieldOffset, marshaller));
             }
             else
             {
@@ -254,47 +265,65 @@ HookManager::ParseStructureNode(MSXML2::IXMLDOMNodePtr &structNode)
 }
 
 bool
-HookManager::ParseStructureFieldNode(MSXML2::IXMLDOMNodePtr &fieldNode, OString &name, DWORD &offset, OString &typeName)
+HookManager::ParseStructureFieldNode(MSXML2::IXMLDOMNodePtr &fieldNode,
+                                     OString &name, int &offset, OString &typeName,
+                                     PropertyList &typeProps)
 {
-    MSXML2::IXMLDOMNamedNodeMapPtr attrs = fieldNode->attributes;
-    MSXML2::IXMLDOMNodePtr attr;
+    offset = -1;
 
-    attr = attrs->getNamedItem("Name");
-    if (attr == NULL)
+    MSXML2::IXMLDOMNamedNodeMapPtr attrs = fieldNode->attributes;
+    MSXML2::IXMLDOMNodePtr attrNode;
+
+    while ((attrNode = attrs->nextNode()) != NULL)
     {
-        GetLogger()->LogError("Name not specified for Structure field");
+        OString attrName = static_cast<OString>(attrNode->nodeName);
+
+        if (attrName == "Name")
+        {
+            name = static_cast<bstr_t>(attrNode->nodeTypedValue);
+        }
+        else if (attrName == "Offset")
+        {
+            OString offsetStr = static_cast<bstr_t>(attrNode->nodeTypedValue);
+
+            // FIXME: there's gotta be a more sensible way to do this
+            char *endPtr = NULL;
+            offset = strtoul(offsetStr.c_str(), &endPtr, 0);
+            if (endPtr == offsetStr.c_str() || offset < 0)
+            {
+                GetLogger()->LogError("Invalid offset specified for Structure field");
+                return false;
+            }
+        }
+        else if (attrName == "Type")
+        {
+            typeName = static_cast<bstr_t>(attrNode->nodeTypedValue);
+
+            if (!Marshaller::Factory::Instance()->HasMarshaller(typeName))
+            {
+                GetLogger()->LogError("Unknown type '%s' specified for Structure field", typeName.c_str());
+                return false;
+            }
+        }
+        else
+        {
+            typeProps.push_back(pair<OString, OString>(attrName, OString(static_cast<bstr_t>(attrNode->nodeTypedValue))));
+        }
+    }
+
+    if (name.size() == 0)
+    {
+        GetLogger()->LogError("Name blank or not specified for Structure field");
         return false;
     }
-    name = static_cast<bstr_t>(attr->nodeTypedValue);
-
-    attr = attrs->getNamedItem("Offset");
-    if (attr == NULL)
+    else if (offset == -1)
     {
         GetLogger()->LogError("Offset not specified for Structure field");
         return false;
     }
-    OString offsetStr = static_cast<bstr_t>(attr->nodeTypedValue);
-
-    // FIXME: there's gotta be a more sensible way to do this
-    char *endPtr = NULL;
-    offset = strtoul(offsetStr.c_str(), &endPtr, 0);
-    if (endPtr == offsetStr.c_str())
+    else if (typeName.size() == 0)
     {
-        GetLogger()->LogError("Invalid offset specified for Structure field");
-        return false;
-    }
-
-    attr = attrs->getNamedItem("Type");
-    if (attr == NULL)
-    {
-        GetLogger()->LogError("Type not specified for Structure field");
-        return false;
-    }
-    typeName = static_cast<bstr_t>(attr->nodeTypedValue);
-
-    if (!Marshaller::Factory::Instance()->HasMarshaller(typeName))
-    {
-        GetLogger()->LogError("Unknown type '%s' specified for Structure field", typeName.c_str());
+        GetLogger()->LogError("Type name not specified for Structure field");
         return false;
     }
 
@@ -447,8 +476,6 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
             {
                 GetLogger()->LogWarning("Unknown FunctionSpec attribute '%s'", attrName.c_str());
             }
-
-            continue;
         }
     }
 
@@ -536,7 +563,7 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
     OString argName;
     ArgumentDirection argDir = ARG_DIR_UNKNOWN;
     OString argType;
-    OMap<OString, OString>::Type argTypeProps;
+    PropertyList argTypeProps;
 
     MSXML2::IXMLDOMNamedNodeMapPtr attrs = argNode->attributes;
 
@@ -570,7 +597,7 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
         }
         else
         {
-            argTypeProps[attrName] = static_cast<bstr_t>(attrNode->nodeTypedValue);
+            argTypeProps.push_back(pair<OString, OString>(attrName, OString(static_cast<bstr_t>(attrNode->nodeTypedValue))));
         }
     }
 
@@ -601,8 +628,7 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
         return NULL;
     }
 
-    OMap<OString, OString>::Type::iterator iter;
-    for (iter = argTypeProps.begin(); iter != argTypeProps.end(); iter++)
+    for (PropertyList::const_iterator iter = argTypeProps.begin(); iter != argTypeProps.end(); iter++)
     {
         if (!marshaller->SetProperty(iter->first, iter->second))
         {
