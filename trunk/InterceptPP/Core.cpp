@@ -25,6 +25,7 @@
 
 #include "stdafx.h"
 #include "Core.h"
+#include "NullLogger.h"
 #include "Util.h"
 
 #pragma warning( disable : 4311 4312 )
@@ -293,7 +294,7 @@ Function::Hook()
     {
         const Signature *sig = &prologSignatures[i];
 
-        OVector<void *>::Type matches = SignatureMatcher::Instance()->FindInRange(sig, reinterpret_cast<void *>(m_offset), sig->GetLength());
+        OVector<void *>::Type matches = SignatureMatcher::Instance()->FindInRange(*sig, reinterpret_cast<void *>(m_offset), sig->GetLength());
         if (matches.size() == 1)
         {
             spec = &prologSignatureSpecs[i];

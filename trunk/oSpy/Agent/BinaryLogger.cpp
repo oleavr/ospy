@@ -106,6 +106,8 @@ BinaryLogger::LoggingThreadFunc()
 {
     while (m_running)
     {
+        Sleep(5000);
+
         PendingEvent *pe;
 
         while ((pe = reinterpret_cast<PendingEvent *>(InterlockedPopEntrySList(&m_pendingEvents))) != NULL)
@@ -124,9 +126,6 @@ BinaryLogger::LoggingThreadFunc()
 	        if (bytesWritten != buf.size())
 		        throw Error("short write");
         }
-
-        if (m_running)
-            Sleep(5000);
     }
 }
 

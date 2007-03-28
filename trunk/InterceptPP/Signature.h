@@ -104,10 +104,12 @@ public:
         return matcher;
     }
 
-    OVector<void *>::Type FindInRange(const Signature *sig, void *base, unsigned int size);
+    OVector<void *>::Type FindInRange(const Signature &sig, void *base, unsigned int size);
+    void *FindUniqueInRange(const Signature &sig, void *base, unsigned int size);
+    void *FindUniqueInModule(const Signature &sig, OICString moduleName);
 
 protected:
-    bool MatchesSignature(const Signature *sig, void *base);
+    bool MatchesSignature(const Signature &sig, void *base);
 };
 
 } // namespace InterceptPP

@@ -37,26 +37,13 @@ public:
     virtual Event *NewEvent(const OString &eventType) = 0;
     virtual void SubmitEvent(Event *ev) = 0;
 
+    void LogDebug(const char *format, ...);
     void LogInfo(const char *format, ...);
     void LogWarning(const char *format, ...);
     void LogError(const char *format, ...);
 
 protected:
     void LogMessage(const char *type, const char *format, va_list args);
-};
-
-class NullLogger : public Logger
-{
-public:
-    NullLogger()
-        : m_id(0)
-    {}
-
-    virtual Event *NewEvent(const OString &eventType);
-    virtual void SubmitEvent(Event *ev) { delete ev; }
-
-protected:
-    unsigned int m_id;
 };
 
 class Node : public BaseObject

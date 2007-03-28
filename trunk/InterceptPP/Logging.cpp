@@ -33,6 +33,17 @@ namespace InterceptPP {
 namespace Logging {
 
 void
+Logger::LogDebug(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+
+    LogMessage("Debug", format, args);
+
+    va_end(args);
+}
+
+void
 Logger::LogInfo(const char *format, ...)
 {
     va_list args;
@@ -76,12 +87,6 @@ Logger::LogMessage(const char *type, const char *format, va_list args)
     Event *ev = NewEvent(type);
     ev->AppendChild(new TextNode("Message", buf));
     ev->Submit();
-}
-
-Event *
-NullLogger::NewEvent(const OString &eventType)
-{
-    return new Event(this, m_id++, eventType);
 }
 
 Node::Node(const OString &name)

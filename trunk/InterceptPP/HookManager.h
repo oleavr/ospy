@@ -79,7 +79,7 @@ protected:
 
     void ParseDllModuleNode(MSXML2::IXMLDOMNodePtr &dllModNode);
     void ParseDllFunctionNode(DllModule *dllMod, MSXML2::IXMLDOMNodePtr &dllFuncNode);
-    void ParseVTableNode(MSXML2::IXMLDOMNodePtr &vtNode);
+    void ParseVTableNode(const OString &processName, MSXML2::IXMLDOMNodePtr &vtNode);
 };
 
 class TypeBuilder

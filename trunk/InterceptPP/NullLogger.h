@@ -25,51 +25,24 @@
 
 #pragma once
 
-#include "Core.h"
-#include "Logging.h"
-
 namespace InterceptPP {
 
-typedef struct {
-    HMODULE handle;
-	OICString name;
-    OString directory;
-	DWORD preferredStartAddress;
-	DWORD startAddress;
-	DWORD endAddress;
-} OModuleInfo;
+namespace Logging {
 
-class Util : public BaseObject
+class NullLogger : public Logger
 {
 public:
-    Util();
+    NullLogger()
+        : m_id(0)
+    {}
 
-    static Util *Instance();
+    virtual Event *NewEvent(const OString &eventType) { return new Event(this, m_id++, eventType); }
+    virtual void SubmitEvent(Event *ev) { delete ev; }
 
-    void Initialize();
-	void UpdateModuleList();
-
-	const OString &GetProcessName() { return m_processName; }
-	OModuleInfo GetModuleInfo(const OICString &name);
-    OModuleInfo GetModuleInfo(void *address);
-	OVector<OModuleInfo>::Type GetAllModules();
-	bool AddressIsWithinAnyModule(DWORD address);
-	bool AddressIsWithinModule(DWORD address, const OICString &moduleName);
-
-    OString GetDirectory(const OModuleInfo &mi);
-
-    Logging::Node *CreateBacktraceNode(void *address);
-	OString CreateBacktrace(void *address);
-
-private:
-    static bool OnLoadLibrary(FunctionCall *call);
-	OModuleInfo *GetModuleInfoForAddress(DWORD address);
-
-	CRITICAL_SECTION m_cs;
-	OString m_processName;
-	OMap<OICString, OModuleInfo>::Type m_modules;
-	DWORD m_lowestAddress;
-	DWORD m_highestAddress;
+protected:
+    unsigned int m_id;
 };
+
+} // namespace Logging
 
 } // namespace InterceptPP
