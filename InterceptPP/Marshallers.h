@@ -317,26 +317,6 @@ public:
     StructurePtr(const char *firstFieldName, ...);
 };
 
-namespace Registry {
-
-class KeyHandle : public Enumeration
-{
-public:
-    KeyHandle()
-        : Enumeration("KeyHandle",
-                      "HKEY_CLASSES_ROOT", 0x80000000,
-                      "HKEY_CURRENT_USER", 0x80000001,
-                      "HKEY_LOCAL_MACHINE", 0x80000002,
-                      "HKEY_USERS", 0x80000003,
-                      "HKEY_DYN_DATA", 0x80000006,
-                      NULL)
-    {}
-};
-
-} // namespace Registry
-
-namespace Winsock {
-
 class Ipv4InAddr : public BaseMarshaller
 {
 public:
@@ -347,28 +327,6 @@ public:
 	virtual unsigned int GetSize() const { return sizeof(DWORD); }
 	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
 };
-
-class Ipv4Sockaddr : public Structure
-{
-public:
-    Ipv4Sockaddr()
-        : Structure("Ipv4Sockaddr",
-                    "sin_family", 0, new UInt16(),
-                    "sin_port", 2, new UInt16BE(),
-                    "sin_addr", 4, new Ipv4InAddr(),
-                    NULL)
-    {}
-};
-
-class Ipv4SockaddrPtr : public Pointer
-{
-public:
-    Ipv4SockaddrPtr()
-        : Pointer(new Ipv4Sockaddr())
-    {}
-};
-
-} // namespace Winsock
 
 } // namespace Marshaller
 
