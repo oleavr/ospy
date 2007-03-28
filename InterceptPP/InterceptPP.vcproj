@@ -249,6 +249,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\NullLogger.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Signature.h"
 				>
 			</File>

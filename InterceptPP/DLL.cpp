@@ -55,7 +55,7 @@ DllModule::FindUniqueSignature(const Signature *sig)
 {
     SignatureMatcher *sm = SignatureMatcher::Instance();
 
-    OVector<void *>::Type matches = sm->FindInRange(sig, m_base, m_size);
+    OVector<void *>::Type matches = sm->FindInRange(*sig, m_base, m_size);
     if (matches.size() == 0)
         throw Error("no matches found");
     else if (matches.size() > 1)

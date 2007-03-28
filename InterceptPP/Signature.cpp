@@ -27,6 +27,9 @@
 #include <cctype>
 #include "Core.h"
 #include "Signature.h"
+#include "Util.h"
+
+#pragma warning( disable : 4312 )
 
 namespace InterceptPP {
 
@@ -140,26 +143,26 @@ Signature::ParseSpec(const OString &spec)
 }
 
 OVector<void *>::Type
-SignatureMatcher::FindInRange(const Signature *sig, void *base, unsigned int size)
+SignatureMatcher::FindInRange(const Signature &sig, void *base, unsigned int size)
 {
     OVector<void *>::Type matches;
     unsigned char *p = static_cast<unsigned char *>(base);
-    unsigned char *maxP = p + size - sig->GetLength();
+    unsigned char *maxP = p + size - sig.GetLength();
 
     for (; p <= maxP; p++)
     {
-        const SignatureToken &t = sig->GetLongestToken();
+        const SignatureToken &t = sig.GetLongestToken();
 
         if (memcmp(p, t.GetData(), t.GetLength()) == 0)
         {
-            void *candidateBase = p - sig->GetLongestTokenOffset();
+            void *candidateBase = p - sig.GetLongestTokenOffset();
 
             if (MatchesSignature(sig, candidateBase))
             {
                 matches.push_back(candidateBase);
 
                 // Skip ahead
-                p = static_cast<unsigned char *>(candidateBase) + sig->GetLength();
+                p = static_cast<unsigned char *>(candidateBase) + sig.GetLength();
             }
         }
     }
@@ -167,14 +170,35 @@ SignatureMatcher::FindInRange(const Signature *sig, void *base, unsigned int siz
     return matches;
 }
 
+void *
+SignatureMatcher::FindUniqueInRange(const Signature &sig, void *base, unsigned int size)
+{
+    OVector<void *>::Type matches = FindInRange(sig, base, size);
+
+    if (matches.size() == 0)
+        throw Error("No matches found");
+    else if (matches.size() > 1)
+        throw Error("More than one match found");
+
+    return matches[0];
+}
+
+void *
+SignatureMatcher::FindUniqueInModule(const Signature &sig, OICString moduleName)
+{
+    OModuleInfo mi = Util::Instance()->GetModuleInfo(moduleName);
+
+    return FindUniqueInRange(sig, reinterpret_cast<void *>(mi.startAddress), mi.endAddress - mi.startAddress);
+}
+
 bool
-SignatureMatcher::MatchesSignature(const Signature *sig, void *base)
+SignatureMatcher::MatchesSignature(const Signature &sig, void *base)
 {
     unsigned char *p = static_cast<unsigned char *>(base);
 
-    for (unsigned int i = 0; i < sig->GetTokenCount(); i++)
+    for (unsigned int i = 0; i < sig.GetTokenCount(); i++)
     {
-        const SignatureToken &t = (*sig)[i];
+        const SignatureToken &t = sig[i];
 
         if (t.GetType() == TOKEN_TYPE_LITERAL)
         {

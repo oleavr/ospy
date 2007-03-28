@@ -169,7 +169,7 @@ Util::GetModuleInfo(void *address)
 	EnterCriticalSection(&m_cs);
 
     bool found = false;
-	OModuleInfo *mi = Util::GetModuleInfoForAddress(reinterpret_cast<DWORD>(address));
+	OModuleInfo *mi = GetModuleInfoForAddress(reinterpret_cast<DWORD>(address));
 	if (mi != NULL)
     {
         found = true;
@@ -203,7 +203,7 @@ Util::GetAllModules()
 }
 
 bool
-Util::AddressIsWithinExecutableModule(DWORD address)
+Util::AddressIsWithinAnyModule(DWORD address)
 {
 	bool result;
 
@@ -214,6 +214,25 @@ Util::AddressIsWithinExecutableModule(DWORD address)
 	LeaveCriticalSection(&m_cs);
 
 	return result;
+}
+
+bool
+Util::AddressIsWithinModule(DWORD address, const OICString &moduleName)
+{
+    bool result = false;
+
+	EnterCriticalSection(&m_cs);
+
+	OModuleInfo *mi = GetModuleInfoForAddress(address);
+    if (mi != NULL)
+    {
+        if (mi->name == moduleName)
+            result = true;
+    }
+
+	LeaveCriticalSection(&m_cs);
+
+    return result;
 }
 
 OString

@@ -27,6 +27,8 @@
 #include "HookManager.h"
 #include "Util.h"
 
+#pragma warning( disable : 4312 )
+
 namespace InterceptPP {
 
 HookManager::HookManager()
@@ -144,15 +146,17 @@ HookManager::LoadDefinitions(const OString &path)
         }
         nodeList.Release();
 
+        const OString &processName = Util::Instance()->GetProcessName();
+
         OOStringStream ss;
         ss << "/HookManager/Hooks/VTables[@ProcessName = translate('";
-        ss << Util::Instance()->GetProcessName();
+        ss << processName;
         ss << "', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')]/VTable";
 
         nodeList = doc->selectNodes(ss.str().c_str());
         for (int i = 0; i < nodeList->length; i++)
         {
-            ParseVTableNode(nodeList->item[i]);
+            ParseVTableNode(processName, nodeList->item[i]);
         }
         nodeList.Release();
 
@@ -888,7 +892,7 @@ HookManager::ParseDllFunctionNode(DllModule *dllMod, MSXML2::IXMLDOMNodePtr &dll
 }
 
 void
-HookManager::ParseVTableNode(MSXML2::IXMLDOMNodePtr &vtNode)
+HookManager::ParseVTableNode(const OString &processName, MSXML2::IXMLDOMNodePtr &vtNode)
 {
     OString specId, name, offsetStr;
 
@@ -917,21 +921,85 @@ HookManager::ParseVTableNode(MSXML2::IXMLDOMNodePtr &vtNode)
     }
     name = static_cast<bstr_t>(attr->nodeTypedValue);
 
-    attr = attrs->getNamedItem("Offset");
-    if (attr == NULL)
-    {
-        GetLogger()->LogError("Offset not specified for VTable");
-        return;
-    }
-    offsetStr = static_cast<bstr_t>(attr->nodeTypedValue);
+    DWORD offset;
 
-    // FIXME: there's gotta be a more sensible way to do this
-    char *endPtr = NULL;
-    DWORD offset = strtoul(offsetStr.c_str(), &endPtr, 0);
-    if (endPtr == offsetStr.c_str())
+    attr = attrs->getNamedItem("CtorSigId");
+    if (attr != NULL)
     {
-        GetLogger()->LogError("Invalid offset specified for VTable");
-        return;
+        OString sigId = static_cast<bstr_t>(attr->nodeTypedValue);
+        int sigOffset = 0;
+
+        if (sigId.size() == 0)
+        {
+            GetLogger()->LogError("CtorSigId cannot be blank");
+            return;
+        }
+
+        SignatureMap::const_iterator iter = m_signatures.find(sigId);
+        if (iter == m_signatures.end())
+        {
+            GetLogger()->LogError("Constructor signature id '%s' not found", sigId.c_str());
+            return;
+        }
+
+        const Signature *sig = iter->second;
+
+        attr = attrs->getNamedItem("CtorSigOffset");
+        if (attr != NULL)
+        {
+            OString sigOffsetStr = static_cast<bstr_t>(attr->nodeTypedValue);
+
+            char *endPtr = NULL;
+            sigOffset = strtol(sigOffsetStr.c_str(), &endPtr, 0);
+            if (endPtr == sigOffsetStr.c_str())
+            {
+                GetLogger()->LogError("Invalid CtorSigOffset specified for VTable '%s'", name.c_str());
+                return;
+            }
+        }
+
+        void *startAddr;
+
+        try
+        {
+            startAddr = SignatureMatcher::Instance()->FindUniqueInModule(*sig, processName.c_str());
+        }
+        catch (Error &e)
+        {
+            GetLogger()->LogError("Constructor signature specified for VTable '%s' not found: %s", name.c_str(), e.what());
+            return;
+        }
+
+        startAddr = static_cast<char *>(startAddr) + sigOffset;
+        offset = *(static_cast<DWORD *>(startAddr));
+
+        if (!Util::Instance()->AddressIsWithinModule(offset, processName.c_str()))
+        {
+            GetLogger()->LogError("SigOffset specified for VTable '%s' seems to be invalid, pointer offset=0x%p, vtable offset=0x%08x",
+                                  name.c_str(), startAddr, offset);
+            return;
+        }
+
+        GetLogger()->LogDebug("VTable '%s': found at offset 0x%08x", name.c_str(), offset);
+    }
+    else
+    {
+        attr = attrs->getNamedItem("Offset");
+        if (attr == NULL)
+        {
+            GetLogger()->LogError("Neither CtorSigId nor Offset specified for VTable '%s'", name.c_str());
+            return;
+        }
+        offsetStr = static_cast<bstr_t>(attr->nodeTypedValue);
+
+        // FIXME: there's gotta be a more sensible way to do this
+        char *endPtr = NULL;
+        offset = strtoul(offsetStr.c_str(), &endPtr, 0);
+        if (endPtr == offsetStr.c_str())
+        {
+            GetLogger()->LogError("Invalid offset specified for VTable");
+            return;
+        }
     }
 
     VTable *vtable = new VTable(m_vtableSpecs[specId], name, offset);

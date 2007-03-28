@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     try
     {
 #endif
-        mgr->LoadDefinitions("D:\\Projects\\oSpy\\trunk\\oSpy\\Agent\\config.xml");
+        mgr->LoadDefinitions("C:\\Projects\\oSpy\\trunk\\oSpy\\Agent\\config.xml");
 
         cout << TypeBuilder::Instance()->GetTypeCount() << " types loaded" << endl;
         cout << mgr->GetFunctionSpecCount() << " FunctionSpec objects loaded" << endl;

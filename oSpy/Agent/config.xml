@@ -79,9 +79,21 @@
         </VTables>
     </Specs>
     <Signatures>
-        <Signature Name="TCPBridgeConstructor" ModuleName="msnmsgr.exe">
-            C7 86 FC 00 00 00 98 3A 00 00 <!-- mov dword ptr [esi+0FCh], 15000 -->
-            C7 86 00 01 00 00 78 05 00 00 <!-- mov dword ptr [esi+100h], 1400 -->
+        <Signature Name="CTCPBridgeCtor">
+            C7 86 FC 00 00 00 98 3A 00 00  <!-- mov dword ptr [esi+0FCh], 15000 -->
+            C7 86 00 01 00 00 78 05 00 00  <!-- mov dword ptr [esi+100h], 1400  -->
+        </Signature>
+        <Signature Name="CUDPBridgeCtor">
+            C7 86 10 01 00 00 20 4E 00 00  <!-- mov dword ptr [esi+110h], 20000 -->
+            C7 86 14 01 00 00 06 00 00 00  <!-- mov dword ptr [esi+114h], 6     -->
+        </Signature>
+        <Signature Name="CTurnBridgeCtor">
+            66 C7 86 6A 01 00 00 01 80     <!-- mov word ptr [esi+16Ah], 32769  -->
+            66 C7 86 6C 01 00 00 01 81     <!-- mov word ptr [esi+16Ch], 33025  -->
+        </Signature>
+        <Signature Name="CSBBridgeCtor">
+            89 5E 18                       <!-- mov [esi+18h], ebx              -->
+            8D 4E 24                       <!-- lea ecx, [esi+24h]              -->
         </Signature>
     </Signatures>
     <Hooks>
@@ -94,12 +106,10 @@
             <Function SpecId="RegOpenKeyExW"/>
         </DllModule>
         <VTables ProcessName="msnmsgr.exe">
-            <VTable SpecId="CP2PTransportBridge" Name="CTCPTransportBridge">
-                <SignatureMatch Type="Constructor" SigId="TCPBridgeConstructor" ModuleName="msnmsgr.exe" Offset="-50"/>
-            </VTable>
-            <VTable SpecId="CP2PTransportBridge" Name="CTrivialUDPTransportBridge" Offset="0x484D94"/>
-            <VTable SpecId="CP2PTransportBridge" Name="CTurnBridge" Offset="0x4713CC"/>
-            <VTable SpecId="CP2PTransportBridge" Name="CSBBridge" Offset="0x471354"/>
+            <VTable SpecId="CP2PTransportBridge" Name="CTCPTransportBridge" CtorSigId="CTCPBridgeCtor" CtorSigOffset="-50"/>
+            <VTable SpecId="CP2PTransportBridge" Name="CTrivialUDPTransportBridge" CtorSigId="CUDPBridgeCtor" CtorSigOffset="-122"/>
+            <VTable SpecId="CP2PTransportBridge" Name="CTurnBridge" CtorSigId="CTurnBridgeCtor" CtorSigOffset="-407"/>
+            <VTable SpecId="CP2PTransportBridge" Name="CSBBridge" CtorSigId="CSBBridgeCtor" CtorSigOffset="-10"/>
         </VTables>
     </Hooks>
 </HookManager>
