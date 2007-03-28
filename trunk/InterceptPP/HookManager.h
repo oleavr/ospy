@@ -58,6 +58,7 @@ protected:
     typedef OMap<OICString, DllModule *>::Type DllModuleMap;
     typedef OList<DllFunction *>::Type DllFunctionList;
     typedef OList<VTable *>::Type VTableList;
+    typedef OList<pair<OString, OString>>::Type PropertyList;
 
     FunctionSpecMap m_funcSpecs;
     VTableSpecMap m_vtableSpecs;
@@ -68,7 +69,7 @@ protected:
 
     void ParseTypeNode(MSXML2::IXMLDOMNodePtr &typeNode);
     void ParseStructureNode(MSXML2::IXMLDOMNodePtr &structNode);
-    bool ParseStructureFieldNode(MSXML2::IXMLDOMNodePtr &fieldNode, OString &name, DWORD &offset, OString &typeName);
+    bool ParseStructureFieldNode(MSXML2::IXMLDOMNodePtr &fieldNode, OString &name, int &offset, OString &typeName, PropertyList &typeProps);
     void ParseEnumerationNode(MSXML2::IXMLDOMNodePtr &enumNode);
     bool ParseEnumerationMemberNode(MSXML2::IXMLDOMNodePtr &enumMemberNode, OString &memberName, DWORD &memberValue);
 

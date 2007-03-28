@@ -107,7 +107,9 @@ class Integer : public BaseMarshaller
 {
 public:
     Integer(const OString &typeName, bool hex=false)
-        : BaseMarshaller(typeName), m_hex(hex)
+        : BaseMarshaller(typeName),
+          m_bigEndian(false),
+          m_hex(hex)
     {}
 
     virtual bool SetProperty(const OString &name, const OString &value);
@@ -116,6 +118,7 @@ public:
 	void SetFormatHex(bool hex) { m_hex = hex; }
 
 protected:
+    bool m_bigEndian;
     bool m_hex;
 };
 
@@ -128,17 +131,7 @@ public:
 
 	virtual unsigned int GetSize() const { return sizeof(WORD); }
 	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
-};
-
-class UInt16BE : public Integer
-{
-public:
-    UInt16BE(bool hex=false)
-        : Integer("UInt16BE", hex)
-    {}
-
-	virtual unsigned int GetSize() const { return sizeof(WORD); }
-	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
+    virtual bool ToInt(const void *start, int &result) const;
 };
 
 class UInt32 : public Integer
@@ -151,17 +144,6 @@ public:
 	virtual unsigned int GetSize() const { return sizeof(DWORD); }
 	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
     virtual bool ToInt(const void *start, int &result) const;
-};
-
-class UInt32BE : public Integer
-{
-public:
-    UInt32BE(bool hex=false)
-        : Integer("UInt32BE", hex)
-    {}
-
-	virtual unsigned int GetSize() const { return sizeof(DWORD); }
-	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
 };
 
 class UInt32Ptr : public Pointer
