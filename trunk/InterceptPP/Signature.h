@@ -71,9 +71,9 @@ protected:
 class Signature : public BaseObject
 {
 public:
-    Signature(const SignatureSpec *spec);
+    Signature(const OString &spec);
 
-    void Initialize(const SignatureSpec *spec);
+    void Initialize(const OString &spec);
 
     unsigned int GetLength() const { return m_length; }
 
@@ -92,7 +92,7 @@ protected:
     int m_longestIndex;
     int m_longestOffset;
 
-    void ParseSpec(const SignatureSpec *spec);
+    void ParseSpec(const OString &spec);
 };
 
 class SignatureMatcher : public BaseObject

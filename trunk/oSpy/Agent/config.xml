@@ -78,6 +78,12 @@
             </VTable>
         </VTables>
     </Specs>
+    <Signatures>
+        <Signature Name="TCPBridgeConstructor" ModuleName="msnmsgr.exe">
+            C7 86 FC 00 00 00 98 3A 00 00 <!-- mov dword ptr [esi+0FCh], 15000 -->
+            C7 86 00 01 00 00 78 05 00 00 <!-- mov dword ptr [esi+100h], 1400 -->
+        </Signature>
+    </Signatures>
     <Hooks>
         <DllModule Name="ws2_32.dll">
             <Function SpecId="connect"/>
@@ -88,7 +94,9 @@
             <Function SpecId="RegOpenKeyExW"/>
         </DllModule>
         <VTables ProcessName="msnmsgr.exe">
-            <VTable SpecId="CP2PTransportBridge" Name="CTCPTransportBridge" Offset="0x484C64"/>
+            <VTable SpecId="CP2PTransportBridge" Name="CTCPTransportBridge">
+                <SignatureMatch Type="Constructor" SigId="TCPBridgeConstructor" ModuleName="msnmsgr.exe" Offset="-50"/>
+            </VTable>
             <VTable SpecId="CP2PTransportBridge" Name="CTrivialUDPTransportBridge" Offset="0x484D94"/>
             <VTable SpecId="CP2PTransportBridge" Name="CTurnBridge" Offset="0x4713CC"/>
             <VTable SpecId="CP2PTransportBridge" Name="CSBBridge" Offset="0x471354"/>

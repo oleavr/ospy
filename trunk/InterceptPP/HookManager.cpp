@@ -64,6 +64,12 @@ HookManager::~HookManager()
     {
         delete vtsIter->second;
     }
+
+    SignatureMap::iterator sigIter;
+    for (sigIter = m_signatures.begin(); sigIter != m_signatures.end(); sigIter++)
+    {
+        delete sigIter->second;
+    }
 }
 
 HookManager *
@@ -121,6 +127,13 @@ HookManager::LoadDefinitions(const OString &path)
         for (int i = 0; i < nodeList->length; i++)
         {
             ParseVTableSpecNode(nodeList->item[i]);
+        }
+        nodeList.Release();
+
+        nodeList = doc->selectNodes("/HookManager/Signatures/Signature");
+        for (int i = 0; i < nodeList->length; i++)
+        {
+            ParseSignatureNode(nodeList->item[i]);
         }
         nodeList.Release();
 
@@ -643,12 +656,11 @@ HookManager::ParseVTableSpecNode(MSXML2::IXMLDOMNodePtr &vtSpecNode)
     m_vtableSpecs[id] = vtSpec;
 
     MSXML2::IXMLDOMNodeListPtr nodeList;
-    MSXML2::IXMLDOMNodePtr node;
-    
+
     nodeList = vtSpecNode->childNodes;
     for (int i = 0; i < nodeList->length; i++)
     {
-        node = nodeList->item[i];
+        MSXML2::IXMLDOMNodePtr node = nodeList->item[i];
 
         OString nodeName = node->nodeName;
         if (nodeName == "Method")
@@ -685,6 +697,91 @@ HookManager::ParseVTableSpecNode(MSXML2::IXMLDOMNodePtr &vtSpecNode)
         }
     }
     nodeList.Release();
+}
+
+static OString
+FilterString(const OString &str)
+{
+    OString result;
+
+    for (unsigned int i = 0; i < str.size(); i++)
+    {
+        char c = str[i];
+        if (isalnum(c) || c == ' ')
+        {
+            result += c;
+        }
+    }
+
+    return result;
+}
+
+static void
+TrimString(OString &str)
+{
+    string::size_type pos = str.find_last_not_of(' ');
+    if (pos != string::npos)
+    {
+        str.erase(pos + 1);
+        pos = str.find_first_not_of(' ');
+        if (pos != string::npos)
+            str.erase(0, pos);
+    }
+    else str.erase(str.begin(), str.end());
+}
+
+void
+HookManager::ParseSignatureNode(MSXML2::IXMLDOMNodePtr &sigNode)
+{
+    OString name;
+    MSXML2::IXMLDOMNodePtr attr = sigNode->attributes->getNamedItem("Name");
+    if (attr == NULL)
+    {
+        GetLogger()->LogError("Name not specified for Signature");
+        return;
+    }
+
+    name = static_cast<bstr_t>(attr->nodeTypedValue);
+    if (name.size() == 0)
+    {
+        GetLogger()->LogError("Empty name specified for Signature");
+        return;
+    }
+
+    OOStringStream ss;
+    MSXML2::IXMLDOMNodeListPtr nodeList = sigNode->childNodes;
+    for (int i = 0; i < nodeList->length; i++)
+    {
+        MSXML2::IXMLDOMNodePtr node = nodeList->item[i];
+
+        if (node->nodeType == NODE_TEXT)
+        {
+            OString chunk = static_cast<bstr_t>(node->nodeTypedValue);
+            chunk = FilterString(chunk);
+            TrimString(chunk);
+
+            if (i)
+                ss << ' ';
+            ss << chunk;
+        }
+    }
+
+    OString sigStr = ss.str();
+    if (sigStr.size() == 0)
+    {
+        GetLogger()->LogError("Signature definition '%s' is empty", name.c_str());
+        return;
+    }
+
+    try
+    {
+        m_signatures[name] = new Signature(sigStr);
+    }
+    catch (Error &e)
+    {
+        GetLogger()->LogError("Signature definition '%s' is invalid: %s", name.c_str(), e.what());
+        return;
+    }
 }
 
 void

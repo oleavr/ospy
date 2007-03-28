@@ -30,13 +30,13 @@
 
 namespace InterceptPP {
 
-Signature::Signature(const SignatureSpec *spec)
+Signature::Signature(const OString &spec)
 {
     Initialize(spec);
 }
 
 void
-Signature::Initialize(const SignatureSpec *spec)
+Signature::Initialize(const OString &spec)
 {
     m_tokens.clear();
     m_length = 0;
@@ -69,9 +69,9 @@ Signature::Initialize(const SignatureSpec *spec)
 }
 
 void
-Signature::ParseSpec(const SignatureSpec *spec)
+Signature::ParseSpec(const OString &spec)
 {
-    OIStringStream iss(spec->signature, OIStringStream::in);
+    OIStringStream iss(spec, OIStringStream::in);
 
     while (iss.good())
     {
