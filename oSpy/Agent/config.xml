@@ -9,7 +9,7 @@
         </Enumeration>
         <Structure Name="Ipv4Sockaddr">
             <Field Name="sin_family" Offset="0" Type="UInt16"/>
-            <Field Name="sin_port" Offset="2" Type="UInt16BE"/>
+            <Field Name="sin_port" Offset="2" Type="UInt16" Endian="big"/>
             <Field Name="sin_addr" Offset="4" Type="Ipv4InAddr"/>
         </Structure>
         <Structure Name="P2PBridgeProperties">
