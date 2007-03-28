@@ -7,6 +7,11 @@
             <Member Name="HKEY_USERS" Value="0x80000003"/>
             <Member Name="HKEY_DYN_DATA" Value="0x80000006"/>
         </Enumeration>
+        <Structure Name="Ipv4Sockaddr">
+            <Field Name="sin_family" Offset="0" Type="UInt16"/>
+            <Field Name="sin_port" Offset="2" Type="UInt16BE"/>
+            <Field Name="sin_addr" Offset="4" Type="Ipv4InAddr"/>
+        </Structure>
         <Structure Name="P2PBridgeProperties">
             <Field Name="field_0" Offset="0" Type="UInt32"/>
             <Field Name="field_4" Offset="4" Type="UInt32"/>
@@ -23,7 +28,7 @@
             <Function Name="connect">
                 <Arguments>
                     <Argument Name="s" Direction="in" Type="UInt32" Hex="true"/>
-                    <Argument Name="name" Direction="in" Type="Winsock::Ipv4SockaddrPtr"/>
+                    <Argument Name="name" Direction="in" Type="Ipv4SockaddrPtr"/>
                     <Argument Name="namelen" Direction="in" Type="UInt32"/>
                 </Arguments>
             </Function>

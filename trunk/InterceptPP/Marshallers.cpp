@@ -105,10 +105,7 @@ Factory::Factory()
     REGISTER_MARSHALLER(AsciiStringPtr);
     REGISTER_MARSHALLER(UnicodeString);
     REGISTER_MARSHALLER(UnicodeStringPtr);
-    REGISTER_MARSHALLER(Registry::KeyHandle);
-    REGISTER_MARSHALLER(Winsock::Ipv4InAddr);
-    REGISTER_MARSHALLER(Winsock::Ipv4Sockaddr);
-    REGISTER_MARSHALLER(Winsock::Ipv4SockaddrPtr);
+    REGISTER_MARSHALLER(Ipv4InAddr);
 }
 
 template<class T> BaseMarshaller *
@@ -594,8 +591,6 @@ StructurePtr::StructurePtr(const char *firstFieldName, ...)
     va_end(args);
 }
 
-namespace Winsock {
-
 OString
 Ipv4InAddr::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
 {
@@ -610,8 +605,6 @@ Ipv4InAddr::ToString(const void *start, bool deep, IPropertyProvider *propProv) 
 
     return ss.str();
 }
-
-} // namespace Winsock
 
 } // namespace Marshaller
 
