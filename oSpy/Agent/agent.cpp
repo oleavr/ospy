@@ -59,13 +59,14 @@ DllMain(HMODULE hModule,
             OModuleInfo mi = Util::Instance()->GetModuleInfo(DllMain);
             OString ourDir = Util::Instance()->GetDirectory(mi);
 
-            InterceptPP::SetLogger(new BinaryLogger(ourDir + "\\oSpyAgentLog.bin"));
+            //InterceptPP::SetLogger(new BinaryLogger(ourDir + "\\oSpyAgentLog.bin"));
+            InterceptPP::SetLogger(new BinaryLogger("C:\\oSpyAgentLog.bin"));
 
             HookManager *mgr = HookManager::Instance();
             try
             {
-                // FIXME: don't hardcode this...
-                mgr->LoadDefinitions(ourDir + "\\config.xml");
+                //mgr->LoadDefinitions(ourDir + "\\config.xml");
+                mgr->LoadDefinitions("C:\\Projects\\oSpy\\trunk\\oSpy\\Agent\\config.xml");
             }
             catch (Error &e)
             {
@@ -83,7 +84,7 @@ DllMain(HMODULE hModule,
 			hook_wininet();
 			//hook_httpapi();
 			hook_activesync();
-			hook_msn();
+			//hook_msn();
 		}
     }
 

@@ -61,9 +61,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="psapi.lib shlwapi.lib"
+				AdditionalDependencies="psapi.lib shlwapi.lib libdisasm.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories=""
+				AdditionalLibraryDirectories="..\..\..\..\..\libdisasm\vc6\Release"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -137,9 +137,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="psapi.lib shlwapi.lib"
+				AdditionalDependencies="psapi.lib shlwapi.lib libdisasm.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories=""
+				AdditionalLibraryDirectories="..\..\..\..\..\libdisasm\vc6\Release"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"

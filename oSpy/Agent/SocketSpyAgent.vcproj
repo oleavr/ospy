@@ -63,9 +63,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:MSVCRTD"
-				AdditionalDependencies="psapi.lib ws2_32.lib shlwapi.lib"
+				AdditionalDependencies="psapi.lib ws2_32.lib shlwapi.lib libdisasm.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories=""
+				AdditionalLibraryDirectories="..\..\..\..\libdisasm\vc6\Release"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -142,9 +142,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="psapi.lib ws2_32.lib shlwapi.lib"
+				AdditionalDependencies="psapi.lib ws2_32.lib shlwapi.lib libdisasm.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories=""
+				AdditionalLibraryDirectories="..\..\..\..\libdisasm\vc6\Release"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

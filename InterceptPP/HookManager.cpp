@@ -27,7 +27,7 @@
 #include "HookManager.h"
 #include "Util.h"
 
-#pragma warning( disable : 4312 )
+#pragma warning( disable : 4311 4312 )
 
 namespace InterceptPP {
 
@@ -41,6 +41,12 @@ HookManager::~HookManager()
     for (vtIter = m_vtables.begin(); vtIter != m_vtables.end(); vtIter++)
     {
         delete *vtIter;
+    }
+
+    FunctionList::iterator funcIter;
+    for (funcIter = m_functions.begin(); funcIter != m_functions.end(); funcIter++)
+    {
+        delete *funcIter;
     }
 
     DllFunctionList::iterator dfIter;
@@ -105,60 +111,88 @@ HookManager::LoadDefinitions(const OString &path)
         MSXML2::IXMLDOMNodeListPtr nodeList;
         MSXML2::IXMLDOMNodePtr node;
 
-        nodeList = doc->selectNodes("/HookManager/Types/*");
-        for (int i = 0; i < nodeList->length; i++)
-        {
-            ParseTypeNode(nodeList->item[i]);
-        }
-        nodeList.Release();
+        // TODO: refactor this mess
 
-        nodeList = doc->selectNodes("/HookManager/Specs/Functions/Function");
-        for (int i = 0; i < nodeList->length; i++)
         {
-            OString id;
-
-            FunctionSpec *funcSpec = ParseFunctionSpecNode(nodeList->item[i], id);
-            if (funcSpec != NULL)
+            nodeList = doc->selectNodes("/HookManager/Types/*");
+            for (int i = 0; i < nodeList->length; i++)
             {
-                m_funcSpecs[id] = funcSpec;
+                ParseTypeNode(nodeList->item[i]);
             }
+            nodeList.Release();
         }
-        nodeList.Release();
 
-        nodeList = doc->selectNodes("/HookManager/Specs/VTables/VTable");
-        for (int i = 0; i < nodeList->length; i++)
         {
-            ParseVTableSpecNode(nodeList->item[i]);
-        }
-        nodeList.Release();
+            nodeList = doc->selectNodes("/HookManager/Specs/Functions/Function");
+            for (int i = 0; i < nodeList->length; i++)
+            {
+                OString id;
 
-        nodeList = doc->selectNodes("/HookManager/Signatures/Signature");
-        for (int i = 0; i < nodeList->length; i++)
-        {
-            ParseSignatureNode(nodeList->item[i]);
+                FunctionSpec *funcSpec = ParseFunctionSpecNode(nodeList->item[i], id);
+                if (funcSpec != NULL)
+                {
+                    m_funcSpecs[id] = funcSpec;
+                }
+            }
+            nodeList.Release();
         }
-        nodeList.Release();
 
-        nodeList = doc->selectNodes("/HookManager/Hooks/DllModule");
-        for (int i = 0; i < nodeList->length; i++)
         {
-            ParseDllModuleNode(nodeList->item[i]);
+            nodeList = doc->selectNodes("/HookManager/Specs/VTables/VTable");
+            for (int i = 0; i < nodeList->length; i++)
+            {
+                ParseVTableSpecNode(nodeList->item[i]);
+            }
+            nodeList.Release();
         }
-        nodeList.Release();
+
+        {
+            nodeList = doc->selectNodes("/HookManager/Signatures/Signature");
+            for (int i = 0; i < nodeList->length; i++)
+            {
+                ParseSignatureNode(nodeList->item[i]);
+            }
+            nodeList.Release();
+        }
+
+        {
+            nodeList = doc->selectNodes("/HookManager/Hooks/DllModule");
+            for (int i = 0; i < nodeList->length; i++)
+            {
+                ParseDllModuleNode(nodeList->item[i]);
+            }
+            nodeList.Release();
+        }
 
         const OString &processName = Util::Instance()->GetProcessName();
 
-        OOStringStream ss;
-        ss << "/HookManager/Hooks/VTables[@ProcessName = translate('";
-        ss << processName;
-        ss << "', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')]/VTable";
-
-        nodeList = doc->selectNodes(ss.str().c_str());
-        for (int i = 0; i < nodeList->length; i++)
         {
-            ParseVTableNode(processName, nodeList->item[i]);
+            OOStringStream ss;
+            ss << "/HookManager/Hooks/Functions[@ProcessName = translate('";
+            ss << processName;
+            ss << "', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')]/Function";
+
+            nodeList = doc->selectNodes(ss.str().c_str());
+            for (int i = 0; i < nodeList->length; i++)
+            {
+                ParseFunctionNode(processName, nodeList->item[i]);
+            }
+            nodeList.Release();
         }
-        nodeList.Release();
+
+        {
+            OOStringStream ss;
+            ss << "/HookManager/Hooks/VTables[@ProcessName = translate('";
+            ss << processName;
+            ss << "', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')]/VTable";
+
+            nodeList = doc->selectNodes(ss.str().c_str());
+            for (int i = 0; i < nodeList->length; i++)
+            {
+                ParseVTableNode(processName, nodeList->item[i]);
+            }
+            nodeList.Release();
+        }
 
         doc.Release();
     }
@@ -915,6 +949,82 @@ HookManager::ParseDllFunctionNode(DllModule *dllMod, MSXML2::IXMLDOMNodePtr &dll
     {
         GetLogger()->LogError("SpecId not specified for DllFunction");
     }
+}
+
+void
+HookManager::ParseFunctionNode(const OString &processName, MSXML2::IXMLDOMNodePtr &funcNode)
+{
+    OString specId, sigId;
+    int sigOffset = 0;
+
+    MSXML2::IXMLDOMNamedNodeMapPtr attrs = funcNode->attributes;
+    MSXML2::IXMLDOMNodePtr attr;
+
+    attr = attrs->getNamedItem("SpecId");
+    if (attr == NULL)
+    {
+        GetLogger()->LogError("Function spec id not specified for Function");
+        return;
+    }
+    specId = static_cast<bstr_t>(attr->nodeTypedValue);
+
+    if (m_funcSpecs.find(specId) == m_funcSpecs.end())
+    {
+        GetLogger()->LogError("Invalid function spec id '%s' specified for Function", specId.c_str());
+        return;
+    }
+
+    attr = attrs->getNamedItem("SigId");
+    if (attr == NULL)
+    {
+        GetLogger()->LogError("Signature id not specified for Function");
+        return;
+    }
+    sigId = static_cast<bstr_t>(attr->nodeTypedValue);
+
+    SignatureMap::const_iterator iter = m_signatures.find(sigId);
+    if (iter == m_signatures.end())
+    {
+        GetLogger()->LogError("Invalid signature id '%s' specified for Function", sigId.c_str());
+        return;
+    }
+
+    const Signature *sig = iter->second;
+
+    attr = attrs->getNamedItem("SigOffset");
+    if (attr != NULL)
+    {
+        OString sigOffsetStr = static_cast<bstr_t>(attr->nodeTypedValue);
+
+        char *endPtr = NULL;
+        sigOffset = strtol(sigOffsetStr.c_str(), &endPtr, 0);
+        if (endPtr == sigOffsetStr.c_str())
+        {
+            GetLogger()->LogError("Invalid signature offset specified for Function");
+            return;
+        }
+    }
+
+    void *startAddr;
+
+    try
+    {
+        startAddr = SignatureMatcher::Instance()->FindUniqueInModule(*sig, processName.c_str());
+    }
+    catch (Error &e)
+    {
+        GetLogger()->LogError("Signature '%s' specified for Function not found: %s", sigId.c_str(), e.what());
+        return;
+    }
+
+    DWORD offset = reinterpret_cast<DWORD>(startAddr) + sigOffset;
+
+    GetLogger()->LogDebug("Function with signature id '%s' found at offset 0x%x",
+                          sigId.c_str(), offset);
+
+    Function *func = new Function(m_funcSpecs[specId], offset);
+    m_functions.push_back(func);
+    func->Hook();
 }
 
 void

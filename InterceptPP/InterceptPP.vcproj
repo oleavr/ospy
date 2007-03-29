@@ -40,7 +40,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				AdditionalIncludeDirectories="..\..\..\libdisasm"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;_WITH_LIBDISASM"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -102,7 +103,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
+				AdditionalIncludeDirectories="..\..\..\libdisasm"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_WITH_LIBDISASM"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
