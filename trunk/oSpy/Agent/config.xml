@@ -1,5 +1,13 @@
 <HookManager>
     <Types>
+        <!-- Winsock -->
+        <Structure Name="Ipv4Sockaddr">
+            <Field Name="sin_family" Offset="0" Type="UInt16"/>
+            <Field Name="sin_port" Offset="2" Type="UInt16" Endian="big"/>
+            <Field Name="sin_addr" Offset="4" Type="Ipv4InAddr"/>
+        </Structure>
+
+        <!-- Registry -->
         <Enumeration Name="RegKeyHandle">
             <Member Name="HKEY_CLASSES_ROOT" Value="0x80000000"/>
             <Member Name="HKEY_CURRENT_USER" Value="0x80000001"/>
@@ -7,11 +15,8 @@
             <Member Name="HKEY_USERS" Value="0x80000003"/>
             <Member Name="HKEY_DYN_DATA" Value="0x80000006"/>
         </Enumeration>
-        <Structure Name="Ipv4Sockaddr">
-            <Field Name="sin_family" Offset="0" Type="UInt16"/>
-            <Field Name="sin_port" Offset="2" Type="UInt16" Endian="big"/>
-            <Field Name="sin_addr" Offset="4" Type="Ipv4InAddr"/>
-        </Structure>
+
+        <!-- Windows Live Messenger -->
         <Structure Name="P2PBridgeProperties">
             <Field Name="field_0" Offset="0" Type="UInt32"/>
             <Field Name="field_4" Offset="4" Type="UInt32"/>
@@ -23,8 +28,10 @@
             <Field Name="field_20" Offset="0x20" Type="UInt32"/>
         </Structure>
     </Types>
+
     <Specs>
         <Functions>
+            <!-- Winsock -->
             <Function Name="connect">
                 <Arguments>
                     <Argument Name="s" Direction="in" Type="UInt32" Hex="true"/>
@@ -49,6 +56,7 @@
                 </Arguments>
             </Function>
 
+            <!-- Registry -->
             <Function Name="RegOpenKeyExW">
                 <Arguments>
                     <Argument Name="hKey" Direction="in" Type="RegKeyHandle"/>
@@ -58,8 +66,18 @@
                     <Argument Name="phkResult" Direction="out" Type="UInt32Ptr" Hex="true"/>
                 </Arguments>
             </Function>
+
+            <!-- Windows Live Messenger -->
+            <Function Name="WLMDebug">
+                <Arguments>
+                    <Argument Name="domain" Direction="in" Type="UInt32"/>
+                    <Argument Name="severity" Direction="in" Type="UInt32"/>
+                    <Argument Name="format" Direction="in" Type="UnicodeStringPtr"/>
+                </Arguments>
+            </Function>
         </Functions>
         <VTables>
+            <!-- Windows Live Messenger -->
             <VTable Id="CP2PTransportBridge" MethodCount="22">
                 <Method Index="0" Name="OnBridgePeerConnectingEndpointsUpdated" CallingConvention="thiscall" ArgsSize="8"/>
                 <Method Index="1" Name="OnBridgePeerListeningEndpointsUpdated" CallingConvention="thiscall" ArgsSize="4"/>
@@ -83,7 +101,9 @@
             </VTable>
         </VTables>
     </Specs>
+
     <Signatures>
+        <!-- Windows Live Messenger -->
         <Signature Name="WLMDebug">
             84 C0                          <!-- test al, al                     -->
             74 14                          <!-- jz short loc_448B51             -->
@@ -111,7 +131,9 @@
             8D 4E 24                       <!-- lea ecx, [esi+24h]              -->
         </Signature>
     </Signatures>
+
     <Hooks>
+        <!-- DLLs -->
         <DllModule Name="ws2_32.dll">
             <Function SpecId="connect"/>
             <Function SpecId="recv"/>
@@ -120,9 +142,13 @@
         <DllModule Name="advapi32.dll">
             <Function SpecId="RegOpenKeyExW"/>
         </DllModule>
+
+        <!-- Internal functions -->
         <Functions ProcessName="msnmsgr.exe">
             <Function SpecId="WLMDebug" SigId="WLMDebug" SigOffset="-11"/>
         </Functions>
+
+        <!-- Internal vtables -->
         <VTables ProcessName="msnmsgr.exe">
             <VTable SpecId="CP2PTransportBridge" Name="CTCPTransportBridge" CtorSigId="CTCPBridgeCtor" CtorSigOffset="-50"/>
             <VTable SpecId="CP2PTransportBridge" Name="CTrivialUDPTransportBridge" CtorSigId="CUDPBridgeCtor" CtorSigOffset="-122"/>

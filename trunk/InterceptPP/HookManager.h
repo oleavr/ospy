@@ -49,6 +49,7 @@ public:
     unsigned int GetSignatureCount() const { return static_cast<unsigned int>(m_signatures.size()); }
     unsigned int GetDllModuleCount() const { return static_cast<unsigned int>(m_dllModules.size()); }
     unsigned int GetDllFunctionCount() const { return static_cast<unsigned int>(m_dllFunctions.size()); }
+    unsigned int GetFunctionCount() const { return static_cast<unsigned int>(m_functions.size()); }
     unsigned int GetVTableCount() const { return static_cast<unsigned int>(m_vtables.size()); }
 
 protected:
@@ -57,6 +58,7 @@ protected:
     typedef OMap<OString, Signature *>::Type SignatureMap;
     typedef OMap<OICString, DllModule *>::Type DllModuleMap;
     typedef OList<DllFunction *>::Type DllFunctionList;
+    typedef OList<Function *>::Type FunctionList;
     typedef OList<VTable *>::Type VTableList;
     typedef OList<pair<OString, OString>>::Type PropertyList;
 
@@ -65,6 +67,7 @@ protected:
     SignatureMap m_signatures;
     DllModuleMap m_dllModules;
     DllFunctionList m_dllFunctions;
+    FunctionList m_functions;
     VTableList m_vtables;
 
     void ParseTypeNode(MSXML2::IXMLDOMNodePtr &typeNode);
@@ -80,6 +83,7 @@ protected:
 
     void ParseDllModuleNode(MSXML2::IXMLDOMNodePtr &dllModNode);
     void ParseDllFunctionNode(DllModule *dllMod, MSXML2::IXMLDOMNodePtr &dllFuncNode);
+    void ParseFunctionNode(const OString &processName, MSXML2::IXMLDOMNodePtr &funcNode);
     void ParseVTableNode(const OString &processName, MSXML2::IXMLDOMNodePtr &vtNode);
 };
 

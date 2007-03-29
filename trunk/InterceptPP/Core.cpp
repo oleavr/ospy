@@ -28,6 +28,10 @@
 #include "NullLogger.h"
 #include "Util.h"
 
+#ifdef _WITH_LIBDISASM
+#include <libdisasm/libdis.h>
+#endif
+
 #pragma warning( disable : 4311 4312 )
 
 namespace InterceptPP {
@@ -40,6 +44,9 @@ Initialize()
 {
     g_defaultLogger = new Logging::NullLogger();
 
+#ifdef _WITH_LIBDISASM
+    x86_init(opt_none, NULL, NULL);
+#endif
     Function::Initialize();
     Util::Instance()->Initialize();
     SetLogger(NULL);
@@ -289,6 +296,7 @@ void
 Function::Hook()
 {
     const PrologSignatureSpec *spec = NULL;
+    int nBytesToCopy = 0;
 
     for (unsigned int i = 0; i < prologSignatures.size(); i++)
     {
@@ -302,10 +310,34 @@ Function::Hook()
         }
     }
 
-    if (spec == NULL)
-        throw Error("none of the supported signatures matched");
+    if (spec != NULL)
+    {
+        nBytesToCopy = spec->numBytesToCopy;
+    }
+    else
+    {
+#ifdef _WITH_LIBDISASM
+        unsigned char *p = reinterpret_cast<unsigned char *>(m_offset);
+        const int bytesNeeded = 5;
+        x86_insn_t insn;
 
-    FunctionTrampoline *trampoline = CreateTrampoline(spec->numBytesToCopy);
+        while (nBytesToCopy < bytesNeeded)
+        {
+            int size = x86_disasm(p, 16, 0, 0, &insn);
+            if (size == 0)
+                throw Error("none of the supported signatures matched and libdisasm fallback failed as well");
+
+            p += size;
+            nBytesToCopy += size;
+        }
+
+        GetLogger()->LogDebug("Calculated that we need to copy %d bytes of the original function", nBytesToCopy);
+#else
+        throw Error("none of the supported signatures matched");
+#endif
+    }
+
+    FunctionTrampoline *trampoline = CreateTrampoline(nBytesToCopy);
 
     DWORD oldProtect;
     VirtualProtect(reinterpret_cast<LPVOID>(m_offset), 5, PAGE_EXECUTE_WRITECOPY, &oldProtect);
