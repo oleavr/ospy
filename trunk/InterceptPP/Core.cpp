@@ -27,10 +27,7 @@
 #include "Core.h"
 #include "NullLogger.h"
 #include "Util.h"
-
-#ifdef _WITH_LIBDISASM
-#include <libdisasm/libdis.h>
-#endif
+#include <udis86.h>
 
 #pragma warning( disable : 4311 4312 )
 
@@ -44,9 +41,6 @@ Initialize()
 {
     g_defaultLogger = new Logging::NullLogger();
 
-#ifdef _WITH_LIBDISASM
-    x86_init(opt_none, NULL, NULL);
-#endif
     Function::Initialize();
     Util::Instance()->Initialize();
     SetLogger(NULL);
@@ -316,25 +310,23 @@ Function::Hook()
     }
     else
     {
-#ifdef _WITH_LIBDISASM
         unsigned char *p = reinterpret_cast<unsigned char *>(m_offset);
         const int bytesNeeded = 5;
-        x86_insn_t insn;
+
+        ud_t udObj;
+        ud_init(&udObj);
+        ud_set_input_buffer(&udObj, p, 16);
 
         while (nBytesToCopy < bytesNeeded)
         {
-            int size = x86_disasm(p, 16, 0, 0, &insn);
+            int size = ud_disassemble(&udObj);
             if (size == 0)
-                throw Error("none of the supported signatures matched and libdisasm fallback failed as well");
+                throw Error("none of the supported signatures matched and libudis86 fallback failed as well");
 
-            p += size;
             nBytesToCopy += size;
         }
 
         GetLogger()->LogDebug("Calculated that we need to copy %d bytes of the original function", nBytesToCopy);
-#else
-        throw Error("none of the supported signatures matched");
-#endif
     }
 
     FunctionTrampoline *trampoline = CreateTrampoline(nBytesToCopy);
@@ -343,6 +335,7 @@ Function::Hook()
     VirtualProtect(reinterpret_cast<LPVOID>(m_offset), 5, PAGE_EXECUTE_WRITECOPY, &oldProtect);
     // TODO: check that VirtualProtect succeeded
 
+    // TODO: make this as close to atomic as possible
     FunctionRedirectStub *redirStub = reinterpret_cast<FunctionRedirectStub *>(m_offset);
     redirStub->JMP_opcode = 0xE9;
     redirStub->JMP_offset = reinterpret_cast<DWORD>(trampoline) - (reinterpret_cast<DWORD>(reinterpret_cast<unsigned char *>(redirStub) + sizeof(FunctionRedirectStub)));
