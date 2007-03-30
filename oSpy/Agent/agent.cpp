@@ -66,7 +66,7 @@ DllMain(HMODULE hModule,
             try
             {
                 //mgr->LoadDefinitions(ourDir + "\\config.xml");
-                mgr->LoadDefinitions("C:\\Projects\\oSpy\\trunk\\oSpy\\Agent\\config.xml");
+                mgr->LoadDefinitions("D:\\Projects\\oSpy\\trunk\\oSpy\\Agent\\config.xml");
             }
             catch (Error &e)
             {
