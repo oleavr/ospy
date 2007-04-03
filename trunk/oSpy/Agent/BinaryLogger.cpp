@@ -25,16 +25,17 @@
 
 #include "stdafx.h"
 #include "BinaryLogger.h"
+#include "Agent.h"
 
 typedef struct {
     SLIST_ENTRY entry;
     Logging::Event *ev;
 } PendingEvent;
 
-BinaryLogger::BinaryLogger(const OString &filename)
-    : m_id(0), m_running(true)
+BinaryLogger::BinaryLogger(Agent *agent, const OWString &filename)
+    : m_agent(agent), m_id(0), m_running(true)
 {
-	m_handle = CreateFile(filename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    m_handle = CreateFileW(filename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (m_handle == INVALID_HANDLE_VALUE)
 		throw runtime_error("CreateFile failed");
 
@@ -51,9 +52,7 @@ BinaryLogger::~BinaryLogger()
 Logging::Event *
 BinaryLogger::NewEvent(const OString &eventType)
 {
-    // TODO: have m_id in shared memory so everything that gets logged
-    //       shares the same namespace.
-    return new Logging::Event(this, m_id++, eventType);
+    return new Logging::Event(this, m_agent->GetNextLogIndex(), eventType);
 }
 
 void
@@ -125,6 +124,8 @@ BinaryLogger::LoggingThreadFunc()
 
 	        if (bytesWritten != buf.size())
 		        throw Error("short write");
+
+            m_agent->AddBytesLogged(static_cast<LONG>(buf.size()));
         }
     }
 }

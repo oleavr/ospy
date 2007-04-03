@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2006 Ole André Vadla Ravnås <oleavr@gmail.com>
+// Copyright (c) 2007 Ole André Vadla Ravnås <oleavr@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -23,35 +23,51 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
-using System.Windows.Forms;
+#pragma once
 
-namespace oSpy
+#include <winsock2.h>
+#include "BinaryLogger.h"
+
+#define MAX_SOFTWALL_RULES   128
+
+typedef struct {
+    /* mask of conditions */
+    DWORD Conditions;
+
+    /* condition values */
+    char ProcessName[32];
+    char FunctionName[16];
+    DWORD ReturnAddress;
+    in_addr LocalAddress;
+    int LocalPort;
+    in_addr RemoteAddress;
+    int RemotePort;
+
+    /* return value and lasterror to set if all conditions match */
+    int Retval;
+    DWORD LastError;
+} SoftwallRule;
+
+typedef struct {
+    WCHAR LogPath[MAX_PATH];
+    volatile LONG LogIndex;
+    volatile LONG LogSize;
+
+    DWORD NumSoftwallRules;
+    SoftwallRule rules[MAX_SOFTWALL_RULES];
+} CaptureConfig;
+
+class Agent : public BaseObject
 {
-    public partial class CaptureProgressForm : Form
-    {
-        private CaptureManager captureMgr;
+public:
+    Agent();
 
-        public CaptureProgressForm(CaptureManager captureMgr)
-        {
-            InitializeComponent();
+    void Attach();
 
-            this.captureMgr = captureMgr;
-        }
+    LONG GetNextLogIndex();
+    LONG AddBytesLogged(LONG n);
 
-        private void pollTimer_Tick(object sender, EventArgs e)
-        {
-            int evCount, evBytes;
-
-            captureMgr.GetCaptureStatistics(out evCount, out evBytes);
-
-            evCountLabel.Text = Convert.ToString(evCount);
-            evBytesLabel.Text = Convert.ToString(evBytes);
-        }
-    }
-}
+protected:
+    CaptureConfig *m_cfg;
+    BinaryLogger *m_logger;
+};
