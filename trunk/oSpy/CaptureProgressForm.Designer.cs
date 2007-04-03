@@ -1,6 +1,6 @@
 namespace oSpy
 {
-    partial class CaptureForm
+    partial class CaptureProgressForm
     {
         /// <summary>
         /// Required designer variable.

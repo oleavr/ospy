@@ -51,12 +51,13 @@
     <Compile Include="BacktraceForm.Designer.cs">
       <DependentUpon>BacktraceForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="CaptureForm.cs">
+    <Compile Include="CaptureProgressForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="CaptureForm.Designer.cs">
-      <DependentUpon>CaptureForm.cs</DependentUpon>
+    <Compile Include="CaptureProgressForm.Designer.cs">
+      <DependentUpon>CaptureProgressForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="CaptureManager.cs" />
     <Compile Include="Configuration\ConfigManager.cs" />
     <Compile Include="Configuration\ParserConfigDialog.cs">
       <SubType>Form</SubType>
@@ -152,11 +153,11 @@
     <Compile Include="Parser\HTTP.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="InjectForm.cs">
+    <Compile Include="CaptureChooseForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="InjectForm.Designer.cs">
-      <DependentUpon>InjectForm.cs</DependentUpon>
+    <Compile Include="CaptureChooseForm.Designer.cs">
+      <DependentUpon>CaptureChooseForm.cs</DependentUpon>
     </Compile>
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -177,9 +178,9 @@
       <SubType>Designer</SubType>
       <DependentUpon>BacktraceForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="CaptureForm.resx">
+    <EmbeddedResource Include="CaptureProgressForm.resx">
       <SubType>Designer</SubType>
-      <DependentUpon>CaptureForm.cs</DependentUpon>
+      <DependentUpon>CaptureProgressForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Configuration\ParserConfigDialog.resx">
       <SubType>Designer</SubType>
@@ -197,9 +198,9 @@
       <SubType>Designer</SubType>
       <DependentUpon>DebugForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="InjectForm.resx">
+    <EmbeddedResource Include="CaptureChooseForm.resx">
       <SubType>Designer</SubType>
-      <DependentUpon>InjectForm.cs</DependentUpon>
+      <DependentUpon>CaptureChooseForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <SubType>Designer</SubType>

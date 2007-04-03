@@ -80,7 +80,6 @@ namespace oSpy
         }
         
         private DebugForm debugForm;
-        private InjectForm injectForm;
         private SoftwallForm swForm;
 
         private bool updatingSelections = false;
@@ -112,7 +111,6 @@ namespace oSpy
             tblMessages = dataSet.Tables["messages"];
 
             debugForm = new DebugForm();
-            injectForm = new InjectForm();
             swForm = new SoftwallForm();
 
             packetParser = new PacketParser(debugForm);
@@ -469,6 +467,15 @@ namespace oSpy
 
         private void captureStartMenuItem_Click(object sender, EventArgs e)
         {
+            CaptureChooseForm frm = new CaptureChooseForm();
+
+            int[] pids = frm.GetProcessIds();
+            if (pids.Length == 0)
+                return;
+
+            CaptureManager mgr = new CaptureManager();
+            mgr.StartCapture();
+#if false
             tmpEventList.Clear();
             tmpPacketList.Clear();
 
@@ -488,6 +495,7 @@ namespace oSpy
             th.Start(progFrm);
 
             progFrm.ShowDialog(this);
+#endif
         }
 
         private void DoPostAnalysis(object param)
@@ -507,11 +515,6 @@ namespace oSpy
             SaveSettings();
             ConfigManager.Save();
             listener.Stop();
-        }
-
-        private void injectToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            injectForm.ShowDialog(this);
         }
 
         private void dataGridView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
