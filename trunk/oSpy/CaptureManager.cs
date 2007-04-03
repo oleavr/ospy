@@ -28,6 +28,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.IO;
+using System.Threading;
+using System.Diagnostics;
 
 namespace oSpy
 {
@@ -43,6 +45,16 @@ namespace oSpy
     {
         protected const int MAX_PATH = 260;
         protected const int ERROR_ALREADY_EXISTS = 183;
+
+        protected const int PROCESS_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF);
+        protected const int STANDARD_RIGHTS_REQUIRED = 0xF0000;
+        protected const int SYNCHRONIZE = 0x100000;
+
+        protected const int MEM_COMMIT = 0x1000;
+        protected const int PAGE_READWRITE = 0x4;
+
+        protected const int STILL_ACTIVE = STATUS_PENDING;
+        protected const int STATUS_PENDING = 0x103;
 
         protected enum enumProtect : uint
         {
@@ -70,6 +82,39 @@ namespace oSpy
         protected static extern IntPtr MapViewOfFile(IntPtr hFileMappingObject,
           enumFileMap dwDesiredAccess, uint dwFileOffsetHigh,
           uint dwFileOffsetLow, uint dwNumberOfBytesToMap);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        protected static extern IntPtr LoadLibrary(string lpFileName);
+
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        protected static extern bool FreeLibrary(IntPtr hModule);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true, ExactSpelling = true)]
+        protected static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        protected static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle,
+           uint dwProcessId);
+
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        protected static extern bool CloseHandle(IntPtr hObject);
+
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        protected static extern IntPtr VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress,
+            uint dwSize, uint flAllocationType, uint flProtect);
+
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        protected static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress,
+           byte[] lpBuffer, uint nSize, out IntPtr lpNumberOfBytesWritten);
+
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        protected static extern IntPtr CreateRemoteThread(IntPtr hProcess,
+            IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress,
+            IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);
+
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        protected static extern bool GetExitCodeThread(IntPtr hThread, out uint lpExitCode);
 
         public const int MAX_SOFTWALL_RULES = 128;
 
@@ -111,8 +156,38 @@ namespace oSpy
         {
         }
 
-        public void StartCapture()
+        private int[] pids;
+        private IProgressFeedback progress;
+
+        public void StartCapture(int[] pids, IProgressFeedback progress)
         {
+            this.pids = pids;
+            this.progress = progress;
+
+            Thread th = new Thread(StartCaptureThread);
+            th.Start();
+        }
+
+        private void StartCaptureThread()
+        {
+            try
+            {
+                PrepareCapture(pids);
+                DoInjection();
+            }
+            catch (Exception e)
+            {
+                progress.OperationFailed(e.Message);
+                return;
+            }
+
+            progress.OperationComplete();
+        }
+
+        private void PrepareCapture(int[] pids)
+        {
+            progress.ProgressUpdate("Preparing capture", 100);
+
             IntPtr map = CreateFileMapping(0xFFFFFFFFu, IntPtr.Zero,
                                            enumProtect.PAGE_READWRITE,
                                            0, (uint)Marshal.SizeOf(typeof(CaptureConfig)),
@@ -138,8 +213,146 @@ namespace oSpy
             Marshal.Copy(tmpDirChars, 0, ptr, tmpDirChars.Length);
 
             // And make it NUL-terminated
-            ptr = (IntPtr) (ptr.ToInt64() + (tmpDirChars.Length * Marshal.SizeOf(typeof(UInt16))));
-            Marshal.WriteInt16(ptr, 0);
+            Marshal.WriteInt16(ptr, tmpDirChars.Length * Marshal.SizeOf(typeof(UInt16)), 0);
+
+            // Initialize LogIndex
+            Marshal.WriteInt32(cfgPtr, Marshal.OffsetOf(typeof(CaptureConfig), "LogIndex").ToInt32(), 1);
+
+            // Initialize softwall rules
+            SoftwallRule[] rules = new SoftwallRule[0];
+
+            Marshal.WriteInt32(cfgPtr, Marshal.OffsetOf(typeof(CaptureConfig), "NumSoftwallRules").ToInt32(), rules.Length);
+
+            ptr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(CaptureConfig), "SoftwallRules").ToInt64());
+            foreach (SoftwallRule rule in rules)
+            {
+                Marshal.StructureToPtr(rule, ptr, false);
+
+                ptr = (IntPtr)(ptr.ToInt64() + Marshal.SizeOf(typeof(SoftwallRule)));
+            }
+        }
+
+        private void DoInjection()
+        {
+            List<IntPtr> handles = new List<IntPtr>(pids.Length);
+            uint[] exitCodes = new uint[pids.Length];
+
+            // Inject into the desired process IDs
+            for (int i = 0; i < pids.Length; i++)
+            {
+                int percentComplete = (int) (((float) (i + 1) / (float) pids.Length) * 100.0f);
+                progress.ProgressUpdate("Injecting logging agents", percentComplete);
+                handles.Add(InjectDLL(pids[i]));
+            }
+
+            // Wait for completion
+            List<IntPtr> completedHandles = new List<IntPtr>(pids.Length);
+            while (handles.Count > 0)
+            {
+                int completionCount = pids.Length - handles.Count + 1;
+                int percentComplete = (int)(((float)completionCount / (float)pids.Length) * 100.0f);
+
+                progress.ProgressUpdate("Waiting for agents to initialize", percentComplete);
+
+                completedHandles.Clear();
+
+                for (int i = 0; i < handles.Count; i++)
+                {
+                    uint exitCode;
+
+                    if (!GetExitCodeThread(handles[i], out exitCode))
+                        throw new CaptureError("GetExitCodeThread failed");
+
+                    if (exitCode != STILL_ACTIVE)
+                    {
+                        completedHandles.Add(handles[i]);
+                        exitCodes[i] = exitCode;
+                    }
+                }
+
+                foreach (IntPtr handle in completedHandles)
+                {
+                    handles.Remove(handle);
+                }
+
+                Thread.Sleep(200);
+            }
+
+            // Check if any of them failed
+            for (int i = 0; i < pids.Length; i++)
+            {
+                if (exitCodes[i] == 0)
+                {
+                    throw new CaptureError(String.Format("Failed to inject logging agent into process with pid={0}",
+                                                         pids[i]));
+                }
+            }
+        }
+
+        private IntPtr InjectDLL(int processId)
+        {
+            string agentDLLPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) + "\\oSpyAgent.dll";
+            if (!File.Exists(agentDLLPath))
+                throw new CaptureError(agentDLLPath + " not found");
+
+            return InjectDLL(processId, agentDLLPath);
+        }
+
+        private IntPtr InjectDLL(int processId, string dllPath)
+        {
+            // Create a unicode (UTF-16) C-string
+            UnicodeEncoding enc = new UnicodeEncoding();
+            byte[] rawdllStr = enc.GetBytes(dllPath);
+            byte[] dllStr = new byte[rawdllStr.Length + 2];
+            rawdllStr.CopyTo(dllStr, 0);
+            dllStr[dllStr.Length - 2] = 0;
+            dllStr[dllStr.Length - 1] = 0;
+
+            // Get offset of LoadLibraryW in kernel32
+            IntPtr kernelMod = LoadLibrary("kernel32.dll");
+            if (kernelMod == IntPtr.Zero)
+                throw new CaptureError("LoadLibrary of kernel32.dll failed");
+
+            try
+            {
+                IntPtr loadLibraryAddr = GetProcAddress(kernelMod, "LoadLibraryW");
+                if (loadLibraryAddr == IntPtr.Zero)
+                    throw new CaptureError("GetProcAddress of LoadLibraryW failed");
+
+                // Open the target process
+                IntPtr proc = OpenProcess(PROCESS_ALL_ACCESS, true, (uint) processId);
+                if (proc == IntPtr.Zero)
+                    throw new CaptureError("OpenProcess failed");
+
+                try
+                {
+                    // Allocate memory for the string in the target process
+                    IntPtr remoteDllStr = VirtualAllocEx(proc, IntPtr.Zero,
+                        (uint) dllStr.Length, MEM_COMMIT, PAGE_READWRITE);
+                    if (remoteDllStr == IntPtr.Zero)
+                        throw new CaptureError("VirtualAllocEx failed");
+
+                    // Write the string to the allocated buffer
+                    IntPtr bytesWritten;
+                    if (!WriteProcessMemory(proc, remoteDllStr, dllStr, (uint)dllStr.Length, out bytesWritten))
+                        throw new CaptureError("WriteProcessMemory failed");
+
+                    // Launch the thread, being LoadLibraryW
+                    IntPtr remoteThreadHandle = CreateRemoteThread(proc, IntPtr.Zero, 0, loadLibraryAddr, remoteDllStr, 0, IntPtr.Zero);
+                    if (remoteThreadHandle == IntPtr.Zero)
+                        throw new CaptureError("CreateRemoteThread failed");
+
+                    return remoteThreadHandle;
+                }
+                finally
+                {
+                    CloseHandle(proc);
+                }
+            }
+            finally
+            {
+                FreeLibrary(kernelMod);
+            }
         }
     }
 }

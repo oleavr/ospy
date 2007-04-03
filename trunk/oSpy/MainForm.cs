@@ -46,6 +46,7 @@ namespace oSpy
     public partial class MainForm : Form
     {
         private ConfigContext config;
+        private CaptureManager captureMgr;
         private AgentListener listener;
 
         private DataTable tblMessages;
@@ -99,6 +100,7 @@ namespace oSpy
             InitializeComponent();
 
             config = ConfigManager.GetContext("MainForm");
+            captureMgr = new CaptureManager();
 
             colorPool = new ColorPool();
 
@@ -473,8 +475,18 @@ namespace oSpy
             if (pids.Length == 0)
                 return;
 
-            CaptureManager mgr = new CaptureManager();
-            mgr.StartCapture();
+            ProgressForm prog = new ProgressForm("Starting capture");
+
+            captureMgr.StartCapture(pids, prog);
+
+            if (prog.ShowDialog() != DialogResult.OK)
+            {
+                MessageBox.Show(String.Format("Failed to start capture: {0}", prog.GetOperationErrorMessage()),
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            MessageBox.Show("Capture started", "W00t", MessageBoxButtons.OK, MessageBoxIcon.Information);
 #if false
             tmpEventList.Clear();
             tmpPacketList.Clear();
