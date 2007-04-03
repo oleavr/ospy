@@ -33,7 +33,7 @@ using System.Windows.Forms;
 
 namespace oSpy
 {
-    public partial class CaptureForm : Form
+    public partial class CaptureProgressForm : Form
     {
         private AgentListener listener;
 
@@ -42,7 +42,7 @@ namespace oSpy
 
         private AgentListener.ElementsReceivedHandler receivedHandler;
 
-        public CaptureForm(AgentListener listener, AgentListener.SoftwallRule[] rules)
+        public CaptureProgressForm(AgentListener listener, AgentListener.SoftwallRule[] rules)
         {
             InitializeComponent();
 

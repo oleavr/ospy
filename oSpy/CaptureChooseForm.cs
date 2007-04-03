@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2006 Ole André Vadla Ravnås <oleavr@gmail.com>
+// Copyright (c) 2007 Ole André Vadla Ravnås <oleavr@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -37,121 +37,80 @@ using System.Runtime.InteropServices;
 
 namespace oSpy
 {
-    public partial class InjectForm : Form
+    public partial class CaptureChooseForm : Form
     {
-        public InjectForm()
+        private int checkCount = 0;
+
+        public CaptureChooseForm()
         {
             InitializeComponent();
         }
 
         private void InjectForm_Shown(object sender, EventArgs e)
         {
-            RefreshList();
+            UpdateProcessList();
+            UpdateButtons();
         }
 
-        private void RefreshList()
+        private void UpdateProcessList()
         {
-            listView.Clear();
+            List<ProcessItem> items = new List<ProcessItem>();
+
+            int ourSessionId = Process.GetCurrentProcess().SessionId;
+
             foreach (Process proc in Process.GetProcesses())
             {
-                string name;
-
-                name = String.Format("{0} ({1})", proc.ProcessName, proc.Id);
-
-                ListViewItem item = new ListViewItem(name);
-                item.Tag = proc;
-
-                listView.Items.Add(item);
-            }
-        }
-
-        private void closeButton_Click(object sender, EventArgs e)
-        {
-            Close();
-        }
-
-        private void killButton_Click(object sender, EventArgs e)
-        {
-            if (listView.SelectedItems.Count == 0)
-                return;
-
-            foreach (ListViewItem item in listView.SelectedItems)
-            {
-                Process proc = item.Tag as Process;
-                proc.Kill();
-            }
-
-            Thread.Sleep(1000);
-
-            RefreshList();
-        }
-
-        private void refreshButton_Click(object sender, EventArgs e)
-        {
-            RefreshList();
-        }
-
-        private void asRestartButton_Click(object sender, EventArgs e)
-        {
-            int count = 0;
-
-            RefreshList();
-
-            foreach (ListViewItem item in listView.Items)
-            {
-                Process proc = item.Tag as Process;
-
-                string name = proc.ProcessName.ToLower();
-
-                if (name == "rapimgr" ||
-                    name == "wcescomm" ||
-                    name == "wcesmgr")
+                if (proc.SessionId == ourSessionId)
                 {
-                    count++;
-                    proc.Kill();
+                    items.Add(new ProcessItem(proc));
                 }
             }
 
-            if (count > 0)
-            {
-                Thread.Sleep(1000);
-            }
+            items.Sort();
 
-            RefreshList();
+            processList.Items.Clear();
+            processList.Items.AddRange(items.ToArray());
         }
-        
-        private void asInjectButton_Click(object sender, EventArgs e)
-        {            
-            int count = 0;
 
-            RefreshList();
+        private void UpdateButtons()
+        {
+            startBtn.Enabled = (checkCount > 0);
+        }
 
-            foreach (ListViewItem item in listView.Items)
+        private void processList_ItemCheck(object sender, ItemCheckEventArgs e)
+        {
+            if (e.NewValue == CheckState.Checked)
+                checkCount++;
+            else
+                checkCount--;
+
+            UpdateButtons();
+        }
+
+        private void startBtn_Click(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.OK;
+        }
+
+        public int[] GetProcessIds()
+        {
+            List<int> result = new List<int>();
+
+            if (ShowDialog() == DialogResult.OK)
             {
-                Process proc = item.Tag as Process;
-
-                string name = proc.ProcessName.ToLower();
-
-                if (name == "rapimgr" ||
-                    name == "wcescomm" ||
-                    name == "wcesmgr")
+                for (int i = 0; i < processList.Items.Count; i++)
                 {
-                    count++;
-                    if (!InjectDLL(proc.Id))
+                    if (processList.GetItemChecked(i))
                     {
-                        MessageBox.Show(this, "Failed to inject agent into '" + name + "'.", "Error",
-                                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        result.Add((processList.Items[i] as ProcessItem).Process.Id);
                     }
                 }
             }
 
-            if (count > 0)
-            {
-                MessageBox.Show(this, String.Format("Agent successfully injected into {0} processes.", count),
-                    "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
+            return result.ToArray();
         }
 
+#if false
         private const int PROCESS_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF);
         private const int STANDARD_RIGHTS_REQUIRED = 0xF0000;
         private const int SYNCHRONIZE = 0x100000;
@@ -210,10 +169,10 @@ namespace oSpy
 
         private void injectButton_Click(object sender, EventArgs e)
         {
-            if (listView.SelectedItems.Count == 0)
+            if (processView.SelectedItems.Count == 0)
                 return;
 
-            foreach (ListViewItem item in listView.SelectedItems)
+            foreach (ListViewItem item in processView.SelectedItems)
             {
                 Process proc = item.Tag as Process;
 
@@ -380,6 +339,33 @@ namespace oSpy
             Thread.Sleep(1000);
 
             RefreshList();
+        }
+#endif
+    }
+
+    public class ProcessItem : IComparable
+    {
+        protected Process process;
+        public Process Process
+        {
+            get { return process; }
+        }
+
+        public ProcessItem(Process process)
+        {
+            this.process = process;
+        }
+
+        public override string ToString()
+        {
+            return String.Format("{0} ({1})", process.ProcessName, process.Id);
+        }
+
+        public int CompareTo(Object obj)
+        {
+            ProcessItem otherItem = obj as ProcessItem;
+
+            return process.ProcessName.CompareTo(otherItem.process.ProcessName);
         }
     }
 }
