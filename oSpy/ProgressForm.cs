@@ -36,6 +36,8 @@ namespace oSpy
 {
     public partial class ProgressForm : Form, IProgressFeedback
     {
+        private string errorMessage;
+
         public ProgressForm(string operation)
         {
             InitializeComponent();
@@ -60,12 +62,28 @@ namespace oSpy
 
         public void OperationComplete()
         {
-            Invoke(new ThreadStart(SetDialogResult));
+            Invoke(new ThreadStart(SetDialogResultOk));
         }
 
-        private void SetDialogResult()
+        public void OperationFailed(string errorMessage)
+        {
+            this.errorMessage = errorMessage;
+            Invoke(new ThreadStart(SetDialogResultError));
+        }
+
+        public string GetOperationErrorMessage()
+        {
+            return errorMessage;
+        }
+
+        private void SetDialogResultOk()
         {
             this.DialogResult = DialogResult.OK;
+        }
+
+        private void SetDialogResultError()
+        {
+            this.DialogResult = DialogResult.Abort;
         }
     }
 
@@ -73,5 +91,7 @@ namespace oSpy
     {
         void ProgressUpdate(string operation, int progress);
         void OperationComplete();
+        void OperationFailed(string errorMessage);
+        string GetOperationErrorMessage();
     }
 }
