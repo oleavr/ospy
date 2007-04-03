@@ -42,7 +42,7 @@ public:
 
     static HookManager *Instance();
 
-    void LoadDefinitions(const OString &path);
+    void LoadDefinitions(const OWString &path);
 
     unsigned int GetFunctionSpecCount() const { return static_cast<unsigned int>(m_funcSpecs.size()); }
     unsigned int GetVTableSpecCount() const { return static_cast<unsigned int>(m_vtableSpecs.size()); }

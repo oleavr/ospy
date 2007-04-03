@@ -94,12 +94,12 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine=""
+				CommandLine="copy config.xml $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\SocketSpyLogger\bin\Debug"
+			OutputDirectory="..\bin\Release"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
@@ -174,7 +174,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine=""
+				CommandLine="copy config.xml $(OutDir)"
 			/>
 		</Configuration>
 	</Configurations>
@@ -199,62 +199,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\byte_buffer.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hooking.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hooks_activesync.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hooks_crypt.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hooks_httpapi.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hooks_kernel32.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hooks_msn.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hooks_secur32.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hooks_wininet.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hooks_winsock.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\httpapi_util.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\logging_old.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\overlapped.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\softwall.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -274,10 +218,6 @@
 					/>
 				</FileConfiguration>
 			</File>
-			<File
-				RelativePath=".\util.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -285,43 +225,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\Agent.h"
+				>
+			</File>
+			<File
 				RelativePath=".\BinaryLogger.h"
 				>
 			</File>
 			<File
-				RelativePath=".\byte_buffer.h"
-				>
-			</File>
-			<File
-				RelativePath=".\hooking.h"
-				>
-			</File>
-			<File
-				RelativePath=".\hooks.h"
-				>
-			</File>
-			<File
-				RelativePath=".\httpapi_util.h"
-				>
-			</File>
-			<File
-				RelativePath=".\logging_old.h"
-				>
-			</File>
-			<File
-				RelativePath=".\overlapped.h"
-				>
-			</File>
-			<File
-				RelativePath=".\softwall.h"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\util.h"
 				>
 			</File>
 		</Filter>
@@ -331,6 +243,10 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
+		<File
+			RelativePath=".\config.xml"
+			>
+		</File>
 		<File
 			RelativePath=".\hookgenerator.pyw"
 			>

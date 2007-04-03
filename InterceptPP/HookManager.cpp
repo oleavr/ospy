@@ -92,7 +92,7 @@ HookManager::Instance()
 }
 
 void
-HookManager::LoadDefinitions(const OString &path)
+HookManager::LoadDefinitions(const OWString &path)
 {
     CoInitialize(NULL);
 

@@ -216,6 +216,8 @@ typedef basic_string<wchar_t, char_traits<wchar_t>, MyAlloc<wchar_t>> OWString;
 typedef basic_string<char, ci_char_traits, MyAlloc<char>> OICString;
 
 typedef basic_ostringstream<char, char_traits<char>, MyAlloc<char>> OOStringStream;
+typedef basic_ostringstream<wchar_t, char_traits<wchar_t>, MyAlloc<wchar_t>> OOWStringStream;
+
 typedef basic_istringstream<char, char_traits<char>, MyAlloc<char>> OIStringStream;
 
 template <class eT>

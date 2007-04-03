@@ -330,7 +330,7 @@ namespace oSpy
                 return;
             }
 
-            captureStartMenuItem.Enabled = true;
+            newCaptureToolStripMenuItem.Enabled = true;
         }
 
         private void exitMenuItem_Click(object sender, EventArgs e)
@@ -467,7 +467,7 @@ namespace oSpy
             }
         }
 
-        private void captureStartMenuItem_Click(object sender, EventArgs e)
+        private void newCaptureToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CaptureChooseForm frm = new CaptureChooseForm();
 
@@ -475,18 +475,22 @@ namespace oSpy
             if (pids.Length == 0)
                 return;
 
-            ProgressForm prog = new ProgressForm("Starting capture");
+            ProgressForm progFrm = new ProgressForm("Starting capture");
 
-            captureMgr.StartCapture(pids, prog);
+            captureMgr.StartCapture(pids, progFrm);
 
-            if (prog.ShowDialog() != DialogResult.OK)
+            if (progFrm.ShowDialog() != DialogResult.OK)
             {
-                MessageBox.Show(String.Format("Failed to start capture: {0}", prog.GetOperationErrorMessage()),
+                MessageBox.Show(String.Format("Failed to start capture: {0}", progFrm.GetOperationErrorMessage()),
                                 "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
-            MessageBox.Show("Capture started", "W00t", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            CaptureProgressForm capProgFrm = new CaptureProgressForm(captureMgr);
+            capProgFrm.ShowDialog();
+
+            MessageBox.Show(String.Format("Trace complete. Have a look in '{0}'", captureMgr.TargetDirectory),
+                            "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
 #if false
             tmpEventList.Clear();
             tmpPacketList.Clear();

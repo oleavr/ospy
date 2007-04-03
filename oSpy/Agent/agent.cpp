@@ -24,15 +24,63 @@
 //
 
 #include "stdafx.h"
-#include "BinaryLogger.h"
-#include "logging_old.h"
-#include "hooks.h"
-#include "util.h"
-#include "overlapped.h"
+#include "Agent.h"
 
 #ifdef _MANAGED
 #pragma managed(push, off)
 #endif
+
+Agent::Agent()
+{
+    InterceptPP::Initialize();
+}
+
+void
+Agent::Attach()
+{
+    HANDLE map = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, "oSpyCaptureConfig");
+    m_cfg = static_cast<CaptureConfig *>(MapViewOfFile(map, FILE_MAP_WRITE, 0, 0, sizeof(CaptureConfig)));
+
+    // Create the logger and tell Intercept++ to use it
+    {
+        OOWStringStream ss;
+        ss << m_cfg->LogPath << "\\" << GetProcessId(GetCurrentProcess()) << ".log";
+
+        m_logger = new BinaryLogger(this, ss.str());
+        InterceptPP::SetLogger(m_logger);
+    }
+
+    // Load hook definitions from XML
+    HookManager *mgr = HookManager::Instance();
+    try
+    {
+        OOWStringStream ss;
+        ss << m_cfg->LogPath << "\\" << "config.xml";
+        mgr->LoadDefinitions(ss.str());
+    }
+    catch (Error &e)
+    {
+        GetLogger()->LogError("LoadDefinitions failed: %s", e.what());
+    }
+    catch (...)
+    {
+        GetLogger()->LogError("LoadDefinitions failed: unknown error");
+    }
+}
+
+LONG
+Agent::GetNextLogIndex()
+{
+    return InterlockedIncrement(&m_cfg->LogIndex);
+}
+
+LONG
+Agent::AddBytesLogged(LONG n)
+{
+    LONG prevSize = InterlockedExchangeAdd(&m_cfg->LogSize, n);
+
+    return prevSize + n;
+}
 
 BOOL APIENTRY
 DllMain(HMODULE hModule,
@@ -49,42 +97,8 @@ DllMain(HMODULE hModule,
 		// And to make sure that the compiler doesn't optimize the previous statement out.
 		if (dummy_float > 0.0f)
 		{
-			// Initialize SHM logger
-			message_logger_init();
-
-            //COverlappedManager::Init();
-
-            InterceptPP::Initialize();
-
-            OModuleInfo mi = Util::Instance()->GetModuleInfo(DllMain);
-            OString ourDir = Util::Instance()->GetDirectory(mi);
-
-            //InterceptPP::SetLogger(new BinaryLogger(ourDir + "\\oSpyAgentLog.bin"));
-            InterceptPP::SetLogger(new BinaryLogger("C:\\oSpyAgentLog.bin"));
-
-            HookManager *mgr = HookManager::Instance();
-            try
-            {
-                //mgr->LoadDefinitions(ourDir + "\\config.xml");
-                mgr->LoadDefinitions("D:\\Projects\\oSpy\\trunk\\oSpy\\Agent\\config.xml");
-            }
-            catch (Error &e)
-            {
-                GetLogger()->LogError("LoadDefinitions failed: %s", e.what());
-            }
-            catch (...)
-            {
-                GetLogger()->LogError("LoadDefinitions failed: unknown error");
-            }
-
-			//hook_kernel32();
-			hook_winsock();
-			hook_secur32();
-			hook_crypt();
-			hook_wininet();
-			//hook_httpapi();
-			hook_activesync();
-			//hook_msn();
+            Agent *agent = new Agent();
+            agent->Attach();
 		}
     }
 

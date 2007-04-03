@@ -122,7 +122,7 @@ namespace oSpy
         public struct SoftwallRule
         {
             /* mask of conditions */
-            public Int32 conditions;
+            public Int32 Conditions;
 
             /* condition values */
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
@@ -146,18 +146,29 @@ namespace oSpy
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_PATH)]
             public string LogPath;
             public volatile UInt32 LogIndex;
+            public volatile UInt32 LogSize;
 
             public UInt32 NumSoftwallRules;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = MAX_SOFTWALL_RULES)]
             public SoftwallRule[] SoftwallRules;
         }
 
+        private int[] pids;
+        private IProgressFeedback progress;
+
+        private IntPtr cfgPtr;
+        private IntPtr logIndexPtr;
+        private IntPtr logSizePtr;
+        private string tmpDir;
+
+        public string TargetDirectory
+        {
+            get { return tmpDir; }
+        }
+
         public CaptureManager()
         {
         }
-
-        private int[] pids;
-        private IProgressFeedback progress;
 
         public void StartCapture(int[] pids, IProgressFeedback progress)
         {
@@ -166,6 +177,12 @@ namespace oSpy
 
             Thread th = new Thread(StartCaptureThread);
             th.Start();
+        }
+
+        public void GetCaptureStatistics(out int evCount, out int evBytes)
+        {
+            evCount = Marshal.ReadInt32(logIndexPtr);
+            evBytes = Marshal.ReadInt32(logSizePtr);
         }
 
         private void StartCaptureThread()
@@ -195,10 +212,9 @@ namespace oSpy
             if (Marshal.GetLastWin32Error() == ERROR_ALREADY_EXISTS)
                 throw new CaptureError("Is another instance of oSpy or one or more processes previously monitored still alive?");
 
-            IntPtr cfgPtr = MapViewOfFile(map, enumFileMap.FILE_MAP_WRITE, 0, 0, (uint)Marshal.SizeOf(typeof(CaptureConfig)));
+            cfgPtr = MapViewOfFile(map, enumFileMap.FILE_MAP_WRITE, 0, 0, (uint)Marshal.SizeOf(typeof(CaptureConfig)));
 
             // Create a temporary directory for the capture
-            string tmpDir;
             do
             {
                 tmpDir = String.Format("{0}{1}", Path.GetTempPath(), Path.GetRandomFileName());
@@ -215,8 +231,12 @@ namespace oSpy
             // And make it NUL-terminated
             Marshal.WriteInt16(ptr, tmpDirChars.Length * Marshal.SizeOf(typeof(UInt16)), 0);
 
-            // Initialize LogIndex
-            Marshal.WriteInt32(cfgPtr, Marshal.OffsetOf(typeof(CaptureConfig), "LogIndex").ToInt32(), 1);
+            // Initialize LogIndex and LogSize
+            logIndexPtr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(CaptureConfig), "LogIndex").ToInt64());
+            logSizePtr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(CaptureConfig), "LogSize").ToInt64());
+
+            Marshal.WriteInt32(logIndexPtr, 0);
+            Marshal.WriteInt32(logSizePtr, 0);
 
             // Initialize softwall rules
             SoftwallRule[] rules = new SoftwallRule[0];
@@ -230,6 +250,10 @@ namespace oSpy
 
                 ptr = (IntPtr)(ptr.ToInt64() + Marshal.SizeOf(typeof(SoftwallRule)));
             }
+
+            // Copy configuration XML
+            string configPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) + "\\config.xml";
+            File.Copy(configPath, String.Format("{0}\\config.xml", tmpDir));
         }
 
         private void DoInjection()

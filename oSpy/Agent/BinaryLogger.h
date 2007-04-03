@@ -25,16 +25,20 @@
 
 #pragma once
 
+class Agent;
+
 class BinaryLogger : public Logging::Logger
 {
 public:
-    BinaryLogger(const OString &filename);
+    BinaryLogger(Agent *agent, const OWString &filename);
 	virtual ~BinaryLogger();
 
     virtual Logging::Event *NewEvent(const OString &eventType);
     virtual void SubmitEvent(Logging::Event *ev);
 
 protected:
+    Agent *m_agent;
+
 	HANDLE m_handle;
     unsigned int m_id;
     volatile bool m_running;
