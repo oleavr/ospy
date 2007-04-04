@@ -122,8 +122,7 @@ Agent::MonitorThreadFuncWrapper(LPVOID param)
 
     instance->MonitorThreadFunc();
 
-    // Unload our own module
-    //FreeLibrary(g_mod);
+    CreateThread(NULL, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(FreeLibrary), g_mod, 0, NULL);
 
     return 0;
 }
@@ -135,7 +134,7 @@ Agent::MonitorThreadFunc()
     while (WaitForSingleObject(m_stoppedEvent, INFINITE) != WAIT_OBJECT_0);
 
     // Clean up
-    UnInitialize();
+    g_agent->UnInitialize();
 }
 
 LONG
@@ -174,14 +173,13 @@ DllMain(HMODULE hModule,
     }
     else if (ul_reason_for_call == DLL_PROCESS_DETACH)
     {
-        /*
         if (g_agent != NULL)
         {
             delete g_agent;
             g_agent = NULL;
         }
 
-        g_mod = NULL;*/
+        g_mod = NULL;
     }
 
     return TRUE;
