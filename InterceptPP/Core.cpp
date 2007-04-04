@@ -26,6 +26,7 @@
 #include "stdafx.h"
 #include "Core.h"
 #include "NullLogger.h"
+#include "HookManager.h"
 #include "Util.h"
 #include <udis86.h>
 
@@ -33,17 +34,25 @@
 
 namespace InterceptPP {
 
-static Logger *g_defaultLogger = NULL;
 static Logger *g_logger = NULL;
 
 void
 Initialize()
 {
-    g_defaultLogger = new Logging::NullLogger();
-
     Function::Initialize();
     Util::Instance()->Initialize();
     SetLogger(NULL);
+}
+
+void
+UnInitialize()
+{
+    HookManager::Instance()->Reset();
+    Logger *logger = static_cast<Logger *>(InterlockedExchangePointer(&g_logger, NULL));
+    if (logger != NULL)
+        delete logger;
+    Util::Instance()->UnInitialize();
+    Function::UnInitialize();
 }
 
 Logger *
@@ -55,10 +64,12 @@ GetLogger()
 void
 SetLogger(Logger *logger)
 {
-    if (logger != NULL)
-        g_logger = logger;
-    else
-        g_logger = g_defaultLogger;
+    if (logger == NULL)
+        logger = new Logging::NullLogger();
+
+    Logger *prevLogger = static_cast<Logger *>(InterlockedExchangePointer(&g_logger, logger));
+    if (prevLogger != NULL)
+        delete prevLogger;
 }
 
 const PrologSignatureSpec Function::prologSignatureSpecs[] = {
@@ -240,6 +251,12 @@ FunctionSpec::SetArguments(unsigned int count, ...)
     va_end(args);
 }
 
+Function::Function(FunctionSpec *spec, DWORD offset)
+    : m_trampoline(NULL), m_oldMemProtect(0), m_origStart(0)
+{
+    Initialize(spec, offset);
+}
+
 void
 Function::Initialize()
 {
@@ -247,6 +264,12 @@ Function::Initialize()
 	{
         prologSignatures.push_back(Signature(prologSignatureSpecs[i].sig.signature));
     }
+}
+
+void
+Function::UnInitialize()
+{
+    prologSignatures.clear();
 }
 
 OString
@@ -330,17 +353,47 @@ Function::Hook()
     }
 
     FunctionTrampoline *trampoline = CreateTrampoline(nBytesToCopy);
+    m_trampoline = trampoline;
 
-    DWORD oldProtect;
-    VirtualProtect(reinterpret_cast<LPVOID>(m_offset), 5, PAGE_EXECUTE_WRITECOPY, &oldProtect);
-    // TODO: check that VirtualProtect succeeded
+    if (!VirtualProtect(reinterpret_cast<LPVOID>(m_offset), sizeof(LONGLONG), PAGE_EXECUTE_WRITECOPY, &m_oldMemProtect))
+        throw Error("VirtualProtected failed");
 
-    // TODO: make this as close to atomic as possible
     FunctionRedirectStub *redirStub = reinterpret_cast<FunctionRedirectStub *>(m_offset);
-    redirStub->JMP_opcode = 0xE9;
-    redirStub->JMP_offset = reinterpret_cast<DWORD>(trampoline) - (reinterpret_cast<DWORD>(reinterpret_cast<unsigned char *>(redirStub) + sizeof(FunctionRedirectStub)));
+
+    LONGLONG buf;
+    memcpy(&buf, redirStub, sizeof(buf));
+    m_origStart = buf;
+
+    FunctionRedirectStub *stub = reinterpret_cast<FunctionRedirectStub *>(&buf);
+    stub->JMP_opcode = 0xE9;
+    stub->JMP_offset = reinterpret_cast<DWORD>(trampoline) - (reinterpret_cast<DWORD>(reinterpret_cast<unsigned char *>(redirStub) + sizeof(FunctionRedirectStub)));
+
+    LONGLONG *dst = reinterpret_cast<LONGLONG *>(redirStub);
+#if 1
+    *dst = buf;
+#else
+    // Only available on win2k3 and newer *sigh*
+    InterlockedExchange64(dst, buf);
+#endif
 
     FlushInstructionCache(GetCurrentProcess(), NULL, 0);
+}
+
+void
+Function::UnHook()
+{
+    LONGLONG *dst = reinterpret_cast<LONGLONG *>(m_offset);
+
+#if 1
+    *dst = m_origStart;
+#else
+    InterlockedExchange64(dst, m_origStart);
+#endif
+
+    FlushInstructionCache(GetCurrentProcess(), NULL, 0);
+
+    delete m_trampoline;
+    m_trampoline = NULL;
 }
 
 __declspec(naked) void

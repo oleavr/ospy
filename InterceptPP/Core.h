@@ -35,6 +35,7 @@ namespace InterceptPP {
 using Logging::Logger;
 
 void Initialize();
+void UnInitialize();
 Logger *GetLogger();
 void SetLogger(Logger *logger);
 
@@ -229,9 +230,10 @@ protected:
 class Function : public BaseObject
 {
 public:
-    Function(FunctionSpec *spec=NULL, DWORD offset=0) { Initialize(spec, offset); }
+    Function(FunctionSpec *spec=NULL, DWORD offset=0);
 
     static void Initialize();
+    static void UnInitialize();
     void Initialize(FunctionSpec *spec, DWORD offset) { m_spec = spec; m_offset = offset; }
 
     virtual const OString GetParentName() const { return ""; }
@@ -242,12 +244,17 @@ public:
     DWORD GetOffset() const { return m_offset; }
 
     void Hook();
+    void UnHook();
 
 protected:
     FunctionSpec *m_spec;
     DWORD m_offset;
     static const PrologSignatureSpec prologSignatureSpecs[];
     static OVector<Signature>::Type prologSignatures;
+
+    void *m_trampoline;
+    DWORD m_oldMemProtect;
+    LONGLONG m_origStart;
 
     void OnEnter(FunctionCall *call);
     void OnLeave(FunctionCall *call);

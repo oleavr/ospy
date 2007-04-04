@@ -25,7 +25,6 @@
 
 #include "stdafx.h"
 #include "Util.h"
-#include "DLL.h"
 #include <psapi.h>
 #include <shlwapi.h>
 
@@ -34,7 +33,12 @@
 namespace InterceptPP {
 
 Util::Util()
-    : m_lowestAddress(0xFFFFFFFF),
+    : m_asciiFuncSpec(NULL),
+      m_uniFuncSpec(NULL),
+      m_mod(NULL),
+      m_asciiFunc(NULL),
+      m_uniFunc(NULL),
+      m_lowestAddress(0xFFFFFFFF),
       m_highestAddress(0)
 {
 }
@@ -63,20 +67,52 @@ Util::Initialize()
 		m_processName = buf;
 	}
 
-    FunctionSpec *asciiFuncSpec = new FunctionSpec("LoadLibraryA");
-    asciiFuncSpec->SetHandler(OnLoadLibrary);
+    m_asciiFuncSpec = new FunctionSpec("LoadLibraryA");
+    m_asciiFuncSpec->SetHandler(OnLoadLibrary);
 
-    FunctionSpec *uniFuncSpec = new FunctionSpec("LoadLibraryW");
-    uniFuncSpec->SetHandler(OnLoadLibrary);
+    m_uniFuncSpec = new FunctionSpec("LoadLibraryW");
+    m_uniFuncSpec->SetHandler(OnLoadLibrary);
 
-    DllModule *mod = new DllModule("kernel32.dll");
-    DllFunction *asciiFunc = new DllFunction(mod, asciiFuncSpec);
-    DllFunction *uniFunc = new DllFunction(mod, uniFuncSpec);
+    m_mod = new DllModule("kernel32.dll");
+    m_asciiFunc = new DllFunction(m_mod, m_asciiFuncSpec);
+    m_uniFunc = new DllFunction(m_mod, m_uniFuncSpec);
 
-    asciiFunc->Hook();
-    uniFunc->Hook();
+    m_asciiFunc->Hook();
+    m_uniFunc->Hook();
 
 	UpdateModuleList();
+}
+
+void
+Util::UnInitialize()
+{
+    m_modules.clear();
+
+    if (m_uniFunc != NULL)
+    {
+        m_uniFunc->UnHook();
+        delete m_uniFunc;
+    }
+
+    if (m_asciiFunc != NULL)
+    {
+        m_asciiFunc->UnHook();
+        delete m_asciiFunc;
+    }
+
+    if (m_mod != NULL)
+        delete m_mod;
+
+    if (m_uniFuncSpec != NULL)
+        delete m_uniFuncSpec;
+
+    if (m_asciiFuncSpec != NULL)
+        delete m_asciiFuncSpec;
+
+    m_processName = "";
+
+    m_lowestAddress = 0xFFFFFFFF;
+    m_highestAddress = 0;
 }
 
 bool

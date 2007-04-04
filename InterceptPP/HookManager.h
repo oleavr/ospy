@@ -44,6 +44,8 @@ public:
 
     void LoadDefinitions(const OWString &path);
 
+    void Reset();
+
     unsigned int GetFunctionSpecCount() const { return static_cast<unsigned int>(m_funcSpecs.size()); }
     unsigned int GetVTableSpecCount() const { return static_cast<unsigned int>(m_vtableSpecs.size()); }
     unsigned int GetSignatureCount() const { return static_cast<unsigned int>(m_signatures.size()); }

@@ -53,21 +53,28 @@ typedef struct {
     volatile LONG LogIndex;
     volatile LONG LogSize;
 
+    volatile LONG ClientCount;
+
     DWORD NumSoftwallRules;
     SoftwallRule rules[MAX_SOFTWALL_RULES];
-} CaptureConfig;
+} Capture;
 
 class Agent : public BaseObject
 {
 public:
     Agent();
 
-    void Attach();
+    void Initialize();
+    void UnInitialize();
 
     LONG GetNextLogIndex();
     LONG AddBytesLogged(LONG n);
 
 protected:
-    CaptureConfig *m_cfg;
-    BinaryLogger *m_logger;
+    HANDLE m_map;
+    Capture *m_capture;
+    HANDLE m_stoppedEvent;
+
+    static DWORD WINAPI MonitorThreadFuncWrapper(LPVOID param);
+    void MonitorThreadFunc();
 };

@@ -50,6 +50,12 @@ DllModule::DllModule(const OString &path)
     m_size = mi.endAddress - mi.startAddress;
 }
 
+DllModule::~DllModule()
+{
+    if (m_handle != NULL)
+        FreeLibrary(m_handle);
+}
+
 void *
 DllModule::FindUniqueSignature(const Signature *sig)
 {
@@ -73,6 +79,5 @@ DllFunction::DllFunction(DllModule *module, FunctionSpec *spec)
 
     Function::Initialize(spec, reinterpret_cast<DWORD>(offset));
 }
-
 
 } // namespace InterceptPP

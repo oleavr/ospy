@@ -30,24 +30,39 @@
 #pragma managed(push, off)
 #endif
 
+static HMODULE g_mod = NULL;
+static Agent *g_agent = NULL;
+
 Agent::Agent()
+    : m_map(INVALID_HANDLE_VALUE),
+      m_capture(NULL),
+      m_stoppedEvent(INVALID_HANDLE_VALUE)
 {
-    InterceptPP::Initialize();
 }
 
 void
-Agent::Attach()
+Agent::Initialize()
 {
-    HANDLE map = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, "oSpyCaptureConfig");
-    m_cfg = static_cast<CaptureConfig *>(MapViewOfFile(map, FILE_MAP_WRITE, 0, 0, sizeof(CaptureConfig)));
+    InterceptPP::Initialize();
+
+    m_map = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, "oSpyCapture");
+    m_capture = static_cast<Capture *>(MapViewOfFile(m_map, FILE_MAP_WRITE, 0, 0, sizeof(Capture)));
+    if (m_capture == NULL)
+        throw Error("MapViewOfFile failed");
+
+    m_stoppedEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "oSpyCaptureStopped");
+    if (m_stoppedEvent == NULL)
+        throw Error("OpenEvent failed");
+
+    // Register
+    InterlockedIncrement(&m_capture->ClientCount);
 
     // Create the logger and tell Intercept++ to use it
     {
         OOWStringStream ss;
-        ss << m_cfg->LogPath << "\\" << GetProcessId(GetCurrentProcess()) << ".log";
+        ss << m_capture->LogPath << "\\" << GetProcessId(GetCurrentProcess()) << ".log";
 
-        m_logger = new BinaryLogger(this, ss.str());
-        InterceptPP::SetLogger(m_logger);
+        InterceptPP::SetLogger(new BinaryLogger(this, ss.str()));
     }
 
     // Load hook definitions from XML
@@ -55,7 +70,7 @@ Agent::Attach()
     try
     {
         OOWStringStream ss;
-        ss << m_cfg->LogPath << "\\" << "config.xml";
+        ss << m_capture->LogPath << "\\" << "config.xml";
         mgr->LoadDefinitions(ss.str());
     }
     catch (Error &e)
@@ -66,18 +81,73 @@ Agent::Attach()
     {
         GetLogger()->LogError("LoadDefinitions failed: unknown error");
     }
+
+    // Start a monitoring thread that does unhooking etc. when the trace is stopped
+    CreateThread(NULL, 0, MonitorThreadFuncWrapper, this, 0, NULL);
+}
+
+void
+Agent::UnInitialize()
+{
+    // Uninitialize Intercept++, effectively unhooking everything
+    InterceptPP::UnInitialize();
+
+    // Unregister
+    InterlockedDecrement(&m_capture->ClientCount);
+
+    // Clean up the rest
+    if (m_stoppedEvent != NULL)
+    {
+        CloseHandle(m_stoppedEvent);
+        m_stoppedEvent = NULL;
+    }
+
+    if (m_capture != NULL)
+    {
+        UnmapViewOfFile(m_capture);
+        m_capture = NULL;
+    }
+
+    if (m_map != NULL)
+    {
+        CloseHandle(m_map);
+        m_map = NULL;
+    }
+}
+
+DWORD WINAPI
+Agent::MonitorThreadFuncWrapper(LPVOID param)
+{
+    Agent *instance = reinterpret_cast<Agent *>(param);
+
+    instance->MonitorThreadFunc();
+
+    // Unload our own module
+    //FreeLibrary(g_mod);
+
+    return 0;
+}
+
+void
+Agent::MonitorThreadFunc()
+{
+    // Wait for the stopped event
+    while (WaitForSingleObject(m_stoppedEvent, INFINITE) != WAIT_OBJECT_0);
+
+    // Clean up
+    UnInitialize();
 }
 
 LONG
 Agent::GetNextLogIndex()
 {
-    return InterlockedIncrement(&m_cfg->LogIndex);
+    return InterlockedIncrement(&m_capture->LogIndex);
 }
 
 LONG
 Agent::AddBytesLogged(LONG n)
 {
-    LONG prevSize = InterlockedExchangeAdd(&m_cfg->LogSize, n);
+    LONG prevSize = InterlockedExchangeAdd(&m_capture->LogSize, n);
 
     return prevSize + n;
 }
@@ -97,9 +167,21 @@ DllMain(HMODULE hModule,
 		// And to make sure that the compiler doesn't optimize the previous statement out.
 		if (dummy_float > 0.0f)
 		{
-            Agent *agent = new Agent();
-            agent->Attach();
+            g_mod = hModule;
+            g_agent = new Agent();
+            g_agent->Initialize();
 		}
+    }
+    else if (ul_reason_for_call == DLL_PROCESS_DETACH)
+    {
+        /*
+        if (g_agent != NULL)
+        {
+            delete g_agent;
+            g_agent = NULL;
+        }
+
+        g_mod = NULL;*/
     }
 
     return TRUE;

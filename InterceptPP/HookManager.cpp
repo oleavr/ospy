@@ -37,47 +37,7 @@ HookManager::HookManager()
 
 HookManager::~HookManager()
 {
-    VTableList::iterator vtIter;
-    for (vtIter = m_vtables.begin(); vtIter != m_vtables.end(); vtIter++)
-    {
-        delete *vtIter;
-    }
-
-    FunctionList::iterator funcIter;
-    for (funcIter = m_functions.begin(); funcIter != m_functions.end(); funcIter++)
-    {
-        delete *funcIter;
-    }
-
-    DllFunctionList::iterator dfIter;
-    for (dfIter = m_dllFunctions.begin(); dfIter != m_dllFunctions.end(); dfIter++)
-    {
-        delete *dfIter;
-    }
-
-    DllModuleMap::iterator dmIter;
-    for (dmIter = m_dllModules.begin(); dmIter != m_dllModules.end(); dmIter++)
-    {
-        delete dmIter->second;
-    }
-
-    FunctionSpecMap::iterator fsIter;
-    for (fsIter = m_funcSpecs.begin(); fsIter != m_funcSpecs.end(); fsIter++)
-    {
-        delete fsIter->second;
-    }
-
-    VTableSpecMap::iterator vtsIter;
-    for (vtsIter = m_vtableSpecs.begin(); vtsIter != m_vtableSpecs.end(); vtsIter++)
-    {
-        delete vtsIter->second;
-    }
-
-    SignatureMap::iterator sigIter;
-    for (sigIter = m_signatures.begin(); sigIter != m_signatures.end(); sigIter++)
-    {
-        delete sigIter->second;
-    }
+    Reset();
 }
 
 HookManager *
@@ -200,6 +160,62 @@ HookManager::LoadDefinitions(const OWString &path)
     {
         throw ParserError(e.ErrorMessage());
     }
+}
+
+void
+HookManager::Reset()
+{
+    VTableList::iterator vtIter;
+    for (vtIter = m_vtables.begin(); vtIter != m_vtables.end(); vtIter++)
+    {
+        (*vtIter)->UnHook();
+        delete *vtIter;
+    }
+    m_vtables.clear();
+
+    FunctionList::iterator funcIter;
+    for (funcIter = m_functions.begin(); funcIter != m_functions.end(); funcIter++)
+    {
+        (*funcIter)->UnHook();
+        delete *funcIter;
+    }
+    m_functions.clear();
+
+    DllFunctionList::iterator dfIter;
+    for (dfIter = m_dllFunctions.begin(); dfIter != m_dllFunctions.end(); dfIter++)
+    {
+        (*dfIter)->UnHook();
+        delete *dfIter;
+    }
+    m_dllFunctions.clear();
+
+    DllModuleMap::iterator dmIter;
+    for (dmIter = m_dllModules.begin(); dmIter != m_dllModules.end(); dmIter++)
+    {
+        delete dmIter->second;
+    }
+    m_dllModules.clear();
+
+    FunctionSpecMap::iterator fsIter;
+    for (fsIter = m_funcSpecs.begin(); fsIter != m_funcSpecs.end(); fsIter++)
+    {
+        delete fsIter->second;
+    }
+    m_funcSpecs.clear();
+
+    VTableSpecMap::iterator vtsIter;
+    for (vtsIter = m_vtableSpecs.begin(); vtsIter != m_vtableSpecs.end(); vtsIter++)
+    {
+        delete vtsIter->second;
+    }
+    m_vtableSpecs.clear();
+
+    SignatureMap::iterator sigIter;
+    for (sigIter = m_signatures.begin(); sigIter != m_signatures.end(); sigIter++)
+    {
+        delete sigIter->second;
+    }
+    m_signatures.clear();
 }
 
 void

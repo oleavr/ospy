@@ -489,8 +489,20 @@ namespace oSpy
             CaptureProgressForm capProgFrm = new CaptureProgressForm(captureMgr);
             capProgFrm.ShowDialog();
 
+            progFrm = new ProgressForm("Stopping capture");
+
+            captureMgr.StopCapture(progFrm);
+
+            if (progFrm.ShowDialog() != DialogResult.OK)
+            {
+                MessageBox.Show(String.Format("Failed to stop capture: {0}", progFrm.GetOperationErrorMessage()),
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             MessageBox.Show(String.Format("Trace complete. Have a look in '{0}'", captureMgr.TargetDirectory),
                             "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
 #if false
             tmpEventList.Clear();
             tmpPacketList.Clear();

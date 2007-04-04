@@ -59,6 +59,7 @@ public:
 	VMethod &GetMethodByIndex(int index) { return m_methods[index]; }
 
 	void Hook();
+    void UnHook();
 
 	VMethod &operator[](int index) { return m_methods[index]; }
 

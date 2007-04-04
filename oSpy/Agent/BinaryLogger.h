@@ -40,8 +40,8 @@ protected:
     Agent *m_agent;
 
 	HANDLE m_handle;
-    unsigned int m_id;
-    volatile bool m_running;
+    HANDLE m_destroyEvent;
+    HANDLE m_loggingThreadHandle;
     SLIST_HEADER m_pendingEvents;
 
     void FlushPending();
