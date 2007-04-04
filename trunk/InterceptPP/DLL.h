@@ -32,6 +32,7 @@ namespace InterceptPP {
 class DllModule : public BaseObject {
 public:
     DllModule(const OString &path);
+    ~DllModule();
 
     const OString &GetPath() const { return m_path; }
     const OString &GetName() const { return m_name; }

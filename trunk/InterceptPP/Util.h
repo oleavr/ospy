@@ -26,6 +26,7 @@
 #pragma once
 
 #include "Core.h"
+#include "DLL.h"
 #include "Logging.h"
 
 namespace InterceptPP {
@@ -47,6 +48,7 @@ public:
     static Util *Instance();
 
     void Initialize();
+    void UnInitialize();
 	void UpdateModuleList();
 
 	const OString &GetProcessName() { return m_processName; }
@@ -67,6 +69,13 @@ private:
 
 	CRITICAL_SECTION m_cs;
 	OString m_processName;
+
+    FunctionSpec *m_asciiFuncSpec;
+    FunctionSpec *m_uniFuncSpec;
+    DllModule *m_mod;
+    DllFunction *m_asciiFunc;
+    DllFunction *m_uniFunc;
+
 	OMap<OICString, OModuleInfo>::Type m_modules;
 	DWORD m_lowestAddress;
 	DWORD m_highestAddress;

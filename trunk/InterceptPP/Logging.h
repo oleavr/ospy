@@ -34,6 +34,8 @@ class Event;
 class Logger : public BaseObject
 {
 public:
+    virtual ~Logger() {}
+
     virtual Event *NewEvent(const OString &eventType) = 0;
     virtual void SubmitEvent(Event *ev) = 0;
 

@@ -30,6 +30,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 using System.Threading;
 using System.Diagnostics;
+using Microsoft.Win32.SafeHandles;
 
 namespace oSpy
 {
@@ -113,6 +114,10 @@ namespace oSpy
             IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress,
             IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern SafeWaitHandle CreateEvent(IntPtr lpEventAttributes, bool bManualReset,
+                                                 bool bInitialState, string lpName);
+
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         protected static extern bool GetExitCodeThread(IntPtr hThread, out uint lpExitCode);
 
@@ -141,12 +146,14 @@ namespace oSpy
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
-        public struct CaptureConfig
+        public struct Capture
         {
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_PATH)]
             public string LogPath;
             public volatile UInt32 LogIndex;
             public volatile UInt32 LogSize;
+
+            public volatile UInt32 ClientCount;
 
             public UInt32 NumSoftwallRules;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = MAX_SOFTWALL_RULES)]
@@ -157,9 +164,10 @@ namespace oSpy
         private IProgressFeedback progress;
 
         private IntPtr cfgPtr;
-        private IntPtr logIndexPtr;
-        private IntPtr logSizePtr;
+        private IntPtr logIndexPtr, logSizePtr, clientCountPtr;
         private string tmpDir;
+
+        private ManualResetEvent stoppedEvent;
 
         public string TargetDirectory
         {
@@ -176,6 +184,14 @@ namespace oSpy
             this.progress = progress;
 
             Thread th = new Thread(StartCaptureThread);
+            th.Start();
+        }
+
+        public void StopCapture(IProgressFeedback progress)
+        {
+            this.progress = progress;
+
+            Thread th = new Thread(StopCaptureThread);
             th.Start();
         }
 
@@ -201,18 +217,40 @@ namespace oSpy
             progress.OperationComplete();
         }
 
+        private void StopCaptureThread()
+        {
+            stoppedEvent.Set();
+
+            int clientCount;
+            do
+            {
+                clientCount = Marshal.ReadInt32(clientCountPtr);
+
+                Thread.Sleep(100);
+            }
+            while (clientCount > 0);
+
+            progress.OperationComplete();
+        }
+
         private void PrepareCapture(int[] pids)
         {
             progress.ProgressUpdate("Preparing capture", 100);
 
             IntPtr map = CreateFileMapping(0xFFFFFFFFu, IntPtr.Zero,
                                            enumProtect.PAGE_READWRITE,
-                                           0, (uint)Marshal.SizeOf(typeof(CaptureConfig)),
-                                           "oSpyCaptureConfig");
+                                           0, (uint)Marshal.SizeOf(typeof(Capture)),
+                                           "oSpyCapture");
             if (Marshal.GetLastWin32Error() == ERROR_ALREADY_EXISTS)
                 throw new CaptureError("Is another instance of oSpy or one or more processes previously monitored still alive?");
 
-            cfgPtr = MapViewOfFile(map, enumFileMap.FILE_MAP_WRITE, 0, 0, (uint)Marshal.SizeOf(typeof(CaptureConfig)));
+            stoppedEvent = new ManualResetEvent(false);
+            stoppedEvent.SafeWaitHandle = CreateEvent(IntPtr.Zero,
+                                                      true, // bManualReset
+                                                      false, // bInitialState
+                                                      "oSpyCaptureStopped");
+
+            cfgPtr = MapViewOfFile(map, enumFileMap.FILE_MAP_WRITE, 0, 0, (uint)Marshal.SizeOf(typeof(Capture)));
 
             // Create a temporary directory for the capture
             do
@@ -225,25 +263,29 @@ namespace oSpy
 
             // Write the temporary directory to shared memory
             char[] tmpDirChars = tmpDir.ToCharArray();
-            IntPtr ptr = (IntPtr) (cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(CaptureConfig), "LogPath").ToInt64());
+            IntPtr ptr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(Capture), "LogPath").ToInt64());
             Marshal.Copy(tmpDirChars, 0, ptr, tmpDirChars.Length);
 
             // And make it NUL-terminated
             Marshal.WriteInt16(ptr, tmpDirChars.Length * Marshal.SizeOf(typeof(UInt16)), 0);
 
             // Initialize LogIndex and LogSize
-            logIndexPtr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(CaptureConfig), "LogIndex").ToInt64());
-            logSizePtr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(CaptureConfig), "LogSize").ToInt64());
+            logIndexPtr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(Capture), "LogIndex").ToInt64());
+            logSizePtr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(Capture), "LogSize").ToInt64());
 
             Marshal.WriteInt32(logIndexPtr, 0);
             Marshal.WriteInt32(logSizePtr, 0);
 
+            // And ClientCount
+            clientCountPtr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(Capture), "ClientCount").ToInt64());
+            Marshal.WriteInt32(clientCountPtr, 0);
+
             // Initialize softwall rules
             SoftwallRule[] rules = new SoftwallRule[0];
 
-            Marshal.WriteInt32(cfgPtr, Marshal.OffsetOf(typeof(CaptureConfig), "NumSoftwallRules").ToInt32(), rules.Length);
+            Marshal.WriteInt32(cfgPtr, Marshal.OffsetOf(typeof(Capture), "NumSoftwallRules").ToInt32(), rules.Length);
 
-            ptr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(CaptureConfig), "SoftwallRules").ToInt64());
+            ptr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(Capture), "SoftwallRules").ToInt64());
             foreach (SoftwallRule rule in rules)
             {
                 Marshal.StructureToPtr(rule, ptr, false);

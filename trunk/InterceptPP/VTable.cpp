@@ -96,9 +96,10 @@ VTable::Hook()
 {
 	VTableSpec *spec = GetSpec();
 
-	DWORD oldProtect;
-	VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), spec->GetMethodCount() * sizeof(LPVOID),
-		PAGE_READWRITE, &oldProtect);
+    DWORD vtSize = spec->GetMethodCount() * sizeof(LPVOID);
+
+    DWORD oldProtect;
+	VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, PAGE_READWRITE, &oldProtect);
 
 	DWORD *methods = reinterpret_cast<DWORD *>(m_startOffset);
 
@@ -108,6 +109,34 @@ VTable::Hook()
 	}
 
     FlushInstructionCache(GetCurrentProcess(), NULL, 0);
+
+	VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, oldProtect, &oldProtect);
+}
+
+void
+VTable::UnHook()
+{
+    VTableSpec *spec = GetSpec();
+
+    DWORD vtSize = spec->GetMethodCount() * sizeof(LPVOID);
+
+    DWORD oldProtect;
+	VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, PAGE_READWRITE, &oldProtect);
+
+    DWORD *methods = reinterpret_cast<DWORD *>(m_startOffset);
+
+	for (unsigned int i = 0; i < spec->GetMethodCount(); i++)
+	{
+		void *trampoline = reinterpret_cast<void *>(methods[i]);
+
+        methods[i] = m_methods[i].GetOffset();
+
+        delete[] trampoline;
+	}
+
+    FlushInstructionCache(GetCurrentProcess(), NULL, 0);
+
+	VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, oldProtect, &oldProtect);
 }
 
 } // namespace InterceptPP

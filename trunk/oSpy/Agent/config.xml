@@ -139,9 +139,11 @@
             <Function SpecId="recv"/>
             <Function SpecId="send"/>
         </DllModule>
+        <!--
         <DllModule Name="advapi32.dll">
             <Function SpecId="RegOpenKeyExW"/>
         </DllModule>
+        -->
 
         <!-- Internal functions -->
         <Functions ProcessName="msnmsgr.exe">

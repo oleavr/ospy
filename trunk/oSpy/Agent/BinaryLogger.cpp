@@ -33,19 +33,27 @@ typedef struct {
 } PendingEvent;
 
 BinaryLogger::BinaryLogger(Agent *agent, const OWString &filename)
-    : m_agent(agent), m_id(0), m_running(true)
+    : m_agent(agent)
 {
     m_handle = CreateFileW(filename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (m_handle == INVALID_HANDLE_VALUE)
 		throw runtime_error("CreateFile failed");
 
+    m_destroyEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
     InitializeSListHead(&m_pendingEvents);
 
-    CreateThread(NULL, 0, LoggingThreadFuncWrapper, this, 0, NULL);
+    m_loggingThreadHandle = CreateThread(NULL, 0, LoggingThreadFuncWrapper, this, 0, NULL);
 }
 
 BinaryLogger::~BinaryLogger()
 {
+    SetEvent(m_destroyEvent);
+
+    WaitForSingleObject(m_loggingThreadHandle, INFINITE);
+
+    FlushPending();
+
 	CloseHandle(m_handle);
 }
 
@@ -58,7 +66,7 @@ BinaryLogger::NewEvent(const OString &eventType)
 void
 BinaryLogger::SubmitEvent(Logging::Event *ev)
 {
-    if (m_running)
+    if (WaitForSingleObject(m_destroyEvent, 0) != WAIT_OBJECT_0)
     {
         PendingEvent *pe = new PendingEvent;
         pe->ev = ev;
@@ -67,7 +75,6 @@ BinaryLogger::SubmitEvent(Logging::Event *ev)
     else
     {
         delete ev;
-        FlushPending();
     }
 }
 
@@ -103,10 +110,8 @@ BinaryLogger::LoggingThreadFuncWrapper(LPVOID param)
 void
 BinaryLogger::LoggingThreadFunc()
 {
-    while (m_running)
+    while (WaitForSingleObject(m_destroyEvent, 5000) != WAIT_OBJECT_0)
     {
-        Sleep(5000);
-
         PendingEvent *pe;
 
         while ((pe = reinterpret_cast<PendingEvent *>(InterlockedPopEntrySList(&m_pendingEvents))) != NULL)
