@@ -1,6 +1,6 @@
-namespace oSpy
+namespace oSpy.Capture
 {
-    partial class CaptureChooseForm
+    partial class ChooseForm
     {
         /// <summary>
         /// Required designer variable.

@@ -290,6 +290,7 @@ namespace oSpy
             ruleListView.SelectedIndices.Add(ruleListView.Items.Count - 1);
         }
 
+#if false
         public AgentListener.SoftwallRule[] GetRules()
         {
             DataRowCollection rows = softwallDataSet.Tables[0].Rows;
@@ -358,6 +359,7 @@ namespace oSpy
 
             return rules.ToArray();
         }
+#endif
 
         private UInt32 IPAddrFromStr(string str)
         {

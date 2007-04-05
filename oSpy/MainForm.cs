@@ -47,8 +47,7 @@ namespace oSpy
     public partial class MainForm : Form
     {
         private ConfigContext config;
-        private CaptureManager captureMgr;
-        private AgentListener listener;
+        private Capture.Manager captureMgr;
 
         private DataTable tblMessages;
         private PacketParser packetParser;
@@ -88,28 +87,21 @@ namespace oSpy
         private PacketSlice[] prevSelectedSlices;
 
         private ColorPool colorPool;
+#if false
         private string deviceLabel;
         private string statusLabel;
         private string subStatusLabel;
         private string wizStatusLabel;
-
-        private AgentListener.ElementsReceivedHandler receivedHandler;
-        private AgentListener.StoppedHandler stoppedHandler;
+#endif
 
         public MainForm()
         {
             InitializeComponent();
 
             config = ConfigManager.GetContext("MainForm");
-            captureMgr = new CaptureManager();
+            captureMgr = new Capture.Manager();
 
             colorPool = new ColorPool();
-
-            listener = new AgentListener();
-            receivedHandler = new AgentListener.ElementsReceivedHandler(listener_ElementsReceived);
-            listener.MessageElementsReceived += receivedHandler;
-            stoppedHandler = new AgentListener.StoppedHandler(listener_Stopped);
-            listener.Stopped += stoppedHandler;
 
             tblMessages = dataSet.Tables["messages"];
 
@@ -130,10 +122,12 @@ namespace oSpy
 
         protected void ClearState()
         {
+#if false
             deviceLabel = "";
             statusLabel = "";
             subStatusLabel = "";
             wizStatusLabel = "";
+#endif
 
             dataSet.Clear();
             packetParser.Reset();
@@ -226,6 +220,7 @@ namespace oSpy
             }
         }
 
+#if false
         private void listener_ElementsReceived(AgentListener.MessageQueueElement[] elements)
         {
             if (InvokeRequired)
@@ -333,6 +328,7 @@ namespace oSpy
 
             newCaptureToolStripMenuItem.Enabled = true;
         }
+#endif
 
         private void exitMenuItem_Click(object sender, EventArgs e)
         {
@@ -470,7 +466,7 @@ namespace oSpy
 
         private void newCaptureToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            CaptureChooseForm frm = new CaptureChooseForm();
+            Capture.ChooseForm frm = new Capture.ChooseForm();
 
             Process[] processes = frm.GetSelectedProcesses();
             if (processes.Length == 0)
@@ -487,7 +483,7 @@ namespace oSpy
                 return;
             }
 
-            CaptureProgressForm capProgFrm = new CaptureProgressForm(captureMgr);
+            Capture.ProgressForm capProgFrm = new Capture.ProgressForm(captureMgr);
             capProgFrm.ShowDialog();
 
             progFrm = new ProgressForm("Stopping capture");
@@ -543,7 +539,6 @@ namespace oSpy
         {
             SaveSettings();
             ConfigManager.Save();
-            listener.Stop();
         }
 
         private void dataGridView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
