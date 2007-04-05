@@ -291,7 +291,8 @@ Function::GetFullName() const
 FunctionTrampoline *
 Function::CreateTrampoline(unsigned int bytesToCopy)
 {
-    FunctionTrampoline *trampoline = reinterpret_cast<FunctionTrampoline *>(new unsigned char[sizeof(FunctionTrampoline) + bytesToCopy + sizeof(FunctionRedirectStub)]);
+	int trampoSize = sizeof(FunctionTrampoline) + bytesToCopy + sizeof(FunctionRedirectStub);
+    FunctionTrampoline *trampoline = reinterpret_cast<FunctionTrampoline *>(new unsigned char[trampoSize]);
 
 	trampoline->CALL_opcode = 0xE8;
 	trampoline->CALL_offset = (DWORD) OnEnterProxy - (DWORD) &(trampoline->data);
@@ -305,6 +306,10 @@ Function::CreateTrampoline(unsigned int bytesToCopy)
     FunctionRedirectStub *redirStub = reinterpret_cast<FunctionRedirectStub *>(reinterpret_cast<unsigned char *>(trampoline) + sizeof(FunctionTrampoline) + bytesToCopy);
     redirStub->JMP_opcode = 0xE9;
     redirStub->JMP_offset = (m_offset + bytesToCopy) - (reinterpret_cast<DWORD>(reinterpret_cast<unsigned char *>(redirStub) + sizeof(FunctionRedirectStub)));
+
+    DWORD oldProtect;
+	if (!VirtualProtect(trampoline, trampoSize, PAGE_EXECUTE_READWRITE, &oldProtect))
+		throw Error("VirtualProtected failed");
 
 	return trampoline;
 }
@@ -485,6 +490,9 @@ Function::OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, FunctionT
 		retTrampoline->CALL_opcode = 0xE8;
 		retTrampoline->CALL_offset = (DWORD) Function::OnLeaveProxy - (DWORD) &(retTrampoline->data);
 		retTrampoline->data = call;
+
+		DWORD oldProtect;
+		VirtualProtect(retTrampoline, sizeof(FunctionTrampoline), PAGE_EXECUTE_READWRITE, &oldProtect);
 
 		return retTrampoline;
 	}
