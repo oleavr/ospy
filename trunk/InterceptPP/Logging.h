@@ -122,10 +122,13 @@ class Event : public Element
 public:
     Event(Logger *logger, unsigned int id, const OString &eventType);
 
+    unsigned int GetId() const { return m_id; }
+
     void Submit() { m_logger->SubmitEvent(this); }
 
 protected:
     Logger *m_logger;
+    unsigned int m_id;
 };
 
 } // namespace Logging

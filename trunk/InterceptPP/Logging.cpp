@@ -161,7 +161,7 @@ DataNode::SetData(const void *buf, int size)
 }
 
 Event::Event(Logger *logger, unsigned int id, const OString &eventType)
-    : Element("Event"), m_logger(logger)
+    : Element("Event"), m_logger(logger), m_id(id)
 {
     AddField("Id", id);
 
