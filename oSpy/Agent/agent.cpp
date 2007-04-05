@@ -166,7 +166,7 @@ DllMain(HMODULE hModule,
 		// And to make sure that the compiler doesn't optimize the previous statement out.
 		if (dummy_float > 0.0f)
 		{
-            g_mod = hModule;
+			g_mod = hModule;
             g_agent = new Agent();
             g_agent->Initialize();
 		}
