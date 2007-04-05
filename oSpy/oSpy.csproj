@@ -51,6 +51,7 @@
     <Compile Include="BacktraceForm.Designer.cs">
       <DependentUpon>BacktraceForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Capture\Converter.cs" />
     <Compile Include="Capture\ProgressForm.cs">
       <SubType>Form</SubType>
     </Compile>

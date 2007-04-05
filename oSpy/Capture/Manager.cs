@@ -209,7 +209,7 @@ namespace oSpy.Capture
                 PrepareCapture(processes);
                 DoInjection();
             }
-            catch (Exception e)
+            catch (Error e)
             {
                 progress.OperationFailed(e.Message);
                 return;
@@ -225,7 +225,7 @@ namespace oSpy.Capture
                 DoUnInjection();
                 FinalizeCapture();
             }
-            catch (Exception e)
+            catch (Error e)
             {
                 progress.OperationFailed(e.Message);
                 return;
@@ -291,6 +291,9 @@ namespace oSpy.Capture
 
         private void FinalizeCapture()
         {
+            Converter conv = new Converter();
+            conv.ConvertAll(tmpDir, progress);
+
             UnmapViewOfFile(cfgPtr);
             CloseHandle(fileMapping);
         }
