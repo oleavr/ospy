@@ -53,5 +53,10 @@ namespace oSpy
             evCountLabel.Text = Convert.ToString(evCount);
             evBytesLabel.Text = Convert.ToString(evBytes);
         }
+
+        private void CaptureProgressForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            pollTimer.Enabled = false;
+        }
     }
 }

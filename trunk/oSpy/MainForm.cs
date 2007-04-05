@@ -40,6 +40,7 @@ using oSpy.Util;
 using oSpy.Net;
 using System.Threading;
 using System.Xml;
+using System.Diagnostics;
 
 namespace oSpy
 {
@@ -471,13 +472,13 @@ namespace oSpy
         {
             CaptureChooseForm frm = new CaptureChooseForm();
 
-            int[] pids = frm.GetProcessIds();
-            if (pids.Length == 0)
+            Process[] processes = frm.GetSelectedProcesses();
+            if (processes.Length == 0)
                 return;
 
             ProgressForm progFrm = new ProgressForm("Starting capture");
 
-            captureMgr.StartCapture(pids, progFrm);
+            captureMgr.StartCapture(processes, progFrm);
 
             if (progFrm.ShowDialog() != DialogResult.OK)
             {

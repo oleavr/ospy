@@ -83,6 +83,10 @@ namespace oSpy
         protected static extern IntPtr MapViewOfFile(IntPtr hFileMappingObject,
           enumFileMap dwDesiredAccess, uint dwFileOffsetHigh,
           uint dwFileOffsetLow, uint dwNumberOfBytesToMap);
+        [DllImport("Kernel32.dll", EntryPoint = "UnmapViewOfFile",
+            SetLastError = true, CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.VariantBool)]
+        protected static extern bool UnmapViewOfFile(IntPtr lpBaseAddress);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         protected static extern IntPtr LoadLibrary(string lpFileName);
@@ -153,21 +157,18 @@ namespace oSpy
             public volatile UInt32 LogIndex;
             public volatile UInt32 LogSize;
 
-            public volatile UInt32 ClientCount;
-
             public UInt32 NumSoftwallRules;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = MAX_SOFTWALL_RULES)]
             public SoftwallRule[] SoftwallRules;
         }
 
-        private int[] pids;
+        private Process[] processes;
+        private IntPtr[] handles;
         private IProgressFeedback progress;
 
-        private IntPtr cfgPtr;
-        private IntPtr logIndexPtr, logSizePtr, clientCountPtr;
+        private IntPtr fileMapping, cfgPtr;
+        private IntPtr logIndexPtr, logSizePtr;
         private string tmpDir;
-
-        private ManualResetEvent stoppedEvent;
 
         public string TargetDirectory
         {
@@ -178,9 +179,9 @@ namespace oSpy
         {
         }
 
-        public void StartCapture(int[] pids, IProgressFeedback progress)
+        public void StartCapture(Process[] processes, IProgressFeedback progress)
         {
-            this.pids = pids;
+            this.processes = processes;
             this.progress = progress;
 
             Thread th = new Thread(StartCaptureThread);
@@ -205,7 +206,7 @@ namespace oSpy
         {
             try
             {
-                PrepareCapture(pids);
+                PrepareCapture(processes);
                 DoInjection();
             }
             catch (Exception e)
@@ -219,38 +220,32 @@ namespace oSpy
 
         private void StopCaptureThread()
         {
-            stoppedEvent.Set();
-
-            int clientCount;
-            do
+            try
             {
-                clientCount = Marshal.ReadInt32(clientCountPtr);
-
-                Thread.Sleep(100);
+                DoUnInjection();
+                FinalizeCapture();
             }
-            while (clientCount > 0);
+            catch (Exception e)
+            {
+                progress.OperationFailed(e.Message);
+                return;
+            }
 
             progress.OperationComplete();
         }
 
-        private void PrepareCapture(int[] pids)
+        private void PrepareCapture(Process[] processes)
         {
             progress.ProgressUpdate("Preparing capture", 100);
 
-            IntPtr map = CreateFileMapping(0xFFFFFFFFu, IntPtr.Zero,
-                                           enumProtect.PAGE_READWRITE,
-                                           0, (uint)Marshal.SizeOf(typeof(Capture)),
-                                           "oSpyCapture");
+            fileMapping = CreateFileMapping(0xFFFFFFFFu, IntPtr.Zero,
+                                            enumProtect.PAGE_READWRITE,
+                                            0, (uint)Marshal.SizeOf(typeof(Capture)),
+                                            "oSpyCapture");
             if (Marshal.GetLastWin32Error() == ERROR_ALREADY_EXISTS)
                 throw new CaptureError("Is another instance of oSpy or one or more processes previously monitored still alive?");
 
-            stoppedEvent = new ManualResetEvent(false);
-            stoppedEvent.SafeWaitHandle = CreateEvent(IntPtr.Zero,
-                                                      true, // bManualReset
-                                                      false, // bInitialState
-                                                      "oSpyCaptureStopped");
-
-            cfgPtr = MapViewOfFile(map, enumFileMap.FILE_MAP_WRITE, 0, 0, (uint)Marshal.SizeOf(typeof(Capture)));
+            cfgPtr = MapViewOfFile(fileMapping, enumFileMap.FILE_MAP_WRITE, 0, 0, (uint)Marshal.SizeOf(typeof(Capture)));
 
             // Create a temporary directory for the capture
             do
@@ -276,10 +271,6 @@ namespace oSpy
             Marshal.WriteInt32(logIndexPtr, 0);
             Marshal.WriteInt32(logSizePtr, 0);
 
-            // And ClientCount
-            clientCountPtr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(Capture), "ClientCount").ToInt64());
-            Marshal.WriteInt32(clientCountPtr, 0);
-
             // Initialize softwall rules
             SoftwallRule[] rules = new SoftwallRule[0];
 
@@ -298,73 +289,122 @@ namespace oSpy
             File.Copy(configPath, String.Format("{0}\\config.xml", tmpDir));
         }
 
+        private void FinalizeCapture()
+        {
+            UnmapViewOfFile(cfgPtr);
+            CloseHandle(fileMapping);
+        }
+
         private void DoInjection()
         {
-            List<IntPtr> handles = new List<IntPtr>(pids.Length);
-            uint[] exitCodes = new uint[pids.Length];
-
             // Inject into the desired process IDs
-            for (int i = 0; i < pids.Length; i++)
+            List<IntPtr> threadHandles = new List<IntPtr>(processes.Length);
+            for (int i = 0; i < processes.Length; i++)
             {
-                int percentComplete = (int) (((float) (i + 1) / (float) pids.Length) * 100.0f);
+                int percentComplete = (int)(((float)(i + 1) / (float)processes.Length) * 100.0f);
                 progress.ProgressUpdate("Injecting logging agents", percentComplete);
-                handles.Add(InjectDLL(pids[i]));
+                threadHandles.Add(InjectDll(processes[i].Id));
             }
 
-            // Wait for completion
-            List<IntPtr> completedHandles = new List<IntPtr>(pids.Length);
-            while (handles.Count > 0)
-            {
-                int completionCount = pids.Length - handles.Count + 1;
-                int percentComplete = (int)(((float)completionCount / (float)pids.Length) * 100.0f);
+            // Wait for the threads to exit
+            handles = GetThreadExitCodes(threadHandles.ToArray(), "Waiting for agents to initialize");
 
-                progress.ProgressUpdate("Waiting for agents to initialize", percentComplete);
+            // Check if any of them failed
+            for (int i = 0; i < processes.Length; i++)
+            {
+                if (handles[i] == IntPtr.Zero)
+                {
+                    throw new CaptureError(String.Format("Failed to inject logging agent into process {0} with pid={1}",
+                                                         processes[i].ProcessName, processes[i].Id));
+                }
+            }
+        }
+
+        private void DoUnInjection()
+        {
+            // Uninject the DLLs previously injected
+            List<IntPtr> threadHandles = new List<IntPtr>(processes.Length);
+            for (int i = 0; i < processes.Length; i++)
+            {
+                int percentComplete = (int)(((float)(i + 1) / (float)processes.Length) * 100.0f);
+                progress.ProgressUpdate("Uninjecting logging agents", percentComplete);
+
+                if (!processes[i].HasExited)
+                    threadHandles.Add(UnInjectDll(processes[i].Id, handles[i]));
+            }
+
+            if (threadHandles.Count == 0)
+                return;
+
+            // Wait for the threads to exit
+            handles = GetThreadExitCodes(threadHandles.ToArray(), "Waiting for agents to finish uninjecting");
+
+            // Check if any of them failed
+            for (int i = 0; i < processes.Length; i++)
+            {
+                if (handles[i] == IntPtr.Zero)
+                {
+                    throw new CaptureError(String.Format("Failed to uninject logging agent from process {0} with pid={1}",
+                                                         processes[i].ProcessName, processes[i].Id));
+                }
+            }
+        }
+
+        private IntPtr[] GetThreadExitCodes(IntPtr[] handles, string progressMsg)
+        {
+            Dictionary<IntPtr, IntPtr> exitCodes = new Dictionary<IntPtr, IntPtr>(handles.Length);
+            List<IntPtr> pendingHandles = new List<IntPtr>(handles);
+            List<IntPtr> completedHandles = new List<IntPtr>(handles.Length);
+
+            while (pendingHandles.Count > 0)
+            {
+                int completionCount = processes.Length - pendingHandles.Count + 1;
+                int percentComplete = (int)(((float)completionCount / (float)processes.Length) * 100.0f);
+
+                progress.ProgressUpdate(progressMsg, percentComplete);
 
                 completedHandles.Clear();
 
-                for (int i = 0; i < handles.Count; i++)
+                for (int i = 0; i < pendingHandles.Count; i++)
                 {
                     uint exitCode;
 
-                    if (!GetExitCodeThread(handles[i], out exitCode))
+                    if (!GetExitCodeThread(pendingHandles[i], out exitCode))
                         throw new CaptureError("GetExitCodeThread failed");
 
                     if (exitCode != STILL_ACTIVE)
                     {
-                        completedHandles.Add(handles[i]);
-                        exitCodes[i] = exitCode;
+                        exitCodes[pendingHandles[i]] = (IntPtr)exitCode;
+                        completedHandles.Add(pendingHandles[i]);
                     }
                 }
 
                 foreach (IntPtr handle in completedHandles)
                 {
-                    handles.Remove(handle);
+                    pendingHandles.Remove(handle);
                 }
 
                 Thread.Sleep(200);
             }
 
-            // Check if any of them failed
-            for (int i = 0; i < pids.Length; i++)
+            IntPtr[] result = new IntPtr[handles.Length];
+            for (int i = 0; i < handles.Length; i++)
             {
-                if (exitCodes[i] == 0)
-                {
-                    throw new CaptureError(String.Format("Failed to inject logging agent into process with pid={0}",
-                                                         pids[i]));
-                }
+                result[i] = exitCodes[handles[i]];
             }
+            return result;
         }
 
-        private IntPtr InjectDLL(int processId)
+        private IntPtr InjectDll(int processId)
         {
             string agentDLLPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) + "\\oSpyAgent.dll";
             if (!File.Exists(agentDLLPath))
                 throw new CaptureError(agentDLLPath + " not found");
 
-            return InjectDLL(processId, agentDLLPath);
+            return InjectDll(processId, agentDLLPath);
         }
 
-        private IntPtr InjectDLL(int processId, string dllPath)
+        private IntPtr InjectDll(int processId, string dllPath)
         {
             // Create a unicode (UTF-16) C-string
             UnicodeEncoding enc = new UnicodeEncoding();
@@ -405,6 +445,44 @@ namespace oSpy
 
                     // Launch the thread, being LoadLibraryW
                     IntPtr remoteThreadHandle = CreateRemoteThread(proc, IntPtr.Zero, 0, loadLibraryAddr, remoteDllStr, 0, IntPtr.Zero);
+                    if (remoteThreadHandle == IntPtr.Zero)
+                        throw new CaptureError("CreateRemoteThread failed");
+
+                    return remoteThreadHandle;
+                }
+                finally
+                {
+                    CloseHandle(proc);
+                }
+            }
+            finally
+            {
+                FreeLibrary(kernelMod);
+            }
+        }
+
+        private IntPtr UnInjectDll(int processId, IntPtr handle)
+        {
+            // Get offset of FreeLibrary in kernel32
+            IntPtr kernelMod = LoadLibrary("kernel32.dll");
+            if (kernelMod == IntPtr.Zero)
+                throw new CaptureError("LoadLibrary of kernel32.dll failed");
+
+            try
+            {
+                IntPtr freeLibraryAddr = GetProcAddress(kernelMod, "FreeLibrary");
+                if (freeLibraryAddr == IntPtr.Zero)
+                    throw new CaptureError("GetProcAddress of FreeLibrary failed");
+
+                // Open the target process
+                IntPtr proc = OpenProcess(PROCESS_ALL_ACCESS, true, (uint)processId);
+                if (proc == IntPtr.Zero)
+                    throw new CaptureError("OpenProcess failed");
+
+                try
+                {
+                    // Launch the thread, being FreeLibrary
+                    IntPtr remoteThreadHandle = CreateRemoteThread(proc, IntPtr.Zero, 0, freeLibraryAddr, handle, 0, IntPtr.Zero);
                     if (remoteThreadHandle == IntPtr.Zero)
                         throw new CaptureError("CreateRemoteThread failed");
 
