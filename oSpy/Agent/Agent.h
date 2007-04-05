@@ -53,8 +53,6 @@ typedef struct {
     volatile LONG LogIndex;
     volatile LONG LogSize;
 
-    volatile LONG ClientCount;
-
     DWORD NumSoftwallRules;
     SoftwallRule rules[MAX_SOFTWALL_RULES];
 } Capture;
@@ -73,8 +71,4 @@ public:
 protected:
     HANDLE m_map;
     Capture *m_capture;
-    HANDLE m_stoppedEvent;
-
-    static DWORD WINAPI MonitorThreadFuncWrapper(LPVOID param);
-    void MonitorThreadFunc();
 };

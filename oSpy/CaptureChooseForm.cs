@@ -92,9 +92,9 @@ namespace oSpy
             DialogResult = DialogResult.OK;
         }
 
-        public int[] GetProcessIds()
+        public Process[] GetSelectedProcesses()
         {
-            List<int> result = new List<int>();
+            List<Process> result = new List<Process>();
 
             if (ShowDialog() == DialogResult.OK)
             {
@@ -102,7 +102,7 @@ namespace oSpy
                 {
                     if (processList.GetItemChecked(i))
                     {
-                        result.Add((processList.Items[i] as ProcessItem).Process.Id);
+                        result.Add((processList.Items[i] as ProcessItem).Process);
                     }
                 }
             }

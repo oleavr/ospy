@@ -35,8 +35,7 @@ static Agent *g_agent = NULL;
 
 Agent::Agent()
     : m_map(INVALID_HANDLE_VALUE),
-      m_capture(NULL),
-      m_stoppedEvent(INVALID_HANDLE_VALUE)
+      m_capture(NULL)
 {
 }
 
@@ -49,13 +48,6 @@ Agent::Initialize()
     m_capture = static_cast<Capture *>(MapViewOfFile(m_map, FILE_MAP_WRITE, 0, 0, sizeof(Capture)));
     if (m_capture == NULL)
         throw Error("MapViewOfFile failed");
-
-    m_stoppedEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "oSpyCaptureStopped");
-    if (m_stoppedEvent == NULL)
-        throw Error("OpenEvent failed");
-
-    // Register
-    InterlockedIncrement(&m_capture->ClientCount);
 
     // Create the logger and tell Intercept++ to use it
     {
@@ -81,9 +73,6 @@ Agent::Initialize()
     {
         GetLogger()->LogError("LoadDefinitions failed: unknown error");
     }
-
-    // Start a monitoring thread that does unhooking etc. when the trace is stopped
-    CreateThread(NULL, 0, MonitorThreadFuncWrapper, this, 0, NULL);
 }
 
 void
@@ -92,16 +81,7 @@ Agent::UnInitialize()
     // Uninitialize Intercept++, effectively unhooking everything
     InterceptPP::UnInitialize();
 
-    // Unregister
-    InterlockedDecrement(&m_capture->ClientCount);
-
     // Clean up the rest
-    if (m_stoppedEvent != NULL)
-    {
-        CloseHandle(m_stoppedEvent);
-        m_stoppedEvent = NULL;
-    }
-
     if (m_capture != NULL)
     {
         UnmapViewOfFile(m_capture);
@@ -113,28 +93,6 @@ Agent::UnInitialize()
         CloseHandle(m_map);
         m_map = NULL;
     }
-}
-
-DWORD WINAPI
-Agent::MonitorThreadFuncWrapper(LPVOID param)
-{
-    Agent *instance = reinterpret_cast<Agent *>(param);
-
-    instance->MonitorThreadFunc();
-
-    CreateThread(NULL, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(FreeLibrary), g_mod, 0, NULL);
-
-    return 0;
-}
-
-void
-Agent::MonitorThreadFunc()
-{
-    // Wait for the stopped event
-    while (WaitForSingleObject(m_stoppedEvent, INFINITE) != WAIT_OBJECT_0);
-
-    // Clean up
-    g_agent->UnInitialize();
 }
 
 LONG
@@ -175,6 +133,7 @@ DllMain(HMODULE hModule,
     {
         if (g_agent != NULL)
         {
+            g_agent->UnInitialize();
             delete g_agent;
             g_agent = NULL;
         }

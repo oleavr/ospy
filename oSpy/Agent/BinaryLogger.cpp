@@ -49,11 +49,7 @@ BinaryLogger::BinaryLogger(Agent *agent, const OWString &filename)
 BinaryLogger::~BinaryLogger()
 {
     SetEvent(m_destroyEvent);
-
-    WaitForSingleObject(m_loggingThreadHandle, INFINITE);
-
     FlushPending();
-
 	CloseHandle(m_handle);
 }
 
@@ -88,10 +84,23 @@ BinaryLogger::FlushPending()
 
         do
         {
-            PendingEvent *next = reinterpret_cast<PendingEvent *>(cur->entry.Next);
+	        BinarySerializer serializer;
+            serializer.AppendNode(cur->ev);
 
+            PendingEvent *next = reinterpret_cast<PendingEvent *>(cur->entry.Next);
             delete cur->ev;
             delete cur;
+
+            const OString &buf = serializer.GetData();
+
+	        DWORD bytesWritten;
+	        if (!WriteFile(m_handle, buf.data(), static_cast<DWORD>(buf.size()), &bytesWritten, NULL))
+		        throw Error("WriteFile failed");
+
+	        if (bytesWritten != buf.size())
+		        throw Error("short write");
+
+            m_agent->AddBytesLogged(static_cast<LONG>(buf.size()));
 
             cur = next;
         }
@@ -112,26 +121,7 @@ BinaryLogger::LoggingThreadFunc()
 {
     while (WaitForSingleObject(m_destroyEvent, 5000) != WAIT_OBJECT_0)
     {
-        PendingEvent *pe;
-
-        while ((pe = reinterpret_cast<PendingEvent *>(InterlockedPopEntrySList(&m_pendingEvents))) != NULL)
-        {
-	        BinarySerializer serializer;
-            serializer.AppendNode(pe->ev);
-            delete pe->ev;
-            delete pe;
-
-	        const OString &buf = serializer.GetData();
-
-	        DWORD bytesWritten;
-	        if (!WriteFile(m_handle, buf.data(), static_cast<DWORD>(buf.size()), &bytesWritten, NULL))
-		        throw Error("WriteFile failed");
-
-	        if (bytesWritten != buf.size())
-		        throw Error("short write");
-
-            m_agent->AddBytesLogged(static_cast<LONG>(buf.size()));
-        }
+        FlushPending();
     }
 }
 

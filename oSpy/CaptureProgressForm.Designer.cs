@@ -120,6 +120,7 @@ namespace oSpy
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Capture";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.CaptureProgressForm_FormClosed);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
