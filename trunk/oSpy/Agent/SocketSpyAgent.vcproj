@@ -64,7 +64,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:MSVCRTD"
-				AdditionalDependencies="psapi.lib ws2_32.lib shlwapi.lib libudis86_d.lib"
+				AdditionalDependencies="comsuppw.lib msxml2.lib psapi.lib ws2_32.lib shlwapi.lib libudis86_d.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
 				IgnoreAllDefaultLibraries="false"
@@ -144,7 +144,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="psapi.lib ws2_32.lib shlwapi.lib libudis86.lib"
+				AdditionalDependencies="comsuppw.lib msxml2.lib psapi.lib ws2_32.lib shlwapi.lib libudis86.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
