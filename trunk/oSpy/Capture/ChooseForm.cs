@@ -35,13 +35,13 @@ using System.IO;
 using System.Threading;
 using System.Runtime.InteropServices;
 
-namespace oSpy
+namespace oSpy.Capture
 {
-    public partial class CaptureChooseForm : Form
+    public partial class ChooseForm : Form
     {
         private int checkCount = 0;
 
-        public CaptureChooseForm()
+        public ChooseForm()
         {
             InitializeComponent();
         }

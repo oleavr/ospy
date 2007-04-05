@@ -51,13 +51,13 @@
     <Compile Include="BacktraceForm.Designer.cs">
       <DependentUpon>BacktraceForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="CaptureProgressForm.cs">
+    <Compile Include="Capture\ProgressForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="CaptureProgressForm.Designer.cs">
-      <DependentUpon>CaptureProgressForm.cs</DependentUpon>
+    <Compile Include="Capture\ProgressForm.Designer.cs">
+      <DependentUpon>ProgressForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="CaptureManager.cs" />
+    <Compile Include="Capture\Manager.cs" />
     <Compile Include="Configuration\ConfigManager.cs" />
     <Compile Include="Configuration\ParserConfigDialog.cs">
       <SubType>Form</SubType>
@@ -153,11 +153,11 @@
     <Compile Include="Parser\HTTP.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="CaptureChooseForm.cs">
+    <Compile Include="Capture\ChooseForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="CaptureChooseForm.Designer.cs">
-      <DependentUpon>CaptureChooseForm.cs</DependentUpon>
+    <Compile Include="Capture\ChooseForm.Designer.cs">
+      <DependentUpon>ChooseForm.cs</DependentUpon>
     </Compile>
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -178,9 +178,9 @@
       <SubType>Designer</SubType>
       <DependentUpon>BacktraceForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="CaptureProgressForm.resx">
+    <EmbeddedResource Include="Capture\ProgressForm.resx">
       <SubType>Designer</SubType>
-      <DependentUpon>CaptureProgressForm.cs</DependentUpon>
+      <DependentUpon>ProgressForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Configuration\ParserConfigDialog.resx">
       <SubType>Designer</SubType>
@@ -198,9 +198,9 @@
       <SubType>Designer</SubType>
       <DependentUpon>DebugForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="CaptureChooseForm.resx">
+    <EmbeddedResource Include="Capture\ChooseForm.resx">
       <SubType>Designer</SubType>
-      <DependentUpon>CaptureChooseForm.cs</DependentUpon>
+      <DependentUpon>ChooseForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <SubType>Designer</SubType>

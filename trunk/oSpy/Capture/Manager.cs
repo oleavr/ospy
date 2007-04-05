@@ -32,17 +32,17 @@ using System.Threading;
 using System.Diagnostics;
 using Microsoft.Win32.SafeHandles;
 
-namespace oSpy
+namespace oSpy.Capture
 {
-    public class CaptureError : Exception
+    public class Error : Exception
     {
-        public CaptureError(string msg)
+        public Error(string msg)
             : base(msg)
         {
         }
     }
 
-    public class CaptureManager
+    public class Manager
     {
         protected const int MAX_PATH = 260;
         protected const int ERROR_ALREADY_EXISTS = 183;
@@ -175,7 +175,7 @@ namespace oSpy
             get { return tmpDir; }
         }
 
-        public CaptureManager()
+        public Manager()
         {
         }
 
@@ -243,7 +243,7 @@ namespace oSpy
                                             0, (uint)Marshal.SizeOf(typeof(Capture)),
                                             "oSpyCapture");
             if (Marshal.GetLastWin32Error() == ERROR_ALREADY_EXISTS)
-                throw new CaptureError("Is another instance of oSpy or one or more processes previously monitored still alive?");
+                throw new Error("Is another instance of oSpy or one or more processes previously monitored still alive?");
 
             cfgPtr = MapViewOfFile(fileMapping, enumFileMap.FILE_MAP_WRITE, 0, 0, (uint)Marshal.SizeOf(typeof(Capture)));
 
@@ -314,8 +314,8 @@ namespace oSpy
             {
                 if (handles[i] == IntPtr.Zero)
                 {
-                    throw new CaptureError(String.Format("Failed to inject logging agent into process {0} with pid={1}",
-                                                         processes[i].ProcessName, processes[i].Id));
+                    throw new Error(String.Format("Failed to inject logging agent into process {0} with pid={1}",
+                                                  processes[i].ProcessName, processes[i].Id));
                 }
             }
         }
@@ -344,8 +344,8 @@ namespace oSpy
             {
                 if (handles[i] == IntPtr.Zero)
                 {
-                    throw new CaptureError(String.Format("Failed to uninject logging agent from process {0} with pid={1}",
-                                                         processes[i].ProcessName, processes[i].Id));
+                    throw new Error(String.Format("Failed to uninject logging agent from process {0} with pid={1}",
+                                                  processes[i].ProcessName, processes[i].Id));
                 }
             }
         }
@@ -370,7 +370,7 @@ namespace oSpy
                     uint exitCode;
 
                     if (!GetExitCodeThread(pendingHandles[i], out exitCode))
-                        throw new CaptureError("GetExitCodeThread failed");
+                        throw new Error("GetExitCodeThread failed");
 
                     if (exitCode != STILL_ACTIVE)
                     {
@@ -399,7 +399,7 @@ namespace oSpy
         {
             string agentDLLPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) + "\\oSpyAgent.dll";
             if (!File.Exists(agentDLLPath))
-                throw new CaptureError(agentDLLPath + " not found");
+                throw new Error(agentDLLPath + " not found");
 
             return InjectDll(processId, agentDLLPath);
         }
@@ -417,18 +417,18 @@ namespace oSpy
             // Get offset of LoadLibraryW in kernel32
             IntPtr kernelMod = LoadLibrary("kernel32.dll");
             if (kernelMod == IntPtr.Zero)
-                throw new CaptureError("LoadLibrary of kernel32.dll failed");
+                throw new Error("LoadLibrary of kernel32.dll failed");
 
             try
             {
                 IntPtr loadLibraryAddr = GetProcAddress(kernelMod, "LoadLibraryW");
                 if (loadLibraryAddr == IntPtr.Zero)
-                    throw new CaptureError("GetProcAddress of LoadLibraryW failed");
+                    throw new Error("GetProcAddress of LoadLibraryW failed");
 
                 // Open the target process
                 IntPtr proc = OpenProcess(PROCESS_ALL_ACCESS, true, (uint) processId);
                 if (proc == IntPtr.Zero)
-                    throw new CaptureError("OpenProcess failed");
+                    throw new Error("OpenProcess failed");
 
                 try
                 {
@@ -436,17 +436,17 @@ namespace oSpy
                     IntPtr remoteDllStr = VirtualAllocEx(proc, IntPtr.Zero,
                         (uint) dllStr.Length, MEM_COMMIT, PAGE_READWRITE);
                     if (remoteDllStr == IntPtr.Zero)
-                        throw new CaptureError("VirtualAllocEx failed");
+                        throw new Error("VirtualAllocEx failed");
 
                     // Write the string to the allocated buffer
                     IntPtr bytesWritten;
                     if (!WriteProcessMemory(proc, remoteDllStr, dllStr, (uint)dllStr.Length, out bytesWritten))
-                        throw new CaptureError("WriteProcessMemory failed");
+                        throw new Error("WriteProcessMemory failed");
 
                     // Launch the thread, being LoadLibraryW
                     IntPtr remoteThreadHandle = CreateRemoteThread(proc, IntPtr.Zero, 0, loadLibraryAddr, remoteDllStr, 0, IntPtr.Zero);
                     if (remoteThreadHandle == IntPtr.Zero)
-                        throw new CaptureError("CreateRemoteThread failed");
+                        throw new Error("CreateRemoteThread failed");
 
                     return remoteThreadHandle;
                 }
@@ -466,25 +466,25 @@ namespace oSpy
             // Get offset of FreeLibrary in kernel32
             IntPtr kernelMod = LoadLibrary("kernel32.dll");
             if (kernelMod == IntPtr.Zero)
-                throw new CaptureError("LoadLibrary of kernel32.dll failed");
+                throw new Error("LoadLibrary of kernel32.dll failed");
 
             try
             {
                 IntPtr freeLibraryAddr = GetProcAddress(kernelMod, "FreeLibrary");
                 if (freeLibraryAddr == IntPtr.Zero)
-                    throw new CaptureError("GetProcAddress of FreeLibrary failed");
+                    throw new Error("GetProcAddress of FreeLibrary failed");
 
                 // Open the target process
                 IntPtr proc = OpenProcess(PROCESS_ALL_ACCESS, true, (uint)processId);
                 if (proc == IntPtr.Zero)
-                    throw new CaptureError("OpenProcess failed");
+                    throw new Error("OpenProcess failed");
 
                 try
                 {
                     // Launch the thread, being FreeLibrary
                     IntPtr remoteThreadHandle = CreateRemoteThread(proc, IntPtr.Zero, 0, freeLibraryAddr, handle, 0, IntPtr.Zero);
                     if (remoteThreadHandle == IntPtr.Zero)
-                        throw new CaptureError("CreateRemoteThread failed");
+                        throw new Error("CreateRemoteThread failed");
 
                     return remoteThreadHandle;
                 }

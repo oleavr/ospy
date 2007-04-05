@@ -31,13 +31,13 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 
-namespace oSpy
+namespace oSpy.Capture
 {
-    public partial class CaptureProgressForm : Form
+    public partial class ProgressForm : Form
     {
-        private CaptureManager captureMgr;
+        private Manager captureMgr;
 
-        public CaptureProgressForm(CaptureManager captureMgr)
+        public ProgressForm(Manager captureMgr)
         {
             InitializeComponent();
 
