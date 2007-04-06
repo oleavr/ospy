@@ -1,5 +1,5 @@
 ﻿//
-// Copyright (c) 2006 Ole André Vadla Ravnås <oleavr@gmail.com>
+// Copyright (c) 2007 Ole André Vadla Ravnås <oleavr@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -291,8 +291,11 @@ namespace oSpy.Capture
 
         private void FinalizeCapture()
         {
+            int evCount, evBytes;
+            GetCaptureStatistics(out evCount, out evBytes);
+
             Converter conv = new Converter();
-            conv.ConvertAll(tmpDir, progress);
+            conv.ConvertAll(tmpDir, evCount, progress);
 
             UnmapViewOfFile(cfgPtr);
             CloseHandle(fileMapping);

@@ -2126,9 +2126,12 @@ namespace oSpy
             selBytesToolStripMenuItem.Enabled = (curSelBytes.Length > 0);
         }
 
-        private void convertTraceToXMLToolStripMenuItem_Click(object sender, EventArgs e)
+        private void tryggveToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            XmlUtils.BinaryLogToXml("c:\\oSpyAgentLog.bin");
+            oSpy.Capture.Converter conv = new oSpy.Capture.Converter();
+            ProgressForm prog = new ProgressForm("Woot");
+            conv.ConvertAll("C:\\Users\\Ole André\\AppData\\Local\\Temp\\gatqxqhw.wvc", 206, prog);
+            prog.ShowDialog();
         }
     }
 
