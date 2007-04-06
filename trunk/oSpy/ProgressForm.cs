@@ -36,54 +36,57 @@ namespace oSpy
 {
     public partial class ProgressForm : Form, IProgressFeedback
     {
+        SynchronizationContext uiContext;
         private string errorMessage;
 
         public ProgressForm(string operation)
         {
+            uiContext = WindowsFormsSynchronizationContext.Current;
+
             InitializeComponent();
 
-            ProgressUpdate(operation, 0);
+            curOperationLabel.Text = operation;
+            progressBar1.Value = 0;
         }
 
         public delegate void ProgressUpdateHandler(string operation, int progress);
 
         public void ProgressUpdate(string operation, int progress)
         {
-            if (curOperationLabel.InvokeRequired || progressBar1.InvokeRequired)
-            {
-                Invoke(new ProgressUpdateHandler(ProgressUpdate), operation, progress);
-            }
-            else
-            {
-                curOperationLabel.Text = operation;
-                progressBar1.Value = progress;
-            }
+            uiContext.Post(new SendOrPostCallback(
+                delegate(object state)
+                {
+                    curOperationLabel.Text = operation;
+                    progressBar1.Value = progress;
+                }
+              ), null);
         }
 
         public void OperationComplete()
         {
-            Invoke(new ThreadStart(SetDialogResultOk));
+            uiContext.Post(new SendOrPostCallback(
+                delegate(object state)
+                {
+                    DialogResult = DialogResult.OK;
+                }
+              ), null);
         }
 
         public void OperationFailed(string errorMessage)
         {
             this.errorMessage = errorMessage;
-            Invoke(new ThreadStart(SetDialogResultError));
+
+            uiContext.Post(new SendOrPostCallback(
+                delegate(object state)
+                {
+                    DialogResult = DialogResult.Abort;
+                }
+              ), null);
         }
 
         public string GetOperationErrorMessage()
         {
             return errorMessage;
-        }
-
-        private void SetDialogResultOk()
-        {
-            this.DialogResult = DialogResult.OK;
-        }
-
-        private void SetDialogResultError()
-        {
-            this.DialogResult = DialogResult.Abort;
         }
     }
 

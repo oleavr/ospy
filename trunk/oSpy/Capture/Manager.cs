@@ -346,7 +346,7 @@ namespace oSpy.Capture
             handles = GetThreadExitCodes(threadHandles.ToArray(), "Waiting for agents to finish uninjecting");
 
             // Check if any of them failed
-            for (int i = 0; i < processes.Length; i++)
+            for (int i = 0; i < handles.Length; i++)
             {
                 if (handles[i] == IntPtr.Zero)
                 {
