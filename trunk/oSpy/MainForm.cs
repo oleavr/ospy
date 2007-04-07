@@ -341,12 +341,14 @@ namespace oSpy
             {
                 ProgressForm progFrm = new ProgressForm("Opening");
 
+#if false
                 ClearState();
 
                 dataGridView.DataSource = null;
                 dataSet.Tables[0].BeginLoadData();
 
                 clearMenuItem.PerformClick();
+#endif
 
                 Thread th = new Thread(new ParameterizedThreadStart(OpenFile));
                 th.Start(progFrm);
@@ -357,6 +359,13 @@ namespace oSpy
 
         private void OpenFile(object param)
         {
+            IProgressFeedback progress = param as IProgressFeedback;
+
+            Capture.DumpFile df = new Capture.DumpFile(openFileDialog.FileName);
+            df.Load(progress);
+
+            progress.OperationComplete();
+#if false
             IProgressFeedback progress = param as IProgressFeedback;
 
             FileStream fs = new FileStream(openFileDialog.FileName, FileMode.Open);
@@ -377,6 +386,7 @@ namespace oSpy
             Invoke(new ThreadStart(RestoreDataSource));
 
             progress.OperationComplete();
+#endif
         }
 
         private void RestoreDataSource()

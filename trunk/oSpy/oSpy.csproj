@@ -90,6 +90,7 @@
     <Compile Include="NewVisualizationForm.Designer.cs">
       <DependentUpon>NewVisualizationForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Capture\DumpFile.cs" />
     <Compile Include="Parser\ITransactionFactory.cs" />
     <Compile Include="MultiSessionView.cs">
       <SubType>UserControl</SubType>

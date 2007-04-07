@@ -29,6 +29,7 @@ using System.Text;
 using System.IO;
 using System.Xml;
 using oSpy.Util;
+using ICSharpCode.SharpZipLib.BZip2;
 
 namespace oSpy.Capture
 {
@@ -62,8 +63,10 @@ namespace oSpy.Capture
                 }
             }
 
-            string resultPath = String.Format("{0}\\capture.xml", captureDirPath);
-            XmlTextWriter xtw = new XmlTextWriter(resultPath, System.Text.Encoding.UTF8);
+            string resultPath = String.Format("{0}\\capture.osd", captureDirPath);
+            BZip2OutputStream outStream = new BZip2OutputStream(new FileStream(resultPath, FileMode.Create));
+
+            XmlTextWriter xtw = new XmlTextWriter(outStream, System.Text.Encoding.UTF8);
             xtw.Formatting = Formatting.Indented;
             xtw.Indentation = 4;
             xtw.IndentChar = ' ';
