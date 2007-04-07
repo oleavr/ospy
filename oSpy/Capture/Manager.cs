@@ -198,7 +198,7 @@ namespace oSpy.Capture
 
         public void SaveCapture(string path)
         {
-            File.Move(tmpDir + "\\capture.xml", path);
+            File.Move(tmpDir + "\\capture.osd", path);
             DiscardCapture();
         }
 

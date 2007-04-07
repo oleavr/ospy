@@ -29,8 +29,8 @@ namespace oSpy
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.dataSet = new System.Data.DataSet();
             this.messageTbl = new System.Data.DataTable();
@@ -407,8 +407,8 @@ namespace oSpy
             // 
             this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
-            this.goToolStripMenuItem,
             this.editToolStripMenuItem,
+            this.goToolStripMenuItem,
             this.optionsToolStripMenuItem,
             this.analyzeToolStripMenuItem,
             this.toolsToolStripMenuItem,
@@ -436,45 +436,45 @@ namespace oSpy
             // newCaptureToolStripMenuItem
             // 
             this.newCaptureToolStripMenuItem.Name = "newCaptureToolStripMenuItem";
-            this.newCaptureToolStripMenuItem.Size = new System.Drawing.Size(150, 22);
+            this.newCaptureToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.newCaptureToolStripMenuItem.Text = "&New capture...";
             this.newCaptureToolStripMenuItem.Click += new System.EventHandler(this.newCaptureToolStripMenuItem_Click);
             // 
             // openMenuItem
             // 
             this.openMenuItem.Name = "openMenuItem";
-            this.openMenuItem.Size = new System.Drawing.Size(150, 22);
+            this.openMenuItem.Size = new System.Drawing.Size(152, 22);
             this.openMenuItem.Text = "&Open...";
             this.openMenuItem.Click += new System.EventHandler(this.openMenuItem_Click);
             // 
             // saveMenuItem
             // 
             this.saveMenuItem.Name = "saveMenuItem";
-            this.saveMenuItem.Size = new System.Drawing.Size(150, 22);
+            this.saveMenuItem.Size = new System.Drawing.Size(152, 22);
             this.saveMenuItem.Text = "&Save...";
             this.saveMenuItem.Click += new System.EventHandler(this.saveMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(147, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(149, 6);
             // 
             // clearMenuItem
             // 
             this.clearMenuItem.Name = "clearMenuItem";
-            this.clearMenuItem.Size = new System.Drawing.Size(150, 22);
+            this.clearMenuItem.Size = new System.Drawing.Size(152, 22);
             this.clearMenuItem.Text = "&Clear";
             this.clearMenuItem.Click += new System.EventHandler(this.clearMenuItem_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(147, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(149, 6);
             // 
             // exitMenuItem
             // 
             this.exitMenuItem.Name = "exitMenuItem";
-            this.exitMenuItem.Size = new System.Drawing.Size(150, 22);
+            this.exitMenuItem.Size = new System.Drawing.Size(152, 22);
             this.exitMenuItem.Text = "E&xit";
             this.exitMenuItem.Click += new System.EventHandler(this.exitMenuItem_Click);
             // 
@@ -517,7 +517,7 @@ namespace oSpy
             this.rowsToolStripMenuItem,
             this.transactionsToolStripMenuItem});
             this.selectallToolStripMenuItem.Name = "selectallToolStripMenuItem";
-            this.selectallToolStripMenuItem.Size = new System.Drawing.Size(120, 22);
+            this.selectallToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.selectallToolStripMenuItem.Text = "Select &all";
             // 
             // rowsToolStripMenuItem
@@ -636,19 +636,19 @@ namespace oSpy
             // debugToolStripMenuItem1
             // 
             this.debugToolStripMenuItem1.Name = "debugToolStripMenuItem1";
-            this.debugToolStripMenuItem1.Size = new System.Drawing.Size(109, 22);
+            this.debugToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
             this.debugToolStripMenuItem1.Text = "&Debug";
             this.debugToolStripMenuItem1.Click += new System.EventHandler(this.debugToolStripMenuItem_Click);
             // 
             // toolStripMenuItem2
             // 
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(106, 6);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(149, 6);
             // 
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(109, 22);
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.aboutToolStripMenuItem.Text = "&About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
@@ -912,9 +912,9 @@ namespace oSpy
             // 
             this.timestampDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
             this.timestampDataGridViewTextBoxColumn.DataPropertyName = "Timestamp";
-            dataGridViewCellStyle1.Format = "T";
-            dataGridViewCellStyle1.NullValue = null;
-            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle3.Format = "T";
+            dataGridViewCellStyle3.NullValue = null;
+            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle3;
             this.timestampDataGridViewTextBoxColumn.HeaderText = "Timestamp";
             this.timestampDataGridViewTextBoxColumn.Name = "timestampDataGridViewTextBoxColumn";
             this.timestampDataGridViewTextBoxColumn.ReadOnly = true;
@@ -962,9 +962,9 @@ namespace oSpy
             // returnAddressDataGridViewTextBoxColumn
             // 
             this.returnAddressDataGridViewTextBoxColumn.DataPropertyName = "ReturnAddress";
-            dataGridViewCellStyle2.Format = "x";
-            dataGridViewCellStyle2.NullValue = null;
-            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle4.Format = "x";
+            dataGridViewCellStyle4.NullValue = null;
+            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle4;
             this.returnAddressDataGridViewTextBoxColumn.HeaderText = "ReturnAddress";
             this.returnAddressDataGridViewTextBoxColumn.Name = "returnAddressDataGridViewTextBoxColumn";
             this.returnAddressDataGridViewTextBoxColumn.ReadOnly = true;
