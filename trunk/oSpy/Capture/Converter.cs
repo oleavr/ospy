@@ -36,6 +36,7 @@ namespace oSpy.Capture
     {
         public void ConvertAll(string captureDirPath, int numEvents, IProgressFeedback progress)
         {
+            List<BinaryReader> readers = new List<BinaryReader>(1);
             SortedList<uint, KeyValuePair<BinaryReader, uint>> ids = new SortedList<uint, KeyValuePair<BinaryReader, uint>>(numEvents);
 
             uint i = 0;
@@ -43,6 +44,8 @@ namespace oSpy.Capture
             {
                 FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
                 BinaryReader r = new BinaryReader(fs);
+
+                readers.Add(r);
 
                 while (fs.Position < fs.Length)
                 {
@@ -84,6 +87,9 @@ namespace oSpy.Capture
             xtw.WriteEndElement();
             xtw.WriteEndDocument();
             xtw.Close();
+
+            foreach (BinaryReader r in readers)
+                r.Close();
         }
 
         private void UnserializeNode(BinaryReader r, XmlTextWriter xtw)
