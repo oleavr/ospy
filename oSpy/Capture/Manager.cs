@@ -196,6 +196,17 @@ namespace oSpy.Capture
             th.Start();
         }
 
+        public void SaveCapture(string path)
+        {
+            File.Move(tmpDir + "\\capture.xml", path);
+            DiscardCapture();
+        }
+
+        public void DiscardCapture()
+        {
+            Directory.Delete(tmpDir, true);
+        }
+
         public void GetCaptureStatistics(out int evCount, out int evBytes)
         {
             evCount = Marshal.ReadInt32(logIndexPtr);

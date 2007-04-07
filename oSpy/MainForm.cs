@@ -497,8 +497,14 @@ namespace oSpy
                 return;
             }
 
-            MessageBox.Show(String.Format("Trace complete. Have a look in '{0}'", captureMgr.TargetDirectory),
-                            "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                captureMgr.SaveCapture(saveFileDialog.FileName);
+            }
+            else
+            {
+                captureMgr.DiscardCapture();
+            }
 
 #if false
             tmpEventList.Clear();
