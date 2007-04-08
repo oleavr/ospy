@@ -33,6 +33,7 @@ using System.Text;
 using System.IO;
 using ICSharpCode.SharpZipLib.BZip2;
 using System.Text.RegularExpressions;
+using oSpy.Capture;
 using oSpy.Configuration;
 using oSpy.Event;
 using oSpy.Parser;
@@ -49,12 +50,12 @@ namespace oSpy
         private ConfigContext config;
         private Capture.Manager captureMgr;
 
-        private DataTable tblMessages;
+        //private DataTable tblMessages;
         private PacketParser packetParser;
         private List<TCPEvent> tmpEventList;
         private List<IPPacket> tmpPacketList;
 
-        private Dictionary<int, IPPacket> curLinesToPackets;
+        //private Dictionary<int, IPPacket> curLinesToPackets;
         private List<IPPacket> curPacketList;
         private TransactionNodeList curNodeList;
         private MemoryStream curSelBytes;
@@ -103,7 +104,7 @@ namespace oSpy
 
             colorPool = new ColorPool();
 
-            tblMessages = dataSet.Tables["messages"];
+            //tblMessages = dataSet.Tables["messages"];
 
             debugForm = new DebugForm();
             swForm = new SoftwallForm();
@@ -341,14 +342,12 @@ namespace oSpy
             {
                 ProgressForm progFrm = new ProgressForm("Opening");
 
-#if false
                 ClearState();
 
                 dataGridView.DataSource = null;
                 dataSet.Tables[0].BeginLoadData();
 
                 clearMenuItem.PerformClick();
-#endif
 
                 Thread th = new Thread(new ParameterizedThreadStart(OpenFile));
                 th.Start(progFrm);
@@ -361,10 +360,27 @@ namespace oSpy
         {
             IProgressFeedback progress = param as IProgressFeedback;
 
-            Capture.DumpFile df = new Capture.DumpFile(openFileDialog.FileName);
-            df.Load(progress);
+            Capture.DumpFile df = new Capture.DumpFile();
+            df.Load(openFileDialog.FileName, progress);
+
+            foreach (DumpEvent ev in df.Events.Values)
+            {
+                DataRow row = dataSet.Tables[0].NewRow();
+                row[eventCol] = ev;
+                row.AcceptChanges();
+                dataSet.Tables[0].Rows.Add(row);
+            }
+
+            dataSet.Tables[0].EndLoadData();
+
+            progress.ProgressUpdate("Opened", 100);
+
+            progress.ProgressUpdate("Finishing", 100);
+            Invoke(new ThreadStart(RestoreDataSource));
 
             progress.OperationComplete();
+
+
 #if false
             IProgressFeedback progress = param as IProgressFeedback;
 
@@ -560,6 +576,26 @@ namespace oSpy
         private void dataGridView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             DataGridViewRow row = dataGridView.Rows[e.RowIndex];
+            DumpEvent ev = row.Cells[eventTextCol.Index].Value as DumpEvent;
+
+            switch (e.ColumnIndex)
+            {
+                case 1:
+                    e.Value = ev.Id;
+                    break;
+                case 2:
+                    e.Value = ev.Timestamp;
+                    break;
+                case 3:
+                    e.Value = ev.Type.ToString();
+                    break;
+            }
+        }
+
+#if false
+        private void dataGridView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            DataGridViewRow row = dataGridView.Rows[e.RowIndex];
             MessageType msg_type = (MessageType)((UInt32)row.Cells[msgTypeDataGridViewTextBoxColumn.Index].Value);
             bool highlight = false;
 
@@ -684,6 +720,7 @@ namespace oSpy
                     break;
             }
         }
+#endif
 
         private void clearMenuItem_Click(object sender, EventArgs e)
         {
@@ -1139,6 +1176,7 @@ namespace oSpy
         // FIXME: a really naive implementation done in a hurry
         private void richTextBox_SelectionChanged(object sender, EventArgs e)
         {
+#if false
             curSelBytes = new MemoryStream();
             statusBarLabel.Text = "";
 
@@ -1290,8 +1328,24 @@ namespace oSpy
                 statusBarLabel.Text = String.Format("{0} byte{1} selected",
                     curSelBytes.Length, (curSelBytes.Length > 1) ? "s" : "");
             }
+#endif
         }
 
+        private void UpdateDumpView()
+        {
+            StringBuilder builder = new StringBuilder();
+
+            foreach (DataGridViewRow row in dataGridView.SelectedRows)
+            {
+                DumpEvent ev = row.Cells[eventTextCol.Index].Value as DumpEvent;
+                builder.Append(ev.Data);
+                builder.Append("\n\n");
+            }
+
+            richTextBox.Text = builder.ToString();
+        }
+
+#if false
         private void UpdateDumpView()
         {
             //
@@ -1466,7 +1520,13 @@ namespace oSpy
                 UpdateDumpHighlighting(curNodeList[0].GetAllSlices().ToArray());
             }
         }
+#endif
 
+        private void dataGridView_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+        }
+
+#if false
         private void dataGridView_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             if (e.Button != MouseButtons.Left)
@@ -1538,6 +1598,7 @@ namespace oSpy
             peerAddr = (string)cells[peerAddressDataGridViewTextBoxColumn.Index].Value;
             peerPort = (UInt16)cells[peerPortDataGridViewTextBoxColumn.Index].Value;
         }
+#endif
 
         private void expandAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -1585,16 +1646,19 @@ namespace oSpy
 
         private void goToReturnaddressInIDAToolStripMenuItem_Click(object sender, EventArgs e)
         {
+#if false
             DataGridViewRow row = dataGridView.SelectedRows[0];
 
             string moduleName = (string)row.Cells[callerModuleNameDataGridViewTextBoxColumn.Index].Value;
             UInt32 returnAddress = (UInt32)row.Cells[returnAddressDataGridViewTextBoxColumn.Index].Value;
 
             Util.IDA.GoToAddressInIDA(moduleName, returnAddress);
+#endif
         }
 
         private void showbacktraceToolStripMenuItem_Click(object sender, EventArgs e)
         {
+#if false
             DataGridViewRow row = dataGridView.SelectedRows[0];
             Int32 index = (Int32)row.Cells[indexDataGridViewTextBoxColumn.Index].Value;
             string functionName = (string)row.Cells[functionNameDataGridViewTextBoxColumn.Index].Value;
@@ -1602,10 +1666,12 @@ namespace oSpy
 
             BacktraceForm btForm = new BacktraceForm(index, functionName, backtrace);
             btForm.Show(this);
+#endif
         }
 
         private void createSwRuleFromEntryToolStripMenuItem_Click(object sender, EventArgs e)
         {
+#if false
             DataGridViewRow row = dataGridView.SelectedRows[0];
 
             string processName = (string)row.Cells[processNameDataGridViewTextBoxColumn.Index].Value;
@@ -1641,10 +1707,12 @@ namespace oSpy
             swForm.AddRule(processName, functionName, returnAddress, localAddress, localPort,
                            remoteAddress, remotePort);
             swForm.ShowDialog();
+#endif
         }
 
         private void dataGridContextMenuStrip_Opening(object sender, System.ComponentModel.CancelEventArgs e)
         {
+#if false
             bool selected = (dataGridView.SelectedRows.Count > 0);
 
             goToReturnaddressInIDAToolStripMenuItem.Enabled = selected;
@@ -1658,6 +1726,7 @@ namespace oSpy
             }
 
             createSwRuleFromEntryToolStripMenuItem.Enabled = selected;
+#endif
         }
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1758,6 +1827,7 @@ namespace oSpy
 
         private void findComboBox_KeyDown(object sender, KeyEventArgs e)
         {
+#if false
             if (e.KeyCode != Keys.Enter)
                 return;
 
@@ -1862,6 +1932,7 @@ namespace oSpy
             statusBarLabel.Text = String.Format("{0} match{1} found",
                 (nMatches > 0) ? Convert.ToString(nMatches) : "No",
                 (nMatches == 0 || nMatches > 1) ? "es" : "");
+#endif
         }
 
         private void findTypeComboBox_KeyDown(object sender, KeyEventArgs e)
@@ -1923,6 +1994,7 @@ namespace oSpy
 
         private void transactionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
+#if false
             updatingSelections = true;
 
             UnselectAllRows();
@@ -1958,6 +2030,7 @@ namespace oSpy
                 selRow.Selected = false;
                 selRow.Selected = true;
             }
+#endif
         }
 
         private bool GetNextRowIndex(out int index)
@@ -1977,6 +2050,7 @@ namespace oSpy
 
         private void GoToNextPacket()
         {
+#if false
             int startIndex;
             if (!GetNextRowIndex(out startIndex))
                 return;
@@ -1995,10 +2069,12 @@ namespace oSpy
                     }
                 }
             }
+#endif
         }
 
         private void GoToNextTransactionRow()
         {
+#if false
             int startIndex;
             if (!GetNextRowIndex(out startIndex))
                 return;
@@ -2018,6 +2094,7 @@ namespace oSpy
                     }
                 }
             }
+#endif
         }
 
         private void nextpacketToolStripMenuItem_Click(object sender, EventArgs e)

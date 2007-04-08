@@ -32,26 +32,186 @@ using System.Xml;
 
 namespace oSpy.Capture
 {
-    class DumpFile
+    public class DumpFile
     {
-        private Stream dumpStream;
+        private string tmpPath;
+        private StreamReader tmpReader;
 
-        public DumpFile(string path)
+        private SortedDictionary<uint, DumpEvent> events;
+        public SortedDictionary<uint, DumpEvent> Events
         {
-            FileStream fs = new FileStream(path, FileMode.Open);
-            dumpStream = new BZip2InputStream(fs);
+            get { return events; }
         }
 
-        public void Load(IProgressFeedback progress)
+        public DumpFile()
         {
-            XmlTextReader xtr = new XmlTextReader(dumpStream);
+        }
 
+        public void Close()
+        {
+            if (tmpReader != null)
+            {
+                tmpReader.Close();
+                tmpReader = null;
+            }
+
+            if (tmpPath != null)
+            {
+                File.Delete(tmpPath);
+                tmpPath = null;
+            }
+
+            events = null;
+        }
+
+        public void Load(string path, IProgressFeedback progress)
+        {
+            BZip2InputStream inStream = new BZip2InputStream(new FileStream(path, FileMode.Open));
+            XmlTextReader xtr = new XmlTextReader(inStream);
+
+            tmpPath = Path.GetTempFileName();
+            FileStream tmpFileStream = new FileStream(tmpPath, FileMode.Create, FileAccess.ReadWrite);
+            tmpReader = new StreamReader(tmpFileStream);
+            StreamWriter tmpFileWriter = new StreamWriter(tmpFileStream, Encoding.UTF8);
+
+            events = new SortedDictionary<uint, DumpEvent>();
+
+            int prevPct = -1, pct;
             while (xtr.Read())
             {
-                int pct = (int)(((float)dumpStream.Position / (float)dumpStream.Length) * 100.0f);
-                progress.ProgressUpdate("Scanning", pct);
+                pct = (int)(((float)inStream.Position / (float)inStream.Length) * 100.0f);
+                if (pct != prevPct)
+                {
+                    prevPct = pct;
+                    progress.ProgressUpdate("Loading", pct);
+                }
 
+                if (xtr.NodeType == XmlNodeType.Element && xtr.Name == "Event")
+                {
+                    tmpFileWriter.Flush();
+                    long startOffset = tmpFileStream.Position;
+
+                    XmlReader rdr = xtr.ReadSubtree();
+                    XmlDocument doc = new XmlDocument();
+                    doc.Load(rdr);
+
+                    XmlAttributeCollection attrs = doc.DocumentElement.Attributes;
+                    uint id = Convert.ToUInt32(attrs["Id"].Value);
+                    DumpEventType type = (DumpEventType) Enum.Parse(typeof(DumpEventType), attrs["Type"].Value);
+                    DateTime timestamp = DateTime.FromFileTimeUtc(Convert.ToInt64(attrs["Timestamp"].Value));
+                    string processName = attrs["ProcessName"].Value;
+                    uint processId = Convert.ToUInt32(attrs["ProcessId"].Value);
+                    uint threadId = Convert.ToUInt32(attrs["ThreadId"].Value);
+
+                    string eventStr = doc.DocumentElement.InnerXml;
+                    tmpFileWriter.Write(eventStr);
+
+                    events[id] = new DumpEvent(this, id, type, timestamp, processName, processId, threadId, startOffset, eventStr.Length);
+                }
             }
+
+            xtr.Close();
+
+            tmpFileStream.Seek(0, SeekOrigin.Begin);
+        }
+
+        public string ExtractEventData(long offset, int length)
+        {
+            tmpReader.BaseStream.Seek(offset, SeekOrigin.Begin);
+            tmpReader.DiscardBufferedData();
+
+            char[] buf = new char[length];
+            tmpReader.Read(buf, 0, buf.Length);
+
+            return new string(buf);
+        }
+    }
+
+    public enum DumpEventType
+    {
+        Debug,
+        Info,
+        Warning,
+        Error,
+        FunctionCall
+    }
+
+    public class DumpEvent
+    {
+        private DumpFile file;
+        public DumpFile File
+        {
+            get { return file; }
+        }
+
+        private uint id;
+        public uint Id
+        {
+            get { return id; }
+        }
+
+        private DumpEventType type;
+        public DumpEventType Type
+        {
+            get { return type; }
+        }
+
+        private DateTime timestamp;
+        public DateTime Timestamp
+        {
+            get { return timestamp; }
+        }
+
+        private string processName;
+        public string ProcessName
+        {
+            get { return processName; }
+        }
+
+        private uint processId;
+        public uint ProcessId
+        {
+            get { return processId; }
+        }
+
+        private uint threadId;
+        public uint ThreadId
+        {
+            get { return threadId; }
+        }
+
+        private long dataOffset;
+        public long DataOffset
+        {
+            get { return dataOffset; }
+        }
+
+        private int dataLength;
+        public int DataLength
+        {
+            get { return dataLength; }
+        }
+
+        public string Data
+        {
+            get { return file.ExtractEventData(dataOffset, dataLength); }
+        }
+
+        public DumpEvent(DumpFile file,
+                         uint id, DumpEventType type, DateTime timestamp, string processName, uint processId, uint threadId,
+                         long dataOffset, int dataLength)
+        {
+            this.file = file;
+
+            this.id = id;
+            this.type = type;
+            this.timestamp = timestamp;
+            this.processName = processName;
+            this.processId = processId;
+            this.threadId = threadId;
+
+            this.dataOffset = dataOffset;
+            this.dataLength = dataLength;
         }
     }
 }
