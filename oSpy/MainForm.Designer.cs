@@ -29,40 +29,10 @@ namespace oSpy
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.dataSet = new System.Data.DataSet();
-            this.messageTbl = new System.Data.DataTable();
-            this.indexCol = new System.Data.DataColumn();
-            this.timestampCol = new System.Data.DataColumn();
-            this.processNameCol = new System.Data.DataColumn();
-            this.processIdCol = new System.Data.DataColumn();
-            this.threadIdCol = new System.Data.DataColumn();
-            this.functionNameCol = new System.Data.DataColumn();
-            this.backtraceCol = new System.Data.DataColumn();
-            this.returnAddressCol = new System.Data.DataColumn();
-            this.callerModuleNameCol = new System.Data.DataColumn();
-            this.resourceIdCol = new System.Data.DataColumn();
-            this.msgTypeCol = new System.Data.DataColumn();
-            this.contextCol = new System.Data.DataColumn();
-            this.domainCol = new System.Data.DataColumn();
-            this.severityCol = new System.Data.DataColumn();
-            this.messageCol = new System.Data.DataColumn();
-            this.directionCol = new System.Data.DataColumn();
-            this.localAddressCol = new System.Data.DataColumn();
-            this.localPortCol = new System.Data.DataColumn();
-            this.peerAddressCol = new System.Data.DataColumn();
-            this.peerPortCol = new System.Data.DataColumn();
-            this.dataCol = new System.Data.DataColumn();
-            this.ASDeviceCol = new System.Data.DataColumn();
-            this.ASStatusCol = new System.Data.DataColumn();
-            this.ASSubStatusCol = new System.Data.DataColumn();
-            this.ASWizStatusCol = new System.Data.DataColumn();
-            this.senderCol = new System.Data.DataColumn();
-            this.descriptionCol = new System.Data.DataColumn();
-            this.bgColorCol = new System.Data.DataColumn();
-            this.commentCol = new System.Data.DataColumn();
+            this.eventsTbl = new System.Data.DataTable();
+            this.eventCol = new System.Data.DataColumn();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
             this.menuStrip = new System.Windows.Forms.MenuStrip();
@@ -74,13 +44,13 @@ namespace oSpy
             this.clearMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.exitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.goToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.nextpacketToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.nextRowTransactionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.selectallToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.rowsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.transactionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.goToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.nextpacketToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.nextRowTransactionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.manageSoftwallRulesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.parserConfigToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -120,34 +90,6 @@ namespace oSpy
             this.autoHighlightMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mainSplitContainer = new System.Windows.Forms.SplitContainer();
             this.dataGridView = new System.Windows.Forms.DataGridView();
-            this.indexDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.typeDataGridViewImageColumn = new System.Windows.Forms.DataGridViewImageColumn();
-            this.timestampDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.processNameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.processIdDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.threadIdDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.functionNameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.backtraceDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.returnAddressDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.callerModuleNameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.resourceIdDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.msgTypeDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.msgContextDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.messageDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.directionDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.localAddressDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.localPortDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.peerAddressDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.peerPortDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.dataDataGridViewImageColumn = new System.Windows.Forms.DataGridViewImageColumn();
-            this.aSDeviceDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.aSStatusDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.aSSubStatusDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.aSWizStatusDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.senderDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.descriptionDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Comment = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.bgColorDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.lowerSplitContainer = new System.Windows.Forms.SplitContainer();
             this.richTextBox = new System.Windows.Forms.RichTextBox();
             this.propertyGrid = new System.Windows.Forms.PropertyGrid();
@@ -164,8 +106,13 @@ namespace oSpy
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
+            this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.eventTextCol = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.indexTextCol = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.timestampTextCol = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.typeTextCol = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.eventsTbl)).BeginInit();
             this.menuStrip.SuspendLayout();
             this.dataGridContextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource)).BeginInit();
@@ -187,210 +134,19 @@ namespace oSpy
             this.dataSet.CaseSensitive = true;
             this.dataSet.DataSetName = "oSpyDataSet";
             this.dataSet.Tables.AddRange(new System.Data.DataTable[] {
-            this.messageTbl});
+            this.eventsTbl});
             // 
-            // messageTbl
+            // eventsTbl
             // 
-            this.messageTbl.Columns.AddRange(new System.Data.DataColumn[] {
-            this.indexCol,
-            this.timestampCol,
-            this.processNameCol,
-            this.processIdCol,
-            this.threadIdCol,
-            this.functionNameCol,
-            this.backtraceCol,
-            this.returnAddressCol,
-            this.callerModuleNameCol,
-            this.resourceIdCol,
-            this.msgTypeCol,
-            this.contextCol,
-            this.domainCol,
-            this.severityCol,
-            this.messageCol,
-            this.directionCol,
-            this.localAddressCol,
-            this.localPortCol,
-            this.peerAddressCol,
-            this.peerPortCol,
-            this.dataCol,
-            this.ASDeviceCol,
-            this.ASStatusCol,
-            this.ASSubStatusCol,
-            this.ASWizStatusCol,
-            this.senderCol,
-            this.descriptionCol,
-            this.bgColorCol,
-            this.commentCol});
-            this.messageTbl.Constraints.AddRange(new System.Data.Constraint[] {
-            new System.Data.UniqueConstraint("Constraint1", new string[] {
-                        "Index"}, true)});
-            this.messageTbl.PrimaryKey = new System.Data.DataColumn[] {
-        this.indexCol};
-            this.messageTbl.TableName = "Messages";
-            this.messageTbl.RowChanged += new System.Data.DataRowChangeEventHandler(this.messageTbl_RowChanged);
+            this.eventsTbl.Columns.AddRange(new System.Data.DataColumn[] {
+            this.eventCol});
+            this.eventsTbl.TableName = "Events";
             // 
-            // indexCol
+            // eventCol
             // 
-            this.indexCol.AllowDBNull = false;
-            this.indexCol.AutoIncrement = true;
-            this.indexCol.Caption = "Index";
-            this.indexCol.ColumnName = "Index";
-            this.indexCol.DataType = typeof(int);
-            // 
-            // timestampCol
-            // 
-            this.timestampCol.AllowDBNull = false;
-            this.timestampCol.Caption = "Timestamp";
-            this.timestampCol.ColumnName = "Timestamp";
-            this.timestampCol.DataType = typeof(System.DateTime);
-            this.timestampCol.DateTimeMode = System.Data.DataSetDateTime.Local;
-            // 
-            // processNameCol
-            // 
-            this.processNameCol.AllowDBNull = false;
-            this.processNameCol.Caption = "Process name";
-            this.processNameCol.ColumnName = "ProcessName";
-            // 
-            // processIdCol
-            // 
-            this.processIdCol.AllowDBNull = false;
-            this.processIdCol.Caption = "Process Id";
-            this.processIdCol.ColumnName = "ProcessId";
-            this.processIdCol.DataType = typeof(uint);
-            // 
-            // threadIdCol
-            // 
-            this.threadIdCol.AllowDBNull = false;
-            this.threadIdCol.Caption = "Thread Id";
-            this.threadIdCol.ColumnName = "ThreadId";
-            this.threadIdCol.DataType = typeof(uint);
-            // 
-            // functionNameCol
-            // 
-            this.functionNameCol.AllowDBNull = false;
-            this.functionNameCol.Caption = "Function name";
-            this.functionNameCol.ColumnName = "FunctionName";
-            // 
-            // backtraceCol
-            // 
-            this.backtraceCol.ColumnName = "Backtrace";
-            // 
-            // returnAddressCol
-            // 
-            this.returnAddressCol.AllowDBNull = false;
-            this.returnAddressCol.ColumnName = "ReturnAddress";
-            this.returnAddressCol.DataType = typeof(uint);
-            // 
-            // callerModuleNameCol
-            // 
-            this.callerModuleNameCol.Caption = "CallerModuleName";
-            this.callerModuleNameCol.ColumnName = "CallerModuleName";
-            // 
-            // resourceIdCol
-            // 
-            this.resourceIdCol.ColumnName = "ResourceId";
-            this.resourceIdCol.DataType = typeof(uint);
-            // 
-            // msgTypeCol
-            // 
-            this.msgTypeCol.AllowDBNull = false;
-            this.msgTypeCol.Caption = "Message type";
-            this.msgTypeCol.ColumnName = "MsgType";
-            this.msgTypeCol.DataType = typeof(uint);
-            // 
-            // contextCol
-            // 
-            this.contextCol.Caption = "Message context";
-            this.contextCol.ColumnName = "MsgContext";
-            this.contextCol.DataType = typeof(uint);
-            // 
-            // domainCol
-            // 
-            this.domainCol.ColumnName = "Domain";
-            this.domainCol.DataType = typeof(uint);
-            // 
-            // severityCol
-            // 
-            this.severityCol.ColumnName = "Severity";
-            this.severityCol.DataType = typeof(uint);
-            // 
-            // messageCol
-            // 
-            this.messageCol.Caption = "Message";
-            this.messageCol.ColumnName = "Message";
-            // 
-            // directionCol
-            // 
-            this.directionCol.Caption = "Packet direction";
-            this.directionCol.ColumnName = "Direction";
-            this.directionCol.DataType = typeof(uint);
-            // 
-            // localAddressCol
-            // 
-            this.localAddressCol.Caption = "Local address";
-            this.localAddressCol.ColumnName = "LocalAddress";
-            this.localAddressCol.MaxLength = 15;
-            // 
-            // localPortCol
-            // 
-            this.localPortCol.Caption = "Local port";
-            this.localPortCol.ColumnName = "LocalPort";
-            this.localPortCol.DataType = typeof(ushort);
-            // 
-            // peerAddressCol
-            // 
-            this.peerAddressCol.Caption = "Peer address";
-            this.peerAddressCol.ColumnName = "PeerAddress";
-            this.peerAddressCol.MaxLength = 15;
-            // 
-            // peerPortCol
-            // 
-            this.peerPortCol.Caption = "Peer port";
-            this.peerPortCol.ColumnName = "PeerPort";
-            this.peerPortCol.DataType = typeof(ushort);
-            // 
-            // dataCol
-            // 
-            this.dataCol.Caption = "Data";
-            this.dataCol.ColumnName = "Data";
-            this.dataCol.DataType = typeof(byte[]);
-            // 
-            // ASDeviceCol
-            // 
-            this.ASDeviceCol.ColumnName = "AS_Device";
-            // 
-            // ASStatusCol
-            // 
-            this.ASStatusCol.ColumnName = "AS_Status";
-            // 
-            // ASSubStatusCol
-            // 
-            this.ASSubStatusCol.ColumnName = "AS_SubStatus";
-            // 
-            // ASWizStatusCol
-            // 
-            this.ASWizStatusCol.ColumnName = "AS_WizStatus";
-            // 
-            // senderCol
-            // 
-            this.senderCol.ColumnMapping = System.Data.MappingType.Hidden;
-            this.senderCol.ColumnName = "Sender";
-            // 
-            // descriptionCol
-            // 
-            this.descriptionCol.ColumnMapping = System.Data.MappingType.Hidden;
-            this.descriptionCol.ColumnName = "Description";
-            // 
-            // bgColorCol
-            // 
-            this.bgColorCol.ColumnMapping = System.Data.MappingType.Hidden;
-            this.bgColorCol.ColumnName = "BgColor";
-            this.bgColorCol.DataType = typeof(byte[]);
-            // 
-            // commentCol
-            // 
-            this.commentCol.ColumnMapping = System.Data.MappingType.Hidden;
-            this.commentCol.ColumnName = "Comment";
+            this.eventCol.AllowDBNull = false;
+            this.eventCol.ColumnName = "Event";
+            this.eventCol.DataType = typeof(object);
             // 
             // openFileDialog
             // 
@@ -436,47 +192,78 @@ namespace oSpy
             // newCaptureToolStripMenuItem
             // 
             this.newCaptureToolStripMenuItem.Name = "newCaptureToolStripMenuItem";
-            this.newCaptureToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.newCaptureToolStripMenuItem.Size = new System.Drawing.Size(150, 22);
             this.newCaptureToolStripMenuItem.Text = "&New capture...";
             this.newCaptureToolStripMenuItem.Click += new System.EventHandler(this.newCaptureToolStripMenuItem_Click);
             // 
             // openMenuItem
             // 
             this.openMenuItem.Name = "openMenuItem";
-            this.openMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.openMenuItem.Size = new System.Drawing.Size(150, 22);
             this.openMenuItem.Text = "&Open...";
             this.openMenuItem.Click += new System.EventHandler(this.openMenuItem_Click);
             // 
             // saveMenuItem
             // 
             this.saveMenuItem.Name = "saveMenuItem";
-            this.saveMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.saveMenuItem.Size = new System.Drawing.Size(150, 22);
             this.saveMenuItem.Text = "&Save...";
             this.saveMenuItem.Click += new System.EventHandler(this.saveMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(147, 6);
             // 
             // clearMenuItem
             // 
             this.clearMenuItem.Name = "clearMenuItem";
-            this.clearMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.clearMenuItem.Size = new System.Drawing.Size(150, 22);
             this.clearMenuItem.Text = "&Clear";
             this.clearMenuItem.Click += new System.EventHandler(this.clearMenuItem_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(147, 6);
             // 
             // exitMenuItem
             // 
             this.exitMenuItem.Name = "exitMenuItem";
-            this.exitMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exitMenuItem.Size = new System.Drawing.Size(150, 22);
             this.exitMenuItem.Text = "E&xit";
             this.exitMenuItem.Click += new System.EventHandler(this.exitMenuItem_Click);
+            // 
+            // editToolStripMenuItem
+            // 
+            this.editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.selectallToolStripMenuItem});
+            this.editToolStripMenuItem.Name = "editToolStripMenuItem";
+            this.editToolStripMenuItem.Size = new System.Drawing.Size(39, 20);
+            this.editToolStripMenuItem.Text = "&Edit";
+            // 
+            // selectallToolStripMenuItem
+            // 
+            this.selectallToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.rowsToolStripMenuItem,
+            this.transactionsToolStripMenuItem});
+            this.selectallToolStripMenuItem.Name = "selectallToolStripMenuItem";
+            this.selectallToolStripMenuItem.Size = new System.Drawing.Size(120, 22);
+            this.selectallToolStripMenuItem.Text = "Select &all";
+            // 
+            // rowsToolStripMenuItem
+            // 
+            this.rowsToolStripMenuItem.Name = "rowsToolStripMenuItem";
+            this.rowsToolStripMenuItem.Size = new System.Drawing.Size(141, 22);
+            this.rowsToolStripMenuItem.Text = "&Rows";
+            this.rowsToolStripMenuItem.Click += new System.EventHandler(this.rowsToolStripMenuItem_Click);
+            // 
+            // transactionsToolStripMenuItem
+            // 
+            this.transactionsToolStripMenuItem.Name = "transactionsToolStripMenuItem";
+            this.transactionsToolStripMenuItem.Size = new System.Drawing.Size(141, 22);
+            this.transactionsToolStripMenuItem.Text = "&Transactions";
+            this.transactionsToolStripMenuItem.Click += new System.EventHandler(this.transactionsToolStripMenuItem_Click);
             // 
             // goToolStripMenuItem
             // 
@@ -502,37 +289,6 @@ namespace oSpy
             this.nextRowTransactionToolStripMenuItem.Size = new System.Drawing.Size(306, 22);
             this.nextRowTransactionToolStripMenuItem.Text = "Next row belonging to a &transaction";
             this.nextRowTransactionToolStripMenuItem.Click += new System.EventHandler(this.nextRowTransactionToolStripMenuItem_Click);
-            // 
-            // editToolStripMenuItem
-            // 
-            this.editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.selectallToolStripMenuItem});
-            this.editToolStripMenuItem.Name = "editToolStripMenuItem";
-            this.editToolStripMenuItem.Size = new System.Drawing.Size(39, 20);
-            this.editToolStripMenuItem.Text = "&Edit";
-            // 
-            // selectallToolStripMenuItem
-            // 
-            this.selectallToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.rowsToolStripMenuItem,
-            this.transactionsToolStripMenuItem});
-            this.selectallToolStripMenuItem.Name = "selectallToolStripMenuItem";
-            this.selectallToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.selectallToolStripMenuItem.Text = "Select &all";
-            // 
-            // rowsToolStripMenuItem
-            // 
-            this.rowsToolStripMenuItem.Name = "rowsToolStripMenuItem";
-            this.rowsToolStripMenuItem.Size = new System.Drawing.Size(141, 22);
-            this.rowsToolStripMenuItem.Text = "&Rows";
-            this.rowsToolStripMenuItem.Click += new System.EventHandler(this.rowsToolStripMenuItem_Click);
-            // 
-            // transactionsToolStripMenuItem
-            // 
-            this.transactionsToolStripMenuItem.Name = "transactionsToolStripMenuItem";
-            this.transactionsToolStripMenuItem.Size = new System.Drawing.Size(141, 22);
-            this.transactionsToolStripMenuItem.Text = "&Transactions";
-            this.transactionsToolStripMenuItem.Click += new System.EventHandler(this.transactionsToolStripMenuItem_Click);
             // 
             // optionsToolStripMenuItem
             // 
@@ -636,19 +392,19 @@ namespace oSpy
             // debugToolStripMenuItem1
             // 
             this.debugToolStripMenuItem1.Name = "debugToolStripMenuItem1";
-            this.debugToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
+            this.debugToolStripMenuItem1.Size = new System.Drawing.Size(109, 22);
             this.debugToolStripMenuItem1.Text = "&Debug";
             this.debugToolStripMenuItem1.Click += new System.EventHandler(this.debugToolStripMenuItem_Click);
             // 
             // toolStripMenuItem2
             // 
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(149, 6);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(106, 6);
             // 
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(109, 22);
             this.aboutToolStripMenuItem.Text = "&About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
@@ -691,9 +447,9 @@ namespace oSpy
             // 
             // bindingSource
             // 
-            this.bindingSource.DataMember = "Messages";
+            this.bindingSource.DataMember = "Events";
             this.bindingSource.DataSource = this.dataSet;
-            this.bindingSource.Sort = "Index ASC";
+            this.bindingSource.Sort = "";
             // 
             // dumpContextMenuStrip
             // 
@@ -845,38 +601,14 @@ namespace oSpy
             this.dataGridView.AllowUserToDeleteRows = false;
             this.dataGridView.AllowUserToResizeRows = false;
             this.dataGridView.AutoGenerateColumns = false;
-            this.dataGridView.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.dataGridView.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
             this.dataGridView.BackgroundColor = System.Drawing.SystemColors.ControlDark;
             this.dataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.indexDataGridViewTextBoxColumn,
-            this.typeDataGridViewImageColumn,
-            this.timestampDataGridViewTextBoxColumn,
-            this.processNameDataGridViewTextBoxColumn,
-            this.processIdDataGridViewTextBoxColumn,
-            this.threadIdDataGridViewTextBoxColumn,
-            this.functionNameDataGridViewTextBoxColumn,
-            this.backtraceDataGridViewTextBoxColumn,
-            this.returnAddressDataGridViewTextBoxColumn,
-            this.callerModuleNameDataGridViewTextBoxColumn,
-            this.resourceIdDataGridViewTextBoxColumn,
-            this.msgTypeDataGridViewTextBoxColumn,
-            this.msgContextDataGridViewTextBoxColumn,
-            this.messageDataGridViewTextBoxColumn,
-            this.directionDataGridViewTextBoxColumn,
-            this.localAddressDataGridViewTextBoxColumn,
-            this.localPortDataGridViewTextBoxColumn,
-            this.peerAddressDataGridViewTextBoxColumn,
-            this.peerPortDataGridViewTextBoxColumn,
-            this.dataDataGridViewImageColumn,
-            this.aSDeviceDataGridViewTextBoxColumn,
-            this.aSStatusDataGridViewTextBoxColumn,
-            this.aSSubStatusDataGridViewTextBoxColumn,
-            this.aSWizStatusDataGridViewTextBoxColumn,
-            this.senderDataGridViewTextBoxColumn,
-            this.descriptionDataGridViewTextBoxColumn,
-            this.Comment,
-            this.bgColorDataGridViewTextBoxColumn});
+            this.eventTextCol,
+            this.indexTextCol,
+            this.timestampTextCol,
+            this.typeTextCol});
             this.dataGridView.ContextMenuStrip = this.dataGridContextMenuStrip;
             this.dataGridView.DataSource = this.bindingSource;
             this.dataGridView.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -890,233 +622,6 @@ namespace oSpy
             this.dataGridView.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.dataGridView_CellFormatting);
             this.dataGridView.SelectionChanged += new System.EventHandler(this.dataGridView_SelectionChanged);
             this.dataGridView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.dataGridView_MouseDoubleClick);
-            // 
-            // indexDataGridViewTextBoxColumn
-            // 
-            this.indexDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.ColumnHeader;
-            this.indexDataGridViewTextBoxColumn.DataPropertyName = "Index";
-            this.indexDataGridViewTextBoxColumn.HeaderText = "Index";
-            this.indexDataGridViewTextBoxColumn.Name = "indexDataGridViewTextBoxColumn";
-            this.indexDataGridViewTextBoxColumn.ReadOnly = true;
-            this.indexDataGridViewTextBoxColumn.Width = 58;
-            // 
-            // typeDataGridViewImageColumn
-            // 
-            this.typeDataGridViewImageColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.ColumnHeader;
-            this.typeDataGridViewImageColumn.HeaderText = "Type";
-            this.typeDataGridViewImageColumn.Name = "typeDataGridViewImageColumn";
-            this.typeDataGridViewImageColumn.ReadOnly = true;
-            this.typeDataGridViewImageColumn.Width = 37;
-            // 
-            // timestampDataGridViewTextBoxColumn
-            // 
-            this.timestampDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
-            this.timestampDataGridViewTextBoxColumn.DataPropertyName = "Timestamp";
-            dataGridViewCellStyle3.Format = "T";
-            dataGridViewCellStyle3.NullValue = null;
-            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle3;
-            this.timestampDataGridViewTextBoxColumn.HeaderText = "Timestamp";
-            this.timestampDataGridViewTextBoxColumn.Name = "timestampDataGridViewTextBoxColumn";
-            this.timestampDataGridViewTextBoxColumn.ReadOnly = true;
-            this.timestampDataGridViewTextBoxColumn.Width = 83;
-            // 
-            // processNameDataGridViewTextBoxColumn
-            // 
-            this.processNameDataGridViewTextBoxColumn.DataPropertyName = "ProcessName";
-            this.processNameDataGridViewTextBoxColumn.HeaderText = "ProcessName";
-            this.processNameDataGridViewTextBoxColumn.Name = "processNameDataGridViewTextBoxColumn";
-            this.processNameDataGridViewTextBoxColumn.ReadOnly = true;
-            this.processNameDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // processIdDataGridViewTextBoxColumn
-            // 
-            this.processIdDataGridViewTextBoxColumn.DataPropertyName = "ProcessId";
-            this.processIdDataGridViewTextBoxColumn.HeaderText = "ProcessId";
-            this.processIdDataGridViewTextBoxColumn.Name = "processIdDataGridViewTextBoxColumn";
-            this.processIdDataGridViewTextBoxColumn.ReadOnly = true;
-            this.processIdDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // threadIdDataGridViewTextBoxColumn
-            // 
-            this.threadIdDataGridViewTextBoxColumn.DataPropertyName = "ThreadId";
-            this.threadIdDataGridViewTextBoxColumn.HeaderText = "ThreadId";
-            this.threadIdDataGridViewTextBoxColumn.Name = "threadIdDataGridViewTextBoxColumn";
-            this.threadIdDataGridViewTextBoxColumn.ReadOnly = true;
-            this.threadIdDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // functionNameDataGridViewTextBoxColumn
-            // 
-            this.functionNameDataGridViewTextBoxColumn.DataPropertyName = "FunctionName";
-            this.functionNameDataGridViewTextBoxColumn.HeaderText = "FunctionName";
-            this.functionNameDataGridViewTextBoxColumn.Name = "functionNameDataGridViewTextBoxColumn";
-            this.functionNameDataGridViewTextBoxColumn.ReadOnly = true;
-            // 
-            // backtraceDataGridViewTextBoxColumn
-            // 
-            this.backtraceDataGridViewTextBoxColumn.DataPropertyName = "Backtrace";
-            this.backtraceDataGridViewTextBoxColumn.HeaderText = "Backtrace";
-            this.backtraceDataGridViewTextBoxColumn.Name = "backtraceDataGridViewTextBoxColumn";
-            this.backtraceDataGridViewTextBoxColumn.ReadOnly = true;
-            this.backtraceDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // returnAddressDataGridViewTextBoxColumn
-            // 
-            this.returnAddressDataGridViewTextBoxColumn.DataPropertyName = "ReturnAddress";
-            dataGridViewCellStyle4.Format = "x";
-            dataGridViewCellStyle4.NullValue = null;
-            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle4;
-            this.returnAddressDataGridViewTextBoxColumn.HeaderText = "ReturnAddress";
-            this.returnAddressDataGridViewTextBoxColumn.Name = "returnAddressDataGridViewTextBoxColumn";
-            this.returnAddressDataGridViewTextBoxColumn.ReadOnly = true;
-            // 
-            // callerModuleNameDataGridViewTextBoxColumn
-            // 
-            this.callerModuleNameDataGridViewTextBoxColumn.DataPropertyName = "CallerModuleName";
-            this.callerModuleNameDataGridViewTextBoxColumn.HeaderText = "CallerModuleName";
-            this.callerModuleNameDataGridViewTextBoxColumn.Name = "callerModuleNameDataGridViewTextBoxColumn";
-            this.callerModuleNameDataGridViewTextBoxColumn.ReadOnly = true;
-            this.callerModuleNameDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // resourceIdDataGridViewTextBoxColumn
-            // 
-            this.resourceIdDataGridViewTextBoxColumn.DataPropertyName = "ResourceId";
-            this.resourceIdDataGridViewTextBoxColumn.HeaderText = "ResourceId";
-            this.resourceIdDataGridViewTextBoxColumn.Name = "resourceIdDataGridViewTextBoxColumn";
-            this.resourceIdDataGridViewTextBoxColumn.ReadOnly = true;
-            this.resourceIdDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // msgTypeDataGridViewTextBoxColumn
-            // 
-            this.msgTypeDataGridViewTextBoxColumn.DataPropertyName = "MsgType";
-            this.msgTypeDataGridViewTextBoxColumn.HeaderText = "MsgType";
-            this.msgTypeDataGridViewTextBoxColumn.Name = "msgTypeDataGridViewTextBoxColumn";
-            this.msgTypeDataGridViewTextBoxColumn.ReadOnly = true;
-            this.msgTypeDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // msgContextDataGridViewTextBoxColumn
-            // 
-            this.msgContextDataGridViewTextBoxColumn.DataPropertyName = "MsgContext";
-            this.msgContextDataGridViewTextBoxColumn.HeaderText = "MsgContext";
-            this.msgContextDataGridViewTextBoxColumn.Name = "msgContextDataGridViewTextBoxColumn";
-            this.msgContextDataGridViewTextBoxColumn.ReadOnly = true;
-            this.msgContextDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // messageDataGridViewTextBoxColumn
-            // 
-            this.messageDataGridViewTextBoxColumn.DataPropertyName = "Message";
-            this.messageDataGridViewTextBoxColumn.HeaderText = "Message";
-            this.messageDataGridViewTextBoxColumn.Name = "messageDataGridViewTextBoxColumn";
-            this.messageDataGridViewTextBoxColumn.ReadOnly = true;
-            this.messageDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // directionDataGridViewTextBoxColumn
-            // 
-            this.directionDataGridViewTextBoxColumn.DataPropertyName = "Direction";
-            this.directionDataGridViewTextBoxColumn.HeaderText = "Direction";
-            this.directionDataGridViewTextBoxColumn.Name = "directionDataGridViewTextBoxColumn";
-            this.directionDataGridViewTextBoxColumn.ReadOnly = true;
-            this.directionDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // localAddressDataGridViewTextBoxColumn
-            // 
-            this.localAddressDataGridViewTextBoxColumn.DataPropertyName = "LocalAddress";
-            this.localAddressDataGridViewTextBoxColumn.HeaderText = "LocalAddress";
-            this.localAddressDataGridViewTextBoxColumn.Name = "localAddressDataGridViewTextBoxColumn";
-            this.localAddressDataGridViewTextBoxColumn.ReadOnly = true;
-            this.localAddressDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // localPortDataGridViewTextBoxColumn
-            // 
-            this.localPortDataGridViewTextBoxColumn.DataPropertyName = "LocalPort";
-            this.localPortDataGridViewTextBoxColumn.HeaderText = "LocalPort";
-            this.localPortDataGridViewTextBoxColumn.Name = "localPortDataGridViewTextBoxColumn";
-            this.localPortDataGridViewTextBoxColumn.ReadOnly = true;
-            this.localPortDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // peerAddressDataGridViewTextBoxColumn
-            // 
-            this.peerAddressDataGridViewTextBoxColumn.DataPropertyName = "PeerAddress";
-            this.peerAddressDataGridViewTextBoxColumn.HeaderText = "PeerAddress";
-            this.peerAddressDataGridViewTextBoxColumn.Name = "peerAddressDataGridViewTextBoxColumn";
-            this.peerAddressDataGridViewTextBoxColumn.ReadOnly = true;
-            this.peerAddressDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // peerPortDataGridViewTextBoxColumn
-            // 
-            this.peerPortDataGridViewTextBoxColumn.DataPropertyName = "PeerPort";
-            this.peerPortDataGridViewTextBoxColumn.HeaderText = "PeerPort";
-            this.peerPortDataGridViewTextBoxColumn.Name = "peerPortDataGridViewTextBoxColumn";
-            this.peerPortDataGridViewTextBoxColumn.ReadOnly = true;
-            this.peerPortDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // dataDataGridViewImageColumn
-            // 
-            this.dataDataGridViewImageColumn.DataPropertyName = "Data";
-            this.dataDataGridViewImageColumn.HeaderText = "Data";
-            this.dataDataGridViewImageColumn.Name = "dataDataGridViewImageColumn";
-            this.dataDataGridViewImageColumn.ReadOnly = true;
-            this.dataDataGridViewImageColumn.Visible = false;
-            // 
-            // aSDeviceDataGridViewTextBoxColumn
-            // 
-            this.aSDeviceDataGridViewTextBoxColumn.DataPropertyName = "AS_Device";
-            this.aSDeviceDataGridViewTextBoxColumn.HeaderText = "AS_Device";
-            this.aSDeviceDataGridViewTextBoxColumn.Name = "aSDeviceDataGridViewTextBoxColumn";
-            this.aSDeviceDataGridViewTextBoxColumn.ReadOnly = true;
-            this.aSDeviceDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // aSStatusDataGridViewTextBoxColumn
-            // 
-            this.aSStatusDataGridViewTextBoxColumn.DataPropertyName = "AS_Status";
-            this.aSStatusDataGridViewTextBoxColumn.HeaderText = "AS_Status";
-            this.aSStatusDataGridViewTextBoxColumn.Name = "aSStatusDataGridViewTextBoxColumn";
-            this.aSStatusDataGridViewTextBoxColumn.ReadOnly = true;
-            this.aSStatusDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // aSSubStatusDataGridViewTextBoxColumn
-            // 
-            this.aSSubStatusDataGridViewTextBoxColumn.DataPropertyName = "AS_SubStatus";
-            this.aSSubStatusDataGridViewTextBoxColumn.HeaderText = "AS_SubStatus";
-            this.aSSubStatusDataGridViewTextBoxColumn.Name = "aSSubStatusDataGridViewTextBoxColumn";
-            this.aSSubStatusDataGridViewTextBoxColumn.ReadOnly = true;
-            this.aSSubStatusDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // aSWizStatusDataGridViewTextBoxColumn
-            // 
-            this.aSWizStatusDataGridViewTextBoxColumn.DataPropertyName = "AS_WizStatus";
-            this.aSWizStatusDataGridViewTextBoxColumn.HeaderText = "AS_WizStatus";
-            this.aSWizStatusDataGridViewTextBoxColumn.Name = "aSWizStatusDataGridViewTextBoxColumn";
-            this.aSWizStatusDataGridViewTextBoxColumn.ReadOnly = true;
-            this.aSWizStatusDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // senderDataGridViewTextBoxColumn
-            // 
-            this.senderDataGridViewTextBoxColumn.DataPropertyName = "Sender";
-            this.senderDataGridViewTextBoxColumn.HeaderText = "Sender";
-            this.senderDataGridViewTextBoxColumn.Name = "senderDataGridViewTextBoxColumn";
-            this.senderDataGridViewTextBoxColumn.ReadOnly = true;
-            // 
-            // descriptionDataGridViewTextBoxColumn
-            // 
-            this.descriptionDataGridViewTextBoxColumn.DataPropertyName = "Description";
-            this.descriptionDataGridViewTextBoxColumn.HeaderText = "Description";
-            this.descriptionDataGridViewTextBoxColumn.Name = "descriptionDataGridViewTextBoxColumn";
-            this.descriptionDataGridViewTextBoxColumn.ReadOnly = true;
-            // 
-            // Comment
-            // 
-            this.Comment.DataPropertyName = "Comment";
-            this.Comment.HeaderText = "Comment";
-            this.Comment.Name = "Comment";
-            this.Comment.ReadOnly = true;
-            // 
-            // bgColorDataGridViewTextBoxColumn
-            // 
-            this.bgColorDataGridViewTextBoxColumn.DataPropertyName = "BgColor";
-            this.bgColorDataGridViewTextBoxColumn.HeaderText = "BgColor";
-            this.bgColorDataGridViewTextBoxColumn.Name = "bgColorDataGridViewTextBoxColumn";
-            this.bgColorDataGridViewTextBoxColumn.ReadOnly = true;
-            this.bgColorDataGridViewTextBoxColumn.Visible = false;
             // 
             // lowerSplitContainer
             // 
@@ -1286,6 +791,42 @@ namespace oSpy
             this.dumpSaveFileDialog.DefaultExt = "bin";
             this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
             // 
+            // dataGridViewTextBoxColumn1
+            // 
+            this.dataGridViewTextBoxColumn1.DataPropertyName = "Event";
+            this.dataGridViewTextBoxColumn1.HeaderText = "Event";
+            this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
+            this.dataGridViewTextBoxColumn1.Visible = false;
+            // 
+            // eventTextCol
+            // 
+            this.eventTextCol.DataPropertyName = "Event";
+            this.eventTextCol.HeaderText = "Event";
+            this.eventTextCol.Name = "eventTextCol";
+            this.eventTextCol.ReadOnly = true;
+            this.eventTextCol.Visible = false;
+            // 
+            // indexTextCol
+            // 
+            this.indexTextCol.HeaderText = "Index";
+            this.indexTextCol.Name = "indexTextCol";
+            this.indexTextCol.ReadOnly = true;
+            this.indexTextCol.Width = 58;
+            // 
+            // timestampTextCol
+            // 
+            this.timestampTextCol.HeaderText = "Timestamp";
+            this.timestampTextCol.Name = "timestampTextCol";
+            this.timestampTextCol.ReadOnly = true;
+            this.timestampTextCol.Width = 83;
+            // 
+            // typeTextCol
+            // 
+            this.typeTextCol.HeaderText = "Type";
+            this.typeTextCol.Name = "typeTextCol";
+            this.typeTextCol.ReadOnly = true;
+            this.typeTextCol.Width = 56;
+            // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(828, 585);
@@ -1298,7 +839,7 @@ namespace oSpy
             this.Text = "oSpy";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.eventsTbl)).EndInit();
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
             this.dataGridContextMenuStrip.ResumeLayout(false);
@@ -1324,17 +865,6 @@ namespace oSpy
         #endregion
 
         private System.Data.DataSet dataSet;
-        private System.Data.DataTable messageTbl;
-        private System.Data.DataColumn indexCol;
-        private System.Data.DataColumn timestampCol;
-        private System.Data.DataColumn functionNameCol;
-        private System.Data.DataColumn processIdCol;
-        private System.Data.DataColumn threadIdCol;
-        private System.Data.DataColumn localAddressCol;
-        private System.Data.DataColumn localPortCol;
-        private System.Data.DataColumn peerAddressCol;
-        private System.Data.DataColumn peerPortCol;
-        private System.Data.DataColumn dataCol;
         private System.Windows.Forms.OpenFileDialog openFileDialog;
         private System.Windows.Forms.SaveFileDialog saveFileDialog;
         private System.Windows.Forms.MenuStrip menuStrip;
@@ -1342,22 +872,8 @@ namespace oSpy
         private System.Windows.Forms.ToolStripMenuItem openMenuItem;
         private System.Windows.Forms.ToolStripMenuItem saveMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exitMenuItem;
-        private System.Data.DataColumn processNameCol;
-        private System.Data.DataColumn returnAddressCol;
-        private System.Data.DataColumn msgTypeCol;
-        private System.Data.DataColumn messageCol;
-        private System.Data.DataColumn contextCol;
-        private System.Data.DataColumn directionCol;
         private System.Windows.Forms.ToolStripMenuItem clearMenuItem;
-        private System.Data.DataColumn ASDeviceCol;
-        private System.Data.DataColumn ASStatusCol;
-        private System.Data.DataColumn ASSubStatusCol;
-        private System.Data.DataColumn ASWizStatusCol;
         private System.Windows.Forms.BindingSource bindingSource;
-        private System.Data.DataColumn senderCol;
-        private System.Data.DataColumn descriptionCol;
-        private System.Data.DataColumn bgColorCol;
-        private System.Data.DataColumn commentCol;
         private System.Windows.Forms.ContextMenuStrip propertyGridContextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem expandAllToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem collapseAllToolStripMenuItem;
@@ -1366,7 +882,6 @@ namespace oSpy
         private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem autoHighlightMenuItem;
-        private System.Data.DataColumn callerModuleNameCol;
         private System.Windows.Forms.ContextMenuStrip dumpContextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem saveRawDumpToFileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem analyzeToolStripMenuItem;
@@ -1374,7 +889,6 @@ namespace oSpy
         private System.Windows.Forms.ToolStripMenuItem debugToolStripMenuItem1;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
-        private System.Data.DataColumn resourceIdCol;
         private System.Windows.Forms.ContextMenuStrip dataGridContextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem createSwRuleFromEntryToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem optionsToolStripMenuItem;
@@ -1402,38 +916,7 @@ namespace oSpy
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
         private System.Windows.Forms.ToolStripMenuItem parserConfigToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
-        private System.Data.DataColumn domainCol;
-        private System.Data.DataColumn severityCol;
-        private System.Data.DataColumn backtraceCol;
         private System.Windows.Forms.ToolStripMenuItem showbacktraceToolStripMenuItem;
-        private System.Windows.Forms.DataGridViewTextBoxColumn indexDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewImageColumn typeDataGridViewImageColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn timestampDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn processNameDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn processIdDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn threadIdDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn functionNameDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn backtraceDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn returnAddressDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn callerModuleNameDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn resourceIdDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn msgTypeDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn msgContextDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn messageDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn directionDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn localAddressDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn localPortDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn peerAddressDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn peerPortDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewImageColumn dataDataGridViewImageColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn aSDeviceDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn aSStatusDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn aSSubStatusDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn aSWizStatusDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn senderDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn descriptionDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Comment;
-        private System.Windows.Forms.DataGridViewTextBoxColumn bgColorDataGridViewTextBoxColumn;
         private System.Windows.Forms.ToolStripMenuItem selectallToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem rowsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem transactionsToolStripMenuItem;
@@ -1455,6 +938,13 @@ namespace oSpy
         private System.Windows.Forms.ToolStripMenuItem copyToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem tryggveToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem newCaptureToolStripMenuItem;
+        private System.Data.DataTable eventsTbl;
+        private System.Data.DataColumn eventCol;
+        private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
+        private System.Windows.Forms.DataGridViewTextBoxColumn eventTextCol;
+        private System.Windows.Forms.DataGridViewTextBoxColumn indexTextCol;
+        private System.Windows.Forms.DataGridViewTextBoxColumn timestampTextCol;
+        private System.Windows.Forms.DataGridViewTextBoxColumn typeTextCol;
     }
 }
 
