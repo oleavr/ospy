@@ -96,7 +96,7 @@ class ArgumentSpec : public BaseObject
 {
 public:
 	ArgumentSpec(const OString &name, ArgumentDirection direction, BaseMarshaller *marshaller)
-		: m_name(name), m_direction(direction), m_marshaller(marshaller)
+		: m_name(name), m_direction(direction), m_offset(0), m_marshaller(marshaller)
 	{
 	}
 	~ArgumentSpec() { delete m_marshaller; }
@@ -105,18 +105,22 @@ public:
     ArgumentDirection GetDirection() const { return m_direction; }
     const BaseMarshaller *GetMarshaller() const { return m_marshaller; }
 
+    unsigned int GetOffset() const { return m_offset; }
+    void SetOffset(unsigned int offset) { m_offset = offset; }
+
     unsigned int GetSize() const { return m_marshaller->GetSize(); }
 
 protected:
 	OString m_name;
 	ArgumentDirection m_direction;
+    unsigned int m_offset;
 	BaseMarshaller *m_marshaller;
 };
 
 class Argument : public BaseObject
 {
 public:
-    Argument(ArgumentSpec *spec, const void *data)
+    Argument(ArgumentSpec *spec, void *data)
         : m_spec(spec), m_data(data)
     {}
 
@@ -125,10 +129,12 @@ public:
     Logging::Node *ToNode(bool deep, IPropertyProvider *propProv) const;
     OString ToString(bool deep, IPropertyProvider *propProv) const;
     bool ToInt(int &result) const;
+    bool ToPointer(void *&result) const;
+    bool ToVaList(va_list &result) const;
 
 protected:
     ArgumentSpec *m_spec;
-    const void *m_data;
+    void *m_data;
 };
 
 class ArgumentListSpec : public BaseObject
@@ -158,7 +164,7 @@ protected:
 class ArgumentList : public BaseObject
 {
 public:
-    ArgumentList(ArgumentListSpec *spec, const void *data);
+    ArgumentList(ArgumentListSpec *spec, void *data);
 	~ArgumentList();
 
     const ArgumentListSpec *GetSpec() const { return m_spec; }
@@ -305,6 +311,8 @@ public:
 	OString ToString();
 
 	virtual bool QueryForProperty(const OString &query, int &result);
+	virtual bool QueryForProperty(const OString &query, void *&result);
+	virtual bool QueryForProperty(const OString &query, va_list &result);
 
 protected:
 	Function *m_function;
@@ -327,6 +335,8 @@ protected:
 private:
     bool ShouldLogArgumentDeep(const Argument *arg) const;
     void AppendCpuRegisterToElement(Logging::Element *el, const char *name, DWORD value);
+
+    bool ResolveProperty(const OString &query, const Argument *&arg, DWORD &reg, bool &isArgument, bool &wantAddressOf);
 };
 
 } // namespace InterceptPP

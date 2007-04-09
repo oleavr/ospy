@@ -198,6 +198,8 @@ namespace oSpy.Capture
 
         public void SaveCapture(string path)
         {
+            if (File.Exists(path))
+                File.Delete(path);
             File.Move(tmpDir + "\\capture.osd", path);
             DiscardCapture();
         }

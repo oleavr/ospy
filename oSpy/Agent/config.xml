@@ -72,7 +72,8 @@
                 <Arguments>
                     <Argument Name="domain" Direction="in" Type="UInt32"/>
                     <Argument Name="severity" Direction="in" Type="UInt32"/>
-                    <Argument Name="format" Direction="in" Type="UnicodeStringPtr"/>
+                    <Argument Name="format" Direction="in" Type="UnicodeFormatStringPtr" VaList="arg.args"/>
+                    <Argument Name="args" Direction="in" Type="VaList"/>
                 </Arguments>
             </Function>
         </Functions>
