@@ -932,7 +932,7 @@ FunctionCall::ResolveProperty(const OString &query, const Argument *&arg, DWORD 
         return false;
 
     int off = 0;
-    if (query[0] == '@')
+    if (query[0] == '&')
     {
         wantAddressOf = true;
         off++;
