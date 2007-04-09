@@ -33,6 +33,8 @@ class IPropertyProvider
 {
 public:
 	virtual bool QueryForProperty(const OString &query, int &result) = 0;
+	virtual bool QueryForProperty(const OString &query, void *&result) = 0;
+	virtual bool QueryForProperty(const OString &query, va_list &result) = 0;
 };
 
 class BaseMarshaller : public BaseObject
@@ -52,9 +54,11 @@ public:
 
     virtual const OString &GetName() const { return m_typeName; }
     virtual unsigned int GetSize() const = 0;
-    virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
-	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const = 0;
-    virtual bool ToInt(const void *start, int &result) const { return false; }
+    virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const = 0;
+    virtual bool ToInt(void *start, int &result) const { return false; }
+    virtual bool ToPointer(void *start, void *&result) const { return false; }
+    virtual bool ToVaList(void *start, va_list &result) const { return false; }
 
 protected:
     OString m_typeName;
@@ -96,11 +100,27 @@ public:
     virtual bool SetProperty(const OString &name, const OString &value);
 
     virtual unsigned int GetSize() const { return sizeof(void *); }
-    virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
-	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
+    virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
+    virtual bool ToPointer(void *start, void *&result) const;
 
 protected:
     BaseMarshaller *m_type;
+};
+
+class VaList : public BaseMarshaller
+{
+public:
+    VaList()
+        : BaseMarshaller("VaList")
+    {}
+
+    virtual BaseMarshaller *Clone() const { return new VaList(*this); }
+
+    virtual unsigned int GetSize() const { return sizeof(va_list); }
+    virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
+    virtual bool ToVaList(void *start, va_list &result) const;
 };
 
 class Integer : public BaseMarshaller
@@ -130,8 +150,8 @@ public:
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(WORD); }
-	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
-    virtual bool ToInt(const void *start, int &result) const;
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
+    virtual bool ToInt(void *start, int &result) const;
 };
 
 class UInt32 : public Integer
@@ -142,8 +162,8 @@ public:
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(DWORD); }
-	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
-    virtual bool ToInt(const void *start, int &result) const;
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
+    virtual bool ToInt(void *start, int &result) const;
 };
 
 class UInt32Ptr : public Pointer
@@ -163,8 +183,8 @@ public:
     virtual bool SetProperty(const OString &name, const OString &value);
 
     virtual unsigned int GetSize() const { return m_size; }
-    virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
-	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
+    virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
 
 protected:
     int m_size;
@@ -205,7 +225,7 @@ public:
         : CString("AsciiString", sizeof(CHAR), length)
     {}
 
-	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
 };
 
 class AsciiStringPtr : public Pointer
@@ -223,7 +243,7 @@ public:
         : CString("UnicodeString", sizeof(WCHAR), length)
     {}
 
-	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
 };
 
 class UnicodeStringPtr : public Pointer
@@ -231,6 +251,26 @@ class UnicodeStringPtr : public Pointer
 public:
     UnicodeStringPtr()
         : Pointer(new UnicodeString())
+    {}
+};
+
+class UnicodeFormatString : public CString
+{
+public:
+    UnicodeFormatString(int length=-1)
+        : CString("UnicodeFormatString", sizeof(WCHAR), length)
+    {}
+
+    virtual bool SetProperty(const OString &name, const OString &value);
+
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
+};
+
+class UnicodeFormatStringPtr : public Pointer
+{
+public:
+    UnicodeFormatStringPtr()
+        : Pointer(new UnicodeFormatString())
     {}
 };
 
@@ -244,8 +284,8 @@ public:
     void AddMember(const OString &name, DWORD value) { m_defs[value] = name; }
     unsigned int GetMemberCount() const { return static_cast<unsigned int>(m_defs.size()); }
 
-    virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
-	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
+    virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
 
 protected:
     OMap<DWORD, OString>::Type m_defs;
@@ -281,8 +321,8 @@ public:
     unsigned int GetFieldCount() const { return static_cast<unsigned int>(m_fields.size()); }
 
     virtual unsigned int GetSize() const { return m_size; }
-    virtual Logging::Node *ToNode(const void *start, bool deep, IPropertyProvider *propProv) const;
-	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
+    virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
 
 protected:
     unsigned int m_size;
@@ -307,7 +347,7 @@ public:
     {}
 
 	virtual unsigned int GetSize() const { return sizeof(DWORD); }
-	virtual OString ToString(const void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
 };
 
 } // namespace Marshaller

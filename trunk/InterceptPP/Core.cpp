@@ -156,6 +156,18 @@ Argument::ToInt(int &result) const
     return m_spec->GetMarshaller()->ToInt(m_data, result);
 }
 
+bool
+Argument::ToPointer(void *&result) const
+{
+    return m_spec->GetMarshaller()->ToPointer(m_data, result);
+}
+
+bool
+Argument::ToVaList(va_list &result) const
+{
+    return m_spec->GetMarshaller()->ToVaList(m_data, result);
+}
+
 ArgumentListSpec::ArgumentListSpec()
 {
     Initialize(0, NULL);
@@ -206,13 +218,15 @@ ArgumentListSpec::AddArgument(ArgumentSpec *arg)
     if ((arg->GetDirection() & ARG_DIR_OUT) != 0)
         m_hasOutArgs = true;
 
+    arg->SetOffset(m_size);
+
     m_size += arg->GetMarshaller()->GetSize();
 }
 
-ArgumentList::ArgumentList(ArgumentListSpec *spec, const void *data)
+ArgumentList::ArgumentList(ArgumentListSpec *spec, void *data)
     : m_spec(spec)
 {
-    const void *p = data;
+    void *p = data;
 
     for (unsigned int i = 0; i < spec->GetCount(); i++)
     {
@@ -220,7 +234,7 @@ ArgumentList::ArgumentList(ArgumentListSpec *spec, const void *data)
 
         m_arguments.push_back(Argument(argSpec, p));
 
-        p = static_cast<const unsigned char *>(p) + argSpec->GetSize();
+        p = static_cast<unsigned char *>(p) + argSpec->GetSize();
     }
 }
 
@@ -637,13 +651,16 @@ FunctionCall::FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxE
 	int argsSize = function->GetSpec()->GetArgsSize();
 	if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN)
 	{
-		m_argumentsData.resize(argsSize);
-		memcpy((void *) m_argumentsData.data(), (BYTE *) btAddr + 4, argsSize);
+        if (argsSize > 0)
+        {
+		    m_argumentsData.resize(argsSize);
+		    memcpy((void *) m_argumentsData.data(), (BYTE *) btAddr + 4, argsSize);
+        }
 
         ArgumentListSpec *spec = function->GetSpec()->GetArguments();
         if (spec != NULL)
         {
-            m_arguments = new ArgumentList(spec, m_argumentsData.data());
+            m_arguments = new ArgumentList(spec, const_cast<void *>(static_cast<const void *>(m_argumentsData.data())));
         }
 	}
 }
@@ -836,32 +853,138 @@ FunctionCall::ToString()
 bool
 FunctionCall::QueryForProperty(const OString &query, int &result)
 {
-    OString propObj = query.substr(0, 4);
-    OString propArg = query.substr(4);
+    const Argument *arg;
+    DWORD reg;
+    bool isArg, wantAddrOf;
+
+    if (!ResolveProperty(query, arg, reg, isArg, wantAddrOf))
+        return false;
+
+    if (wantAddrOf)
+        return false;
+
+    if (isArg)
+        return arg->ToInt(result);
+
+    result = reg;
+    return true;
+}
+
+bool
+FunctionCall::QueryForProperty(const OString &query, void *&result)
+{
+    const Argument *arg;
+    DWORD reg;
+    bool isArg, wantAddrOf;
+
+    if (!ResolveProperty(query, arg, reg, isArg, wantAddrOf))
+        return false;
+
+    if (isArg)
+    {
+        if (!wantAddrOf)
+        {
+            return arg->ToPointer(result);
+        }
+        else
+        {
+            if (m_state != FUNCTION_CALL_ENTERING)
+                return false;
+
+            result = static_cast<unsigned char *>(m_backtraceAddress) + 4 + arg->GetSpec()->GetOffset();
+            return true;
+        }
+    }
+    else
+    {
+        if (wantAddrOf)
+            return false;
+
+        result = reinterpret_cast<void *>(reg);
+        return true;
+    }
+}
+
+bool
+FunctionCall::QueryForProperty(const OString &query, va_list &result)
+{
+    const Argument *arg;
+    DWORD reg;
+    bool isArg, wantAddrOf;
+
+    if (!ResolveProperty(query, arg, reg, isArg, wantAddrOf))
+        return false;
+
+    if (wantAddrOf)
+        return false;
+
+    if (isArg)
+        return arg->ToVaList(result);
+    else
+        return false;
+}
+
+bool
+FunctionCall::ResolveProperty(const OString &query, const Argument *&arg, DWORD &reg, bool &isArgument, bool &wantAddressOf)
+{
+    // minimum: "arg.s"
+    if (query.size() < 5)
+        return false;
+
+    int off = 0;
+    if (query[0] == '@')
+    {
+        wantAddressOf = true;
+        off++;
+    }
+    else
+    {
+        wantAddressOf = false;
+    }
+
+    OString propObj = query.substr(off, off + 4);
+    OString propArg = query.substr(off + 4);
 
     if (propObj == "reg.")
     {
         if (propArg == "eax")
-        {
-            result = m_cpuCtxLive->eax;
-            return true;
-        }
-        // TODO: complete this and make it somewhat more elegant
+            reg = m_cpuCtxLive->eax;
+        else if (propArg == "ebx")
+            reg = m_cpuCtxLive->ebx;
+        else if (propArg == "ecx")
+            reg = m_cpuCtxLive->ecx;
+        else if (propArg == "edx")
+            reg = m_cpuCtxLive->edx;
+        else if (propArg == "edi")
+            reg = m_cpuCtxLive->edi;
+        else if (propArg == "esi")
+            reg = m_cpuCtxLive->esi;
+        else if (propArg == "ebp")
+            reg = m_cpuCtxLive->ebp;
+        else if (propArg == "esp")
+            reg = m_cpuCtxLive->esp;
+        else
+            return false;
+
+        isArgument = false;
+        return true;
     }
     else if (propObj == "arg.")
     {
         for (unsigned int i = 0; i < m_arguments->GetCount(); i++)
         {
-            const Argument &arg = (*m_arguments)[i];
+            const Argument &curArg = (*m_arguments)[i];
 
-            if (arg.GetSpec()->GetName() == propArg)
+            if (curArg.GetSpec()->GetName() == propArg)
             {
-                return arg.ToInt(result);
+                arg = &curArg;
+                isArgument = true;
+                return true;
             }
         }
     }
 
-	return false;
+    return false;
 }
 
 } // namespace InterceptPP

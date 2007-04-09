@@ -66,7 +66,7 @@ BaseMarshaller::SetPropertyBindings(const char *firstPropName, ...)
 }
 
 Logging::Node *
-BaseMarshaller::ToNode(const void *start, bool deep, IPropertyProvider *propProv) const
+BaseMarshaller::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 {
     Logging::Element *el = new Logging::Element("Value");
 
@@ -94,6 +94,7 @@ Factory::Instance()
 Factory::Factory()
 {
     REGISTER_MARSHALLER(Pointer);
+    REGISTER_MARSHALLER(VaList);
     REGISTER_MARSHALLER(UInt16);
     REGISTER_MARSHALLER(UInt32);
     REGISTER_MARSHALLER(UInt32Ptr);
@@ -103,6 +104,8 @@ Factory::Factory()
     REGISTER_MARSHALLER(AsciiStringPtr);
     REGISTER_MARSHALLER(UnicodeString);
     REGISTER_MARSHALLER(UnicodeStringPtr);
+    REGISTER_MARSHALLER(UnicodeFormatString);
+    REGISTER_MARSHALLER(UnicodeFormatStringPtr);
     REGISTER_MARSHALLER(Ipv4InAddr);
 }
 
@@ -174,9 +177,9 @@ Pointer::SetProperty(const OString &name, const OString &value)
 }
 
 Logging::Node *
-Pointer::ToNode(const void *start, bool deep, IPropertyProvider *propProv) const
+Pointer::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 {
-    const void **ptr = (const void **) start;
+    void **ptr = static_cast<void **>(start);
 
     Logging::Element *el = new Logging::Element("Value");
 
@@ -201,11 +204,11 @@ Pointer::ToNode(const void *start, bool deep, IPropertyProvider *propProv) const
 }
 
 OString
-Pointer::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
+Pointer::ToString(void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
-    const void **ptr = (const void **) start;
+    void **ptr = static_cast<void **>(start);
     if (*ptr != NULL)
     {
         if (deep)
@@ -223,6 +226,46 @@ Pointer::ToString(const void *start, bool deep, IPropertyProvider *propProv) con
     }
 
     return ss.str();
+}
+
+bool
+Pointer::ToPointer(void *start, void *&result) const
+{
+    void **ptr = static_cast<void **>(start);
+    result = *ptr;
+    return true;
+}
+
+Logging::Node *
+VaList::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
+{
+    Logging::Element *el = new Logging::Element("Value");
+    el->AddField("Type", m_typeName);
+    el->AddField("Value", ToString(start, deep, propProv));
+
+    return el;
+}
+
+OString
+VaList::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+{
+    void **ptr = static_cast<void **>(start);
+
+    OOStringStream ss;
+    if (*ptr != NULL)
+        ss << hex << "0x" << *ptr;
+    else
+        ss << "NULL";
+
+    return ss.str();
+}
+
+bool
+VaList::ToVaList(void *start, va_list &result) const
+{
+    va_list *ptr = static_cast<va_list *>(start);
+    result = *ptr;
+    return true;
 }
 
 bool
@@ -255,7 +298,7 @@ Integer::SetProperty(const OString &name, const OString &value)
 }
 
 OString
-UInt16::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
+UInt16::ToString(void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
@@ -273,7 +316,7 @@ UInt16::ToString(const void *start, bool deep, IPropertyProvider *propProv) cons
 }
 
 bool
-UInt16::ToInt(const void *start, int &result) const
+UInt16::ToInt(void *start, int &result) const
 {
     const unsigned short *wPtr = reinterpret_cast<const unsigned short *>(start);
     unsigned short w = *wPtr;
@@ -289,7 +332,7 @@ UInt16::ToInt(const void *start, int &result) const
 }
 
 OString
-UInt32::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
+UInt32::ToString(void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
@@ -307,7 +350,7 @@ UInt32::ToString(const void *start, bool deep, IPropertyProvider *propProv) cons
 }
 
 bool
-UInt32::ToInt(const void *start, int &result) const
+UInt32::ToInt(void *start, int &result) const
 {
     const unsigned int *dwPtr = reinterpret_cast<const unsigned int *>(start);
     unsigned int dw = *dwPtr;
@@ -356,7 +399,7 @@ ByteArray::SetProperty(const OString &name, const OString &value)
 }
 
 Logging::Node *
-ByteArray::ToNode(const void *start, bool deep, IPropertyProvider *propProv) const
+ByteArray::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 {
     int size = m_size;
 
@@ -386,13 +429,13 @@ ByteArray::ToNode(const void *start, bool deep, IPropertyProvider *propProv) con
 }
 
 OString
-ByteArray::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
+ByteArray::ToString(void *start, bool deep, IPropertyProvider *propProv) const
 {
     return "TODO";
 }
 
 OString
-AsciiString::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
+AsciiString::ToString(void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
@@ -402,7 +445,7 @@ AsciiString::ToString(const void *start, bool deep, IPropertyProvider *propProv)
 }
 
 OString
-UnicodeString::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
+UnicodeString::ToString(void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
@@ -412,6 +455,66 @@ UnicodeString::ToString(const void *start, bool deep, IPropertyProvider *propPro
     OString result;
     result.resize(len);
     WideCharToMultiByte(CP_ACP, 0, strPtr, -1, const_cast<char *>(result.data()),
+                        static_cast<int>(result.size()), NULL, NULL);
+
+    return result;
+}
+
+bool
+UnicodeFormatString::SetProperty(const OString &name, const OString &value)
+{
+    if (name == "VaList" || name == "VaStart")
+    {
+        SetPropertyBinding(name, value);
+        return true;
+    }
+
+    return false;
+}
+
+OString
+UnicodeFormatString::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+{
+    OOStringStream ss;
+
+    WCHAR *fmtPtr = static_cast<WCHAR *>(start);
+
+    bool success = false;
+    va_list args;
+
+    if (HasPropertyBinding("VaList"))
+    {
+        success = propProv->QueryForProperty(GetPropertyBinding("VaList"), args);
+    }
+    else if (HasPropertyBinding("VaStart"))
+    {
+        WCHAR **start;
+
+        if (propProv->QueryForProperty(GetPropertyBinding("VaStart"), reinterpret_cast<void *&>(start)))
+        {
+            va_start(args, *start);
+            success = true;
+        }
+    }
+
+    WCHAR buf[2048], *p;
+
+    if (success)
+    {
+        vswprintf(buf, sizeof(buf), fmtPtr, args);
+        buf[2047] = '\0';
+        p = buf;
+    }
+    else
+    {
+        p = fmtPtr;
+    }
+
+    unsigned int len = static_cast<unsigned int>(wcslen(p));
+
+    OString result;
+    result.resize(len);
+    WideCharToMultiByte(CP_ACP, 0, p, -1, const_cast<char *>(result.data()),
                         static_cast<int>(result.size()), NULL, NULL);
 
     return result;
@@ -439,7 +542,7 @@ Enumeration::Enumeration(const char *name, const char *firstName, ...)
 }
 
 Logging::Node *
-Enumeration::ToNode(const void *start, bool deep, IPropertyProvider *propProv) const
+Enumeration::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 {
     Logging::Element *el = new Logging::Element("Value");
 
@@ -451,7 +554,7 @@ Enumeration::ToNode(const void *start, bool deep, IPropertyProvider *propProv) c
 }
 
 OString
-Enumeration::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
+Enumeration::ToString(void *start, bool deep, IPropertyProvider *propProv) const
 {
     const DWORD *dwPtr = reinterpret_cast<const DWORD *>(start);
 
@@ -527,9 +630,9 @@ Structure::AddField(StructureField *field)
 }
 
 Logging::Node *
-Structure::ToNode(const void *start, bool deep, IPropertyProvider *propProv) const
+Structure::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 {
-    const void **ptr = (const void **) start;
+    void **ptr = static_cast<void **>(start);
 
     Logging::Element *structElement = new Logging::Element("Value");
 
@@ -540,7 +643,7 @@ Structure::ToNode(const void *start, bool deep, IPropertyProvider *propProv) con
     {
         const StructureField *field = m_fields[i];
 
-        const void *fieldPtr = reinterpret_cast<const char *>(start) + field->GetOffset();
+        void *fieldPtr = reinterpret_cast<char *>(start) + field->GetOffset();
 
         Logging::Element *fieldElement = new Logging::Element("Field");
         structElement->AppendChild(fieldElement);
@@ -555,7 +658,7 @@ Structure::ToNode(const void *start, bool deep, IPropertyProvider *propProv) con
 }
 
 OString
-Structure::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
+Structure::ToString(void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
@@ -565,7 +668,7 @@ Structure::ToString(const void *start, bool deep, IPropertyProvider *propProv) c
     {
         const StructureField *field = m_fields[i];
 
-        const void *fieldPtr = reinterpret_cast<const char *>(start) + field->GetOffset();
+        void *fieldPtr = reinterpret_cast<char *>(start) + field->GetOffset();
 
         if (i > 0)
             ss << ", ";
@@ -589,7 +692,7 @@ StructurePtr::StructurePtr(const char *firstFieldName, ...)
 }
 
 OString
-Ipv4InAddr::ToString(const void *start, bool deep, IPropertyProvider *propProv) const
+Ipv4InAddr::ToString(void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
