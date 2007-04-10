@@ -28,7 +28,6 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Xml;
-using oSpy.Util;
 using ICSharpCode.SharpZipLib.BZip2;
 
 namespace oSpy.Capture
@@ -140,7 +139,11 @@ namespace oSpy.Capture
         {
             uint len = r.ReadUInt32();
             byte[] buf = r.ReadBytes((int) len);
-            return StaticUtils.DecodeASCII(buf);
+
+            Decoder dec = Encoding.ASCII.GetDecoder();
+            char[] chars = new char[buf.Length];
+            dec.GetChars(buf, 0, buf.Length, chars, 0);
+            return new string(chars);
         }
     }
 }
