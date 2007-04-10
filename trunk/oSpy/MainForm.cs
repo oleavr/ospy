@@ -33,7 +33,6 @@ using System.Text;
 using System.IO;
 using ICSharpCode.SharpZipLib.BZip2;
 using System.Text.RegularExpressions;
-using oSpy.Capture;
 using System.Threading;
 using System.Xml;
 using System.Diagnostics;
@@ -45,87 +44,20 @@ namespace oSpy
         private Capture.Manager captureMgr;
         private SoftwallForm swForm;
 
+        private Capture.DumpFile curDump;
+        private ProgressForm curProgress;
+
         public MainForm()
         {
             InitializeComponent();
 
             captureMgr = new Capture.Manager();
             swForm = new SoftwallForm();
-
-            ClearState();
         }
 
-        protected void ClearState()
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            dataSet.Clear();
-            richTextBox.Clear();
-        }
-
-        private void exitMenuItem_Click(object sender, EventArgs e)
-        {
-            Close();
-        }
-
-        private void openMenuItem_Click(object sender, EventArgs e)
-        {
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                ProgressForm progFrm = new ProgressForm("Opening");
-
-                ClearState();
-
-                dataGridView.DataSource = null;
-                dataSet.Tables[0].BeginLoadData();
-
-                clearMenuItem.PerformClick();
-
-                Thread th = new Thread(new ParameterizedThreadStart(OpenFile));
-                th.Start(progFrm);
-
-                progFrm.ShowDialog(this);
-            }
-        }
-
-        private void OpenFile(object param)
-        {
-            IProgressFeedback progress = param as IProgressFeedback;
-
-            Capture.DumpFile df = new Capture.DumpFile();
-            df.Load(openFileDialog.FileName, progress);
-
-            foreach (DumpEvent ev in df.Events.Values)
-            {
-                DataRow row = dataSet.Tables[0].NewRow();
-                row[eventCol] = ev;
-                row.AcceptChanges();
-                dataSet.Tables[0].Rows.Add(row);
-            }
-
-            dataSet.Tables[0].EndLoadData();
-
-            progress.ProgressUpdate("Opened", 100);
-
-            progress.ProgressUpdate("Finishing", 100);
-            Invoke(new ThreadStart(RestoreDataSource));
-
-            progress.OperationComplete();
-        }
-
-        private void RestoreDataSource()
-        {
-            dataGridView.DataSource = bindingSource;
-        }
-
-        private void saveMenuItem_Click(object sender, EventArgs e)
-        {
-            if (saveFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                FileStream fs = new FileStream(saveFileDialog.FileName, FileMode.Create);
-                BZip2OutputStream stream = new BZip2OutputStream(fs);
-                dataSet.WriteXml(stream);
-                stream.Close();
-                fs.Close();
-            }
+            closeMenuItem.PerformClick();
         }
 
         private void newCaptureToolStripMenuItem_Click(object sender, EventArgs e)
@@ -136,63 +68,157 @@ namespace oSpy
             if (processes.Length == 0)
                 return;
 
-            ProgressForm progFrm = new ProgressForm("Starting capture");
+            curProgress = new ProgressForm("Starting capture");
 
-            captureMgr.StartCapture(processes, progFrm);
-
-            if (progFrm.ShowDialog() != DialogResult.OK)
+            try
             {
-                MessageBox.Show(String.Format("Failed to start capture: {0}", progFrm.GetOperationErrorMessage()),
-                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                captureMgr.StartCapture(processes, curProgress);
+
+                if (curProgress.ShowDialog(this) != DialogResult.OK)
+                {
+                    MessageBox.Show(String.Format("Failed to start capture: {0}", curProgress.GetOperationErrorMessage()),
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                Capture.ProgressForm capProgFrm = new Capture.ProgressForm(captureMgr);
+                capProgFrm.ShowDialog();
+
+                curProgress = new ProgressForm("Stopping capture");
+
+                captureMgr.StopCapture(curProgress);
+
+                if (curProgress.ShowDialog(this) != DialogResult.OK)
+                {
+                    MessageBox.Show(String.Format("Failed to stop capture: {0}", curProgress.GetOperationErrorMessage()),
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                curDump = captureMgr.CaptureResult;
+                curProgress = new ProgressForm("Opening");
+
+                Thread th = new Thread(new ParameterizedThreadStart(DoOpenDump));
+                th.Start(null);
+
+                if (curProgress.ShowDialog(this) != DialogResult.OK)
+                {
+                    MessageBox.Show(String.Format("Failed to open capture: {0}", curProgress.GetOperationErrorMessage()),
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            }
+            finally
+            {
+                curProgress = null;
+            }
+        }
+
+        private void openMenuItem_Click(object sender, EventArgs e)
+        {
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                closeMenuItem.PerformClick();
+
+                curDump = new Capture.DumpFile();
+                curProgress = new ProgressForm("Opening");
+
+                Thread th = new Thread(new ParameterizedThreadStart(DoOpenDump));
+                th.Start(openFileDialog.FileName);
+
+                if (curProgress.ShowDialog(this) != DialogResult.OK)
+                {
+                    MessageBox.Show(String.Format("Failed to open capture: {0}", curProgress.GetOperationErrorMessage()),
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
+                curProgress = null;
+            }
+        }
+
+        private void DoOpenDump(object obj)
+        {
+            string filename = obj as string;
+
+            try
+            {
+                curDump.Load(filename, curProgress);
+            }
+            catch (Exception e)
+            {
+                curDump = null;
+                curProgress.OperationFailed(e.Message);
                 return;
             }
 
-            Capture.ProgressForm capProgFrm = new Capture.ProgressForm(captureMgr);
-            capProgFrm.ShowDialog();
+            Invoke(new ThreadStart(RestoreDataSource));
 
-            progFrm = new ProgressForm("Stopping capture");
+            curProgress.OperationComplete();
+        }
 
-            captureMgr.StopCapture(progFrm);
+        private void RestoreDataSource()
+        {
+            dataGridView.DataSource = curDump.Events;
+            dataGridView.DataMember = "events";
+        }
 
-            if (progFrm.ShowDialog() != DialogResult.OK)
-            {
-                MessageBox.Show(String.Format("Failed to stop capture: {0}", progFrm.GetOperationErrorMessage()),
-                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
+        private void saveMenuItem_Click(object sender, EventArgs e)
+        {
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
-                captureMgr.SaveCapture(saveFileDialog.FileName);
-            }
-            else
-            {
-                captureMgr.DiscardCapture();
-            }
-        }
+                curProgress = new ProgressForm("Saving");
 
-        private void dataGridView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
-        {
-            DataGridViewRow row = dataGridView.Rows[e.RowIndex];
-            DumpEvent ev = row.Cells[eventTextCol.Index].Value as DumpEvent;
+                Thread th = new Thread(new ParameterizedThreadStart(DoSaveDump));
+                th.Start(saveFileDialog.FileName);
 
-            switch (e.ColumnIndex)
-            {
-                case 1:
-                    e.Value = ev.Id;
-                    break;
-                case 2:
-                    e.Value = ev.Timestamp;
-                    break;
-                case 3:
-                    e.Value = ev.Type.ToString();
-                    break;
+                if (curProgress.ShowDialog(this) != DialogResult.OK)
+                {
+                    MessageBox.Show(String.Format("Failed to save capture: {0}", curProgress.GetOperationErrorMessage()),
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
+                curProgress = null;
             }
         }
 
-        private void clearMenuItem_Click(object sender, EventArgs e)
+        private void DoSaveDump(object obj)
         {
-            ClearState();
+            string filename = obj as string;
+
+            try
+            {
+                curDump.Save(filename, curProgress);
+            }
+            catch (Exception e)
+            {
+                curProgress.OperationFailed(e.Message);
+                return;
+            }
+
+            curProgress.OperationComplete();
+        }
+
+        private void closeMenuItem_Click(object sender, EventArgs e)
+        {
+            dataGridView.DataSource = null;
+
+            if (curDump != null)
+            {
+                curDump.Close();
+                curDump = null;
+            }
+
+            richTextBox.Clear();
+        }
+
+        private void exitMenuItem_Click(object sender, EventArgs e)
+        {
+            if (curDump != null)
+            {
+                curDump.Close();
+            }
+
+            Close();
         }
 
         private void dataGridView_DataError(object sender, DataGridViewDataErrorEventArgs e)
@@ -206,8 +232,7 @@ namespace oSpy
 
             foreach (DataGridViewRow row in dataGridView.SelectedRows)
             {
-                DumpEvent ev = row.Cells[eventTextCol.Index].Value as DumpEvent;
-                builder.Append(ev.Data);
+                builder.Append(curDump.ExtractEventData((uint) row.Cells[0].Value));
                 builder.Append("\n\n");
             }
 
@@ -223,6 +248,12 @@ namespace oSpy
         {
             AboutBoxForm frm = new AboutBoxForm();
             frm.ShowDialog();
+        }
+
+        private void fileToolStripMenuItem_DropDownOpening(object sender, EventArgs e)
+        {
+            saveMenuItem.Enabled = (curDump != null);
+            closeMenuItem.Enabled = (curDump != null);
         }
     }
 }
