@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
-	Name="InterceptPPTest"
+	Name="HookManagerTest"
 	ProjectGUID="{BF9EC593-604C-45AA-865E-D57A0A05C1E9}"
-	RootNamespace="InterceptPPTest"
+	RootNamespace="HookManagerTest"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -185,7 +185,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\InterceptPPTest.cpp"
+				RelativePath=".\HookManagerTest.cpp"
 				>
 			</File>
 		</Filter>
