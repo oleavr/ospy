@@ -1,0 +1,162 @@
+<hookManager>
+    <types>
+        <!-- Winsock -->
+        <structure name="Ipv4Sockaddr">
+            <field name="sin_family" offset="0" type="UInt16"/>
+            <field name="sin_port" offset="2" type="UInt16" endian="big"/>
+            <field name="sin_addr" offset="4" type="Ipv4InAddr"/>
+        </structure>
+
+        <!-- Registry -->
+        <enumeration name="RegKeyHandle">
+            <member name="HKEY_CLASSES_ROOT" value="0x80000000"/>
+            <member name="HKEY_CURRENT_USER" value="0x80000001"/>
+            <member name="HKEY_LOCAL_MACHINE" value="0x80000002"/>
+            <member name="HKEY_USERS" value="0x80000003"/>
+            <member name="HKEY_DYN_DATA" value="0x80000006"/>
+        </enumeration>
+
+        <!-- Windows Live Messenger -->
+        <structure name="P2PBridgeProperties">
+            <field name="field_0" offset="0" type="UInt32"/>
+            <field name="field_4" offset="4" type="UInt32"/>
+            <field name="field_8" offset="8" type="UInt32"/>
+            <field name="field_C" offset="0xC" type="UInt32"/>
+            <field name="field_10" offset="0x10" type="UInt32"/>
+            <field name="field_14" offset="0x14" type="UInt32"/>
+            <field name="field_18" offset="0x18" type="UInt32"/>
+            <field name="field_20" offset="0x20" type="UInt32"/>
+        </structure>
+    </types>
+
+    <specs>
+        <functions>
+            <!-- Winsock -->
+            <function name="connect">
+                <arguments>
+                    <argument name="s" direction="in" type="UInt32" hex="true"/>
+                    <argument name="name" direction="in" type="Ipv4SockaddrPtr"/>
+                    <argument name="namelen" direction="in" type="UInt32"/>
+                </arguments>
+            </function>
+            <function name="recv">
+                <arguments>
+                    <argument name="s" direction="in" type="UInt32" hex="true"/>
+                    <argument name="buf" direction="out" type="ByteArrayPtr" size="reg.eax"/>
+                    <argument name="len" direction="in" type="UInt32"/>
+                    <argument name="flags" direction="in" type="UInt32" hex="true"/>
+                </arguments>
+            </function>
+            <function name="send">
+                <arguments>
+                    <argument name="s" direction="in" type="UInt32" hex="true"/>
+                    <argument name="buf" direction="in" type="ByteArrayPtr" size="arg.len"/>
+                    <argument name="len" direction="in" type="UInt32"/>
+                    <argument name="flags" direction="in" type="UInt32" hex="true"/>
+                </arguments>
+            </function>
+
+            <!-- Registry -->
+            <function name="RegOpenKeyExW">
+                <arguments>
+                    <argument name="hKey" direction="in" type="RegKeyHandle"/>
+                    <argument name="lpSubKey" direction="in" type="UnicodeStringPtr"/>
+                    <argument name="ulOptions" direction="in" type="UInt32"/>
+                    <argument name="samDesired" direction="in" type="UInt32" hex="true"/>
+                    <argument name="phkResult" direction="out" type="UInt32Ptr" hex="true"/>
+                </arguments>
+            </function>
+
+            <!-- Windows Live Messenger -->
+            <function name="WLMDebug">
+                <arguments>
+                    <argument name="domain" direction="in" type="UInt32"/>
+                    <argument name="severity" direction="in" type="UInt32"/>
+                    <argument name="format" direction="in" type="UnicodeFormatStringPtr" vaList="arg.args"/>
+                    <argument name="args" direction="in" type="VaList"/>
+                </arguments>
+            </function>
+        </functions>
+        <vtables>
+            <!-- Windows Live Messenger -->
+            <vtable id="CP2PTransportBridge" methodCount="22">
+                <method index="0" name="OnBridgePeerConnectingEndpointsUpdated" callingConvention="thiscall" argsSize="8"/>
+                <method index="1" name="OnBridgePeerListeningEndpointsUpdated" callingConvention="thiscall" argsSize="4"/>
+                <method index="4" name="P2PListen" callingConvention="thiscall" argsSize="8"/>
+                <method index="5" name="P2PConnect" callingConvention="thiscall" argsSize="8"/>
+                <method index="7" name="Destroy" callingConvention="thiscall" argsSize="4"/>
+                <method index="8" name="Shutdown" callingConvention="thiscall" argsSize="0"/>
+                <method index="9" name="Init" callingConvention="thiscall" argsSize="4"/>
+                <method index="10" name="Send" callingConvention="thiscall" argsSize="16"/>
+                <method index="11" name="GetProperties" callingConvention="thiscall">
+                    <arguments>
+                        <argument name="lpProperties" direction="out" type="P2PBridgePropertiesPtr"/>
+                    </arguments>
+                </method>
+                <method index="12" name="ReadyToSend" callingConvention="thiscall" argsSize="0"/>
+                <method index="13" name="ConnectBridge" callingConvention="thiscall" argsSize="0"/>
+                <method index="17" name="OnReceivedConnectRequest" callingConvention="thiscall" argsSize="4"/>
+                <method index="18" name="OnDataReceived" callingConvention="thiscall" argsSize="16"/>
+                <method index="19" name="OnDataResponse" callingConvention="thiscall" argsSize="12"/>
+                <method index="20" name="OnBridgeStateChange" callingConvention="thiscall" argsSize="8"/>
+            </vtable>
+        </vtables>
+    </specs>
+
+    <signatures>
+        <!-- Windows Live Messenger -->
+        <signature name="WLMDebug">
+            84 C0                          <!-- test al, al                     -->
+            74 14                          <!-- jz short loc_448B51             -->
+            83 7D 0C 02                    <!-- cmp [ebp+arg_4], 2              -->
+            77 0E                          <!-- ja short loc_448B51             -->
+            FF 75 14                       <!-- push [ebp+arg_C]                -->
+            FF 75 10                       <!-- push [ebp+arg_8]                -->
+            FF 75 08                       <!-- push [ebp+arg_0]                -->
+            E8                             <!-- call ...                        -->
+        </signature>
+        <signature name="CTCPBridgeCtor">
+            C7 86 FC 00 00 00 98 3A 00 00  <!-- mov dword ptr [esi+0FCh], 15000 -->
+            C7 86 00 01 00 00 78 05 00 00  <!-- mov dword ptr [esi+100h], 1400  -->
+        </signature>
+        <signature name="CUDPBridgeCtor">
+            C7 86 10 01 00 00 20 4E 00 00  <!-- mov dword ptr [esi+110h], 20000 -->
+            C7 86 14 01 00 00 06 00 00 00  <!-- mov dword ptr [esi+114h], 6     -->
+        </signature>
+        <signature name="CTurnBridgeCtor">
+            66 C7 86 6A 01 00 00 01 80     <!-- mov word ptr [esi+16Ah], 32769  -->
+            66 C7 86 6C 01 00 00 01 81     <!-- mov word ptr [esi+16Ch], 33025  -->
+        </signature>
+        <signature name="CSBBridgeCtor">
+            89 5E 18                       <!-- mov [esi+18h], ebx              -->
+            8D 4E 24                       <!-- lea ecx, [esi+24h]              -->
+        </signature>
+    </signatures>
+
+    <hooks>
+        <!-- DLLs -->
+        <dllModule name="ws2_32.dll">
+            <function specId="connect"/>
+            <function specId="recv"/>
+            <function specId="send"/>
+        </dllModule>
+        <!--
+        <dllModule name="advapi32.dll">
+            <function specId="RegOpenKeyExW"/>
+        </dllModule>
+        -->
+
+        <!-- Internal functions -->
+        <functions processName="msnmsgr.exe">
+            <function specId="WLMDebug" sigId="WLMDebug" sigOffset="-11"/>
+        </functions>
+
+        <!-- Internal vtables -->
+        <vtables processName="msnmsgr.exe">
+            <vtable specId="CP2PTransportBridge" name="CTCPTransportBridge" ctorSigId="CTCPBridgeCtor" ctorSigOffset="-50"/>
+            <vtable specId="CP2PTransportBridge" name="CTrivialUDPTransportBridge" ctorSigId="CUDPBridgeCtor" ctorSigOffset="-122"/>
+            <vtable specId="CP2PTransportBridge" name="CTurnBridge" ctorSigId="CTurnBridgeCtor" ctorSigOffset="-407"/>
+            <vtable specId="CP2PTransportBridge" name="CSBBridge" ctorSigId="CSBBridgeCtor" ctorSigOffset="-10"/>
+        </vtables>
+    </hooks>
+</hookManager>
