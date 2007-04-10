@@ -134,8 +134,8 @@ OVector<Signature>::Type Function::prologSignatures;
 Logging::Node *
 Argument::ToNode(bool deep, IPropertyProvider *propProv) const
 {
-    Logging::Element *el = new Logging::Element("Argument");
-    el->AddField("Name", m_spec->GetName());
+    Logging::Element *el = new Logging::Element("argument");
+    el->AddField("name", m_spec->GetName());
 
     Logging::Node *valueNode = m_spec->GetMarshaller()->ToNode(m_data, deep, propProv);
     if (valueNode != NULL)
@@ -368,7 +368,7 @@ Function::Hook()
             nBytesToCopy += size;
         }
 
-        GetLogger()->LogDebug("Calculated that we need to copy %d bytes of the original function", nBytesToCopy);
+        GetLogger()->LogDebug("calculated that we need to copy %d bytes of the original function", nBytesToCopy);
     }
 
     FunctionTrampoline *trampoline = CreateTrampoline(nBytesToCopy);
@@ -609,7 +609,7 @@ Function::OnEnter(FunctionCall *call)
 	{        
         Logging::Event *ev = GetLogger()->NewEvent("FunctionCall");
 
-        Logging::TextNode *textNode = new Logging::TextNode("Name", GetFullName());
+        Logging::TextNode *textNode = new Logging::TextNode("name", GetFullName());
         ev->AppendChild(textNode);
 
         call->AppendBacktraceToElement(ev);
@@ -693,9 +693,9 @@ FunctionCall::AppendBacktraceToElement(Logging::Element *el)
 void
 FunctionCall::AppendCpuContextToElement(Logging::Element *el)
 {
-    Logging::Element *ctxEl = new Logging::Element("CpuContext");
+    Logging::Element *ctxEl = new Logging::Element("cpuContext");
 
-    ctxEl->AddField("Direction", (m_state == FUNCTION_CALL_ENTERING) ? "In" : "Out");
+    ctxEl->AddField("direction", (m_state == FUNCTION_CALL_ENTERING) ? "in" : "out");
 
     AppendCpuRegisterToElement(ctxEl, "eax", m_cpuCtxLive->eax);
     AppendCpuRegisterToElement(ctxEl, "ebx", m_cpuCtxLive->ebx);
@@ -712,13 +712,13 @@ FunctionCall::AppendCpuContextToElement(Logging::Element *el)
 void
 FunctionCall::AppendCpuRegisterToElement(Logging::Element *el, const char *name, DWORD value)
 {
-    Logging::Element *regEl = new Logging::Element("Register");
+    Logging::Element *regEl = new Logging::Element("register");
     el->AppendChild(regEl);
-    regEl->AddField("Name", name);
+    regEl->AddField("name", name);
 
     OOStringStream ss;
     ss << "0x" << hex << value;
-    regEl->AddField("Value", ss.str());
+    regEl->AddField("value", ss.str());
 }
 
 void
@@ -739,9 +739,9 @@ FunctionCall::AppendArgumentsToElement(Logging::Element *el)
 
         if (logIt)
         {
-            Logging::Element *argsEl = new Logging::Element("Arguments");
+            Logging::Element *argsEl = new Logging::Element("arguments");
             el->AppendChild(argsEl);
-            argsEl->AddField("Direction", (m_state == FUNCTION_CALL_ENTERING) ? "In" : "Out");
+            argsEl->AddField("direction", (m_state == FUNCTION_CALL_ENTERING) ? "in" : "out");
 
             for (unsigned int i = 0; i < args->GetCount(); i++)
             {
@@ -758,9 +758,9 @@ FunctionCall::AppendArgumentsToElement(Logging::Element *el)
         if (m_state == FUNCTION_CALL_LEAVING)
             return;
 
-        Logging::Element *argsEl = new Logging::Element("Arguments");
+        Logging::Element *argsEl = new Logging::Element("arguments");
         el->AppendChild(argsEl);
-        argsEl->AddField("Direction", "In");
+        argsEl->AddField("direction", "in");
 
 	    int argsSize = spec->GetArgsSize();
 	    if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN && argsSize % sizeof(DWORD) == 0)
@@ -771,12 +771,12 @@ FunctionCall::AppendArgumentsToElement(Logging::Element *el)
 
 		    for (unsigned int i = 0; i < argsSize / sizeof(DWORD); i++)
 		    {
-				Logging::Element *argElement = new Logging::Element("Argument");
+				Logging::Element *argElement = new Logging::Element("argument");
                 argsEl->AppendChild(argElement);
 
 				OOStringStream ss;
-				ss << "Arg" << (i + 1);
-				argElement->AddField("Name", ss.str());
+				ss << "arg" << (i + 1);
+				argElement->AddField("name", ss.str());
 
 				bool hex = false;
 

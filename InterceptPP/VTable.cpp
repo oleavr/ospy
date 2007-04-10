@@ -37,7 +37,7 @@ VMethodSpec::Initialize(VTableSpec *vtable, int index)
 	m_index = index;
 
 	OOStringStream ss;
-	ss << "Method_" << index;
+	ss << "method_" << index;
 	m_name = ss.str();
 }
 

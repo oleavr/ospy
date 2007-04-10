@@ -74,7 +74,7 @@ HookManager::LoadDefinitions(const OWString &path)
         // TODO: refactor this mess
 
         {
-            nodeList = doc->selectNodes("/HookManager/Types/*");
+            nodeList = doc->selectNodes("/hookManager/types/*");
             for (int i = 0; i < nodeList->length; i++)
             {
                 ParseTypeNode(nodeList->item[i]);
@@ -83,7 +83,7 @@ HookManager::LoadDefinitions(const OWString &path)
         }
 
         {
-            nodeList = doc->selectNodes("/HookManager/Specs/Functions/Function");
+            nodeList = doc->selectNodes("/hookManager/specs/functions/function");
             for (int i = 0; i < nodeList->length; i++)
             {
                 OString id;
@@ -98,7 +98,7 @@ HookManager::LoadDefinitions(const OWString &path)
         }
 
         {
-            nodeList = doc->selectNodes("/HookManager/Specs/VTables/VTable");
+            nodeList = doc->selectNodes("/hookManager/specs/vtables/vtable");
             for (int i = 0; i < nodeList->length; i++)
             {
                 ParseVTableSpecNode(nodeList->item[i]);
@@ -107,7 +107,7 @@ HookManager::LoadDefinitions(const OWString &path)
         }
 
         {
-            nodeList = doc->selectNodes("/HookManager/Signatures/Signature");
+            nodeList = doc->selectNodes("/hookManager/signatures/signature");
             for (int i = 0; i < nodeList->length; i++)
             {
                 ParseSignatureNode(nodeList->item[i]);
@@ -116,7 +116,7 @@ HookManager::LoadDefinitions(const OWString &path)
         }
 
         {
-            nodeList = doc->selectNodes("/HookManager/Hooks/DllModule");
+            nodeList = doc->selectNodes("/hookManager/hooks/dllModule");
             for (int i = 0; i < nodeList->length; i++)
             {
                 ParseDllModuleNode(nodeList->item[i]);
@@ -128,9 +128,9 @@ HookManager::LoadDefinitions(const OWString &path)
 
         {
             OOStringStream ss;
-            ss << "/HookManager/Hooks/Functions[@ProcessName = translate('";
+            ss << "/hookManager/hooks/functions[@processName = translate('";
             ss << processName;
-            ss << "', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')]/Function";
+            ss << "', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')]/function";
 
             nodeList = doc->selectNodes(ss.str().c_str());
             for (int i = 0; i < nodeList->length; i++)
@@ -142,9 +142,9 @@ HookManager::LoadDefinitions(const OWString &path)
 
         {
             OOStringStream ss;
-            ss << "/HookManager/Hooks/VTables[@ProcessName = translate('";
+            ss << "/hookManager/hooks/vtables[@processName = translate('";
             ss << processName;
-            ss << "', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')]/VTable";
+            ss << "', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')]/vtable";
 
             nodeList = doc->selectNodes(ss.str().c_str());
             for (int i = 0; i < nodeList->length; i++)
@@ -222,17 +222,17 @@ void
 HookManager::ParseTypeNode(MSXML2::IXMLDOMNodePtr &typeNode)
 {
     OString typeName = typeNode->nodeName;
-    if (typeName == "Structure")
+    if (typeName == "structure")
     {
         ParseStructureNode(typeNode);
     }
-    else if (typeName == "Enumeration")
+    else if (typeName == "enumeration")
     {
         ParseEnumerationNode(typeNode);
     }
     else
     {
-        GetLogger()->LogWarning("Unknown type '%s'", typeName.c_str());
+        GetLogger()->LogWarning("unknown type '%s'", typeName.c_str());
     }
 }
 
@@ -240,17 +240,17 @@ void
 HookManager::ParseStructureNode(MSXML2::IXMLDOMNodePtr &structNode)
 {
     OString name;
-    MSXML2::IXMLDOMNodePtr attr = structNode->attributes->getNamedItem("Name");
+    MSXML2::IXMLDOMNodePtr attr = structNode->attributes->getNamedItem("name");
     if (attr == NULL)
     {
-        GetLogger()->LogError("Name not specified for Structure");
+        GetLogger()->LogError("name not specified for structure");
         return;
     }
 
     name = static_cast<bstr_t>(attr->nodeTypedValue);
     if (name.size() == 0)
     {
-        GetLogger()->LogError("Empty name specified for Structure");
+        GetLogger()->LogError("empty name specified for structure");
         return;
     }
 
@@ -265,7 +265,7 @@ HookManager::ParseStructureNode(MSXML2::IXMLDOMNodePtr &structNode)
         MSXML2::IXMLDOMNodePtr node = nodeList->item[i];
 
         OString nodeName = node->nodeName;
-        if (nodeName == "Field")
+        if (nodeName == "field")
         {
             OString fieldName, fieldType;
             int fieldOffset;
@@ -279,7 +279,7 @@ HookManager::ParseStructureNode(MSXML2::IXMLDOMNodePtr &structNode)
                 {
                     if (!marshaller->SetProperty(iter->first, iter->second))
                     {
-                        GetLogger()->LogWarning("Failed to set property '%s' to '%s' on Marshaller::%s",
+                        GetLogger()->LogWarning("failed to set property '%s' to '%s' on Marshaller::%s",
                             iter->first.c_str(), iter->second.c_str(), fieldType.c_str());
                     }
                 }
@@ -293,14 +293,14 @@ HookManager::ParseStructureNode(MSXML2::IXMLDOMNodePtr &structNode)
         }
         else
         {
-            GetLogger()->LogWarning("Unknown Structure subelement '%s'", nodeName.c_str());
+            GetLogger()->LogWarning("unknown structure subelement '%s'", nodeName.c_str());
         }
     }
     nodeList.Release();
 
     if (allGood && structTpl->GetFieldCount() == 0)
     {
-        GetLogger()->LogError("No fields defined for structure '%s'", name.c_str());
+        GetLogger()->LogError("no fields defined for structure '%s'", name.c_str());
         allGood = false;
     }
 
@@ -328,11 +328,11 @@ HookManager::ParseStructureFieldNode(MSXML2::IXMLDOMNodePtr &fieldNode,
     {
         OString attrName = static_cast<OString>(attrNode->nodeName);
 
-        if (attrName == "Name")
+        if (attrName == "name")
         {
             name = static_cast<bstr_t>(attrNode->nodeTypedValue);
         }
-        else if (attrName == "Offset")
+        else if (attrName == "offset")
         {
             OString offsetStr = static_cast<bstr_t>(attrNode->nodeTypedValue);
 
@@ -341,17 +341,17 @@ HookManager::ParseStructureFieldNode(MSXML2::IXMLDOMNodePtr &fieldNode,
             offset = strtoul(offsetStr.c_str(), &endPtr, 0);
             if (endPtr == offsetStr.c_str() || offset < 0)
             {
-                GetLogger()->LogError("Invalid offset specified for Structure field");
+                GetLogger()->LogError("invalid offset specified for structure field");
                 return false;
             }
         }
-        else if (attrName == "Type")
+        else if (attrName == "type")
         {
             typeName = static_cast<bstr_t>(attrNode->nodeTypedValue);
 
             if (!Marshaller::Factory::Instance()->HasMarshaller(typeName))
             {
-                GetLogger()->LogError("Unknown type '%s' specified for Structure field", typeName.c_str());
+                GetLogger()->LogError("unknown type '%s' specified for structure field", typeName.c_str());
                 return false;
             }
         }
@@ -363,17 +363,17 @@ HookManager::ParseStructureFieldNode(MSXML2::IXMLDOMNodePtr &fieldNode,
 
     if (name.size() == 0)
     {
-        GetLogger()->LogError("Name blank or not specified for Structure field");
+        GetLogger()->LogError("name blank or not specified for structure field");
         return false;
     }
     else if (offset == -1)
     {
-        GetLogger()->LogError("Offset not specified for Structure field");
+        GetLogger()->LogError("offset not specified for structure field");
         return false;
     }
     else if (typeName.size() == 0)
     {
-        GetLogger()->LogError("Type name not specified for Structure field");
+        GetLogger()->LogError("type name not specified for structure field");
         return false;
     }
 
@@ -384,17 +384,17 @@ void
 HookManager::ParseEnumerationNode(MSXML2::IXMLDOMNodePtr &enumNode)
 {
     OString name;
-    MSXML2::IXMLDOMNodePtr attr = enumNode->attributes->getNamedItem("Name");
+    MSXML2::IXMLDOMNodePtr attr = enumNode->attributes->getNamedItem("name");
     if (attr == NULL)
     {
-        GetLogger()->LogError("Name not specified for Enumeration");
+        GetLogger()->LogError("name not specified for enumeration");
         return;
     }
 
     name = static_cast<bstr_t>(attr->nodeTypedValue);
     if (name.size() == 0)
     {
-        GetLogger()->LogError("Empty name specified for Enumeration");
+        GetLogger()->LogError("empty name specified for enumeration");
         return;
     }
 
@@ -408,7 +408,7 @@ HookManager::ParseEnumerationNode(MSXML2::IXMLDOMNodePtr &enumNode)
         MSXML2::IXMLDOMNodePtr node = nodeList->item[i];
 
         OString nodeName = node->nodeName;
-        if (nodeName == "Member")
+        if (nodeName == "member")
         {
             OString memberName;
             DWORD memberValue;
@@ -420,7 +420,7 @@ HookManager::ParseEnumerationNode(MSXML2::IXMLDOMNodePtr &enumNode)
         }
         else
         {
-            GetLogger()->LogWarning("Unknown Enumeration subelement '%s'", nodeName.c_str());
+            GetLogger()->LogWarning("unknown enumeration subelement '%s'", nodeName.c_str());
         }
     }
     nodeList.Release();
@@ -431,7 +431,7 @@ HookManager::ParseEnumerationNode(MSXML2::IXMLDOMNodePtr &enumNode)
     }
     else
     {
-        GetLogger()->LogError("No valid members defined for Enumeration '%s'", name.c_str());
+        GetLogger()->LogError("no valid members defined for enumeration '%s'", name.c_str());
         delete enumTpl;
     }
 }
@@ -442,18 +442,18 @@ HookManager::ParseEnumerationMemberNode(MSXML2::IXMLDOMNodePtr &enumMemberNode, 
     MSXML2::IXMLDOMNamedNodeMapPtr attrs = enumMemberNode->attributes;
     MSXML2::IXMLDOMNodePtr attr;
 
-    attr = attrs->getNamedItem("Name");
+    attr = attrs->getNamedItem("name");
     if (attr == NULL)
     {
-        GetLogger()->LogError("Name not specified for Enumeration member");
+        GetLogger()->LogError("name not specified for enumeration member");
         return false;
     }
     memberName = static_cast<bstr_t>(attr->nodeTypedValue);
 
-    attr = attrs->getNamedItem("Value");
+    attr = attrs->getNamedItem("value");
     if (attr == NULL)
     {
-        GetLogger()->LogError("Offset not specified for Enumeration member");
+        GetLogger()->LogError("value not specified for enumeration member");
         return NULL;
     }
     OString valStr = static_cast<bstr_t>(attr->nodeTypedValue);
@@ -463,7 +463,7 @@ HookManager::ParseEnumerationMemberNode(MSXML2::IXMLDOMNodePtr &enumMemberNode, 
     memberValue = strtoul(valStr.c_str(), &endPtr, 0);
     if (endPtr == valStr.c_str())
     {
-        GetLogger()->LogError("Invalid offset specified for Enumeration member");
+        GetLogger()->LogError("invalid value specified for enumeration member");
         return false;
     }
 
@@ -485,15 +485,15 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
     {
         OString attrName = static_cast<OString>(attrNode->nodeName);
 
-        if (attrName == "Id")
+        if (attrName == "id")
         {
             id = static_cast<bstr_t>(attrNode->nodeTypedValue);
         }
-        else if (attrName == "Name")
+        else if (attrName == "name")
         {
             name = static_cast<bstr_t>(attrNode->nodeTypedValue);
         }
-        else if (attrName == "CallingConvention")
+        else if (attrName == "callingConvention")
         {
             OString convName;
             
@@ -512,11 +512,11 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
             }
             else
             {
-                GetLogger()->LogWarning("Unknown CallingConvention '%s'", convName.c_str());
+                GetLogger()->LogWarning("unknown callingConvention '%s'", convName.c_str());
                 continue;
             }
         }
-        else if (attrName == "ArgsSize")
+        else if (attrName == "argsSize")
         {
             argsSize = attrNode->nodeTypedValue;
         }
@@ -524,7 +524,7 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
         {
             if (!ignoreUnknown)
             {
-                GetLogger()->LogWarning("Unknown FunctionSpec attribute '%s'", attrName.c_str());
+                GetLogger()->LogWarning("unknown functionSpec attribute '%s'", attrName.c_str());
             }
         }
     }
@@ -547,7 +547,7 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
             node = nodeList->item[i];
 
             OString nodeName = node->nodeName;
-            if (nodeName == "Arguments")
+            if (nodeName == "arguments")
             {
                 ArgumentListSpec *argList = new ArgumentListSpec();
                 bool argsOk = true;
@@ -562,7 +562,7 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
                     subNode = subNodeList->item[i];
 
                     OString subNodeName = subNode->nodeName;
-                    if (subNodeName == "Argument")
+                    if (subNodeName == "argument")
                     {
                         ArgumentSpec *arg = ParseFunctionSpecArgumentNode(funcSpec, subNode, argIndex);
                         if (arg != NULL)
@@ -578,7 +578,7 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
                     }
                     else
                     {
-                        GetLogger()->LogWarning("Unknown Arguments subelement '%s'", subNodeName.c_str());
+                        GetLogger()->LogWarning("unknown arguments subelement '%s'", subNodeName.c_str());
                     }
                 }
 
@@ -593,7 +593,7 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
             }
             else
             {
-                GetLogger()->LogWarning("Unknown FunctionSpec subelement '%s'", nodeName.c_str());
+                GetLogger()->LogWarning("unknown functionSpec subelement '%s'", nodeName.c_str());
             }
         }
         nodeList.Release();
@@ -601,7 +601,7 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
     }
     else
     {
-        GetLogger()->LogError("Name is blank or not specified for FunctionSpec");
+        GetLogger()->LogError("name is blank or not specified for functionSpec");
     }
 
     return funcSpec;
@@ -622,11 +622,11 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
     {
         OString attrName = static_cast<OString>(attrNode->nodeName);
 
-        if (attrName == "Name")
+        if (attrName == "name")
         {
             argName = static_cast<bstr_t>(attrNode->nodeTypedValue);
         }
-        else if (attrName == "Direction")
+        else if (attrName == "direction")
         {
             OString dirStr = static_cast<bstr_t>(attrNode->nodeTypedValue);
 
@@ -638,10 +638,10 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
                 argDir = static_cast<ArgumentDirection> (ARG_DIR_IN | ARG_DIR_OUT);
             else
             {
-                GetLogger()->LogWarning("Unknown direction '%s'", dirStr.c_str());
+                GetLogger()->LogWarning("unknown direction '%s'", dirStr.c_str());
             }
         }
-        else if (attrName == "Type")
+        else if (attrName == "type")
         {
             argType = static_cast<bstr_t>(attrNode->nodeTypedValue);
         }
@@ -656,25 +656,25 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
     if (argName.size() == 0)
     {
         OOStringStream ss;
-        ss << "Arg" << (argIndex + 1);
+        ss << "arg" << (argIndex + 1);
         argName = ss.str();
     }
 
     if (argDir == ARG_DIR_UNKNOWN)
     {
-        GetLogger()->LogError("Argument direction not specified");
+        GetLogger()->LogError("argument direction not specified");
         return NULL;
     }
     else if (argType.size() == 0)
     {
-        GetLogger()->LogError("Argument type is blank or not specified");
+        GetLogger()->LogError("argument type is blank or not specified");
         return NULL;
     }
 
     BaseMarshaller *marshaller = Marshaller::Factory::Instance()->CreateMarshaller(argType);
     if (marshaller == NULL)
     {
-        GetLogger()->LogError("Argument type '%s' is unknown", argType.c_str());
+        GetLogger()->LogError("argument type '%s' is unknown", argType.c_str());
         return NULL;
     }
 
@@ -682,7 +682,7 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
     {
         if (!marshaller->SetProperty(iter->first, iter->second))
         {
-            GetLogger()->LogWarning("Failed to set property '%s' to '%s' on Marshaller::%s",
+            GetLogger()->LogWarning("failed to set property '%s' to '%s' on Marshaller::%s",
                 iter->first.c_str(), iter->second.c_str(), argType.c_str());
         }
     }
@@ -703,17 +703,17 @@ HookManager::ParseVTableSpecNode(MSXML2::IXMLDOMNodePtr &vtSpecNode)
     {
         OString attrName = static_cast<OString>(attrNode->nodeName);
 
-        if (attrName == "Id")
+        if (attrName == "id")
         {
             id = static_cast<bstr_t>(attrNode->nodeTypedValue);
         }
-        else if (attrName == "MethodCount")
+        else if (attrName == "methodCount")
         {
             methodCount = attrNode->nodeTypedValue;
         }
         else
         {
-            GetLogger()->LogWarning("Unknown VTableSpec attribute '%s'", attrName.c_str());
+            GetLogger()->LogWarning("unknown vtableSpec attribute '%s'", attrName.c_str());
             continue;
         }
     }
@@ -723,12 +723,12 @@ HookManager::ParseVTableSpecNode(MSXML2::IXMLDOMNodePtr &vtSpecNode)
 
     if (id.size() == 0)
     {
-        GetLogger()->LogError("VTableSpec Id is blank or not specified");
+        GetLogger()->LogError("vtableSpec id is blank or not specified");
         return;
     }
     else if (methodCount <= 0)
     {
-        GetLogger()->LogError("VTableSpec MethodCount is invalid or not specified");
+        GetLogger()->LogError("vtableSpec methodCount is invalid or not specified");
         return;
     }
 
@@ -743,10 +743,10 @@ HookManager::ParseVTableSpecNode(MSXML2::IXMLDOMNodePtr &vtSpecNode)
         MSXML2::IXMLDOMNodePtr node = nodeList->item[i];
 
         OString nodeName = node->nodeName;
-        if (nodeName == "Method")
+        if (nodeName == "method")
         {
             MSXML2::IXMLDOMNamedNodeMapPtr attrs = node->attributes;
-            MSXML2::IXMLDOMNodePtr indexAttr = attrs->getNamedItem("Index");
+            MSXML2::IXMLDOMNodePtr indexAttr = attrs->getNamedItem("index");
 
             int index = -1;
             if (indexAttr != NULL)
@@ -766,14 +766,14 @@ HookManager::ParseVTableSpecNode(MSXML2::IXMLDOMNodePtr &vtSpecNode)
             }
             else
             {
-                GetLogger()->LogWarning("Required VMethodSpec attribute 'Index' is invalid or not specified");
+                GetLogger()->LogWarning("required vmethodSpec attribute 'index' is invalid or not specified");
             }
 
             attrs.Release();
         }
         else
         {
-            GetLogger()->LogWarning("Unknown VTableSpec subelement '%s'", nodeName.c_str());
+            GetLogger()->LogWarning("unknown vtableSpec subelement '%s'", nodeName.c_str());
         }
     }
     nodeList.Release();
@@ -814,17 +814,17 @@ void
 HookManager::ParseSignatureNode(MSXML2::IXMLDOMNodePtr &sigNode)
 {
     OString name;
-    MSXML2::IXMLDOMNodePtr attr = sigNode->attributes->getNamedItem("Name");
+    MSXML2::IXMLDOMNodePtr attr = sigNode->attributes->getNamedItem("name");
     if (attr == NULL)
     {
-        GetLogger()->LogError("Name not specified for Signature");
+        GetLogger()->LogError("name not specified for signature");
         return;
     }
 
     name = static_cast<bstr_t>(attr->nodeTypedValue);
     if (name.size() == 0)
     {
-        GetLogger()->LogError("Empty name specified for Signature");
+        GetLogger()->LogError("empty name specified for signature");
         return;
     }
 
@@ -849,7 +849,7 @@ HookManager::ParseSignatureNode(MSXML2::IXMLDOMNodePtr &sigNode)
     OString sigStr = ss.str();
     if (sigStr.size() == 0)
     {
-        GetLogger()->LogError("Signature definition '%s' is empty", name.c_str());
+        GetLogger()->LogError("signature definition '%s' is empty", name.c_str());
         return;
     }
 
@@ -859,7 +859,7 @@ HookManager::ParseSignatureNode(MSXML2::IXMLDOMNodePtr &sigNode)
     }
     catch (Error &e)
     {
-        GetLogger()->LogError("Signature definition '%s' is invalid: %s", name.c_str(), e.what());
+        GetLogger()->LogError("signature definition '%s' is invalid: %s", name.c_str(), e.what());
         return;
     }
 }
@@ -877,13 +877,13 @@ HookManager::ParseDllModuleNode(MSXML2::IXMLDOMNodePtr &dllModNode)
     {
         OString attrName = static_cast<OString>(attrNode->nodeName);
 
-        if (attrName == "Name")
+        if (attrName == "name")
         {
             name = static_cast<bstr_t>(attrNode->nodeTypedValue);
         }
         else
         {
-            GetLogger()->LogWarning("Unknown DllModule attribute '%s'", attrName.c_str());
+            GetLogger()->LogWarning("unknown dllModule attribute '%s'", attrName.c_str());
             continue;
         }
     }
@@ -897,7 +897,7 @@ HookManager::ParseDllModuleNode(MSXML2::IXMLDOMNodePtr &dllModNode)
     }
     else
     {
-        GetLogger()->LogError("Name not specified for DllModule");
+        GetLogger()->LogError("name not specified for dllModule");
         return;
     }
 
@@ -910,13 +910,13 @@ HookManager::ParseDllModuleNode(MSXML2::IXMLDOMNodePtr &dllModNode)
         node = nodeList->item[i];
 
         OString nodeName = node->nodeName;
-        if (nodeName == "Function")
+        if (nodeName == "function")
         {
             ParseDllFunctionNode(dllMod, node);
         }
         else
         {
-            GetLogger()->LogWarning("Unknown DllModule subelement '%s'", nodeName.c_str());
+            GetLogger()->LogWarning("unknown dllModule subelement '%s'", nodeName.c_str());
         }
     }
     nodeList.Release();
@@ -935,13 +935,13 @@ HookManager::ParseDllFunctionNode(DllModule *dllMod, MSXML2::IXMLDOMNodePtr &dll
     {
         OString attrName = static_cast<OString>(attrNode->nodeName);
 
-        if (attrName == "SpecId")
+        if (attrName == "specId")
         {
             specId = static_cast<bstr_t>(attrNode->nodeTypedValue);
         }
         else
         {
-            GetLogger()->LogWarning("Unknown DllFunction attribute '%s'", attrName.c_str());
+            GetLogger()->LogWarning("unknown dllFunction attribute '%s'", attrName.c_str());
             continue;
         }
     }
@@ -958,12 +958,12 @@ HookManager::ParseDllFunctionNode(DllModule *dllMod, MSXML2::IXMLDOMNodePtr &dll
         }
         else
         {
-            GetLogger()->LogError("SpecId '%s' not found", specId.c_str());
+            GetLogger()->LogError("specId '%s' not found", specId.c_str());
         }
     }
     else
     {
-        GetLogger()->LogError("SpecId not specified for DllFunction");
+        GetLogger()->LogError("specId not specified for dllFunction");
     }
 }
 
@@ -976,24 +976,24 @@ HookManager::ParseFunctionNode(const OString &processName, MSXML2::IXMLDOMNodePt
     MSXML2::IXMLDOMNamedNodeMapPtr attrs = funcNode->attributes;
     MSXML2::IXMLDOMNodePtr attr;
 
-    attr = attrs->getNamedItem("SpecId");
+    attr = attrs->getNamedItem("specId");
     if (attr == NULL)
     {
-        GetLogger()->LogError("Function spec id not specified for Function");
+        GetLogger()->LogError("function spec id not specified for function");
         return;
     }
     specId = static_cast<bstr_t>(attr->nodeTypedValue);
 
     if (m_funcSpecs.find(specId) == m_funcSpecs.end())
     {
-        GetLogger()->LogError("Invalid function spec id '%s' specified for Function", specId.c_str());
+        GetLogger()->LogError("invalid function spec id '%s' specified for function", specId.c_str());
         return;
     }
 
-    attr = attrs->getNamedItem("SigId");
+    attr = attrs->getNamedItem("sigId");
     if (attr == NULL)
     {
-        GetLogger()->LogError("Signature id not specified for Function");
+        GetLogger()->LogError("signature id not specified for function");
         return;
     }
     sigId = static_cast<bstr_t>(attr->nodeTypedValue);
@@ -1001,13 +1001,13 @@ HookManager::ParseFunctionNode(const OString &processName, MSXML2::IXMLDOMNodePt
     SignatureMap::const_iterator iter = m_signatures.find(sigId);
     if (iter == m_signatures.end())
     {
-        GetLogger()->LogError("Invalid signature id '%s' specified for Function", sigId.c_str());
+        GetLogger()->LogError("invalid signature id '%s' specified for function", sigId.c_str());
         return;
     }
 
     const Signature *sig = iter->second;
 
-    attr = attrs->getNamedItem("SigOffset");
+    attr = attrs->getNamedItem("sigOffset");
     if (attr != NULL)
     {
         OString sigOffsetStr = static_cast<bstr_t>(attr->nodeTypedValue);
@@ -1016,7 +1016,7 @@ HookManager::ParseFunctionNode(const OString &processName, MSXML2::IXMLDOMNodePt
         sigOffset = strtol(sigOffsetStr.c_str(), &endPtr, 0);
         if (endPtr == sigOffsetStr.c_str())
         {
-            GetLogger()->LogError("Invalid signature offset specified for Function");
+            GetLogger()->LogError("invalid signature offset specified for function");
             return;
         }
     }
@@ -1029,13 +1029,13 @@ HookManager::ParseFunctionNode(const OString &processName, MSXML2::IXMLDOMNodePt
     }
     catch (Error &e)
     {
-        GetLogger()->LogError("Signature '%s' specified for Function not found: %s", sigId.c_str(), e.what());
+        GetLogger()->LogError("signature '%s' specified for function not found: %s", sigId.c_str(), e.what());
         return;
     }
 
     DWORD offset = reinterpret_cast<DWORD>(startAddr) + sigOffset;
 
-    GetLogger()->LogDebug("Function with signature id '%s' found at offset 0x%x",
+    GetLogger()->LogDebug("function with signature id '%s' found at offset 0x%x",
                           sigId.c_str(), offset);
 
     Function *func = new Function(m_funcSpecs[specId], offset);
@@ -1051,31 +1051,31 @@ HookManager::ParseVTableNode(const OString &processName, MSXML2::IXMLDOMNodePtr 
     MSXML2::IXMLDOMNamedNodeMapPtr attrs = vtNode->attributes;
     MSXML2::IXMLDOMNodePtr attr;
 
-    attr = attrs->getNamedItem("SpecId");
+    attr = attrs->getNamedItem("specId");
     if (attr == NULL)
     {
-        GetLogger()->LogError("SpecId not specified for VTable");
+        GetLogger()->LogError("specId not specified for vtable");
         return;
     }
     specId = static_cast<bstr_t>(attr->nodeTypedValue);
 
     if (m_vtableSpecs.find(specId) == m_vtableSpecs.end())
     {
-        GetLogger()->LogError("Invalid SpecId specified for VTable");
+        GetLogger()->LogError("invalid specId specified for vtable");
         return;
     }
 
-    attr = attrs->getNamedItem("Name");
+    attr = attrs->getNamedItem("name");
     if (attr == NULL)
     {
-        GetLogger()->LogError("Name not specified for VTable");
+        GetLogger()->LogError("name not specified for vtable");
         return;
     }
     name = static_cast<bstr_t>(attr->nodeTypedValue);
 
     DWORD offset;
 
-    attr = attrs->getNamedItem("CtorSigId");
+    attr = attrs->getNamedItem("ctorSigId");
     if (attr != NULL)
     {
         OString sigId = static_cast<bstr_t>(attr->nodeTypedValue);
@@ -1083,20 +1083,20 @@ HookManager::ParseVTableNode(const OString &processName, MSXML2::IXMLDOMNodePtr 
 
         if (sigId.size() == 0)
         {
-            GetLogger()->LogError("CtorSigId cannot be blank");
+            GetLogger()->LogError("ctorSigId cannot be blank");
             return;
         }
 
         SignatureMap::const_iterator iter = m_signatures.find(sigId);
         if (iter == m_signatures.end())
         {
-            GetLogger()->LogError("Constructor signature id '%s' not found", sigId.c_str());
+            GetLogger()->LogError("constructor signature id '%s' not found", sigId.c_str());
             return;
         }
 
         const Signature *sig = iter->second;
 
-        attr = attrs->getNamedItem("CtorSigOffset");
+        attr = attrs->getNamedItem("ctorSigOffset");
         if (attr != NULL)
         {
             OString sigOffsetStr = static_cast<bstr_t>(attr->nodeTypedValue);
@@ -1105,7 +1105,7 @@ HookManager::ParseVTableNode(const OString &processName, MSXML2::IXMLDOMNodePtr 
             sigOffset = strtol(sigOffsetStr.c_str(), &endPtr, 0);
             if (endPtr == sigOffsetStr.c_str())
             {
-                GetLogger()->LogError("Invalid CtorSigOffset specified for VTable '%s'", name.c_str());
+                GetLogger()->LogError("invalid ctorSigOffset specified for vtable '%s'", name.c_str());
                 return;
             }
         }
@@ -1118,7 +1118,7 @@ HookManager::ParseVTableNode(const OString &processName, MSXML2::IXMLDOMNodePtr 
         }
         catch (Error &e)
         {
-            GetLogger()->LogError("Constructor signature specified for VTable '%s' not found: %s", name.c_str(), e.what());
+            GetLogger()->LogError("constructor signature specified for vtable '%s' not found: %s", name.c_str(), e.what());
             return;
         }
 
@@ -1127,19 +1127,19 @@ HookManager::ParseVTableNode(const OString &processName, MSXML2::IXMLDOMNodePtr 
 
         if (!Util::Instance()->AddressIsWithinModule(offset, processName.c_str()))
         {
-            GetLogger()->LogError("SigOffset specified for VTable '%s' seems to be invalid, pointer offset=0x%p, vtable offset=0x%08x",
+            GetLogger()->LogError("sigOffset specified for vtable '%s' seems to be invalid, pointer offset=0x%p, vtable offset=0x%08x",
                                   name.c_str(), startAddr, offset);
             return;
         }
 
-        GetLogger()->LogDebug("VTable '%s': found at offset 0x%08x", name.c_str(), offset);
+        GetLogger()->LogDebug("vtable '%s': found at offset 0x%08x", name.c_str(), offset);
     }
     else
     {
-        attr = attrs->getNamedItem("Offset");
+        attr = attrs->getNamedItem("offset");
         if (attr == NULL)
         {
-            GetLogger()->LogError("Neither CtorSigId nor Offset specified for VTable '%s'", name.c_str());
+            GetLogger()->LogError("neither ctorSigId nor offset specified for vtable '%s'", name.c_str());
             return;
         }
         offsetStr = static_cast<bstr_t>(attr->nodeTypedValue);
@@ -1149,7 +1149,7 @@ HookManager::ParseVTableNode(const OString &processName, MSXML2::IXMLDOMNodePtr 
         offset = strtoul(offsetStr.c_str(), &endPtr, 0);
         if (endPtr == offsetStr.c_str())
         {
-            GetLogger()->LogError("Invalid offset specified for VTable");
+            GetLogger()->LogError("invalid offset specified for vtable");
             return;
         }
     }
