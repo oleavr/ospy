@@ -36,6 +36,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
 using System.Diagnostics;
+using oSpy.Util;
 
 namespace oSpy
 {
@@ -223,20 +224,22 @@ namespace oSpy
 
         private void dataGridView_DataError(object sender, DataGridViewDataErrorEventArgs e)
         {
-
         }
 
         private void dataGridView_SelectionChanged(object sender, EventArgs e)
         {
-            StringBuilder builder = new StringBuilder();
+            richTextBox.Clear();
+            if (dataGridView.SelectedRows.Count < 1)
+                return;
 
-            foreach (DataGridViewRow row in dataGridView.SelectedRows)
-            {
-                builder.Append(curDump.ExtractEventData((uint) row.Cells[0].Value));
-                builder.Append("\n\n");
-            }
+            string evData = curDump.ExtractEventData((uint) dataGridView.SelectedRows[0].Cells[0].Value);
 
-            richTextBox.Text = builder.ToString();
+            string prettyXml;
+            XmlHighlighter highlighter = new XmlHighlighter(XmlHighlightColorScheme.DarkBlueScheme);
+            XmlUtils.PrettyPrint(evData, out prettyXml, highlighter);
+
+            richTextBox.Text = prettyXml;
+            highlighter.HighlightRichTextBox(richTextBox);
         }
 
         private void manageSoftwallRulesToolStripMenuItem_Click(object sender, EventArgs e)
