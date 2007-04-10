@@ -49,8 +49,6 @@ namespace oSpy
             this.mainSplitContainer = new System.Windows.Forms.SplitContainer();
             this.dataGridView = new System.Windows.Forms.DataGridView();
             this.richTextBox = new System.Windows.Forms.RichTextBox();
-            this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-            this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.menuStrip.SuspendLayout();
             this.dumpContextMenuStrip.SuspendLayout();
@@ -58,7 +56,6 @@ namespace oSpy
             this.mainSplitContainer.Panel2.SuspendLayout();
             this.mainSplitContainer.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).BeginInit();
-            this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // openFileDialog
@@ -189,7 +186,9 @@ namespace oSpy
             // 
             // mainSplitContainer
             // 
-            this.mainSplitContainer.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.mainSplitContainer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
             this.mainSplitContainer.Location = new System.Drawing.Point(0, 24);
             this.mainSplitContainer.Name = "mainSplitContainer";
             this.mainSplitContainer.Orientation = System.Windows.Forms.Orientation.Horizontal;
@@ -201,7 +200,7 @@ namespace oSpy
             // mainSplitContainer.Panel2
             // 
             this.mainSplitContainer.Panel2.Controls.Add(this.richTextBox);
-            this.mainSplitContainer.Size = new System.Drawing.Size(828, 561);
+            this.mainSplitContainer.Size = new System.Drawing.Size(828, 562);
             this.mainSplitContainer.SplitterDistance = 254;
             this.mainSplitContainer.TabIndex = 8;
             // 
@@ -235,25 +234,10 @@ namespace oSpy
             this.richTextBox.Location = new System.Drawing.Point(0, 0);
             this.richTextBox.Name = "richTextBox";
             this.richTextBox.ReadOnly = true;
-            this.richTextBox.Size = new System.Drawing.Size(828, 303);
+            this.richTextBox.Size = new System.Drawing.Size(828, 304);
             this.richTextBox.TabIndex = 0;
             this.richTextBox.Text = "";
             this.richTextBox.WordWrap = false;
-            // 
-            // statusStrip1
-            // 
-            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.statusBarLabel});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 563);
-            this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(828, 22);
-            this.statusStrip1.TabIndex = 10;
-            this.statusStrip1.Text = "statusStrip1";
-            // 
-            // statusBarLabel
-            // 
-            this.statusBarLabel.Name = "statusBarLabel";
-            this.statusBarLabel.Size = new System.Drawing.Size(0, 17);
             // 
             // dataGridViewTextBoxColumn1
             // 
@@ -265,7 +249,6 @@ namespace oSpy
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(828, 585);
-            this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.mainSplitContainer);
             this.Controls.Add(this.menuStrip);
             this.MainMenuStrip = this.menuStrip;
@@ -279,8 +262,6 @@ namespace oSpy
             this.mainSplitContainer.Panel2.ResumeLayout(false);
             this.mainSplitContainer.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).EndInit();
-            this.statusStrip1.ResumeLayout(false);
-            this.statusStrip1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -306,8 +287,6 @@ namespace oSpy
         protected System.Windows.Forms.SplitContainer mainSplitContainer;
         private System.Windows.Forms.DataGridView dataGridView;
         private System.Windows.Forms.RichTextBox richTextBox;
-        private System.Windows.Forms.StatusStrip statusStrip1;
-        private System.Windows.Forms.ToolStripStatusLabel statusBarLabel;
         private System.Windows.Forms.ToolStripMenuItem copyToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem newCaptureToolStripMenuItem;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
