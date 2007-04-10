@@ -168,7 +168,7 @@ namespace oSpy.Capture
                     row.AcceptChanges();
                     tbl.Rows.Add(row);
 
-                    string eventStr = doc.DocumentElement.InnerXml;
+                    string eventStr = doc.DocumentElement.OuterXml;
                     cacheFileWriter.Write(eventStr);
                     cacheFileWriter.Flush();
 
