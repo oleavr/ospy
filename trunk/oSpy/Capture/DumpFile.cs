@@ -170,6 +170,7 @@ namespace oSpy.Capture
 
                     string eventStr = doc.DocumentElement.InnerXml;
                     cacheFileWriter.Write(eventStr);
+                    cacheFileWriter.Flush();
 
                     evDataOffsets[id] = new KeyValuePair<long, int>(startOffset, eventStr.Length);
                 }

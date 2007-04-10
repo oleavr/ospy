@@ -150,6 +150,7 @@ namespace oSpy
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
             this.optionsToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
             this.optionsToolStripMenuItem.Text = "&Options";
+            this.optionsToolStripMenuItem.Visible = false;
             // 
             // manageSoftwallRulesToolStripMenuItem
             // 
@@ -214,6 +215,7 @@ namespace oSpy
             this.dataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dataGridView.Location = new System.Drawing.Point(0, 0);
+            this.dataGridView.MultiSelect = false;
             this.dataGridView.Name = "dataGridView";
             this.dataGridView.ReadOnly = true;
             this.dataGridView.RowTemplate.Resizable = System.Windows.Forms.DataGridViewTriState.True;
@@ -224,12 +226,12 @@ namespace oSpy
             // 
             // richTextBox
             // 
-            this.richTextBox.BackColor = System.Drawing.Color.Gray;
+            this.richTextBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(64)))));
             this.richTextBox.ContextMenuStrip = this.dumpContextMenuStrip;
             this.richTextBox.Cursor = System.Windows.Forms.Cursors.Arrow;
             this.richTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.richTextBox.Font = new System.Drawing.Font("Lucida Console", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.richTextBox.ForeColor = System.Drawing.Color.Black;
+            this.richTextBox.ForeColor = System.Drawing.Color.Silver;
             this.richTextBox.Location = new System.Drawing.Point(0, 0);
             this.richTextBox.Name = "richTextBox";
             this.richTextBox.ReadOnly = true;
