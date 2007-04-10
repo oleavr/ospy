@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "oSpy", "oSpy.csproj", "{32EB5641-50CC-4A6B-A913-E814EEE3B34D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestPacketStream", "Tests\PacketStream\TestPacketStream.csproj", "{2986256A-383B-42E4-81C3-3C53A4DAB5D6}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oSpyAgent", "Agent\SocketSpyAgent.vcproj", "{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InterceptPPTest", "Agent\InterceptPPTest\InterceptPPTest.vcproj", "{BF9EC593-604C-45AA-865E-D57A0A05C1E9}"
@@ -31,16 +29,6 @@ Global
 		{32EB5641-50CC-4A6B-A913-E814EEE3B34D}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{32EB5641-50CC-4A6B-A913-E814EEE3B34D}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{32EB5641-50CC-4A6B-A913-E814EEE3B34D}.Release|Win32.ActiveCfg = Release|Any CPU
-		{2986256A-383B-42E4-81C3-3C53A4DAB5D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2986256A-383B-42E4-81C3-3C53A4DAB5D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2986256A-383B-42E4-81C3-3C53A4DAB5D6}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{2986256A-383B-42E4-81C3-3C53A4DAB5D6}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{2986256A-383B-42E4-81C3-3C53A4DAB5D6}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{2986256A-383B-42E4-81C3-3C53A4DAB5D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2986256A-383B-42E4-81C3-3C53A4DAB5D6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2986256A-383B-42E4-81C3-3C53A4DAB5D6}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{2986256A-383B-42E4-81C3-3C53A4DAB5D6}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{2986256A-383B-42E4-81C3-3C53A4DAB5D6}.Release|Win32.ActiveCfg = Release|Any CPU
 		{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}.Debug|Mixed Platforms.Build.0 = Debug|Win32
