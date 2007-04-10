@@ -29,9 +29,6 @@ namespace oSpy
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.dataSet = new System.Data.DataSet();
-            this.eventsTbl = new System.Data.DataTable();
-            this.eventCol = new System.Data.DataColumn();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
             this.menuStrip = new System.Windows.Forms.MenuStrip();
@@ -40,31 +37,22 @@ namespace oSpy
             this.openMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-            this.clearMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.closeMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.exitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.manageSoftwallRulesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.bindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.dumpContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mainSplitContainer = new System.Windows.Forms.SplitContainer();
             this.dataGridView = new System.Windows.Forms.DataGridView();
-            this.eventTextCol = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.indexTextCol = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.timestampTextCol = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.typeTextCol = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.richTextBox = new System.Windows.Forms.RichTextBox();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
             this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.eventsTbl)).BeginInit();
             this.menuStrip.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.bindingSource)).BeginInit();
             this.dumpContextMenuStrip.SuspendLayout();
             this.mainSplitContainer.Panel1.SuspendLayout();
             this.mainSplitContainer.Panel2.SuspendLayout();
@@ -73,29 +61,9 @@ namespace oSpy
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
-            // dataSet
-            // 
-            this.dataSet.CaseSensitive = true;
-            this.dataSet.DataSetName = "oSpyDataSet";
-            this.dataSet.Tables.AddRange(new System.Data.DataTable[] {
-            this.eventsTbl});
-            // 
-            // eventsTbl
-            // 
-            this.eventsTbl.Columns.AddRange(new System.Data.DataColumn[] {
-            this.eventCol});
-            this.eventsTbl.TableName = "Events";
-            // 
-            // eventCol
-            // 
-            this.eventCol.AllowDBNull = false;
-            this.eventCol.ColumnName = "Event";
-            this.eventCol.DataType = typeof(object);
-            // 
             // openFileDialog
             // 
             this.openFileDialog.DefaultExt = "osd";
-            this.openFileDialog.FileName = "openFileDialog1";
             this.openFileDialog.Filter = "oSpy dump files|*.osd";
             // 
             // saveFileDialog
@@ -122,12 +90,13 @@ namespace oSpy
             this.openMenuItem,
             this.saveMenuItem,
             this.toolStripSeparator1,
-            this.clearMenuItem,
+            this.closeMenuItem,
             this.toolStripSeparator2,
             this.exitMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(35, 20);
             this.fileToolStripMenuItem.Text = "&File";
+            this.fileToolStripMenuItem.DropDownOpening += new System.EventHandler(this.fileToolStripMenuItem_DropDownOpening);
             // 
             // newCaptureToolStripMenuItem
             // 
@@ -155,12 +124,12 @@ namespace oSpy
             this.toolStripSeparator1.Name = "toolStripSeparator1";
             this.toolStripSeparator1.Size = new System.Drawing.Size(155, 6);
             // 
-            // clearMenuItem
+            // closeMenuItem
             // 
-            this.clearMenuItem.Name = "clearMenuItem";
-            this.clearMenuItem.Size = new System.Drawing.Size(158, 22);
-            this.clearMenuItem.Text = "&Clear";
-            this.clearMenuItem.Click += new System.EventHandler(this.clearMenuItem_Click);
+            this.closeMenuItem.Name = "closeMenuItem";
+            this.closeMenuItem.Size = new System.Drawing.Size(158, 22);
+            this.closeMenuItem.Text = "&Close";
+            this.closeMenuItem.Click += new System.EventHandler(this.closeMenuItem_Click);
             // 
             // toolStripSeparator2
             // 
@@ -185,7 +154,7 @@ namespace oSpy
             // manageSoftwallRulesToolStripMenuItem
             // 
             this.manageSoftwallRulesToolStripMenuItem.Name = "manageSoftwallRulesToolStripMenuItem";
-            this.manageSoftwallRulesToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
+            this.manageSoftwallRulesToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
             this.manageSoftwallRulesToolStripMenuItem.Text = "&Softwall rules...";
             this.manageSoftwallRulesToolStripMenuItem.Click += new System.EventHandler(this.manageSoftwallRulesToolStripMenuItem_Click);
             // 
@@ -200,15 +169,9 @@ namespace oSpy
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
             this.aboutToolStripMenuItem.Text = "&About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
-            // 
-            // bindingSource
-            // 
-            this.bindingSource.DataMember = "Events";
-            this.bindingSource.DataSource = this.dataSet;
-            this.bindingSource.Sort = "";
             // 
             // dumpContextMenuStrip
             // 
@@ -225,7 +188,8 @@ namespace oSpy
             // 
             // mainSplitContainer
             // 
-            this.mainSplitContainer.Location = new System.Drawing.Point(0, 27);
+            this.mainSplitContainer.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.mainSplitContainer.Location = new System.Drawing.Point(0, 24);
             this.mainSplitContainer.Name = "mainSplitContainer";
             this.mainSplitContainer.Orientation = System.Windows.Forms.Orientation.Horizontal;
             // 
@@ -236,8 +200,8 @@ namespace oSpy
             // mainSplitContainer.Panel2
             // 
             this.mainSplitContainer.Panel2.Controls.Add(this.richTextBox);
-            this.mainSplitContainer.Size = new System.Drawing.Size(828, 535);
-            this.mainSplitContainer.SplitterDistance = 244;
+            this.mainSplitContainer.Size = new System.Drawing.Size(828, 561);
+            this.mainSplitContainer.SplitterDistance = 254;
             this.mainSplitContainer.TabIndex = 8;
             // 
             // dataGridView
@@ -245,55 +209,18 @@ namespace oSpy
             this.dataGridView.AllowUserToAddRows = false;
             this.dataGridView.AllowUserToDeleteRows = false;
             this.dataGridView.AllowUserToResizeRows = false;
-            this.dataGridView.AutoGenerateColumns = false;
             this.dataGridView.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
             this.dataGridView.BackgroundColor = System.Drawing.SystemColors.ControlDark;
             this.dataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.eventTextCol,
-            this.indexTextCol,
-            this.timestampTextCol,
-            this.typeTextCol});
-            this.dataGridView.DataSource = this.bindingSource;
             this.dataGridView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dataGridView.Location = new System.Drawing.Point(0, 0);
             this.dataGridView.Name = "dataGridView";
             this.dataGridView.ReadOnly = true;
             this.dataGridView.RowTemplate.Resizable = System.Windows.Forms.DataGridViewTriState.True;
             this.dataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridView.Size = new System.Drawing.Size(828, 244);
+            this.dataGridView.Size = new System.Drawing.Size(828, 254);
             this.dataGridView.TabIndex = 2;
-            this.dataGridView.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.dataGridView_CellFormatting);
             this.dataGridView.SelectionChanged += new System.EventHandler(this.dataGridView_SelectionChanged);
-            // 
-            // eventTextCol
-            // 
-            this.eventTextCol.DataPropertyName = "Event";
-            this.eventTextCol.HeaderText = "Event";
-            this.eventTextCol.Name = "eventTextCol";
-            this.eventTextCol.ReadOnly = true;
-            this.eventTextCol.Visible = false;
-            // 
-            // indexTextCol
-            // 
-            this.indexTextCol.HeaderText = "Index";
-            this.indexTextCol.Name = "indexTextCol";
-            this.indexTextCol.ReadOnly = true;
-            this.indexTextCol.Width = 58;
-            // 
-            // timestampTextCol
-            // 
-            this.timestampTextCol.HeaderText = "Timestamp";
-            this.timestampTextCol.Name = "timestampTextCol";
-            this.timestampTextCol.ReadOnly = true;
-            this.timestampTextCol.Width = 83;
-            // 
-            // typeTextCol
-            // 
-            this.typeTextCol.HeaderText = "Type";
-            this.typeTextCol.Name = "typeTextCol";
-            this.typeTextCol.ReadOnly = true;
-            this.typeTextCol.Width = 56;
             // 
             // richTextBox
             // 
@@ -306,7 +233,7 @@ namespace oSpy
             this.richTextBox.Location = new System.Drawing.Point(0, 0);
             this.richTextBox.Name = "richTextBox";
             this.richTextBox.ReadOnly = true;
-            this.richTextBox.Size = new System.Drawing.Size(828, 287);
+            this.richTextBox.Size = new System.Drawing.Size(828, 303);
             this.richTextBox.TabIndex = 0;
             this.richTextBox.Text = "";
             this.richTextBox.WordWrap = false;
@@ -326,11 +253,6 @@ namespace oSpy
             this.statusBarLabel.Name = "statusBarLabel";
             this.statusBarLabel.Size = new System.Drawing.Size(0, 17);
             // 
-            // dumpSaveFileDialog
-            // 
-            this.dumpSaveFileDialog.DefaultExt = "bin";
-            this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
-            // 
             // dataGridViewTextBoxColumn1
             // 
             this.dataGridViewTextBoxColumn1.DataPropertyName = "Event";
@@ -347,11 +269,9 @@ namespace oSpy
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
             this.Text = "oSpy";
-            ((System.ComponentModel.ISupportInitialize)(this.dataSet)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.eventsTbl)).EndInit();
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.bindingSource)).EndInit();
             this.dumpContextMenuStrip.ResumeLayout(false);
             this.mainSplitContainer.Panel1.ResumeLayout(false);
             this.mainSplitContainer.Panel2.ResumeLayout(false);
@@ -366,7 +286,6 @@ namespace oSpy
 
         #endregion
 
-        private System.Data.DataSet dataSet;
         private System.Windows.Forms.OpenFileDialog openFileDialog;
         private System.Windows.Forms.SaveFileDialog saveFileDialog;
         private System.Windows.Forms.MenuStrip menuStrip;
@@ -374,8 +293,7 @@ namespace oSpy
         private System.Windows.Forms.ToolStripMenuItem openMenuItem;
         private System.Windows.Forms.ToolStripMenuItem saveMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exitMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem clearMenuItem;
-        private System.Windows.Forms.BindingSource bindingSource;
+        private System.Windows.Forms.ToolStripMenuItem closeMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
         private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
@@ -388,16 +306,9 @@ namespace oSpy
         private System.Windows.Forms.RichTextBox richTextBox;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel statusBarLabel;
-        private System.Windows.Forms.SaveFileDialog dumpSaveFileDialog;
         private System.Windows.Forms.ToolStripMenuItem copyToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem newCaptureToolStripMenuItem;
-        private System.Data.DataTable eventsTbl;
-        private System.Data.DataColumn eventCol;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
-        private System.Windows.Forms.DataGridViewTextBoxColumn eventTextCol;
-        private System.Windows.Forms.DataGridViewTextBoxColumn indexTextCol;
-        private System.Windows.Forms.DataGridViewTextBoxColumn timestampTextCol;
-        private System.Windows.Forms.DataGridViewTextBoxColumn typeTextCol;
     }
 }
 

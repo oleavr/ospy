@@ -170,9 +170,10 @@ namespace oSpy.Capture
         private IntPtr logIndexPtr, logSizePtr;
         private string tmpDir;
 
-        public string TargetDirectory
+        private DumpFile captureResult;
+        public DumpFile CaptureResult
         {
-            get { return tmpDir; }
+            get { return captureResult; }
         }
 
         public Manager()
@@ -194,19 +195,6 @@ namespace oSpy.Capture
 
             Thread th = new Thread(StopCaptureThread);
             th.Start();
-        }
-
-        public void SaveCapture(string path)
-        {
-            if (File.Exists(path))
-                File.Delete(path);
-            File.Move(tmpDir + "\\capture.osd", path);
-            DiscardCapture();
-        }
-
-        public void DiscardCapture()
-        {
-            Directory.Delete(tmpDir, true);
         }
 
         public void GetCaptureStatistics(out int evCount, out int evBytes)
@@ -308,7 +296,8 @@ namespace oSpy.Capture
             GetCaptureStatistics(out evCount, out evBytes);
 
             Converter conv = new Converter();
-            conv.ConvertAll(tmpDir, evCount, progress);
+            captureResult = conv.ConvertAll(tmpDir, evCount, progress);
+            Directory.Delete(tmpDir, true);
 
             UnmapViewOfFile(cfgPtr);
             CloseHandle(fileMapping);

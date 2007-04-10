@@ -34,7 +34,7 @@ namespace oSpy.Capture
 {
     class Converter
     {
-        public void ConvertAll(string captureDirPath, int numEvents, IProgressFeedback progress)
+        public DumpFile ConvertAll(string captureDirPath, int numEvents, IProgressFeedback progress)
         {
             List<BinaryReader> readers = new List<BinaryReader>(1);
             SortedList<uint, KeyValuePair<BinaryReader, uint>> ids = new SortedList<uint, KeyValuePair<BinaryReader, uint>>(numEvents);
@@ -62,8 +62,8 @@ namespace oSpy.Capture
                 }
             }
 
-            string resultPath = String.Format("{0}\\capture.osd", captureDirPath);
-            BZip2OutputStream outStream = new BZip2OutputStream(new FileStream(resultPath, FileMode.Create));
+            string resultPath = Path.GetTempFileName();
+            FileStream outStream = new FileStream(resultPath, FileMode.Append);
 
             XmlTextWriter xtw = new XmlTextWriter(outStream, System.Text.Encoding.UTF8);
             xtw.Formatting = Formatting.Indented;
@@ -92,6 +92,8 @@ namespace oSpy.Capture
 
             foreach (BinaryReader r in readers)
                 r.Close();
+
+            return new DumpFile(resultPath);
         }
 
         private void UnserializeNode(BinaryReader r, XmlTextWriter xtw)
