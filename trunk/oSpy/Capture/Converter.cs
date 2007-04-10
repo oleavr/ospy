@@ -71,7 +71,7 @@ namespace oSpy.Capture
             xtw.Indentation = 4;
             xtw.IndentChar = ' ';
             xtw.WriteStartDocument(true);
-            xtw.WriteStartElement("Events");
+            xtw.WriteStartElement("events");
 
             i = 0;
             foreach (KeyValuePair<BinaryReader, uint> pair in ids.Values)

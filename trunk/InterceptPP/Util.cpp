@@ -333,8 +333,8 @@ Util::CreateBacktraceNode(void *address)
 
 					DWORD canonicalAddress = mi->preferredStartAddress + (value - mi->startAddress);
 
-                    Logging::TextNode *entry = new Logging::TextNode("Entry");
-                    entry->AddField("ModuleName", mi->name.c_str());
+                    Logging::TextNode *entry = new Logging::TextNode("entry");
+                    entry->AddField("moduleName", mi->name.c_str());
 
                     OOStringStream ss;
                     ss << "0x" << hex << canonicalAddress;
@@ -342,7 +342,7 @@ Util::CreateBacktraceNode(void *address)
                     entry->SetText(ss.str());
 
                     if (btNode == NULL)
-                        btNode = new Logging::Element("Backtrace");
+                        btNode = new Logging::Element("backtrace");
                     btNode->AppendChild(entry);
 
 					count++;

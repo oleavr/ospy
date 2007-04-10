@@ -86,7 +86,7 @@ namespace oSpy.Capture
                     progress.ProgressUpdate("Loading", pct);
                 }
 
-                if (xtr.NodeType == XmlNodeType.Element && xtr.Name == "Event")
+                if (xtr.NodeType == XmlNodeType.Element && xtr.Name == "event")
                 {
                     tmpFileWriter.Flush();
                     long startOffset = tmpFileStream.Position;
@@ -96,12 +96,12 @@ namespace oSpy.Capture
                     doc.Load(rdr);
 
                     XmlAttributeCollection attrs = doc.DocumentElement.Attributes;
-                    uint id = Convert.ToUInt32(attrs["Id"].Value);
-                    DumpEventType type = (DumpEventType) Enum.Parse(typeof(DumpEventType), attrs["Type"].Value);
-                    DateTime timestamp = DateTime.FromFileTimeUtc(Convert.ToInt64(attrs["Timestamp"].Value));
-                    string processName = attrs["ProcessName"].Value;
-                    uint processId = Convert.ToUInt32(attrs["ProcessId"].Value);
-                    uint threadId = Convert.ToUInt32(attrs["ThreadId"].Value);
+                    uint id = Convert.ToUInt32(attrs["id"].Value);
+                    DumpEventType type = (DumpEventType) Enum.Parse(typeof(DumpEventType), attrs["type"].Value);
+                    DateTime timestamp = DateTime.FromFileTimeUtc(Convert.ToInt64(attrs["timestamp"].Value));
+                    string processName = attrs["processName"].Value;
+                    uint processId = Convert.ToUInt32(attrs["processId"].Value);
+                    uint threadId = Convert.ToUInt32(attrs["threadId"].Value);
 
                     string eventStr = doc.DocumentElement.InnerXml;
                     tmpFileWriter.Write(eventStr);

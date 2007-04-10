@@ -85,7 +85,7 @@ Logger::LogMessage(const char *type, const char *format, va_list args)
     StringCbVPrintfA(buf, sizeof(buf), format, args);
 
     Event *ev = NewEvent(type);
-    ev->AppendChild(new TextNode("Message", buf));
+    ev->AppendChild(new TextNode("message", buf));
     ev->Submit();
 }
 
@@ -161,20 +161,20 @@ DataNode::SetData(const void *buf, int size)
 }
 
 Event::Event(Logger *logger, unsigned int id, const OString &eventType)
-    : Element("Event"), m_logger(logger), m_id(id)
+    : Element("event"), m_logger(logger), m_id(id)
 {
-    AddField("Id", id);
+    AddField("id", id);
 
-    AddField("Type", eventType);
+    AddField("type", eventType);
 
     FILETIME ft;
     GetSystemTimeAsFileTime(&ft);
     unsigned long long stamp = (((unsigned long long) ft.dwHighDateTime) << 32) | ((unsigned long long) ft.dwLowDateTime);
-    AddField("Timestamp", stamp);
+    AddField("timestamp", stamp);
 
-    AddField("ProcessName", Util::Instance()->GetProcessName());
-    AddField("ProcessId", GetCurrentProcessId());
-    AddField("ThreadId", GetCurrentThreadId());
+    AddField("processName", Util::Instance()->GetProcessName());
+    AddField("processId", GetCurrentProcessId());
+    AddField("threadId", GetCurrentThreadId());
 }
 
 } // namespace Logging

@@ -68,10 +68,10 @@ BaseMarshaller::SetPropertyBindings(const char *firstPropName, ...)
 Logging::Node *
 BaseMarshaller::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 {
-    Logging::Element *el = new Logging::Element("Value");
+    Logging::Element *el = new Logging::Element("value");
 
-    el->AddField("Type", m_typeName);
-    el->AddField("Value", ToString(start, false, propProv));
+    el->AddField("type", m_typeName);
+    el->AddField("value", ToString(start, false, propProv));
 
     return el;
 }
@@ -181,9 +181,9 @@ Pointer::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 {
     void **ptr = static_cast<void **>(start);
 
-    Logging::Element *el = new Logging::Element("Value");
+    Logging::Element *el = new Logging::Element("value");
 
-    el->AddField("Type", m_typeName);
+    el->AddField("type", m_typeName);
 
     OOStringStream ss;
     if (*ptr != NULL)
@@ -191,7 +191,7 @@ Pointer::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
     else
         ss << "NULL";
 
-    el->AddField("Value", ss.str());
+    el->AddField("value", ss.str());
 
     if (*ptr != NULL && deep)
     {
@@ -239,9 +239,9 @@ Pointer::ToPointer(void *start, void *&result) const
 Logging::Node *
 VaList::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 {
-    Logging::Element *el = new Logging::Element("Value");
-    el->AddField("Type", m_typeName);
-    el->AddField("Value", ToString(start, deep, propProv));
+    Logging::Element *el = new Logging::Element("value");
+    el->AddField("type", m_typeName);
+    el->AddField("value", ToString(start, deep, propProv));
 
     return el;
 }
@@ -271,7 +271,7 @@ VaList::ToVaList(void *start, va_list &result) const
 bool
 Integer::SetProperty(const OString &name, const OString &value)
 {
-    if (name == "Hex")
+    if (name == "hex")
     {
         if (value == "true")
             m_hex = true;
@@ -280,7 +280,7 @@ Integer::SetProperty(const OString &name, const OString &value)
         else
             return false;
     }
-    else if (name == "Endian")
+    else if (name == "endian")
     {
         if (value == "big")
             m_bigEndian = true;
@@ -375,20 +375,20 @@ ByteArray::ByteArray(int size)
 ByteArray::ByteArray(const OString &sizePropertyBinding)
     : BaseMarshaller("ByteArray"), m_size(0)
 {
-    SetPropertyBinding("Size", sizePropertyBinding);
+    SetPropertyBinding("size", sizePropertyBinding);
 }
 
 bool
 ByteArray::SetProperty(const OString &name, const OString &value)
 {
-    if (name != "Size")
+    if (name != "size")
         return false;
 
     char *endPtr = NULL;
     int iVal = strtol(value.c_str(), &endPtr, 0);
     if (endPtr == value.c_str())
     {
-        SetPropertyBinding("Size", value);
+        SetPropertyBinding("size", value);
     }
     else
     {
@@ -405,9 +405,9 @@ ByteArray::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 
     if (size <= 0)
     {
-        if (HasPropertyBinding("Size"))
+        if (HasPropertyBinding("size"))
         {
-            propProv->QueryForProperty(GetPropertyBinding("Size"), size);
+            propProv->QueryForProperty(GetPropertyBinding("size"), size);
         }
     }
 
@@ -415,12 +415,12 @@ ByteArray::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
     
     if (size > 0)
     {
-        node = new Logging::DataNode("Value");
-        node->AddField("Type", "ByteArray");
+        node = new Logging::DataNode("value");
+        node->AddField("type", "ByteArray");
 
         OOStringStream ss;
         ss << size;
-        node->AddField("Size", ss.str());
+        node->AddField("size", ss.str());
 
         node->SetData(start, size);
     }
@@ -463,7 +463,7 @@ UnicodeString::ToString(void *start, bool deep, IPropertyProvider *propProv) con
 bool
 UnicodeFormatString::SetProperty(const OString &name, const OString &value)
 {
-    if (name == "VaList" || name == "VaStart")
+    if (name == "vaList" || name == "vaStart")
     {
         SetPropertyBinding(name, value);
         return true;
@@ -482,15 +482,15 @@ UnicodeFormatString::ToString(void *start, bool deep, IPropertyProvider *propPro
     bool success = false;
     va_list args;
 
-    if (HasPropertyBinding("VaList"))
+    if (HasPropertyBinding("vaList"))
     {
-        success = propProv->QueryForProperty(GetPropertyBinding("VaList"), args);
+        success = propProv->QueryForProperty(GetPropertyBinding("vaList"), args);
     }
-    else if (HasPropertyBinding("VaStart"))
+    else if (HasPropertyBinding("vaStart"))
     {
         WCHAR **start;
 
-        if (propProv->QueryForProperty(GetPropertyBinding("VaStart"), reinterpret_cast<void *&>(start)))
+        if (propProv->QueryForProperty(GetPropertyBinding("vaStart"), reinterpret_cast<void *&>(start)))
         {
             va_start(args, *start);
             success = true;
@@ -544,11 +544,11 @@ Enumeration::Enumeration(const char *name, const char *firstName, ...)
 Logging::Node *
 Enumeration::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 {
-    Logging::Element *el = new Logging::Element("Value");
+    Logging::Element *el = new Logging::Element("value");
 
-    el->AddField("Type", "Enum");
-    el->AddField("SubType", m_typeName);
-    el->AddField("Value", ToString(start, false, propProv));
+    el->AddField("type", "Enum");
+    el->AddField("subType", m_typeName);
+    el->AddField("value", ToString(start, false, propProv));
 
     return el;
 }
@@ -634,10 +634,10 @@ Structure::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 {
     void **ptr = static_cast<void **>(start);
 
-    Logging::Element *structElement = new Logging::Element("Value");
+    Logging::Element *structElement = new Logging::Element("value");
 
-    structElement->AddField("Type", "Struct");
-    structElement->AddField("SubType", m_typeName);
+    structElement->AddField("type", "Struct");
+    structElement->AddField("subType", m_typeName);
 
     for (unsigned int i = 0; i < m_fields.size(); i++)
     {
@@ -645,10 +645,10 @@ Structure::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 
         void *fieldPtr = reinterpret_cast<char *>(start) + field->GetOffset();
 
-        Logging::Element *fieldElement = new Logging::Element("Field");
+        Logging::Element *fieldElement = new Logging::Element("field");
         structElement->AppendChild(fieldElement);
 
-        fieldElement->AddField("Name", field->GetName());
+        fieldElement->AddField("name", field->GetName());
         Logging::Node *valueNode = field->GetMarshaller()->ToNode(fieldPtr, true, propProv);
         if (valueNode != NULL)
             fieldElement->AppendChild(valueNode);
