@@ -95,9 +95,18 @@ Factory::Factory()
 {
     REGISTER_MARSHALLER(Pointer);
     REGISTER_MARSHALLER(VaList);
+    REGISTER_MARSHALLER(UInt8);
+    REGISTER_MARSHALLER(UInt8Ptr);
+    REGISTER_MARSHALLER(Int8);
+    REGISTER_MARSHALLER(Int8Ptr);
     REGISTER_MARSHALLER(UInt16);
+    REGISTER_MARSHALLER(UInt16Ptr);
+    REGISTER_MARSHALLER(Int16);
+    REGISTER_MARSHALLER(Int16Ptr);
     REGISTER_MARSHALLER(UInt32);
     REGISTER_MARSHALLER(UInt32Ptr);
+    REGISTER_MARSHALLER(Int32);
+    REGISTER_MARSHALLER(Int32Ptr);
     REGISTER_MARSHALLER(ByteArray);
     REGISTER_MARSHALLER(ByteArrayPtr);
     REGISTER_MARSHALLER(AsciiString);
@@ -268,8 +277,8 @@ VaList::ToVaList(void *start, va_list &result) const
     return true;
 }
 
-bool
-Integer::SetProperty(const OString &name, const OString &value)
+template <class T> bool
+Integer<T>::SetProperty(const OString &name, const OString &value)
 {
     if (name == "hex")
     {
@@ -297,69 +306,40 @@ Integer::SetProperty(const OString &name, const OString &value)
     return true;
 }
 
-OString
-UInt16::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+template <class T> OString
+Integer<T>::ToString(void *start, bool deep, IPropertyProvider *propProv) const
 {
     OOStringStream ss;
 
     int v;
     ToInt(start, v);
 
-    if (m_hex)
+    if (m_hex && v != 0)
         ss << "0x" << hex;
     else
         ss << dec;
 
-    ss << static_cast<unsigned int>(v);
+    T i = v;
 
-    return ss.str();
-}
-
-bool
-UInt16::ToInt(void *start, int &result) const
-{
-    const unsigned short *wPtr = reinterpret_cast<const unsigned short *>(start);
-    unsigned short w = *wPtr;
-
-    if (m_bigEndian)
-    {
-        w = _byteswap_ushort(w);
-    }
-
-    result = w;
-    return true;
-}
-
-OString
-UInt32::ToString(void *start, bool deep, IPropertyProvider *propProv) const
-{
-    OOStringStream ss;
-
-    int v;
-    ToInt(start, v);
-
-    if (m_hex)
-        ss << "0x" << hex;
+    if (m_sign)
+        ss << static_cast<int>(i);
     else
-        ss << dec;
-
-    ss << static_cast<unsigned int>(v);
+        ss << static_cast<unsigned int>(i);
 
     return ss.str();
 }
 
-bool
-UInt32::ToInt(void *start, int &result) const
+template <class T> bool
+Integer<T>::ToInt(void *start, int &result) const
 {
-    const unsigned int *dwPtr = reinterpret_cast<const unsigned int *>(start);
-    unsigned int dw = *dwPtr;
+    T i = *(reinterpret_cast<T *>(start));
 
     if (m_bigEndian)
     {
-        dw = _byteswap_ulong(dw);
+        i = ToLittleEndian(i);
     }
 
-    result = dw;
+    result = i;
     return true;
 }
 

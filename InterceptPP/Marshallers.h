@@ -123,47 +123,113 @@ public:
     virtual bool ToVaList(void *start, va_list &result) const;
 };
 
+template <class T>
 class Integer : public BaseMarshaller
 {
 public:
-    Integer(const OString &typeName, bool hex=false)
+    Integer(const OString &typeName, bool sign=true, bool hex=false)
         : BaseMarshaller(typeName),
           m_bigEndian(false),
+          m_sign(sign),
           m_hex(hex)
     {}
 
     virtual bool SetProperty(const OString &name, const OString &value);
 
-	bool GetFormatHex() const { return m_hex; }
+	virtual unsigned int GetSize() const { return sizeof(T); }
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
+    virtual bool ToInt(void *start, int &result) const;
+
+    bool GetFormatHex() const { return m_hex; }
 	void SetFormatHex(bool hex) { m_hex = hex; }
 
 protected:
     bool m_bigEndian;
+    bool m_sign;
     bool m_hex;
+
+    virtual T ToLittleEndian(T i) const { return i; }
 };
 
-class UInt16 : public Integer
+class UInt8 : public Integer<unsigned char>
+{
+public:
+    UInt8(bool hex=false)
+        : Integer("UInt8", false, hex)
+    {}
+};
+
+class UInt8Ptr : public Pointer
+{
+public:
+    UInt8Ptr(bool hex=false)
+        : Pointer(new UInt8(hex))
+    {}
+};
+
+class Int8 : public Integer<short>
+{
+public:
+    Int8(bool hex=false)
+        : Integer("Int8", true, hex)
+    {}
+};
+
+class Int8Ptr : public Pointer
+{
+public:
+    Int8Ptr(bool hex=false)
+        : Pointer(new Int8(hex))
+    {}
+};
+
+class UInt16 : public Integer<unsigned short>
 {
 public:
     UInt16(bool hex=false)
-        : Integer("UInt16", hex)
+        : Integer("UInt16", false, hex)
     {}
 
-	virtual unsigned int GetSize() const { return sizeof(WORD); }
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
-    virtual bool ToInt(void *start, int &result) const;
+protected:
+    virtual unsigned short ToLittleEndian(unsigned short i) const { return _byteswap_ushort(i); }
 };
 
-class UInt32 : public Integer
+class UInt16Ptr : public Pointer
+{
+public:
+    UInt16Ptr(bool hex=false)
+        : Pointer(new UInt16(hex))
+    {}
+};
+
+class Int16 : public Integer<short>
+{
+public:
+    Int16(bool hex=false)
+        : Integer("Int16", true, hex)
+    {}
+
+protected:
+    virtual short ToLittleEndian(short i) const { return _byteswap_ushort(i); }
+};
+
+class Int16Ptr : public Pointer
+{
+public:
+    Int16Ptr(bool hex=false)
+        : Pointer(new Int16(hex))
+    {}
+};
+
+class UInt32 : public Integer<unsigned int>
 {
 public:
     UInt32(bool hex=false)
-        : Integer("UInt32", hex)
+        : Integer("UInt32", false, hex)
     {}
 
-	virtual unsigned int GetSize() const { return sizeof(DWORD); }
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
-    virtual bool ToInt(void *start, int &result) const;
+protected:
+    virtual unsigned int ToLittleEndian(unsigned int i) const { return _byteswap_ulong(i); }
 };
 
 class UInt32Ptr : public Pointer
@@ -171,6 +237,25 @@ class UInt32Ptr : public Pointer
 public:
     UInt32Ptr(bool hex=false)
         : Pointer(new UInt32(hex))
+    {}
+};
+
+class Int32 : public Integer<int>
+{
+public:
+    Int32(bool hex=false)
+        : Integer("Int32", true, hex)
+    {}
+
+protected:
+    virtual int ToLittleEndian(int i) const { return _byteswap_ulong(i); }
+};
+
+class Int32Ptr : public Pointer
+{
+public:
+    Int32Ptr(bool hex=false)
+        : Pointer(new Int32(hex))
     {}
 };
 
