@@ -537,6 +537,19 @@ Enumeration::Enumeration(const char *name, const char *firstName, ...)
     va_end(args);
 }
 
+bool
+Enumeration::AddMember(const OString &name, DWORD value)
+{
+    bool result = true;
+
+    if (m_defs.find(value) == m_defs.end())
+        m_defs[value] = name;
+    else
+        result = false;
+
+    return result;
+}
+
 Logging::Node *
 Enumeration::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 {

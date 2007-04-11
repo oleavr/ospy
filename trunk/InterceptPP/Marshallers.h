@@ -281,7 +281,7 @@ public:
 
     virtual BaseMarshaller *Clone() const { return new Enumeration(*this); }
 
-    void AddMember(const OString &name, DWORD value) { m_defs[value] = name; }
+    bool AddMember(const OString &name, DWORD value);
     unsigned int GetMemberCount() const { return static_cast<unsigned int>(m_defs.size()); }
 
     virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv) const;
