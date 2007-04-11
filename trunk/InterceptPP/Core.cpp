@@ -360,11 +360,11 @@ Function::Hook()
         ud_t udObj;
         ud_init(&udObj);
         ud_set_input_buffer(&udObj, p, 16);
+	    ud_set_mode(&udObj, 32);
 
         while (nBytesToCopy < bytesNeeded)
         {
             int size = ud_disassemble(&udObj);
-            GetLogger()->LogDebug("%s: disassembled instruction with size=%d", GetFullName().c_str(), size);
             if (size == 0)
                 throw Error("none of the supported signatures matched and libudis86 fallback failed as well");
 
@@ -375,7 +375,10 @@ Function::Hook()
     Logging::Logger *logger = GetLogger();
     if (logger != NULL)
     {
-        logger->LogDebug("%s: based on prologIndex=%d we need to copy %d bytes of the original function", GetFullName().c_str(), prologIndex, nBytesToCopy);
+        if (prologIndex >= 0)
+            logger->LogDebug("%s: based on prologIndex %d we need to copy %d bytes of the original function", GetFullName().c_str(), prologIndex, nBytesToCopy);
+        else
+            logger->LogDebug("%s: based on runtime disassembly we need to copy %d bytes of the original function", GetFullName().c_str(), nBytesToCopy);
     }
 
     FunctionTrampoline *trampoline = CreateTrampoline(nBytesToCopy);
