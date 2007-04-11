@@ -232,6 +232,10 @@ namespace oSpy
             if (dataGridView.SelectedRows.Count < 1)
                 return;
 
+            DataGridViewRow row = dataGridView.SelectedRows[0];
+            if (row.Cells.Count <= 1)
+                return;
+
             string evData = curDump.ExtractEventData((uint) dataGridView.SelectedRows[0].Cells[0].Value);
 
             string prettyXml;

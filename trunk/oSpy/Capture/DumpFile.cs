@@ -165,6 +165,13 @@ namespace oSpy.Capture
                     row[3] = attrs["processName"].Value;
                     row[4] = Convert.ToUInt32(attrs["processId"].Value);
                     row[5] = Convert.ToUInt32(attrs["threadId"].Value);
+
+                    XmlNode node = doc.DocumentElement.SelectSingleNode("name");
+                    if (node != null)
+                    {
+                        row[6] = node.InnerText;
+                    }
+
                     row.AcceptChanges();
                     tbl.Rows.Add(row);
 
@@ -226,6 +233,7 @@ namespace oSpy.Capture
             cols.Add("processName", typeof(string));
             cols.Add("processId", typeof(uint));
             cols.Add("threadId", typeof(uint));
+            cols.Add("description", typeof(string));
             ds.Tables.Add(tbl);
 
             return ds;
