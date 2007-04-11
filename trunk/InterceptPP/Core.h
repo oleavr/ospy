@@ -260,7 +260,7 @@ protected:
 
     void *m_trampoline;
     DWORD m_oldMemProtect;
-    LONGLONG m_origStart;
+    unsigned char m_origStart[8];
 
     void OnEnter(FunctionCall *call);
     void OnLeave(FunctionCall *call);

@@ -323,8 +323,7 @@ UInt16::ToInt(void *start, int &result) const
 
     if (m_bigEndian)
     {
-        w = ((w >> 8) & 0x00FF) |
-            ((w << 8) & 0xFF00);
+        w = _byteswap_ushort(w);
     }
 
     result = w;
@@ -357,13 +356,10 @@ UInt32::ToInt(void *start, int &result) const
 
     if (m_bigEndian)
     {
-        dw = (dw >> 24) & 0x000000FF |
-             (dw >>  8) & 0x0000FF00 |
-             (dw <<  8) & 0x00FF0000 |
-             (dw << 24) & 0xFF000000;
+        dw = _byteswap_ulong(dw);
     }
 
-    result = *dwPtr;
+    result = dw;
     return true;
 }
 

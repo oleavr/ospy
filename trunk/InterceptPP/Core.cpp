@@ -266,7 +266,7 @@ FunctionSpec::SetArguments(unsigned int count, ...)
 }
 
 Function::Function(FunctionSpec *spec, DWORD offset)
-    : m_trampoline(NULL), m_oldMemProtect(0), m_origStart(0)
+    : m_trampoline(NULL), m_oldMemProtect(0)
 {
     Initialize(spec, offset);
 }
@@ -332,6 +332,7 @@ void
 Function::Hook()
 {
     const PrologSignatureSpec *spec = NULL;
+    int prologIndex = -1;
     int nBytesToCopy = 0;
 
     for (unsigned int i = 0; i < prologSignatures.size(); i++)
@@ -342,6 +343,7 @@ Function::Hook()
         if (matches.size() == 1)
         {
             spec = &prologSignatureSpecs[i];
+            prologIndex = i;
             break;
         }
     }
@@ -362,13 +364,18 @@ Function::Hook()
         while (nBytesToCopy < bytesNeeded)
         {
             int size = ud_disassemble(&udObj);
+            GetLogger()->LogDebug("%s: disassembled instruction with size=%d", GetFullName().c_str(), size);
             if (size == 0)
                 throw Error("none of the supported signatures matched and libudis86 fallback failed as well");
 
             nBytesToCopy += size;
         }
+    }
 
-        GetLogger()->LogDebug("calculated that we need to copy %d bytes of the original function", nBytesToCopy);
+    Logging::Logger *logger = GetLogger();
+    if (logger != NULL)
+    {
+        logger->LogDebug("%s: based on prologIndex=%d we need to copy %d bytes of the original function", GetFullName().c_str(), prologIndex, nBytesToCopy);
     }
 
     FunctionTrampoline *trampoline = CreateTrampoline(nBytesToCopy);
@@ -379,36 +386,23 @@ Function::Hook()
 
     FunctionRedirectStub *redirStub = reinterpret_cast<FunctionRedirectStub *>(m_offset);
 
-    LONGLONG buf;
-    memcpy(&buf, redirStub, sizeof(buf));
-    m_origStart = buf;
+    memcpy(m_origStart, redirStub, sizeof(m_origStart));
 
-    FunctionRedirectStub *stub = reinterpret_cast<FunctionRedirectStub *>(&buf);
+    unsigned char buf[8];
+    memcpy(buf, redirStub, sizeof(buf));
+
+    FunctionRedirectStub *stub = reinterpret_cast<FunctionRedirectStub *>(buf);
     stub->JMP_opcode = 0xE9;
     stub->JMP_offset = reinterpret_cast<DWORD>(trampoline) - (reinterpret_cast<DWORD>(reinterpret_cast<unsigned char *>(redirStub) + sizeof(FunctionRedirectStub)));
 
-    LONGLONG *dst = reinterpret_cast<LONGLONG *>(redirStub);
-#if 1
-    *dst = buf;
-#else
-    // Only available on win2k3 and newer *sigh*
-    InterlockedExchange64(dst, buf);
-#endif
-
+    memcpy(redirStub, buf, sizeof(buf));
     FlushInstructionCache(GetCurrentProcess(), NULL, 0);
 }
 
 void
 Function::UnHook()
 {
-    LONGLONG *dst = reinterpret_cast<LONGLONG *>(m_offset);
-
-#if 1
-    *dst = m_origStart;
-#else
-    InterlockedExchange64(dst, m_origStart);
-#endif
-
+    memcpy(reinterpret_cast<void *>(m_offset), m_origStart, sizeof(m_origStart));
     FlushInstructionCache(GetCurrentProcess(), NULL, 0);
 
     delete m_trampoline;
