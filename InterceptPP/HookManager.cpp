@@ -415,7 +415,11 @@ HookManager::ParseEnumerationNode(MSXML2::IXMLDOMNodePtr &enumNode)
 
             if (ParseEnumerationMemberNode(node, memberName, memberValue))
             {
-                enumTpl->AddMember(memberName, memberValue);
+                if (!enumTpl->AddMember(memberName, memberValue))
+                {
+                    GetLogger()->LogWarning("%s: failed to add member %s with value 0x%x, the value has already got a mapping",
+                        name.c_str(), memberName.c_str(), memberValue);
+                }
             }
         }
         else
