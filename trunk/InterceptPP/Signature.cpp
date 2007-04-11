@@ -210,6 +210,8 @@ SignatureMatcher::MatchesSignature(const Signature &sig, void *base)
                 return false;
             }
         }
+
+        p += t.GetLength();
     }
 
     return true;
