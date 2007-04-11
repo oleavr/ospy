@@ -75,6 +75,11 @@
                     <argument name="protocol" direction="in" type="Int32"/>
                 </arguments>
             </function>
+            <function name="closesocket">
+                <arguments>
+                    <argument name="s" direction="in" type="UInt32" hex="true"/>
+                </arguments>
+            </function>
             <function name="connect">
                 <arguments>
                     <argument name="s" direction="in" type="UInt32" hex="true"/>
@@ -205,6 +210,7 @@
         <!-- DLLs -->
         <dllModule name="ws2_32.dll">
             <function specId="socket"/>
+            <function specId="closesocket"/>
             <function specId="connect"/>
             <function specId="recv"/>
             <function specId="send"/>
