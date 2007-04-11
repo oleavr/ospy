@@ -93,6 +93,7 @@ Factory::Instance()
 
 Factory::Factory()
 {
+    REGISTER_MARSHALLER(Dynamic);
     REGISTER_MARSHALLER(Pointer);
     REGISTER_MARSHALLER(VaList);
     REGISTER_MARSHALLER(UInt8);
@@ -154,6 +155,117 @@ Factory::CreateMarshaller(const OString &name)
         return m_marshallers[name](name);
     else
         return NULL;
+}
+
+Dynamic::Dynamic()
+    : BaseMarshaller("Dynamic")
+{
+    m_fallback = new Int32();
+}
+
+Dynamic::Dynamic(const Dynamic &instance)
+    : BaseMarshaller("Dynamic")
+{
+    m_nameBase = instance.m_nameBase;
+    m_nameSuffix = instance.m_nameSuffix;
+    m_fallback = instance.m_fallback->Clone();
+}
+
+Dynamic::~Dynamic()
+{
+    delete m_fallback;
+}
+
+BaseMarshaller *
+Dynamic::Clone() const
+{
+    return new Dynamic(*this);
+}
+
+bool
+Dynamic::SetProperty(const OString &name, const OString &value)
+{
+    if (name == "typeNameBase")
+    {
+        m_nameBase = value;
+    }
+    else if (name == "typeNameSuffix")
+    {
+        m_nameSuffix = value;
+    }
+    else if (name == "typeNameFallback")
+    {
+        BaseMarshaller *fallback = Factory::Instance()->CreateMarshaller(value);
+        if (fallback == NULL)
+            return false;
+
+        delete m_fallback;
+        m_fallback = fallback;
+    }
+    else
+    {
+        return false;
+    }
+
+    return true;
+}
+
+Logging::Node *
+Dynamic::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
+{
+    Logging::Element *el = new Logging::Element("value");
+
+    OString subTypeName;
+    OString value = ToStringInternal(start, false, propProv, &subTypeName);
+
+    el->AddField("type", m_typeName);
+    el->AddField("subType", subTypeName);
+    el->AddField("value", value);
+
+    return el;
+}
+
+OString
+Dynamic::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+{
+    return ToStringInternal(start, deep, propProv, NULL);
+}
+
+OString
+Dynamic::ToStringInternal(void *start, bool deep, IPropertyProvider *propProv, OString *lastSubTypeName) const
+{
+    BaseMarshaller *marshaller = CreateMarshaller(propProv);
+    if (marshaller == NULL)
+    {
+        if (lastSubTypeName != NULL)
+            *lastSubTypeName = m_fallback->GetName();
+        return m_fallback->ToString(start, deep, propProv);
+    }
+    else
+    {
+        if (lastSubTypeName != NULL)
+            *lastSubTypeName = marshaller->GetName();
+    }
+
+    OString result = marshaller->ToString(start, deep, propProv);
+    delete marshaller;
+
+    return result;
+}
+
+BaseMarshaller *
+Dynamic::CreateMarshaller(IPropertyProvider *propProv) const
+{
+    if (m_nameBase.size() == 0)
+        return NULL;
+
+    OString s;
+    if (!propProv->QueryForProperty(m_nameBase, s))
+        return NULL;
+
+    s += m_nameSuffix;
+
+    return Factory::Instance()->CreateMarshaller(s);
 }
 
 Pointer::Pointer(BaseMarshaller *type, const OString &ptrTypeName)

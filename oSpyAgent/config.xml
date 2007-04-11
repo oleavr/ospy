@@ -6,6 +6,52 @@
             <field name="sin_port" offset="2" type="UInt16" endian="big"/>
             <field name="sin_addr" offset="4" type="Ipv4InAddr"/>
         </structure>
+        <enumeration name="SockAddrFamily">
+            <member name="AF_APPLETALK" value="16"/>
+            <member name="AF_BAN" value="21"/>
+            <member name="AF_CCITT" value="10"/>
+            <member name="AF_CHAOS" value="5"/>
+            <member name="AF_DATAKIT" value="9"/>
+            <member name="AF_DECnet" value="12"/>
+            <member name="AF_DLI" value="13"/>
+            <member name="AF_ECMA" value="8"/>
+            <member name="AF_FIREFOX" value="19"/>
+            <member name="AF_HYLINK" value="15"/>
+            <member name="AF_IMPLINK" value="3"/>
+            <member name="AF_INET" value="2"/>
+            <member name="AF_INET6" value="23"/>
+            <member name="AF_IPX" value="6"/>
+            <member name="AF_ISO" value="7"/>
+            <member name="AF_LAT" value="14"/>
+            <member name="AF_NETBIOS" value="17"/>
+            <member name="AF_PUP" value="4"/>
+            <member name="AF_SNA" value="11"/>
+            <member name="AF_UNIX" value="1"/>
+            <member name="AF_UNKNOWN1" value="20"/>
+            <member name="AF_UNSPEC" value="0"/>
+            <member name="AF_VOICEVIEW" value="18"/>
+            <member name="AF_MAX" value="22"/>
+        </enumeration>
+        <enumeration name="SockType">
+            <member name="SOCK_DGRAM" value="2"/>
+            <member name="SOCK_RAW" value="3"/>
+            <member name="SOCK_RDM" value="4"/>
+            <member name="SOCK_SEQPACKET" value="5"/>
+            <member name="SOCK_STREAM" value="1"/>
+        </enumeration>
+        <enumeration name="AF_INET_Protocol">
+            <member name="IPPROTO_GGP" value="3"/>
+            <member name="IPPROTO_ICMP" value="1"/>
+            <member name="IPPROTO_IDP" value="22"/>
+            <member name="IPPROTO_IGMP" value="2"/>
+            <member name="IPPROTO_IP" value="0"/>
+            <member name="IPPROTO_MAX" value="256"/>
+            <member name="IPPROTO_ND" value="77"/>
+            <member name="IPPROTO_PUP" value="12"/>
+            <member name="IPPROTO_RAW" value="255"/>
+            <member name="IPPROTO_TCP" value="6"/>
+            <member name="IPPROTO_UDP" value="17"/>
+        </enumeration>
 
         <!-- WinCrypt -->
         <enumeration name="AlgId">
@@ -70,9 +116,10 @@
             <!-- Winsock -->
             <function name="socket">
                 <arguments>
-                    <argument name="af" direction="in" type="Int32"/>
-                    <argument name="type" direction="in" type="Int32"/>
-                    <argument name="protocol" direction="in" type="Int32"/>
+                    <argument name="af" direction="in" type="SockAddrFamily"/>
+                    <argument name="type" direction="in" type="SockType"/>
+                    <argument name="protocol" direction="in" type="Dynamic"
+                              typeNameBase="arg.af" typeNameSuffix="_Protocol"/>
                 </arguments>
             </function>
             <function name="closesocket">

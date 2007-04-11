@@ -922,6 +922,26 @@ FunctionCall::QueryForProperty(const OString &query, va_list &result)
 }
 
 bool
+FunctionCall::QueryForProperty(const OString &query, OString &result)
+{
+    const Argument *arg;
+    DWORD reg;
+    bool isArg, wantAddrOf;
+
+    if (!ResolveProperty(query, arg, reg, isArg, wantAddrOf))
+        return false;
+
+    if (wantAddrOf)
+        return false;
+
+    if (!isArg)
+        return false;
+
+    result = arg->ToString(true, this);
+    return true;
+}
+
+bool
 FunctionCall::ResolveProperty(const OString &query, const Argument *&arg, DWORD &reg, bool &isArgument, bool &wantAddressOf)
 {
     // minimum: "arg.s"
