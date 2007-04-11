@@ -35,6 +35,7 @@ public:
 	virtual bool QueryForProperty(const OString &query, int &result) = 0;
 	virtual bool QueryForProperty(const OString &query, void *&result) = 0;
 	virtual bool QueryForProperty(const OString &query, va_list &result) = 0;
+	virtual bool QueryForProperty(const OString &query, OString &result) = 0;
 };
 
 class BaseMarshaller : public BaseObject
@@ -87,6 +88,30 @@ protected:
     MarshallerMap m_marshallers;
 
     template<class T> static BaseMarshaller *CreateMarshallerInstance(const OString &name);
+};
+
+class Dynamic : public BaseMarshaller
+{
+public:
+    Dynamic();
+    Dynamic(const Dynamic &instance);
+    virtual ~Dynamic();
+
+    virtual BaseMarshaller *Clone() const;
+
+    virtual bool SetProperty(const OString &name, const OString &value);
+
+    virtual unsigned int GetSize() const { return m_fallback->GetSize(); }
+    virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv) const;
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
+
+protected:
+    OString m_nameBase;
+    OString m_nameSuffix;
+    BaseMarshaller *m_fallback;
+
+    OString ToStringInternal(void *start, bool deep, IPropertyProvider *propProv, OString *lastSubTypeName) const;
+    BaseMarshaller *CreateMarshaller(IPropertyProvider *propProv) const;
 };
 
 class Pointer : public BaseMarshaller

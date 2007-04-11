@@ -313,6 +313,7 @@ public:
 	virtual bool QueryForProperty(const OString &query, int &result);
 	virtual bool QueryForProperty(const OString &query, void *&result);
 	virtual bool QueryForProperty(const OString &query, va_list &result);
+	virtual bool QueryForProperty(const OString &query, OString &result);
 
 protected:
 	Function *m_function;
