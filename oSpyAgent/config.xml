@@ -56,6 +56,17 @@
                 </arguments>
             </function>
 
+			<!-- WinCrypt -->
+			<function name="CryptCreateHash">
+				<arguments>
+					<argument name="hProv" direction="in" type="UInt32" hex="true"/>
+					<argument name="Algid" direction="in" type="UInt32" hex="true"/>
+					<argument name="hKey" direction="in" type="UInt32" hex="true"/>
+					<argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
+					<argument name="phHash" direction="out" type="UInt32Ptr" hex="true"/>
+				</arguments>
+			</function>
+
             <!-- Registry -->
             <function name="RegOpenKeyExW">
                 <arguments>
@@ -140,11 +151,15 @@
             <function specId="recv"/>
             <function specId="send"/>
         </dllModule>
+
         <!--
         <dllModule name="advapi32.dll">
             <function specId="RegOpenKeyExW"/>
         </dllModule>
         -->
+		<dllModule name="advapi32.dll">
+			<function specId="CryptCreateHash"/>
+		</dllModule>
 
         <!-- Internal functions -->
         <functions processName="msnmsgr.exe">
