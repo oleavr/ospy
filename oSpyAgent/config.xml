@@ -7,6 +7,42 @@
             <field name="sin_addr" offset="4" type="Ipv4InAddr"/>
         </structure>
 
+        <!-- WinCrypt -->
+        <enumeration name="AlgId">
+            <member name="CALG_3DES" value="0x6603"/>
+            <member name="CALG_3DES_112" value="0x6609"/>
+            <member name="CALG_AES" value="0x6611"/>
+            <member name="CALG_AGREEDKEY_ANY" value="0xaa03"/>
+            <member name="CALG_CYLINK_MEK" value="0x660c"/>
+            <member name="CALG_DES" value="0x6601"/>
+            <member name="CALG_DH_EPHEM" value="0xaa02"/>
+            <member name="CALG_DH_SF" value="0xaa01"/>
+            <member name="CALG_DSS_SIGN" value="0x2200"/>
+            <member name="CALG_HMAC" value="0x8009"/>
+            <member name="CALG_KEA_KEYX" value="0xaa04"/>
+            <member name="CALG_MAC" value="0x8005"/>
+            <member name="CALG_MD2" value="0x8001"/>
+            <member name="CALG_MD4" value="0x8002"/>
+            <member name="CALG_MD5" value="0x8003"/>
+            <member name="CALG_PCT1_MASTER" value="0x4c04"/>
+            <member name="CALG_RC2" value="0x6602"/>
+            <member name="CALG_RC4" value="0x6801"/>
+            <member name="CALG_RSA_KEYX" value="0xa400"/>
+            <member name="CALG_RSA_SIGN" value="0x2400"/>
+            <member name="CALG_SCHANNEL_ENC_KEY" value="0x4c07"/>
+            <member name="CALG_SCHANNEL_MAC_KEY" value="0x4c03"/>
+            <member name="CALG_SCHANNEL_MASTER_HASH" value="0x4c02"/>
+            <member name="CALG_SEAL" value="0x6802"/>
+            <member name="CALG_SHA1" value="0x8004"/>
+            <member name="CALG_SKIPJACK" value="0x660a"/>
+            <member name="CALG_SSL2_MASTER" value="0x4c05"/>
+            <member name="CALG_SSL3_MASTER" value="0x4c01"/>
+            <member name="CALG_SSL3_SHAMD5" value="0x8008"/>
+            <member name="CALG_TEK" value="0x660b"/>
+            <member name="CALG_TLS1_MASTER" value="0x4c06"/>
+            <member name="CALG_TLS1PRF" value="0x800a"/>
+        </enumeration>
+
         <!-- Registry -->
         <enumeration name="RegKeyHandle">
             <member name="HKEY_CLASSES_ROOT" value="0x80000000"/>
@@ -60,7 +96,7 @@
 			<function name="CryptCreateHash">
 				<arguments>
 					<argument name="hProv" direction="in" type="UInt32" hex="true"/>
-					<argument name="Algid" direction="in" type="UInt32" hex="true"/>
+					<argument name="Algid" direction="in" type="AlgId"/>
 					<argument name="hKey" direction="in" type="UInt32" hex="true"/>
 					<argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
 					<argument name="phHash" direction="out" type="UInt32Ptr" hex="true"/>
