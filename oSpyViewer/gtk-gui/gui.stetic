@@ -1,0 +1,181 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<stetic-interface>
+  <widget class="Gtk.Window" id="MainWindow" design-size="655 464">
+    <action-group name="Default">
+      <action id="File">
+        <property name="ShortLabel">_File</property>
+        <property name="Label">_File</property>
+        <property name="Type">Action</property>
+      </action>
+      <action id="Open">
+        <property name="ShortLabel">_Open</property>
+        <property name="IsImportant">True</property>
+        <property name="Label">_Open</property>
+        <property name="Type">Action</property>
+        <property name="StockId">gtk-open</property>
+      </action>
+      <action id="Quit">
+        <property name="ShortLabel">_Quit</property>
+        <property name="Label">_Quit</property>
+        <property name="Type">Action</property>
+        <property name="StockId">gtk-quit</property>
+        <signal name="Activated" handler="OnQuit" />
+      </action>
+      <action id="Help">
+        <property name="ShortLabel">_Help</property>
+        <property name="Label">_Help</property>
+        <property name="Type">Action</property>
+      </action>
+      <action id="About">
+        <property name="ShortLabel">_About...</property>
+        <property name="Label">_About...</property>
+        <property name="Type">Action</property>
+        <property name="StockId">gtk-about</property>
+      </action>
+    </action-group>
+    <property name="Title" translatable="yes">oSpy Viewer</property>
+    <property name="WindowPosition">CenterOnParent</property>
+    <property name="Events">0</property>
+    <property name="MemberName" />
+    <signal name="DeleteEvent" handler="OnDeleteEvent" />
+    <child>
+      <widget class="Gtk.VBox" id="MainVBox">
+        <property name="Events">0</property>
+        <property name="MemberName" />
+        <child>
+          <widget class="Gtk.MenuBar" id="MainMenuBar">
+            <property name="Events">0</property>
+            <property name="MemberName" />
+            <node name="MainMenuBar" type="Menubar">
+              <node type="Menu" action="File">
+                <node type="Menuitem" action="Open" />
+                <node type="Menuitem" action="Quit" />
+              </node>
+              <node type="Menu" action="Help">
+                <node type="Menuitem" action="About" />
+              </node>
+            </node>
+          </widget>
+          <packing>
+            <property name="Position">0</property>
+            <property name="AutoSize">True</property>
+            <property name="Expand">False</property>
+            <property name="Fill">False</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="Gtk.HBox" id="SearchHBox">
+            <property name="Spacing">5</property>
+            <property name="Events">0</property>
+            <property name="MemberName" />
+            <child>
+              <widget class="Gtk.Label" id="SearchLabel">
+                <property name="LabelProp" translatable="yes" context="yes" comments="">|Search:</property>
+                <property name="Events">0</property>
+                <property name="MemberName" />
+              </widget>
+              <packing>
+                <property name="Position">0</property>
+                <property name="AutoSize">True</property>
+                <property name="Expand">False</property>
+                <property name="Fill">False</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="Gtk.Entry" id="SearchValue">
+                <property name="IsEditable">True</property>
+                <property name="InvisibleChar">●</property>
+                <property name="CanFocus">True</property>
+                <property name="Events">0</property>
+                <property name="MemberName" />
+              </widget>
+              <packing>
+                <property name="Position">1</property>
+                <property name="AutoSize">True</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="Gtk.ComboBox" id="SearchType">
+                <property name="IsTextCombo">True</property>
+                <property name="Items" translatable="yes" context="yes" comments="">|ASCII
+HEX</property>
+                <property name="Active">0</property>
+                <property name="Events">0</property>
+                <property name="MemberName" />
+              </widget>
+              <packing>
+                <property name="Position">2</property>
+                <property name="AutoSize">True</property>
+                <property name="Expand">False</property>
+                <property name="Fill">False</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="Position">1</property>
+            <property name="AutoSize">True</property>
+            <property name="Expand">False</property>
+            <property name="Fill">False</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="Gtk.HPaned" id="MainHSplit">
+            <property name="Position">633</property>
+            <property name="CanFocus">True</property>
+            <property name="Events">0</property>
+            <property name="MemberName" />
+            <child>
+              <widget class="Gtk.VPaned" id="MainVSplit">
+                <property name="Position">366</property>
+                <property name="CanFocus">True</property>
+                <property name="Events">0</property>
+                <property name="MemberName" />
+                <child>
+                  <widget class="Gtk.TreeView" id="EventList">
+                    <property name="RulesHint">True</property>
+                    <property name="SearchColumn">0</property>
+                    <property name="CanFocus">True</property>
+                    <property name="Events">0</property>
+                    <property name="MemberName">EventList</property>
+                  </widget>
+                  <packing>
+                    <property name="Resize">False</property>
+                    <property name="Shrink">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="Gtk.TextView" id="DumpDisplay">
+                    <property name="Text" />
+                    <property name="CanFocus">True</property>
+                    <property name="Events">0</property>
+                    <property name="MemberName" />
+                  </widget>
+                  <packing>
+                    <property name="Resize">False</property>
+                  </packing>
+                </child>
+              </widget>
+              <packing>
+                <property name="Resize">False</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="Gtk.TreeView" id="NodeList">
+                <property name="CanFocus">True</property>
+                <property name="Events">0</property>
+                <property name="MemberName" />
+              </widget>
+              <packing>
+                <property name="Resize">False</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="Position">2</property>
+            <property name="AutoSize">True</property>
+          </packing>
+        </child>
+      </widget>
+    </child>
+  </widget>
+</stetic-interface>
