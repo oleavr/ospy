@@ -714,7 +714,9 @@ FunctionCall::AppendCpuRegisterToElement(Logging::Element *el, const char *name,
     regEl->AddField("name", name);
 
     OOStringStream ss;
-    ss << "0x" << hex << value;
+    if (value != 0)
+        ss << "0x" << hex;
+    ss << value;
     regEl->AddField("value", ss.str());
 }
 
