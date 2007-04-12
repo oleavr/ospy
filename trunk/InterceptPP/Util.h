@@ -77,8 +77,8 @@ private:
     DllFunction *m_uniFunc;
 
 	OMap<OICString, OModuleInfo>::Type m_modules;
-	DWORD m_lowestAddress;
-	DWORD m_highestAddress;
+	volatile DWORD m_lowestAddress;
+	volatile DWORD m_highestAddress;
 };
 
 } // namespace InterceptPP

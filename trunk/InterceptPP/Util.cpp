@@ -363,54 +363,43 @@ Util::CreateBacktrace(void *address)
 	int count = 0;
 	DWORD *p = (DWORD *) address;
 
-	EnterCriticalSection(&m_cs);
-
 	for (; count < 8 && (char *) p < (char *) address + 16384; p++)
 	{
-		if (IsBadReadPtr(p, 4))
+        if (IsBadReadPtr(p, 4))
 			break;
 
-		DWORD value = *p;
+        DWORD value = *p;
 
-		if (value >= m_lowestAddress && value <= m_highestAddress)
+		if (value < m_lowestAddress || value > m_highestAddress)
+            continue;
+
+		unsigned char *codeAddr = (unsigned char *) value;
+        if (IsBadCodePtr((FARPROC) codeAddr))
+            continue;
+
+        if (*(codeAddr - 5) == OPCODE_CALL_NEAR_RELATIVE ||
+            *(codeAddr - 6) == OPCODE_CALL_NEAR_ABS_INDIRECT ||
+            *(codeAddr - 3) == OPCODE_CALL_NEAR_ABS_INDIRECT)
 		{
-			bool isRetAddr = false;
-			unsigned char *codeAddr = (unsigned char *) value;
-			unsigned char *p1 = codeAddr - 5;
-			unsigned char *p2 = codeAddr - 6;
-			unsigned char *p3 = codeAddr - 3;
+            EnterCriticalSection(&m_cs);
 
-			// FIXME: add the other CALL variations
-			if ((!IsBadCodePtr((FARPROC) p1) && *p1 == OPCODE_CALL_NEAR_RELATIVE) ||
-				(!IsBadCodePtr((FARPROC) p2) && *p2 == OPCODE_CALL_NEAR_ABS_INDIRECT) ||
-				(!IsBadCodePtr((FARPROC) p3) && *p3 == OPCODE_CALL_NEAR_ABS_INDIRECT))
-			{
-				isRetAddr = true;
-			}
+            OModuleInfo *mi = GetModuleInfoForAddress(value);
 
-			if (isRetAddr)
-			{
-				OModuleInfo *mi = GetModuleInfoForAddress(value);
+			if (mi != NULL && mi->name != "oSpyAgent.dll")
+            {
+			    DWORD canonicalAddress = mi->preferredStartAddress + (value - mi->startAddress);
 
-				if (mi != NULL)
-				{
-					if (mi->name == "oSpyAgent.dll")
-						break;
+			    if (count > 0)
+				    s << "\n";
 
-					DWORD canonicalAddress = mi->preferredStartAddress + (value - mi->startAddress);
+			    s << mi->name.c_str() << "::0x" << hex << canonicalAddress;
 
-					if (count > 0)
-						s << "\n";
+			    count++;
+            }
 
-					s << mi->name.c_str() << "::0x" << hex << canonicalAddress;
-
-					count++;
-				}
-			}
+            LeaveCriticalSection(&m_cs);
 		}
 	}
-
-	LeaveCriticalSection(&m_cs);
 
 	return s.str();
 }
