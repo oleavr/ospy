@@ -22,7 +22,7 @@ namespace Stetic {
             if ((id == "MainWindow")) {
                 Gtk.Window cobj = ((Gtk.Window)(obj));
                 // Widget MainWindow
-                cobj.Title = "oSpy Viewer";
+                cobj.Title = "oSpy Studio";
                 Gtk.UIManager w1 = new Gtk.UIManager();
                 Gtk.ActionGroup w2 = new Gtk.ActionGroup("Default");
                 Gtk.Action w3 = new Gtk.Action("File", "_File", null, null);
@@ -114,13 +114,13 @@ namespace Stetic {
                 w18.Fill = false;
                 // Container child MainVBox.Gtk.Box+BoxChild
                 Gtk.HPaned w19 = new Gtk.HPaned();
-                w19.Position = 633;
+                w19.Position = 639;
                 w19.CanFocus = true;
                 w19.Events = ((Gdk.EventMask)(0));
                 w19.Name = "MainHSplit";
                 // Container child MainHSplit.Gtk.Paned+PanedChild
                 Gtk.VPaned w20 = new Gtk.VPaned();
-                w20.Position = 366;
+                w20.Position = 373;
                 w20.CanFocus = true;
                 w20.Events = ((Gdk.EventMask)(0));
                 w20.Name = "MainVSplit";
