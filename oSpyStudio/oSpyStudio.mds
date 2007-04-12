@@ -12,6 +12,6 @@
     <Execute type="None" entry="oSpyStudio" />
   </StartMode>
   <Entries>
-    <Entry filename="./oSpyViewer.mdp" />
+    <Entry filename="./oSpyStudio.mdp" />
   </Entries>
 </Combine>
