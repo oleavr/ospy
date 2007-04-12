@@ -7,11 +7,11 @@ using System.Runtime.CompilerServices;
 // change them to the information which is associated with the assembly
 // you compile.
 
-[assembly: AssemblyTitle("oSpy Viewer")]
+[assembly: AssemblyTitle("oSpy Studio")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Ravnås Consulting")]
-[assembly: AssemblyProduct("oSpyViewer")]
+[assembly: AssemblyProduct("oSpyStudio")]
 [assembly: AssemblyCopyright("Copyright © 2006-2007 Ole André Vadla Ravnås <oleavr@gmail.com>")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

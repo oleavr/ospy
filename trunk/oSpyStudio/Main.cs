@@ -2,7 +2,7 @@
 using System;
 using Gtk;
 
-namespace oSpyViewer
+namespace oSpyStudio
 {
     class MainClass
     {

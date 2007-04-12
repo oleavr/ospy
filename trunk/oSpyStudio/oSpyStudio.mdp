@@ -1,16 +1,16 @@
 <Project name="oSpyStudio" fileversion="2.0" language="C#" clr-version="Net_1_1" ctype="DotNetProject">
   <Configurations active="Debug">
     <Configuration name="Debug" ctype="DotNetProjectConfiguration">
-      <Output directory="./bin/Debug" assembly="oSpyViewer" />
+      <Output directory="./bin/Debug" assembly="oSpyStudio" />
       <Build debugmode="True" target="Exe" />
       <Execution runwithwarnings="True" consolepause="True" runtime="MsNet" clr-version="Net_1_1" />
-      <CodeGeneration compiler="Csc" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="oSpyViewer.MainClass" generatexmldocumentation="False" ctype="CSharpCompilerParameters" />
+      <CodeGeneration compiler="Csc" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="oSpyStudio.MainClass" generatexmldocumentation="False" ctype="CSharpCompilerParameters" />
     </Configuration>
     <Configuration name="Release" ctype="DotNetProjectConfiguration">
-      <Output directory="./bin/Release" assembly="oSpyViewer" />
+      <Output directory="./bin/Release" assembly="oSpyStudio" />
       <Build debugmode="False" target="Exe" />
       <Execution runwithwarnings="True" consolepause="True" runtime="MsNet" clr-version="Net_1_1" />
-      <CodeGeneration compiler="Csc" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="oSpyViewer.MainClass" generatexmldocumentation="False" ctype="CSharpCompilerParameters" />
+      <CodeGeneration compiler="Csc" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="oSpyStudio.MainClass" generatexmldocumentation="False" ctype="CSharpCompilerParameters" />
     </Configuration>
   </Configurations>
   <DeployTargets />
