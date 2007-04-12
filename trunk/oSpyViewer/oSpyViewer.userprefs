@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<UserCombinePreferences filename="/home/asabil/Devel/ospy/ospy/oSpyViewer/oSpyViewer.mds">
+  <Files>
+    <File filename="Welcome" />
+    <File filename="./Main.cs" />
+    <File filename="./MainWindow.cs" />
+  </Files>
+  <Views>
+    <ViewMemento Id="MonoDevelop.Ide.Gui.Pads.ProjectPad">
+      <TreeView>
+        <Node expanded="True">
+          <Node name="oSpyViewer" expanded="True">
+            <Node name="UserInterface" expanded="True">
+              <Node name="MainWindow" expanded="True" />
+            </Node>
+            <Node name="MainWindow.cs" expanded="False" selected="True" />
+          </Node>
+        </Node>
+      </TreeView>
+    </ViewMemento>
+    <ViewMemento Id="MonoDevelop.Ide.Gui.Pads.ClassPad">
+      <TreeView>
+        <Node expanded="True">
+          <Node name="oSpyViewer" expanded="True" selected="True">
+            <Node name="MainWindow" expanded="True" />
+            <Node name="oSpyViewer" expanded="True" />
+          </Node>
+        </Node>
+      </TreeView>
+    </ViewMemento>
+  </Views>
+  <Properties>
+    <Properties>
+      <Property key="ActiveConfiguration" value="Debug" />
+      <Property key="ActiveWindow" value="/home/asabil/Devel/ospy/ospy/oSpyViewer/MainWindow.cs" />
+    </Properties>
+  </Properties>
+</UserCombinePreferences>
