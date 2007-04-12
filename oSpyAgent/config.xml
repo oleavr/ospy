@@ -53,6 +53,19 @@
             <field name="sin_addr" offset="4" type="Ipv4InAddr"/>
         </structure>
 
+        <!-- Secur32 -->
+        <structure name="SecBuffer">
+            <field name="cbBuffer" offset="0" type="UInt32"/>
+            <field name="BufferType" offset="4" type="UInt32" hex="true"/>
+            <field name="pvBuffer" offset="8" type="ByteArrayPtr" size="cbBuffer"/>
+        </structure>
+        <structure name="SecBufferDesc">
+            <field name="ulVersion" offset="0" type="UInt32"/>
+            <field name="cBuffers" offset="4" type="UInt32"/>
+            <field name="pBuffers" offset="8" type="ArrayPtr"
+                   elementType="SecBuffer" elementCount="cBuffers"/>
+        </structure>
+
         <!-- WinCrypt -->
         <enumeration name="AlgId">
             <member name="CALG_3DES" value="0x6603"/>
@@ -156,14 +169,14 @@
                 <arguments>
                     <argument name="phContext" direction="in" type="UInt32" hex="true"/>
                     <argument name="fQOP" direction="in" type="UInt32" hex="true"/>
-                    <argument name="pMessage" direction="in/out" type="UInt32" hex="true"/>
+                    <argument name="pMessage" direction="in/out" type="SecBufferDescPtr"/>
                     <argument name="MessageSeqNo" direction="in" type="UInt32"/>
                 </arguments>
             </function>
             <function name="DecryptMessage">
                 <arguments>
                     <argument name="phContext" direction="in" type="UInt32" hex="true"/>
-                    <argument name="pMessage" direction="in/out" type="UInt32" hex="true"/>
+                    <argument name="pMessage" direction="in/out" type="SecBufferDescPtr"/>
                     <argument name="MessageSeqNo" direction="in" type="UInt32"/>
                     <argument name="pfQOP" direction="out" type="UInt32Ptr" hex="true"/>
                 </arguments>
@@ -233,7 +246,8 @@
                 <arguments>
                     <argument name="domain" direction="in" type="Int32"/>
                     <argument name="severity" direction="in" type="Int32"/>
-                    <argument name="format" direction="in" type="UnicodeFormatStringPtr" vaList="arg.args"/>
+                    <argument name="format" direction="in" type="UnicodeFormatStringPtr"
+                              vaList="arg.args"/>
                     <argument name="args" direction="in" type="VaList"/>
                 </arguments>
             </function>

@@ -108,6 +108,8 @@ Factory::Factory()
     REGISTER_MARSHALLER(UInt32Ptr);
     REGISTER_MARSHALLER(Int32);
     REGISTER_MARSHALLER(Int32Ptr);
+    REGISTER_MARSHALLER(Array);
+    REGISTER_MARSHALLER(ArrayPtr);
     REGISTER_MARSHALLER(ByteArray);
     REGISTER_MARSHALLER(ByteArrayPtr);
     REGISTER_MARSHALLER(AsciiString);
@@ -463,6 +465,119 @@ Integer<T>::ToUInt(void *start, unsigned int &result) const
     return true;
 }
 
+Array::Array()
+    : BaseMarshaller("Array"), m_elType(new UInt8()), m_elCount(0)
+{
+}
+
+Array::Array(BaseMarshaller *elType, unsigned int elCount)
+    : BaseMarshaller("Array"), m_elType(elType), m_elCount(elCount)
+{
+}
+
+Array::Array(BaseMarshaller *elType, const OString &elCountPropertyBinding)
+    : BaseMarshaller("Array"), m_elType(elType), m_elCount(0)
+{
+    SetPropertyBinding("elementCount", elCountPropertyBinding);
+}
+
+Array::Array(const Array &a)
+    : BaseMarshaller("Array")
+{
+    m_elType = a.m_elType->Clone();
+    m_elCount = a.m_elCount;
+}
+
+Array::~Array()
+{
+    delete m_elType;
+}
+
+bool
+Array::SetProperty(const OString &name, const OString &value)
+{
+    if (name == "elementType")
+    {
+        BaseMarshaller *elType = Factory::Instance()->CreateMarshaller(value);
+        if (elType == NULL)
+            return false;
+
+        delete m_elType;
+        m_elType = elType;
+    }
+    else if (name == "elementCount")
+    {
+        char *endPtr = NULL;
+        unsigned int iVal = strtoul(value.c_str(), &endPtr, 0);
+        if (endPtr == value.c_str())
+        {
+            SetPropertyBinding("elementCount", value);
+        }
+        else
+        {
+            m_elCount = iVal;
+        }
+    }
+    else
+    {
+        return false;
+    }
+
+    return true;
+}
+
+unsigned int
+Array::GetSize() const
+{
+    return m_elType->GetSize() * m_elCount;
+}
+
+Logging::Node *
+Array::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
+{
+    unsigned int elCount = m_elCount;
+
+    if (elCount == 0)
+    {
+        if (HasPropertyBinding("elementCount"))
+        {
+            propProv->QueryForProperty(GetPropertyBinding("elementCount"), elCount);
+        }
+    }
+
+    Logging::Element *node = NULL;
+
+    if (elCount > 0)
+    {
+        node = new Logging::Element("value");
+        node->AddField("type", "Array");
+        node->AddField("elementType", m_elType->GetName());
+
+        OOStringStream ss;
+        ss << elCount;
+        node->AddField("elementCount", ss.str());
+
+        unsigned char *p = static_cast<unsigned char *>(start);
+        unsigned int elSize = m_elType->GetSize();
+
+        for (unsigned int i = 0; i < elCount; i++)
+        {
+            Logging::Node *child = m_elType->ToNode(p, deep, propProv);
+            node->AppendChild(child);
+
+            p += elSize;
+        }
+    }
+
+    return node;
+}
+
+OString
+Array::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+{
+    return "[Array]";
+}
+
 ByteArray::ByteArray(int size)
     : BaseMarshaller("ByteArray"), m_size(size)
 {
@@ -527,7 +642,7 @@ ByteArray::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 OString
 ByteArray::ToString(void *start, bool deep, IPropertyProvider *propProv) const
 {
-    return "TODO";
+    return "[ByteArray]";
 }
 
 OString
