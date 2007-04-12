@@ -33,7 +33,7 @@
         <property name="StockId">gtk-about</property>
       </action>
     </action-group>
-    <property name="Title" translatable="yes">oSpy Viewer</property>
+    <property name="Title" translatable="yes">oSpy Studio</property>
     <property name="WindowPosition">CenterOnParent</property>
     <property name="Events">0</property>
     <property name="MemberName" />
@@ -120,13 +120,13 @@ HEX</property>
         </child>
         <child>
           <widget class="Gtk.HPaned" id="MainHSplit">
-            <property name="Position">633</property>
+            <property name="Position">639</property>
             <property name="CanFocus">True</property>
             <property name="Events">0</property>
             <property name="MemberName" />
             <child>
               <widget class="Gtk.VPaned" id="MainVSplit">
-                <property name="Position">366</property>
+                <property name="Position">373</property>
                 <property name="CanFocus">True</property>
                 <property name="Events">0</property>
                 <property name="MemberName" />
