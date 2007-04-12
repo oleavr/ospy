@@ -9,7 +9,7 @@ public class MainWindow : Gtk.Window
     {
         Stetic.Gui.Build(this, typeof(MainWindow));
         // index, type, time, sender, description
-        Gtk.TreeStore EventListStore = new Gtk.TreeStore(typeof(int),
+        Gtk.TreeStore eventListStore = new Gtk.TreeStore(typeof(int),
                                                          typeof(Gdk.Pixbuf),
                                                          typeof(string),
                                                          typeof(string),
@@ -20,7 +20,7 @@ public class MainWindow : Gtk.Window
         EventList.AppendColumn("Sender", new Gtk.CellRendererText(), "text", 3);
         EventList.AppendColumn("Description", new Gtk.CellRendererText(), "text", 4);
 
-        EventList.Model = EventListStore;
+        EventList.Model = eventListStore;
     }
     
     protected void OnDeleteEvent(object sender, DeleteEventArgs a)
