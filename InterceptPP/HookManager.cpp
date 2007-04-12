@@ -398,7 +398,7 @@ HookManager::ParseEnumerationNode(MSXML2::IXMLDOMNodePtr &enumNode)
         return;
     }
 
-    Marshaller::Enumeration *enumTpl = new Marshaller::Enumeration(name.c_str(), NULL);
+    Marshaller::Enumeration *enumTpl = new Marshaller::Enumeration(name.c_str(), new Marshaller::UInt32(true), NULL);
 
     MSXML2::IXMLDOMNodeListPtr nodeList;
 

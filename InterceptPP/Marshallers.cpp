@@ -445,11 +445,19 @@ template <class T> bool
 Integer<T>::ToInt(void *start, int &result) const
 {
     T i = *(reinterpret_cast<T *>(start));
-
     if (m_bigEndian)
-    {
         i = ToLittleEndian(i);
-    }
+
+    result = i;
+    return true;
+}
+
+template <class T> bool
+Integer<T>::ToUInt(void *start, unsigned int &result) const
+{
+    T i = *(reinterpret_cast<T *>(start));
+    if (m_bigEndian)
+        i = ToLittleEndian(i);
 
     result = i;
     return true;
@@ -608,11 +616,16 @@ UnicodeFormatString::ToString(void *start, bool deep, IPropertyProvider *propPro
     return result;
 }
 
-Enumeration::Enumeration(const char *name, const char *firstName, ...)
-    : UInt32(true)
+Enumeration::Enumeration(const Enumeration &e)
+    : BaseMarshaller(e.m_typeName)
 {
-    m_typeName = name;
+    m_defs = e.m_defs;
+    m_marshaller = e.m_marshaller->Clone();
+}
 
+Enumeration::Enumeration(const char *name, BaseMarshaller *marshaller, const char *firstName, ...)
+    : BaseMarshaller(name), m_marshaller(marshaller)
+{
     va_list args;
     va_start(args, firstName);
 
@@ -627,6 +640,24 @@ Enumeration::Enumeration(const char *name, const char *firstName, ...)
     }
 
     va_end(args);
+}
+
+bool
+Enumeration::SetProperty(const OString &name, const OString &value)
+{
+    if (name == "marshalAs")
+    {
+        BaseMarshaller *marshaller = Factory::Instance()->CreateMarshaller(value);
+        if (marshaller == NULL)
+            return false;
+
+        delete m_marshaller;
+        m_marshaller = marshaller;
+
+        return true;
+    }
+
+    return m_marshaller->SetProperty(name, value);
 }
 
 bool
@@ -649,7 +680,7 @@ Enumeration::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 
     el->AddField("type", "Enum");
     el->AddField("subType", m_typeName);
-    el->AddField("value", ToString(start, false, propProv));
+    el->AddField("value", ToString(start, deep, propProv));
 
     return el;
 }
@@ -657,16 +688,17 @@ Enumeration::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 OString
 Enumeration::ToString(void *start, bool deep, IPropertyProvider *propProv) const
 {
-    const DWORD *dwPtr = reinterpret_cast<const DWORD *>(start);
+    unsigned int val;
+    m_marshaller->ToUInt(start, val);
 
-    OMap<DWORD, OString>::Type::const_iterator it = m_defs.find(*dwPtr);
+    OMap<DWORD, OString>::Type::const_iterator it = m_defs.find(val);
     if (it != m_defs.end())
     {
         return it->second;
     }
     else
     {
-        return UInt32::ToString(start, deep, propProv);
+        return m_marshaller->ToString(start, deep, propProv);
     }
 }
 

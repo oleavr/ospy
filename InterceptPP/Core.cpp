@@ -372,6 +372,7 @@ Function::Hook()
         }
     }
 
+#ifdef _INSANE_DEBUG
     Logging::Logger *logger = GetLogger();
     if (logger != NULL)
     {
@@ -380,6 +381,7 @@ Function::Hook()
         else
             logger->LogDebug("%s: based on runtime disassembly we need to copy %d bytes of the original function", GetFullName().c_str(), nBytesToCopy);
     }
+#endif
 
     FunctionTrampoline *trampoline = CreateTrampoline(nBytesToCopy);
     m_trampoline = trampoline;

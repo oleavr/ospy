@@ -1,11 +1,6 @@
 <hookManager>
     <types>
         <!-- Winsock -->
-        <structure name="Ipv4Sockaddr">
-            <field name="sin_family" offset="0" type="Int16"/>
-            <field name="sin_port" offset="2" type="UInt16" endian="big"/>
-            <field name="sin_addr" offset="4" type="Ipv4InAddr"/>
-        </structure>
         <enumeration name="SockAddrFamily">
             <member name="AF_APPLETALK" value="16"/>
             <member name="AF_BAN" value="21"/>
@@ -52,6 +47,11 @@
             <member name="IPPROTO_TCP" value="6"/>
             <member name="IPPROTO_UDP" value="17"/>
         </enumeration>
+        <structure name="Ipv4Sockaddr">
+            <field name="sin_family" offset="0" type="SockAddrFamily" marshalAs="Int16"/>
+            <field name="sin_port" offset="2" type="UInt16" endian="big"/>
+            <field name="sin_addr" offset="4" type="Ipv4InAddr"/>
+        </structure>
 
         <!-- WinCrypt -->
         <enumeration name="AlgId">
@@ -150,6 +150,9 @@
                     <argument name="flags" direction="in" type="Int32" hex="true"/>
                 </arguments>
             </function>
+
+            <!-- Secur32 -->
+
 
             <!-- WinCrypt -->
             <function name="CryptAcquireContextA">
