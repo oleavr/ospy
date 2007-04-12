@@ -157,6 +157,12 @@ Argument::ToInt(int &result) const
 }
 
 bool
+Argument::ToUInt(unsigned int &result) const
+{
+    return m_spec->GetMarshaller()->ToUInt(m_data, result);
+}
+
+bool
 Argument::ToPointer(void *&result) const
 {
     return m_spec->GetMarshaller()->ToPointer(m_data, result);
@@ -866,6 +872,26 @@ FunctionCall::QueryForProperty(const OString &query, int &result)
 
     if (isArg)
         return arg->ToInt(result);
+
+    result = reg;
+    return true;
+}
+
+bool
+FunctionCall::QueryForProperty(const OString &query, unsigned int &result)
+{
+    const Argument *arg;
+    DWORD reg;
+    bool isArg, wantAddrOf;
+
+    if (!ResolveProperty(query, arg, reg, isArg, wantAddrOf))
+        return false;
+
+    if (wantAddrOf)
+        return false;
+
+    if (isArg)
+        return arg->ToUInt(result);
 
     result = reg;
     return true;

@@ -129,6 +129,7 @@ public:
     Logging::Node *ToNode(bool deep, IPropertyProvider *propProv) const;
     OString ToString(bool deep, IPropertyProvider *propProv) const;
     bool ToInt(int &result) const;
+    bool ToUInt(unsigned int &result) const;
     bool ToPointer(void *&result) const;
     bool ToVaList(va_list &result) const;
 
@@ -311,6 +312,7 @@ public:
 	OString ToString();
 
 	virtual bool QueryForProperty(const OString &query, int &result);
+	virtual bool QueryForProperty(const OString &query, unsigned int &result);
 	virtual bool QueryForProperty(const OString &query, void *&result);
 	virtual bool QueryForProperty(const OString &query, va_list &result);
 	virtual bool QueryForProperty(const OString &query, OString &result);

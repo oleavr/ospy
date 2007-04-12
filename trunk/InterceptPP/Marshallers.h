@@ -33,6 +33,7 @@ class IPropertyProvider
 {
 public:
 	virtual bool QueryForProperty(const OString &query, int &result) = 0;
+	virtual bool QueryForProperty(const OString &query, unsigned int &result) = 0;
 	virtual bool QueryForProperty(const OString &query, void *&result) = 0;
 	virtual bool QueryForProperty(const OString &query, va_list &result) = 0;
 	virtual bool QueryForProperty(const OString &query, OString &result) = 0;
@@ -295,6 +296,44 @@ class Int32Ptr : public Pointer
 public:
     Int32Ptr(bool hex=false)
         : Pointer(new Int32(hex))
+    {}
+};
+
+class Array : public BaseMarshaller
+{
+public:
+    Array();
+    Array(BaseMarshaller *elType, unsigned int elCount);
+    Array(BaseMarshaller *elType, const OString &elCountPropertyBinding);
+    Array(const Array &a);
+    virtual ~Array();
+
+    virtual BaseMarshaller *Clone() const { return new Array(*this); }
+
+    virtual bool SetProperty(const OString &name, const OString &value);
+
+    virtual unsigned int GetSize() const;
+    virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv) const;
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
+
+protected:
+    BaseMarshaller *m_elType;
+    unsigned int m_elCount;
+};
+
+class ArrayPtr : public Pointer
+{
+public:
+    ArrayPtr()
+        : Pointer(new Array())
+    {}
+
+    ArrayPtr(BaseMarshaller *elType, unsigned int elCount)
+        : Pointer(new Array(elType, elCount))
+    {}
+
+	ArrayPtr(BaseMarshaller *elType, const OString &elCountPropertyBinding)
+        : Pointer(new Array(elType, elCountPropertyBinding))
     {}
 };
 
