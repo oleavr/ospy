@@ -58,6 +58,7 @@ public:
     virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv) const;
 	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const = 0;
     virtual bool ToInt(void *start, int &result) const { return false; }
+    virtual bool ToUInt(void *start, unsigned int &result) const { return false; }
     virtual bool ToPointer(void *start, void *&result) const { return false; }
     virtual bool ToVaList(void *start, va_list &result) const { return false; }
 
@@ -164,6 +165,7 @@ public:
 	virtual unsigned int GetSize() const { return sizeof(T); }
 	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
     virtual bool ToInt(void *start, int &result) const;
+    virtual bool ToUInt(void *start, unsigned int &result) const;
 
     bool GetFormatHex() const { return m_hex; }
 	void SetFormatHex(bool hex) { m_hex = hex; }
@@ -182,6 +184,8 @@ public:
     UInt8(bool hex=false)
         : Integer("UInt8", false, hex)
     {}
+
+    virtual BaseMarshaller *Clone() const { return new UInt8(*this); }
 };
 
 class UInt8Ptr : public Pointer
@@ -198,6 +202,8 @@ public:
     Int8(bool hex=false)
         : Integer("Int8", true, hex)
     {}
+
+    virtual BaseMarshaller *Clone() const { return new Int8(*this); }
 };
 
 class Int8Ptr : public Pointer
@@ -214,6 +220,8 @@ public:
     UInt16(bool hex=false)
         : Integer("UInt16", false, hex)
     {}
+
+    virtual BaseMarshaller *Clone() const { return new UInt16(*this); }
 
 protected:
     virtual unsigned short ToLittleEndian(unsigned short i) const { return _byteswap_ushort(i); }
@@ -234,6 +242,8 @@ public:
         : Integer("Int16", true, hex)
     {}
 
+    virtual BaseMarshaller *Clone() const { return new Int16(*this); }
+
 protected:
     virtual short ToLittleEndian(short i) const { return _byteswap_ushort(i); }
 };
@@ -253,6 +263,8 @@ public:
         : Integer("UInt32", false, hex)
     {}
 
+    virtual BaseMarshaller *Clone() const { return new UInt32(*this); }
+
 protected:
     virtual unsigned int ToLittleEndian(unsigned int i) const { return _byteswap_ulong(i); }
 };
@@ -271,6 +283,8 @@ public:
     Int32(bool hex=false)
         : Integer("Int32", true, hex)
     {}
+
+    virtual BaseMarshaller *Clone() const { return new Int32(*this); }
 
 protected:
     virtual int ToLittleEndian(int i) const { return _byteswap_ulong(i); }
@@ -384,21 +398,29 @@ public:
     {}
 };
 
-class Enumeration : public UInt32
+class Enumeration : public BaseMarshaller
 {
 public:
-    Enumeration(const char *name, const char *firstName, ...);
+    Enumeration(const Enumeration &e);
+    Enumeration(const char *name, BaseMarshaller *marshaller, const char *firstName, ...);
 
     virtual BaseMarshaller *Clone() const { return new Enumeration(*this); }
+
+    virtual bool SetProperty(const OString &name, const OString &value);
 
     bool AddMember(const OString &name, DWORD value);
     unsigned int GetMemberCount() const { return static_cast<unsigned int>(m_defs.size()); }
 
+    virtual unsigned int GetSize() const { return m_marshaller->GetSize(); }
     virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv) const;
 	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv) const;
+    virtual bool ToInt(void *start, int &result) const { return m_marshaller->ToInt(start, result); }
+    virtual bool ToUInt(void *start, unsigned int &result) const { return m_marshaller->ToUInt(start, result); }
 
 protected:
     OMap<DWORD, OString>::Type m_defs;
+
+    BaseMarshaller *m_marshaller;
 };
 
 class StructureField : public BaseObject
