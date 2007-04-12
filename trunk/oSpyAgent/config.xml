@@ -151,16 +151,40 @@
                 </arguments>
             </function>
 
-			<!-- WinCrypt -->
-			<function name="CryptCreateHash">
-				<arguments>
-					<argument name="hProv" direction="in" type="UInt32" hex="true"/>
-					<argument name="Algid" direction="in" type="AlgId"/>
-					<argument name="hKey" direction="in" type="UInt32" hex="true"/>
-					<argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
-					<argument name="phHash" direction="out" type="UInt32Ptr" hex="true"/>
-				</arguments>
-			</function>
+            <!-- WinCrypt -->
+            <function name="CryptAcquireContextA">
+                <arguments>
+                    <argument name="phProv" direction="out" type="UInt32Ptr" hex="true"/>
+                    <argument name="pszContainer" direction="in" type="AsciiStringPtr"/>
+                    <argument name="pszProvider" direction="in" type="AsciiStringPtr"/>
+                    <argument name="dwProvType" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
+                </arguments>
+            </function>
+            <function name="CryptAcquireContextW">
+                <arguments>
+                    <argument name="phProv" direction="out" type="UInt32Ptr" hex="true"/>
+                    <argument name="pszContainer" direction="in" type="UnicodeStringPtr"/>
+                    <argument name="pszProvider" direction="in" type="UnicodeStringPtr"/>
+                    <argument name="dwProvType" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
+                </arguments>
+            </function>
+            <function name="CryptReleaseContext">
+                <arguments>
+                    <argument name="hProv" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
+                </arguments>
+            </function>
+            <function name="CryptCreateHash">
+                <arguments>
+                    <argument name="hProv" direction="in" type="UInt32" hex="true"/>
+                    <argument name="Algid" direction="in" type="AlgId"/>
+                    <argument name="hKey" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
+                    <argument name="phHash" direction="out" type="UInt32Ptr" hex="true"/>
+                </arguments>
+            </function>
             <function name="CryptDestroyHash">
                 <arguments>
                     <argument name="hHash" direction="in" type="UInt32" hex="true"/>
@@ -263,13 +287,16 @@
             <function specId="send"/>
         </dllModule>
 
-		<dllModule name="advapi32.dll">
+        <dllModule name="advapi32.dll">
             <!-- <function specId="RegOpenKeyExW"/> -->
 
-			<function specId="CryptCreateHash"/>
+            <function specId="CryptAcquireContextA"/>
+            <function specId="CryptAcquireContextW"/>
+            <function specId="CryptReleaseContext"/>
+            <function specId="CryptCreateHash"/>
             <function specId="CryptDestroyHash"/>
             <function specId="CryptHashData"/>
-		</dllModule>
+        </dllModule>
 
         <!-- Internal functions -->
         <functions processName="msnmsgr.exe">
