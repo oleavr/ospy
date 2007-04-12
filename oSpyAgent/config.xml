@@ -152,7 +152,22 @@
             </function>
 
             <!-- Secur32 -->
-
+            <function name="EncryptMessage">
+                <arguments>
+                    <argument name="phContext" direction="in" type="UInt32" hex="true"/>
+                    <argument name="fQOP" direction="in" type="UInt32" hex="true"/>
+                    <argument name="pMessage" direction="in/out" type="UInt32" hex="true"/>
+                    <argument name="MessageSeqNo" direction="in" type="UInt32"/>
+                </arguments>
+            </function>
+            <function name="DecryptMessage">
+                <arguments>
+                    <argument name="phContext" direction="in" type="UInt32" hex="true"/>
+                    <argument name="pMessage" direction="in/out" type="UInt32" hex="true"/>
+                    <argument name="MessageSeqNo" direction="in" type="UInt32"/>
+                    <argument name="pfQOP" direction="out" type="UInt32Ptr" hex="true"/>
+                </arguments>
+            </function>
 
             <!-- WinCrypt -->
             <function name="CryptAcquireContextA">
@@ -288,6 +303,11 @@
             <function specId="connect"/>
             <function specId="recv"/>
             <function specId="send"/>
+        </dllModule>
+
+        <dllModule name="secur32.dll">
+            <function specId="EncryptMessage"/>
+            <function specId="DecryptMessage"/>
         </dllModule>
 
         <dllModule name="advapi32.dll">
