@@ -30,7 +30,7 @@
 using namespace std;
 using namespace InterceptPP;
 
-#define DEBUG 0
+#define DEBUG 1
 
 int main(int argc, char *argv[])
 {

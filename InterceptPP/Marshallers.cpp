@@ -28,6 +28,63 @@
 
 namespace InterceptPP {
 
+void
+PropertyOverrides::Add(const OString &propName, const OString &value)
+{
+    m_overrides[propName] = value;
+}
+
+bool
+PropertyOverrides::Contains(const OString &propName) const
+{
+    return m_overrides.find(propName) != m_overrides.end();
+}
+
+bool
+PropertyOverrides::GetValue(const OString &propName, OString &value) const
+{
+    OverridesMap::const_iterator it = m_overrides.find(propName);
+    if (it == m_overrides.end())
+        return false;
+
+    value = it->second;
+    return true;
+}
+
+bool
+PropertyOverrides::GetValue(const OString &propName, int &value) const
+{
+    OverridesMap::const_iterator it = m_overrides.find(propName);
+    if (it == m_overrides.end())
+        return false;
+
+    const OString &s = it->second;
+    char *endPtr = NULL;
+    int iVal = strtol(s.c_str(), &endPtr, 0);
+    if (endPtr == s.c_str())
+        return false;
+
+    value = iVal;
+    return true;
+}
+
+bool
+PropertyOverrides::GetValue(const OString &propName, unsigned int &value) const
+{
+    OverridesMap::const_iterator it = m_overrides.find(propName);
+    if (it == m_overrides.end())
+        return false;
+
+    const OString &s = it->second;
+    char *endPtr = NULL;
+    unsigned int iVal = strtoul(s.c_str(), &endPtr, 0);
+    if (endPtr == s.c_str())
+        return false;
+
+    value = iVal;
+    return true;
+}
+
 BaseMarshaller::BaseMarshaller(const OString &typeName)
 	: m_typeName(typeName)
 {
@@ -66,7 +123,7 @@ BaseMarshaller::SetPropertyBindings(const char *firstPropName, ...)
 }
 
 Logging::Node *
-BaseMarshaller::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
+BaseMarshaller::ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     Logging::Element *el = new Logging::Element("value");
 
@@ -165,23 +222,17 @@ Dynamic::Dynamic()
     m_fallback = new Int32();
 }
 
-Dynamic::Dynamic(const Dynamic &instance)
-    : BaseMarshaller("Dynamic")
+Dynamic::Dynamic(const Dynamic &d)
+    : BaseMarshaller(d)
 {
-    m_nameBase = instance.m_nameBase;
-    m_nameSuffix = instance.m_nameSuffix;
-    m_fallback = instance.m_fallback->Clone();
+    m_nameBase = d.m_nameBase;
+    m_nameSuffix = d.m_nameSuffix;
+    m_fallback = d.m_fallback->Clone();
 }
 
 Dynamic::~Dynamic()
 {
     delete m_fallback;
-}
-
-BaseMarshaller *
-Dynamic::Clone() const
-{
-    return new Dynamic(*this);
 }
 
 bool
@@ -213,12 +264,12 @@ Dynamic::SetProperty(const OString &name, const OString &value)
 }
 
 Logging::Node *
-Dynamic::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
+Dynamic::ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     Logging::Element *el = new Logging::Element("value");
 
     OString subTypeName;
-    OString value = ToStringInternal(start, false, propProv, &subTypeName);
+    OString value = ToStringInternal(start, false, propProv, overrides, &subTypeName);
 
     el->AddField("type", m_typeName);
     el->AddField("subType", subTypeName);
@@ -228,20 +279,20 @@ Dynamic::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 }
 
 OString
-Dynamic::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+Dynamic::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
-    return ToStringInternal(start, deep, propProv, NULL);
+    return ToStringInternal(start, deep, propProv, overrides, NULL);
 }
 
 OString
-Dynamic::ToStringInternal(void *start, bool deep, IPropertyProvider *propProv, OString *lastSubTypeName) const
+Dynamic::ToStringInternal(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides, OString *lastSubTypeName) const
 {
     BaseMarshaller *marshaller = CreateMarshaller(propProv);
     if (marshaller == NULL)
     {
         if (lastSubTypeName != NULL)
             *lastSubTypeName = m_fallback->GetName();
-        return m_fallback->ToString(start, deep, propProv);
+        return m_fallback->ToString(start, deep, propProv, overrides);
     }
     else
     {
@@ -249,7 +300,7 @@ Dynamic::ToStringInternal(void *start, bool deep, IPropertyProvider *propProv, O
             *lastSubTypeName = marshaller->GetName();
     }
 
-    OString result = marshaller->ToString(start, deep, propProv);
+    OString result = marshaller->ToString(start, deep, propProv, overrides);
     delete marshaller;
 
     return result;
@@ -274,20 +325,17 @@ Pointer::Pointer(BaseMarshaller *type, const OString &ptrTypeName)
     : BaseMarshaller(ptrTypeName), m_type(type)
 {}
 
+Pointer::Pointer(const Pointer &p)
+    : BaseMarshaller(p), m_type(NULL)
+{
+    if (p.m_type != NULL)
+        m_type = p.m_type->Clone();
+}
+
 Pointer::~Pointer()
 {
     if (m_type != NULL)
         delete m_type;
-}
-
-BaseMarshaller *
-Pointer::Clone() const
-{
-    BaseMarshaller *typeClone = NULL;
-    if (m_type)
-        typeClone = m_type->Clone();
-
-    return new Pointer(typeClone, m_typeName);
 }
 
 bool
@@ -300,7 +348,7 @@ Pointer::SetProperty(const OString &name, const OString &value)
 }
 
 Logging::Node *
-Pointer::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
+Pointer::ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     void **ptr = static_cast<void **>(start);
 
@@ -318,7 +366,7 @@ Pointer::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 
     if (*ptr != NULL && deep)
     {
-        Logging::Node *node = m_type->ToNode(*ptr, true, propProv);
+        Logging::Node *node = m_type->ToNode(*ptr, true, propProv, overrides);
         if (node != NULL)
             el->AppendChild(node);
     }
@@ -327,7 +375,7 @@ Pointer::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 }
 
 OString
-Pointer::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+Pointer::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     OOStringStream ss;
 
@@ -336,7 +384,7 @@ Pointer::ToString(void *start, bool deep, IPropertyProvider *propProv) const
     {
         if (deep)
         {
-            ss << m_type->ToString(*ptr, true, propProv);
+            ss << m_type->ToString(*ptr, true, propProv, overrides);
         }
         else
         {
@@ -360,7 +408,7 @@ Pointer::ToPointer(void *start, void *&result) const
 }
 
 Logging::Node *
-VaList::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
+VaList::ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     Logging::Element *el = new Logging::Element("value");
     el->AddField("type", m_typeName);
@@ -370,7 +418,7 @@ VaList::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 }
 
 OString
-VaList::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+VaList::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     void **ptr = static_cast<void **>(start);
 
@@ -421,7 +469,7 @@ Integer<T>::SetProperty(const OString &name, const OString &value)
 }
 
 template <class T> OString
-Integer<T>::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+Integer<T>::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     OOStringStream ss;
 
@@ -482,7 +530,7 @@ Array::Array(BaseMarshaller *elType, const OString &elCountPropertyBinding)
 }
 
 Array::Array(const Array &a)
-    : BaseMarshaller("Array")
+    : BaseMarshaller(a)
 {
     m_elType = a.m_elType->Clone();
     m_elCount = a.m_elCount;
@@ -533,15 +581,18 @@ Array::GetSize() const
 }
 
 Logging::Node *
-Array::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
+Array::ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     unsigned int elCount = m_elCount;
 
     if (elCount == 0)
     {
-        if (HasPropertyBinding("elementCount"))
+        if (overrides == NULL || !overrides->GetValue("elementCount", elCount))
         {
-            propProv->QueryForProperty(GetPropertyBinding("elementCount"), elCount);
+            if (HasPropertyBinding("elementCount"))
+            {
+                propProv->QueryForProperty(GetPropertyBinding("elementCount"), elCount);
+            }
         }
     }
 
@@ -562,7 +613,7 @@ Array::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 
         for (unsigned int i = 0; i < elCount; i++)
         {
-            Logging::Node *child = m_elType->ToNode(p, deep, propProv);
+            Logging::Node *child = m_elType->ToNode(p, deep, propProv, overrides);
             node->AppendChild(child);
 
             p += elSize;
@@ -573,7 +624,7 @@ Array::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 }
 
 OString
-Array::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+Array::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     return "[Array]";
 }
@@ -610,15 +661,18 @@ ByteArray::SetProperty(const OString &name, const OString &value)
 }
 
 Logging::Node *
-ByteArray::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
+ByteArray::ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     int size = m_size;
 
     if (size <= 0)
     {
-        if (HasPropertyBinding("size"))
+        if (overrides == NULL || !overrides->GetValue("size", size))
         {
-            propProv->QueryForProperty(GetPropertyBinding("size"), size);
+            if (HasPropertyBinding("size"))
+            {
+                propProv->QueryForProperty(GetPropertyBinding("size"), size);
+            }
         }
     }
 
@@ -640,13 +694,13 @@ ByteArray::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
 }
 
 OString
-ByteArray::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+ByteArray::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     return "[ByteArray]";
 }
 
 OString
-AsciiString::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+AsciiString::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     OOStringStream ss;
 
@@ -656,7 +710,7 @@ AsciiString::ToString(void *start, bool deep, IPropertyProvider *propProv) const
 }
 
 OString
-UnicodeString::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+UnicodeString::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     OOStringStream ss;
 
@@ -684,7 +738,7 @@ UnicodeFormatString::SetProperty(const OString &name, const OString &value)
 }
 
 OString
-UnicodeFormatString::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+UnicodeFormatString::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     OOStringStream ss;
 
@@ -731,13 +785,6 @@ UnicodeFormatString::ToString(void *start, bool deep, IPropertyProvider *propPro
     return result;
 }
 
-Enumeration::Enumeration(const Enumeration &e)
-    : BaseMarshaller(e.m_typeName)
-{
-    m_defs = e.m_defs;
-    m_marshaller = e.m_marshaller->Clone();
-}
-
 Enumeration::Enumeration(const char *name, BaseMarshaller *marshaller, const char *firstName, ...)
     : BaseMarshaller(name), m_marshaller(marshaller)
 {
@@ -755,6 +802,13 @@ Enumeration::Enumeration(const char *name, BaseMarshaller *marshaller, const cha
     }
 
     va_end(args);
+}
+
+Enumeration::Enumeration(const Enumeration &e)
+    : BaseMarshaller(e)
+{
+    m_defs = e.m_defs;
+    m_marshaller = e.m_marshaller->Clone();
 }
 
 bool
@@ -789,19 +843,19 @@ Enumeration::AddMember(const OString &name, DWORD value)
 }
 
 Logging::Node *
-Enumeration::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
+Enumeration::ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     Logging::Element *el = new Logging::Element("value");
 
     el->AddField("type", "Enum");
     el->AddField("subType", m_typeName);
-    el->AddField("value", ToString(start, deep, propProv));
+    el->AddField("value", ToString(start, deep, propProv, overrides));
 
     return el;
 }
 
 OString
-Enumeration::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+Enumeration::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     unsigned int val;
     m_marshaller->ToUInt(start, val);
@@ -813,12 +867,12 @@ Enumeration::ToString(void *start, bool deep, IPropertyProvider *propProv) const
     }
     else
     {
-        return m_marshaller->ToString(start, deep, propProv);
+        return m_marshaller->ToString(start, deep, propProv, overrides);
     }
 }
 
 Structure::Structure(const char *name, const char *firstFieldName, ...)
-    : BaseMarshaller(name)
+    : BaseMarshaller(name), m_size(0)
 {
     va_list args;
     va_start(args, firstFieldName);
@@ -832,6 +886,17 @@ Structure::Structure(const char *name, const char *firstFieldName, va_list args)
     : BaseMarshaller(name), m_size(0)
 {
     Initialize(firstFieldName, args);
+}
+
+Structure::Structure(const Structure &s)
+    : BaseMarshaller(s), m_size(0)
+{
+    for (FieldsVector::const_iterator iter = s.m_fields.begin(); iter != s.m_fields.end(); iter++)
+    {
+        AddField(new StructureField(**iter));
+    }
+
+    m_bindings = s.m_bindings;
 }
 
 Structure::~Structure()
@@ -857,30 +922,69 @@ Structure::Initialize(const char *firstFieldName, va_list args)
     }
 }
 
-BaseMarshaller *
-Structure::Clone() const
-{
-    Structure *clone = new Structure(m_typeName.c_str(), NULL);
-
-    for (FieldsVector::const_iterator iter = m_fields.begin(); iter != m_fields.end(); iter++)
-    {
-        clone->AddField(new StructureField(**iter));
-    }
-
-    return clone;
-}
-
 void
 Structure::AddField(StructureField *field)
 {
+    m_fieldIndexes[field->GetName()] = m_fields.size();
     m_fields.push_back(field);
     m_size += field->GetMarshaller()->GetSize();
 }
 
-Logging::Node *
-Structure::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
+void
+Structure::BindFieldTypePropertyToField(const OString &fieldName, const OString &propName, const OString &srcFieldName)
 {
-    void **ptr = static_cast<void **>(start);
+    m_bindings.push_back(FieldTypePropertyBinding(fieldName, propName, srcFieldName));
+}
+
+PropertyOverrides **
+Structure::GetFieldOverrides(void *start, IPropertyProvider *propProv) const
+{
+    PropertyOverrides **fieldOverrides = NULL;
+
+    if (m_bindings.size() == 0)
+        return NULL;
+
+    fieldOverrides = new PropertyOverrides *[m_fields.size()];
+    memset(fieldOverrides, 0, sizeof(PropertyOverrides *) * m_fields.size());
+
+    for (FieldBindingsVector::const_iterator it = m_bindings.begin(); it != m_bindings.end(); it++)
+    {
+        FieldIndexesMap::const_iterator idxIter = m_fieldIndexes.find(it->GetFieldName());
+        FieldIndexesMap::const_iterator srcIdxIter = m_fieldIndexes.find(it->GetSourceFieldName());
+        if (idxIter == m_fieldIndexes.end() || srcIdxIter == m_fieldIndexes.end())
+            continue;
+
+        unsigned int idx = idxIter->second;
+        unsigned int srcIdx = srcIdxIter->second;
+
+        PropertyOverrides *po = fieldOverrides[idx];
+        if (po == NULL)
+        {
+            po = new PropertyOverrides();
+            fieldOverrides[idx] = po;
+        }
+
+        StructureField *srcField = m_fields[srcIdx];
+
+        void *p = reinterpret_cast<char *>(start) + srcField->GetOffset();
+        OString val = srcField->GetMarshaller()->ToString(p, true, propProv);
+        po->Add(it->GetPropertyName(), val);
+    }
+
+    return fieldOverrides;
+}
+
+void
+Structure::FreeFieldOverrides(PropertyOverrides **fieldOverrides) const
+{
+    if (fieldOverrides != NULL)
+        delete[] fieldOverrides;
+}
+
+Logging::Node *
+Structure::ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
+{
+    PropertyOverrides **fieldOverrides = GetFieldOverrides(start, propProv);
 
     Logging::Element *structElement = new Logging::Element("value");
 
@@ -897,36 +1001,31 @@ Structure::ToNode(void *start, bool deep, IPropertyProvider *propProv) const
         structElement->AppendChild(fieldElement);
 
         fieldElement->AddField("name", field->GetName());
-        Logging::Node *valueNode = field->GetMarshaller()->ToNode(fieldPtr, true, propProv);
+
+        PropertyOverrides *po = NULL;
+        if (fieldOverrides != NULL)
+        {
+            po = fieldOverrides[i];
+        }
+
+        Logging::Node *valueNode = field->GetMarshaller()->ToNode(fieldPtr, true, propProv, po);
+
+        if (po != NULL)
+            delete po;
+
         if (valueNode != NULL)
             fieldElement->AppendChild(valueNode);
     }
+
+    FreeFieldOverrides(fieldOverrides);
 
     return structElement;
 }
 
 OString
-Structure::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+Structure::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
-    OOStringStream ss;
-
-    ss << "[ ";
-
-    for (unsigned int i = 0; i < m_fields.size(); i++)
-    {
-        const StructureField *field = m_fields[i];
-
-        void *fieldPtr = reinterpret_cast<char *>(start) + field->GetOffset();
-
-        if (i > 0)
-            ss << ", ";
-
-        ss << field->GetName() << "=" << field->GetMarshaller()->ToString(fieldPtr, true, propProv);
-    }
-
-    ss << " ]";
-
-    return ss.str();
+    return "[Structure]";
 }
 
 StructurePtr::StructurePtr(const char *firstFieldName, ...)
@@ -940,7 +1039,7 @@ StructurePtr::StructurePtr(const char *firstFieldName, ...)
 }
 
 OString
-Ipv4InAddr::ToString(void *start, bool deep, IPropertyProvider *propProv) const
+Ipv4InAddr::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
 {
     OOStringStream ss;
 
