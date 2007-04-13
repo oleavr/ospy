@@ -29,6 +29,10 @@
 
 #pragma warning( disable : 4311 4312 )
 
+#ifndef DEBUG
+#define DEBUG 0
+#endif
+
 namespace InterceptPP {
 
 HookManager::HookManager()
@@ -56,8 +60,10 @@ HookManager::LoadDefinitions(const OWString &path)
 {
     CoInitialize(NULL);
 
+#if !DEBUG
     try
     {
+#endif
         MSXML2::IXMLDOMDocument3Ptr doc;
         HRESULT hr = doc.CreateInstance(__uuidof(MSXML2::DOMDocument60));
         if (FAILED(hr))
@@ -77,7 +83,12 @@ HookManager::LoadDefinitions(const OWString &path)
             nodeList = doc->selectNodes("/hookManager/types/*");
             for (int i = 0; i < nodeList->length; i++)
             {
-                ParseTypeNode(nodeList->item[i]);
+                node = nodeList->item[i];
+
+                if (node->nodeType == MSXML2::NODE_ELEMENT)
+                {
+                    ParseTypeNode(nodeList->item[i]);
+                }
             }
             nodeList.Release();
         }
@@ -155,11 +166,13 @@ HookManager::LoadDefinitions(const OWString &path)
         }
 
         doc.Release();
+#if !DEBUG
     }
     catch (_com_error &e)
     {
         throw ParserError(e.ErrorMessage());
     }
+#endif
 }
 
 void
@@ -285,13 +298,56 @@ HookManager::ParseStructureNode(MSXML2::IXMLDOMNodePtr &structNode)
                 }
 
                 structTpl->AddField(new Marshaller::StructureField(fieldName, fieldOffset, marshaller));
+
+                MSXML2::IXMLDOMNodeListPtr subNodeList = node->childNodes;
+                for (int j = 0; j < subNodeList->length; j++)
+                {
+                    MSXML2::IXMLDOMNodePtr subNode = subNodeList->item[j];
+
+                    OString nodeName = subNode->nodeName;
+                    if (nodeName == "bindTypeProperty")
+                    {
+                        OString propName, srcFieldName;
+
+                        MSXML2::IXMLDOMNodePtr attr = subNode->attributes->getNamedItem("propertyName");
+                        if (attr != NULL)
+                            propName = static_cast<bstr_t>(attr->nodeTypedValue);
+
+                        if (propName.size() == 0)
+                        {
+                            GetLogger()->LogWarning("%s: propertyName blank or not specified for bindTypeProperty",
+                                                    fieldName.c_str());
+                            continue;
+                        }
+
+                        attr = subNode->attributes->getNamedItem("sourceField");
+                        if (attr != NULL)
+                            srcFieldName = static_cast<bstr_t>(attr->nodeTypedValue);
+
+                        if (srcFieldName.size() == 0)
+                        {
+                            GetLogger()->LogWarning("%s: sourceField blank or not specified for bindTypeProperty",
+                                                    fieldName.c_str());
+                            continue;
+                        }
+
+                        // TODO: maybe we should check if the sourceField actually exists
+
+                        structTpl->BindFieldTypePropertyToField(fieldName, propName, srcFieldName);
+                    }
+                    else if (subNode->nodeType == MSXML2::NODE_ELEMENT)
+                    {
+                        GetLogger()->LogWarning("%s: unknown structure field subelement '%s'",
+                            fieldName.c_str(), nodeName.c_str());
+                    }
+                }
             }
             else
             {
                 allGood = false;
             }
         }
-        else
+        else if (node->nodeType == MSXML2::NODE_ELEMENT)
         {
             GetLogger()->LogWarning("unknown structure subelement '%s'", nodeName.c_str());
         }
@@ -422,7 +478,7 @@ HookManager::ParseEnumerationNode(MSXML2::IXMLDOMNodePtr &enumNode)
                 }
             }
         }
-        else
+        else if (node->nodeType == MSXML2::NODE_ELEMENT)
         {
             GetLogger()->LogWarning("unknown enumeration subelement '%s'", nodeName.c_str());
         }
@@ -580,7 +636,7 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
 
                         argIndex++;
                     }
-                    else
+                    else if (subNode->nodeType == MSXML2::NODE_ELEMENT)
                     {
                         GetLogger()->LogWarning("unknown arguments subelement '%s'", subNodeName.c_str());
                     }
@@ -595,7 +651,7 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
                     delete argList;
                 }
             }
-            else
+            else if (node->nodeType == MSXML2::NODE_ELEMENT)
             {
                 GetLogger()->LogWarning("unknown functionSpec subelement '%s'", nodeName.c_str());
             }
@@ -775,7 +831,7 @@ HookManager::ParseVTableSpecNode(MSXML2::IXMLDOMNodePtr &vtSpecNode)
 
             attrs.Release();
         }
-        else
+        else if (node->nodeType == MSXML2::NODE_ELEMENT)
         {
             GetLogger()->LogWarning("unknown vtableSpec subelement '%s'", nodeName.c_str());
         }
@@ -918,7 +974,7 @@ HookManager::ParseDllModuleNode(MSXML2::IXMLDOMNodePtr &dllModNode)
         {
             ParseDllFunctionNode(dllMod, node);
         }
-        else
+        else if (node->nodeType == MSXML2::NODE_ELEMENT)
         {
             GetLogger()->LogWarning("unknown dllModule subelement '%s'", nodeName.c_str());
         }

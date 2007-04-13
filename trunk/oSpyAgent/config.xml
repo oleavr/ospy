@@ -54,16 +54,37 @@
         </structure>
 
         <!-- Secur32 -->
+        <!-- FIXME: this should be made into a Flags enum or something -->
+        <enumeration name="SecBufferType">
+            <member name="SECBUFFER_EMPTY" value="0"/>
+            <member name="SECBUFFER_DATA" value="1"/>
+            <member name="SECBUFFER_TOKEN" value="2"/>
+            <member name="SECBUFFER_PKG_PARAMS" value="3"/>
+            <member name="SECBUFFER_MISSING" value="4"/>
+            <member name="SECBUFFER_EXTRA" value="5"/>
+            <member name="SECBUFFER_STREAM_TRAILER" value="6"/>
+            <member name="SECBUFFER_STREAM_HEADER" value="7"/>
+            <member name="SECBUFFER_MECHLIST" value="11"/>
+            <member name="SECBUFFER_MECHLIST_SIGNATURE" value="12"/>
+            <member name="SECBUFFER_TARGET" value="13"/>
+            <member name="SECBUFFER_CHANNEL_BINDINGS" value="14"/>
+        </enumeration>
         <structure name="SecBuffer">
             <field name="cbBuffer" offset="0" type="UInt32"/>
-            <field name="BufferType" offset="4" type="UInt32" hex="true"/>
-            <field name="pvBuffer" offset="8" type="ByteArrayPtr" size="cbBuffer"/>
+            <field name="BufferType" offset="4" type="SecBufferType"/>
+            <field name="pvBuffer" offset="8" type="ByteArrayPtr">
+                <bindTypeProperty propertyName="size"
+                                  sourceField="cbBuffer"/>
+            </field>
         </structure>
         <structure name="SecBufferDesc">
             <field name="ulVersion" offset="0" type="UInt32"/>
             <field name="cBuffers" offset="4" type="UInt32"/>
             <field name="pBuffers" offset="8" type="ArrayPtr"
-                   elementType="SecBuffer" elementCount="cBuffers"/>
+                   elementType="SecBuffer">
+                <bindTypeProperty propertyName="elementCount"
+                                  sourceField="cBuffers"/>
+            </field>
         </structure>
 
         <!-- WinCrypt -->
