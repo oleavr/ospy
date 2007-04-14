@@ -244,6 +244,40 @@ ArgumentList::ArgumentList(ArgumentListSpec *spec, void *data)
     }
 }
 
+FunctionSpec::FunctionSpec(const OString &name,
+                           CallingConvention conv,
+                           int argsSize,
+                           FunctionCallHandler handler)
+	: m_name(name),
+      m_callingConvention(conv),
+	  m_argsSize(argsSize),
+      m_argList(NULL),
+      m_retValMarshaller(NULL),
+	  m_handler(handler)
+{
+}
+
+FunctionSpec::~FunctionSpec()
+{
+    if (m_retValMarshaller)
+        delete m_retValMarshaller;
+
+    if (m_argList)
+        delete m_argList;
+}
+
+void
+FunctionSpec::SetParams(const OString &name,
+                        CallingConvention conv,
+                        int argsSize,
+                        FunctionCallHandler handler)
+{
+	SetName(name);
+    SetCallingConvention(conv);
+	SetArgsSize(argsSize);
+    SetHandler(handler);
+}
+
 void
 FunctionSpec::SetArguments(ArgumentListSpec *argList)
 {
@@ -269,6 +303,20 @@ FunctionSpec::SetArguments(unsigned int count, ...)
     m_argsSize = m_argList->GetSize();
 
     va_end(args);
+}
+
+const BaseMarshaller *
+FunctionSpec::GetReturnValueMarshaller() const
+{
+    return m_retValMarshaller;
+}
+
+void
+FunctionSpec::SetReturnValueMarshaller(BaseMarshaller *marshaller)
+{
+    if (m_retValMarshaller != NULL)
+        delete m_retValMarshaller;
+    m_retValMarshaller = marshaller;
 }
 
 Function::Function(FunctionSpec *spec, DWORD offset)
@@ -633,11 +681,14 @@ Function::OnLeave(FunctionCall *call)
 	if (handler == NULL || !handler(call))
 	{
         Logging::Event *ev = static_cast<Logging::Event *>(call->GetUserData());
+        if (ev != NULL)
+        {
+            call->AppendCpuContextToElement(ev);
+            call->AppendArgumentsToElement(ev);
+            call->AppendReturnValueToElement(ev);
 
-        call->AppendCpuContextToElement(ev);
-        call->AppendArgumentsToElement(ev);
-
-        ev->Submit();
+            ev->Submit();
+        }
 	}
 }
 
@@ -799,6 +850,23 @@ FunctionCall::AppendArgumentsToElement(Logging::Element *el)
 		    }
 	    }
     }
+}
+
+void
+FunctionCall::AppendReturnValueToElement(Logging::Element *el)
+{
+    if (m_state != FUNCTION_CALL_LEAVING)
+        return;
+
+    const BaseMarshaller *marshaller = m_function->GetSpec()->GetReturnValueMarshaller();
+    if (marshaller == NULL)
+        return;
+
+    Logging::Element *retEl = new Logging::Element("returnValue");
+    el->AppendChild(retEl);
+
+    void *start = &(m_cpuCtxLive->eax);
+    retEl->AppendChild(marshaller->ToNode(start, true, this));
 }
 
 OString

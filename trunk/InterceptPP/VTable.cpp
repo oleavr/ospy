@@ -69,6 +69,12 @@ VMethodSpec::StealFrom(FunctionSpec *funcSpec)
         m_argList = funcSpec->GetArguments();
         funcSpec->SetArguments(static_cast<ArgumentListSpec *>(NULL));
     }
+
+    const BaseMarshaller *marshaller = funcSpec->GetReturnValueMarshaller();
+    if (marshaller != NULL)
+    {
+        m_retValMarshaller = marshaller->Clone();
+    }
 }
 
 VTableSpec::VTableSpec(const OString &name, int methodCount)
