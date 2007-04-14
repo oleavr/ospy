@@ -73,11 +73,11 @@ public class MainWindow : Gtk.Window
     	Gtk.AboutDialog ad = new Gtk.AboutDialog();
     	ad.Name = "oSpy Studio";
     	ad.Website = "http://code.google.com/p/ospy/";
-    	string[] Authors = new string[3];
-    	Authors[0] = "Ole André Vadla Ravnås";
-    	Authors[1] = "Ali Sabil";
-    	Authors[2] = "Johann Prieur";
-    	ad.Authors = Authors;
+    	string[] authors = new string[3];
+    	authors[0] = "Ole André Vadla Ravnås";
+    	authors[1] = "Ali Sabil";
+    	authors[2] = "Johann Prieur";
+    	ad.Authors = authors;
     	ad.Run();
     	ad.Destroy();
     }
