@@ -539,8 +539,8 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
     int argsSize = -1;
 
     MSXML2::IXMLDOMNamedNodeMapPtr attrs = funcSpecNode->attributes;
-
     MSXML2::IXMLDOMNodePtr attrNode;
+
     while ((attrNode = attrs->nextNode()) != NULL)
     {
         OString attrName = static_cast<OString>(attrNode->nodeName);
@@ -607,7 +607,47 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
             node = nodeList->item[i];
 
             OString nodeName = node->nodeName;
-            if (nodeName == "arguments")
+            if (nodeName == "returnValue")
+            {
+                OString retTypeName;
+                PropertyList retTypeProps;
+
+                attrs = node->attributes;
+                while ((attrNode = attrs->nextNode()) != NULL)
+                {
+                    OString attrName = static_cast<OString>(attrNode->nodeName);
+
+                    if (attrName == "type")
+                    {
+                        retTypeName = static_cast<bstr_t>(attrNode->nodeTypedValue);
+                    }
+                    else
+                    {
+                        retTypeProps.push_back(pair<OString, OString>(attrName, OString(static_cast<bstr_t>(attrNode->nodeTypedValue))));
+                    }
+                }
+
+                if (retTypeName.size() > 0 && Marshaller::Factory::Instance()->HasMarshaller(retTypeName))
+                {
+                    BaseMarshaller *marshaller = Marshaller::Factory::Instance()->CreateMarshaller(retTypeName);
+
+                    for (PropertyList::const_iterator iter = retTypeProps.begin(); iter != retTypeProps.end(); iter++)
+                    {
+                        if (!marshaller->SetProperty(iter->first, iter->second))
+                        {
+                            GetLogger()->LogWarning("%s: failed to set property '%s' to '%s' on returnValue Marshaller::%s",
+                                name.c_str(), iter->first.c_str(), iter->second.c_str(), retTypeName.c_str());
+                        }
+                    }
+
+                    funcSpec->SetReturnValueMarshaller(marshaller);
+                }
+                else
+                {
+                    GetLogger()->LogWarning("%s: blank or invalid type name specified for returnValue", name.c_str());
+                }
+            }
+            else if (nodeName == "arguments")
             {
                 ArgumentListSpec *argList = new ArgumentListSpec();
                 bool argsOk = true;

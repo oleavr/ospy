@@ -293,74 +293,7 @@ Util::CreateBacktraceNode(void *address)
 {
     Logging::Element *btNode = NULL;
 
-	int count = 0;
-	DWORD *p = reinterpret_cast<DWORD *>(address);
-
-	EnterCriticalSection(&m_cs);
-
-	for (; count < 8 && (char *) p < (char *) address + 16384; p++)
-	{
-		if (IsBadReadPtr(p, 4))
-			break;
-
-		DWORD value = *p;
-
-		if (value >= m_lowestAddress && value <= m_highestAddress)
-		{
-			bool isRetAddr = false;
-			unsigned char *codeAddr = (unsigned char *) value;
-			unsigned char *p1 = codeAddr - 5;
-			unsigned char *p2 = codeAddr - 6;
-			unsigned char *p3 = codeAddr - 3;
-
-			// FIXME: add the other CALL variations
-			if ((!IsBadCodePtr((FARPROC) p1) && *p1 == OPCODE_CALL_NEAR_RELATIVE) ||
-				(!IsBadCodePtr((FARPROC) p2) && *p2 == OPCODE_CALL_NEAR_ABS_INDIRECT) ||
-				(!IsBadCodePtr((FARPROC) p3) && *p3 == OPCODE_CALL_NEAR_ABS_INDIRECT))
-			{
-				isRetAddr = true;
-			}
-
-			if (isRetAddr)
-			{
-				OModuleInfo *mi = GetModuleInfoForAddress(value);
-
-				if (mi != NULL)
-				{
-                    // FIXME
-					if (mi->name == "oSpyAgent.dll")
-						break;
-
-					DWORD canonicalAddress = mi->preferredStartAddress + (value - mi->startAddress);
-
-                    Logging::TextNode *entry = new Logging::TextNode("entry");
-                    entry->AddField("moduleName", mi->name.c_str());
-
-                    OOStringStream ss;
-                    ss << "0x" << hex << canonicalAddress;
-
-                    entry->SetText(ss.str());
-
-                    if (btNode == NULL)
-                        btNode = new Logging::Element("backtrace");
-                    btNode->AppendChild(entry);
-
-					count++;
-				}
-			}
-		}
-	}
-
-	LeaveCriticalSection(&m_cs);
-
-	return btNode;
-}
-
-OString
-Util::CreateBacktrace(void *address)
-{
-	OOStringStream s;
-	int count = 0;
+    int count = 0;
 	DWORD *p = (DWORD *) address;
 
 	for (; count < 8 && (char *) p < (char *) address + 16384; p++)
@@ -374,7 +307,7 @@ Util::CreateBacktrace(void *address)
             continue;
 
 		unsigned char *codeAddr = (unsigned char *) value;
-        if (IsBadCodePtr((FARPROC) codeAddr))
+        if (IsBadReadPtr(reinterpret_cast<FARPROC>(codeAddr - 6), 6))
             continue;
 
         if (*(codeAddr - 5) == OPCODE_CALL_NEAR_RELATIVE ||
@@ -389,19 +322,26 @@ Util::CreateBacktrace(void *address)
             {
 			    DWORD canonicalAddress = mi->preferredStartAddress + (value - mi->startAddress);
 
-			    if (count > 0)
-				    s << "\n";
+                Logging::TextNode *entry = new Logging::TextNode("entry");
+                entry->AddField("moduleName", mi->name.c_str());
 
-			    s << mi->name.c_str() << "::0x" << hex << canonicalAddress;
+                OOStringStream ss;
+                ss << "0x" << hex << canonicalAddress;
 
-			    count++;
+                entry->SetText(ss.str());
+
+                if (btNode == NULL)
+                    btNode = new Logging::Element("backtrace");
+                btNode->AppendChild(entry);
+
+				count++;
             }
 
             LeaveCriticalSection(&m_cs);
 		}
 	}
 
-	return s.str();
+	return btNode;
 }
 
 OModuleInfo *

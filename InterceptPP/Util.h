@@ -61,7 +61,6 @@ public:
     OString GetDirectory(const OModuleInfo &mi);
 
     Logging::Node *CreateBacktraceNode(void *address);
-	OString CreateBacktrace(void *address);
 
 private:
     static bool OnLoadLibrary(FunctionCall *call);

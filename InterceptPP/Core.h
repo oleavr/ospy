@@ -185,34 +185,20 @@ public:
 	FunctionSpec(const OString &name="",
                  CallingConvention conv=CALLING_CONV_UNKNOWN,
                  int argsSize=FUNCTION_ARGS_SIZE_UNKNOWN,
-                 FunctionCallHandler handler=NULL)
-		: m_name(name),
-          m_callingConvention(conv),
-		  m_argsSize(argsSize),
-          m_argList(NULL),
-		  m_handler(handler)
-	{}
-
-    ~FunctionSpec()
-    {
-        if (m_argList)
-            delete m_argList;
-    }
+                 FunctionCallHandler handler=NULL);
+    ~FunctionSpec();
 
     void SetParams(const OString &name,
                    CallingConvention conv=CALLING_CONV_UNKNOWN,
                    int argsSize=FUNCTION_ARGS_SIZE_UNKNOWN,
-                   FunctionCallHandler handler=NULL)
-	{
-		SetName(name);
-        SetCallingConvention(conv);
-		SetArgsSize(argsSize);
-        SetHandler(handler);
-	}
+                   FunctionCallHandler handler=NULL);
 
     ArgumentListSpec *GetArguments() const { return m_argList; }
     void SetArguments(ArgumentListSpec *argList);
     void SetArguments(unsigned int count, ...);
+
+    const BaseMarshaller *GetReturnValueMarshaller() const;
+    void SetReturnValueMarshaller(BaseMarshaller *marshaller);
 
 	const OString &GetName() const { return m_name; }
 	void SetName(const OString &name) { m_name = name; }
@@ -231,6 +217,7 @@ protected:
 	CallingConvention m_callingConvention;
 	int m_argsSize;
     ArgumentListSpec *m_argList;
+    BaseMarshaller *m_retValMarshaller;
 	FunctionCallHandler m_handler;
 };
 
@@ -309,6 +296,7 @@ public:
     void AppendBacktraceToElement(Logging::Element *el);
     void AppendCpuContextToElement(Logging::Element *el);
     void AppendArgumentsToElement(Logging::Element *el);
+    void AppendReturnValueToElement(Logging::Element *el);
 	OString ToString();
 
 	virtual bool QueryForProperty(const OString &query, int &result);

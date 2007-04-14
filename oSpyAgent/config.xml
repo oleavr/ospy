@@ -149,6 +149,7 @@
         <functions>
             <!-- Winsock -->
             <function name="socket">
+                <returnValue type="UInt32" hex="true"/>
                 <arguments>
                     <argument name="af" direction="in" type="SockAddrFamily"/>
                     <argument name="type" direction="in" type="SockType"/>
@@ -157,11 +158,13 @@
                 </arguments>
             </function>
             <function name="closesocket">
+                <returnValue type="Int32"/>
                 <arguments>
                     <argument name="s" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
             <function name="connect">
+                <returnValue type="Int32"/>
                 <arguments>
                     <argument name="s" direction="in" type="UInt32" hex="true"/>
                     <argument name="name" direction="in" type="Ipv4SockaddrPtr"/>
@@ -169,6 +172,7 @@
                 </arguments>
             </function>
             <function name="recv">
+                <returnValue type="Int32"/>
                 <arguments>
                     <argument name="s" direction="in" type="UInt32" hex="true"/>
                     <argument name="buf" direction="out" type="ByteArrayPtr" size="reg.eax"/>
@@ -177,6 +181,7 @@
                 </arguments>
             </function>
             <function name="send">
+                <returnValue type="Int32"/>
                 <arguments>
                     <argument name="s" direction="in" type="UInt32" hex="true"/>
                     <argument name="buf" direction="in" type="ByteArrayPtr" size="arg.len"/>
@@ -187,6 +192,7 @@
 
             <!-- Secur32 -->
             <function name="EncryptMessage">
+                <returnValue type="Int32"/>
                 <arguments>
                     <argument name="phContext" direction="in" type="UInt32" hex="true"/>
                     <argument name="fQOP" direction="in" type="UInt32" hex="true"/>
@@ -195,6 +201,7 @@
                 </arguments>
             </function>
             <function name="DecryptMessage">
+                <returnValue type="Int32"/>
                 <arguments>
                     <argument name="phContext" direction="in" type="UInt32" hex="true"/>
                     <argument name="pMessage" direction="in/out" type="SecBufferDescPtr"/>
@@ -205,6 +212,7 @@
 
             <!-- WinCrypt -->
             <function name="CryptAcquireContextA">
+                <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
                 <arguments>
                     <argument name="phProv" direction="out" type="UInt32Ptr" hex="true"/>
                     <argument name="pszContainer" direction="in" type="AsciiStringPtr"/>
@@ -214,6 +222,7 @@
                 </arguments>
             </function>
             <function name="CryptAcquireContextW">
+                <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
                 <arguments>
                     <argument name="phProv" direction="out" type="UInt32Ptr" hex="true"/>
                     <argument name="pszContainer" direction="in" type="UnicodeStringPtr"/>
@@ -223,12 +232,14 @@
                 </arguments>
             </function>
             <function name="CryptReleaseContext">
+                <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
                 <arguments>
                     <argument name="hProv" direction="in" type="UInt32" hex="true"/>
                     <argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
             <function name="CryptCreateHash">
+                <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
                 <arguments>
                     <argument name="hProv" direction="in" type="UInt32" hex="true"/>
                     <argument name="Algid" direction="in" type="AlgId"/>
@@ -238,11 +249,13 @@
                 </arguments>
             </function>
             <function name="CryptDestroyHash">
+                <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
                 <arguments>
                     <argument name="hHash" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
             <function name="CryptHashData">
+                <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
                 <arguments>
                     <argument name="hHash" direction="in" type="UInt32" hex="true"/>
                     <argument name="pbData" direction="in" type="ByteArrayPtr" size="arg.dwDataLen"/>
@@ -253,6 +266,7 @@
 
             <!-- Registry -->
             <function name="RegOpenKeyExW">
+                <returnValue type="UInt32"/>
                 <arguments>
                     <argument name="hKey" direction="in" type="RegKeyHandle"/>
                     <argument name="lpSubKey" direction="in" type="UnicodeStringPtr"/>
