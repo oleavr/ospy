@@ -1,0 +1,13 @@
+<objects>
+  <object type="oSpyStudio.HexView" palette-category="widget" allow-children="false">
+    <itemgroups>
+      <itemgroup ref="Gtk.Widget" />
+      <itemgroup label="HexView Properties">
+        <property name="ModelColIndex" />
+      </itemgroup>
+    </itemgroups>
+    <signals>
+      <itemgroup ref="Gtk.Widget" />
+    </signals>
+  </object>
+</objects>
