@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Gtk;
 using oSpyStudio.Widgets;
+using ICSharpCode;
 
 public class MainWindow : Gtk.Window
 {
