@@ -1,24 +1,27 @@
 using System;
+using System.IO;
 using Gtk;
+using oSpyStudio.Widgets;
 
 public class MainWindow : Gtk.Window
 {
-    protected Gtk.TreeView transactionList;
-    protected Gtk.TreeView resourceList;
-    protected Gtk.TreeView processList;
+    protected TreeView transactionList;
+    protected TreeView resourceList;
+    protected TreeView processList;
+    protected DataView dataView;
 
     public MainWindow()
         : base("")
     {
         Stetic.Gui.Build(this, typeof(MainWindow));
 
-		Gtk.TreeStore processListStore = new Gtk.TreeStore(typeof(string));
+		Gtk.TreeStore processListStore = new TreeStore(typeof(string));
 		processList.Model = processListStore;
-		processList.AppendColumn("Process", new Gtk.CellRendererText(), "text", 0);
+		processList.AppendColumn("Process", new CellRendererText(), "text", 0);
 		
-		Gtk.TreeStore resourceListStore = new Gtk.TreeStore(typeof(string));
+		Gtk.TreeStore resourceListStore = new TreeStore(typeof(string));
 		resourceList.Model = resourceListStore;
-		resourceList.AppendColumn("Resource", new Gtk.CellRendererText(), "text", 0);
+		resourceList.AppendColumn("Resource", new CellRendererText(), "text", 0);
 
         // index, type, time, sender, description
         Gtk.TreeStore eventListStore = new Gtk.TreeStore(typeof(int),
@@ -28,11 +31,11 @@ public class MainWindow : Gtk.Window
                                                          typeof(string));
         transactionList.Model = eventListStore;
 
-        transactionList.AppendColumn("Index", new Gtk.CellRendererText(), "text", 0);
-        transactionList.AppendColumn("Type", new Gtk.CellRendererPixbuf(), "pixbuf", 1);
-        transactionList.AppendColumn("Time", new Gtk.CellRendererText(), "text", 2);
-        transactionList.AppendColumn("Sender", new Gtk.CellRendererText(), "text", 3);
-        transactionList.AppendColumn("Description", new Gtk.CellRendererText(), "text", 4);
+        transactionList.AppendColumn("Index", new CellRendererText(), "text", 0);
+        transactionList.AppendColumn("Type", new CellRendererPixbuf(), "pixbuf", 1);
+        transactionList.AppendColumn("Time", new CellRendererText(), "text", 2);
+        transactionList.AppendColumn("Sender", new CellRendererText(), "text", 3);
+        transactionList.AppendColumn("Description", new CellRendererText(), "text", 4);
     }
     
     protected void OnDeleteEvent(object sender, DeleteEventArgs a)
@@ -48,13 +51,22 @@ public class MainWindow : Gtk.Window
     
     protected virtual void OnOpen(object sender, System.EventArgs e)
     {
-    	Gtk.FileChooserDialog fc=
-        new Gtk.FileChooserDialog("Choose the file to open",
+#if false
+        // Use this code for testing the DataView widget
+        byte[] bytes = File.ReadAllBytes("/home/oleavr/Desktop/base64.bin");
+        ListStore store = new ListStore(typeof(object));
+        store.AppendValues(new object[] { bytes });
+        dataView.Model = store;
+		return;
+#endif
+
+    	FileChooserDialog fc =
+            new FileChooserDialog("Choose the file to open",
         	                      this,
                                   FileChooserAction.Open,
                                   "Cancel", ResponseType.Cancel,
                                   "Open", ResponseType.Accept);
-		Gtk.FileFilter ff = new Gtk.FileFilter();
+		FileFilter ff = new FileFilter();
 		ff.AddPattern("*.osd");
 		ff.Name = "oSpy dump files (.osd)";
 		fc.AddFilter(ff);
@@ -70,7 +82,7 @@ public class MainWindow : Gtk.Window
 
     protected virtual void OnAbout(object sender, System.EventArgs e)
     {
-    	Gtk.AboutDialog ad = new Gtk.AboutDialog();
+    	AboutDialog ad = new AboutDialog();
     	ad.Name = "oSpy Studio";
     	ad.Website = "http://code.google.com/p/ospy/";
     	string[] authors = new string[3];
