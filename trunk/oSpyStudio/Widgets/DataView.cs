@@ -181,7 +181,7 @@ namespace oSpyStudio.Widgets
 
 		    w.ModifyText(StateType.Normal, fg);
 		    
-		    w.ModifyFont(Pango.FontDescription.FromString("ASCII 10"));
+		    w.ModifyFont(Pango.FontDescription.FromString("Monospace 10"));
 		}
 	}
 }
