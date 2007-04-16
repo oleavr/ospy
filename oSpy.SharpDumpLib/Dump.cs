@@ -26,34 +26,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading;
-using System.Collections.Specialized;
-using System.ComponentModel;
 
 namespace oSpy.SharpDumpLib
 {
-    public delegate void ProgressChangedEventHandler(ProgressChangedEventArgs e);
-    public delegate void LoadCompletedEventHandler(object sender, LoadCompletedEventArgs e);
-
     public class Dump
-    {
-        public event ProgressChangedEventHandler ProgressChanged;
-        public event LoadCompletedEventHandler LoadCompleted;
-
-        public Dump()
-        {
-        }
-
-        public void Load(string path)
-        {
-        }
-
-        public void BuildFromCapturePath(string path)
-        {
-        }
-    }
-
-    public class LoadCompletedEventArgs : AsyncCompletedEventArgs
     {
     }
 }
