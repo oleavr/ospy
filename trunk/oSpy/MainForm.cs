@@ -115,8 +115,25 @@ namespace oSpy
             }
         }
 
+        private SharpDumpLib.DumpLoader loader = new oSpy.SharpDumpLib.DumpLoader();
+        private object loadState = null;
+
         private void openMenuItem_Click(object sender, EventArgs e)
         {
+            if (loadState == null)
+            {
+                loadState = Guid.NewGuid();
+
+                loader.ProgressChanged += new oSpy.SharpDumpLib.ProgressChangedEventHandler(loader_ProgressChanged);
+                loader.LoadDumpCompleted += new oSpy.SharpDumpLib.LoadDumpCompletedEventHandler(loader_LoadDumpCompleted);
+                loader.LoadAsync(null, loadState);
+            }
+            else
+            {
+                loader.CancelAsync(loadState);
+            }
+
+#if false
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 closeMenuItem.PerformClick();
@@ -134,6 +151,31 @@ namespace oSpy
                 }
 
                 curProgress = null;
+            }
+#endif
+        }
+
+        private void loader_ProgressChanged(System.ComponentModel.ProgressChangedEventArgs e)
+        {
+            richTextBox.Text += String.Format("{0}\n", e.ProgressPercentage);
+        }
+
+        private void loader_LoadDumpCompleted(object sender, oSpy.SharpDumpLib.LoadDumpCompletedEventArgs e)
+        {
+            if (!e.Cancelled)
+            {
+                try
+                {
+                    richTextBox.Text += String.Format("completed with result: {0}!\n", e.Dump);
+                }
+                catch (Exception ex)
+                {
+                    richTextBox.Text += String.Format("failed with error: {0}!\n", ex.Message);
+                }
+            }
+            else
+            {
+                richTextBox.Text += "cancelled\n";
             }
         }
 

@@ -139,6 +139,12 @@
   <ItemGroup>
     <None Include="app.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\oSpy.SharpDumpLib\oSpy.SharpDumpLib.csproj">
+      <Project>{4888CEE7-9E21-4558-89EB-7D2D2838B48B}</Project>
+      <Name>oSpy.SharpDumpLib</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
