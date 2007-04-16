@@ -29,6 +29,7 @@ using System.Text;
 using System.Threading;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.IO;
 
 namespace oSpy.SharpDumpLib
 {
@@ -44,7 +45,7 @@ namespace oSpy.SharpDumpLib
         private SendOrPostCallback onCompletedDelegate;
         private SendOrPostCallback completionMethodDelegate;
 
-        private delegate void WorkerEventHandler(string path, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate);
+        private delegate void WorkerEventHandler(Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate);
         private WorkerEventHandler workerDelegate;
 
         private HybridDictionary userStateToLifetime = new HybridDictionary();
@@ -139,14 +140,14 @@ namespace oSpy.SharpDumpLib
             asyncOp.PostOperationCompleted(onCompletedDelegate, e);
         }
 
-        private void LoadWorker(string path, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
+        private void LoadWorker(Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
         {
             Dump dump = null;
             Exception e = null;
 
             try
             {
-                dump = DoLoad(path, asyncOp);
+                dump = DoLoad(stream, asyncOp);
             }
             catch (Exception ex)
             {
@@ -161,7 +162,7 @@ namespace oSpy.SharpDumpLib
 
         #region Core implementation
 
-        private Dump DoLoad(string path, AsyncOperation asyncOp)
+        private Dump DoLoad(Stream stream, AsyncOperation asyncOp)
         {
             throw new NotImplementedException("FIXME");
         }
@@ -170,12 +171,12 @@ namespace oSpy.SharpDumpLib
 
         #region Public interface
 
-        public Dump Load(string path)
+        public Dump Load(Stream stream)
         {
-            return DoLoad(path, null);
+            return DoLoad(stream, null);
         }
 
-        public void LoadAsync(string path, object taskId)
+        public void LoadAsync(Stream stream, object taskId)
         {
             AsyncOperation asyncOp = AsyncOperationManager.CreateOperation(taskId);
 
@@ -190,7 +191,7 @@ namespace oSpy.SharpDumpLib
             }
 
             workerDelegate = new WorkerEventHandler(LoadWorker);
-            workerDelegate.BeginInvoke(path, asyncOp, completionMethodDelegate, null, null);
+            workerDelegate.BeginInvoke(stream, asyncOp, completionMethodDelegate, null, null);
         }
 
         public void CancelAsync(object taskId)
