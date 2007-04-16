@@ -925,7 +925,7 @@ Structure::Initialize(const char *firstFieldName, va_list args)
 void
 Structure::AddField(StructureField *field)
 {
-    m_fieldIndexes[field->GetName()] = m_fields.size();
+    m_fieldIndexes[field->GetName()] = static_cast<unsigned int>(m_fields.size());
     m_fields.push_back(field);
     m_size += field->GetMarshaller()->GetSize();
 }
