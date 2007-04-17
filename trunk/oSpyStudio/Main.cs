@@ -9,6 +9,8 @@ namespace oSpyStudio
         public static void Main(string[] args)
         {
             Application.Init();
+            System.ComponentModel.AsyncOperationManager.SynchronizationContext = new GLibSynchronizationContext();
+            
             MainWindow win = new MainWindow();
             win.Show();
             Application.Run();
