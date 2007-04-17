@@ -24,75 +24,38 @@
 //
 
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Threading;
+using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Xml;
 
 namespace oSpy.SharpDumpLib
 {
-    public delegate void BuildDumpCompletedEventHandler(object sender, BuildDumpCompletedEventArgs e);
+    public delegate void BuildCompletedEventHandler(object sender, BuildCompletedEventArgs e);
 
-    public class DumpBuilder : Component
+    public class DumpBuilder : AsyncWorker
     {
         #region Events
-        public event ProgressChangedEventHandler ProgressChanged;
-        public event BuildDumpCompletedEventHandler BuildDumpCompleted;
+
+        public event ProgressChangedEventHandler BuildProgressChanged;
+        public event BuildCompletedEventHandler BuildCompleted;
+
         #endregion // Events
 
         #region Internal members
-        private Container components = null;
-
-        private SendOrPostCallback onProgressReportDelegate;
-        private SendOrPostCallback onCompletedDelegate;
-        private SendOrPostCallback completionMethodDelegate;
 
         private delegate void WorkerEventHandler(string logPath, int numEvents, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate);
         private WorkerEventHandler workerDelegate;
 
-        private HybridDictionary userStateToLifetime = new HybridDictionary();
         #endregion // Internal members
 
         #region Construction and destruction
 
         public DumpBuilder(IContainer container)
+            : base(container)
         {
-            container.Add(this);
-            InitializeComponent();
-            InitializeDelegates();
-        }
-
-        public DumpBuilder()
-        {
-            InitializeComponent();
-            InitializeDelegates();
-        }
-
-        private void InitializeComponent()
-        {
-            components = new Container();
-        }
-
-        protected void InitializeDelegates()
-        {
-            onProgressReportDelegate = new SendOrPostCallback(ReportProgress);
-            onCompletedDelegate = new SendOrPostCallback(BuildCompleted);
-            completionMethodDelegate = new SendOrPostCallback(CompletionMethod);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                if (components != null)
-                {
-                    components.Dispose();
-                }
-            }
-            base.Dispose(disposing);
         }
 
         #endregion // Construction and destruction
@@ -106,36 +69,78 @@ namespace oSpy.SharpDumpLib
 
         public virtual void BuildAsync(string logPath, int numEvents, object taskId)
         {
-            AsyncOperation asyncOp = AsyncOperationManager.CreateOperation(taskId);
-
-            lock (userStateToLifetime.SyncRoot)
-            {
-                if (userStateToLifetime.Contains(taskId))
-                    throw new ArgumentException("Task ID parameter must be unique", "taskId");
-
-                userStateToLifetime[taskId] = asyncOp;
-            }
+            AsyncOperation asyncOp = CreateOperation(taskId);
 
             workerDelegate = new WorkerEventHandler(BuildWorker);
             workerDelegate.BeginInvoke(logPath, numEvents, asyncOp, completionMethodDelegate, null, null);
         }
 
-        public virtual void CancelAsync(object taskId)
+        public virtual void BuildAsyncCancel(object taskId)
         {
-            lock (userStateToLifetime.SyncRoot)
-            {
-                object obj = userStateToLifetime[taskId];
-                if (obj != null)
-                {
-                    AsyncOperation asyncOp = obj as AsyncOperation;
-
-                    BuildDumpCompletedEventArgs e = new BuildDumpCompletedEventArgs(null, null, true, asyncOp.UserSuppliedState);
-                    asyncOp.PostOperationCompleted(onCompletedDelegate, e);
-                }
-            }
+            CancelOperation(taskId);
         }
 
         #endregion // Public interface
+
+        #region Async glue
+
+        private void BuildWorker(string logPath, int numEvents, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
+        {
+            Dump dump = null;
+            Exception e = null;
+
+            try
+            {
+                dump = DoBuild(logPath, numEvents, asyncOp);
+            }
+            catch (Exception ex)
+            {
+                e = ex;
+            }
+
+            BuildState buildState = new BuildState(dump, e, asyncOp);
+
+            try { completionMethodDelegate(buildState); }
+            catch (InvalidOperationException) {}
+        }
+
+        protected override object CreateCancelEventArgs(object userSuppliedState)
+        {
+            return new BuildCompletedEventArgs(null, null, true, userSuppliedState);
+        }
+
+        protected override void ReportProgress(object e)
+        {
+            OnBuildProgressChanged(e as ProgressChangedEventArgs);
+        }
+
+        protected virtual void OnBuildProgressChanged(ProgressChangedEventArgs e)
+        {
+            if (BuildProgressChanged != null)
+                BuildProgressChanged(this, e);
+        }
+
+        protected override void ReportCompletion(object e)
+        {
+            OnBuildCompleted(e as BuildCompletedEventArgs);
+        }
+
+        protected virtual void OnBuildCompleted(BuildCompletedEventArgs e)
+        {
+            if (BuildCompleted != null)
+                BuildCompleted(this, e);
+        }
+
+        protected override void CompletionMethod(object state)
+        {
+            BuildState buildState = state as BuildState;
+
+            AsyncOperation asyncOp = buildState.asyncOp;
+            BuildCompletedEventArgs e = new BuildCompletedEventArgs(buildState.dump, buildState.ex, false, asyncOp.UserSuppliedState);
+            FinalizeOperation(asyncOp, e);
+        }
+
+        #endregion // Async glue
 
         #region Core implementation
 
@@ -156,7 +161,7 @@ namespace oSpy.SharpDumpLib
                     {
                         if (asyncOp != null)
                         {
-                            int pctComplete = (int)(((float)n / (float)numEvents) * 100.0f);
+                            int pctComplete = (int)(((float)(n + 1) / (float)numEvents) * 100.0f);
                             ProgressChangedEventArgs e = new ProgressChangedEventArgs(pctComplete, asyncOp.UserSuppliedState);
                             asyncOp.Post(onProgressReportDelegate, e);
                         }
@@ -240,78 +245,17 @@ namespace oSpy.SharpDumpLib
         }
 
         #endregion // Core implementation
-
-        #region Async glue
-
-        private void ReportProgress(object state)
-        {
-            OnProgressChanged(state as ProgressChangedEventArgs);
-        }
-
-        private void BuildCompleted(object operationState)
-        {
-            OnBuildCompleted(operationState as BuildDumpCompletedEventArgs);
-        }
-
-        private void CompletionMethod(object buildDumpState)
-        {
-            BuildDumpState buildState = buildDumpState as BuildDumpState;
-
-            AsyncOperation asyncOp = buildState.asyncOp;
-            BuildDumpCompletedEventArgs e = new BuildDumpCompletedEventArgs(buildState.dump, buildState.ex, false, asyncOp.UserSuppliedState);
-
-            lock (userStateToLifetime.SyncRoot)
-            {
-                userStateToLifetime.Remove(asyncOp.UserSuppliedState);
-            }
-
-            asyncOp.PostOperationCompleted(onCompletedDelegate, e);
-        }
-
-        protected void OnProgressChanged(ProgressChangedEventArgs e)
-        {
-            if (ProgressChanged != null)
-                ProgressChanged(this, e);
-        }
-
-        protected void OnBuildCompleted(BuildDumpCompletedEventArgs e)
-        {
-            if (BuildDumpCompleted != null)
-                BuildDumpCompleted(this, e);
-        }
-
-        private void BuildWorker(string logPath, int numEvents, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
-        {
-            Dump dump = null;
-            Exception e = null;
-
-            try
-            {
-                dump = DoBuild(logPath, numEvents, asyncOp);
-            }
-            catch (Exception ex)
-            {
-                e = ex;
-            }
-
-            BuildDumpState buildState = new BuildDumpState(dump, e, asyncOp);
-
-            try { completionMethodDelegate(buildState); }
-            catch (InvalidOperationException) {}
-        }
-
-        #endregion // Async glue
     }
 
     #region Helper classes
 
-    internal class BuildDumpState
+    internal class BuildState
     {
         public Dump dump = null;
         public Exception ex = null;
         public AsyncOperation asyncOp = null;
 
-        public BuildDumpState(Dump dump, Exception ex, AsyncOperation asyncOp)
+        public BuildState(Dump dump, Exception ex, AsyncOperation asyncOp)
         {
             this.dump = dump;
             this.ex = ex;
@@ -319,24 +263,22 @@ namespace oSpy.SharpDumpLib
         }
     }
 
-    public class BuildDumpCompletedEventArgs : AsyncCompletedEventArgs
+    public class BuildCompletedEventArgs : AsyncCompletedEventArgs
     {
         private Dump dump = null;
-
-        public BuildDumpCompletedEventArgs(Dump dump, Exception e, bool cancelled, object state)
-            : base(e, cancelled, state)
-        {
-            this.dump = dump;
-        }
-
         public Dump Dump
         {
             get
             {
                 RaiseExceptionIfNecessary();
-
                 return dump;
             }
+        }
+
+        public BuildCompletedEventArgs(Dump dump, Exception e, bool cancelled, object state)
+            : base(e, cancelled, state)
+        {
+            this.dump = dump;
         }
     }
 

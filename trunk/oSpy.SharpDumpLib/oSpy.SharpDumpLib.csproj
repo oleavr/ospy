@@ -33,6 +33,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AsyncWorker.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Dump.cs" />
     <Compile Include="DumpBuilder.cs">
       <SubType>Component</SubType>
@@ -44,6 +47,10 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Resource.cs" />
+    <Compile Include="DumpAnalyzer.cs">
+      <SubType>Component</SubType>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
