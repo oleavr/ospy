@@ -162,18 +162,29 @@ namespace oSpy.Capture
             public SoftwallRule[] SoftwallRules;
         }
 
-        private Process[] processes;
-        private IntPtr[] handles;
-        private IProgressFeedback progress;
+        private Process[] processes = null;
+        private IntPtr[] handles = null;
+        private IProgressFeedback progress = null;
 
         private IntPtr fileMapping, cfgPtr;
         private IntPtr logIndexPtr, logSizePtr;
-        private string tmpDir;
 
-        private DumpFile captureResult;
-        public DumpFile CaptureResult
+        private string capturePath;
+        public string CapturePath
         {
-            get { return captureResult; }
+            get { return capturePath; }
+        }
+
+        private int eventCount;
+        public int EventCount
+        {
+            get { return eventCount; }
+        }
+
+        private int captureSize;
+        public int CaptureSize
+        {
+            get { return captureSize; }
         }
 
         public Manager()
@@ -197,10 +208,15 @@ namespace oSpy.Capture
             th.Start();
         }
 
-        public void GetCaptureStatistics(out int evCount, out int evBytes)
+        public void CloseCapture()
         {
-            evCount = Marshal.ReadInt32(logIndexPtr);
-            evBytes = Marshal.ReadInt32(logSizePtr);
+            Directory.Delete(capturePath, true);
+        }
+
+        public void UpdateCaptureStatistics()
+        {
+            eventCount = Marshal.ReadInt32(logIndexPtr);
+            captureSize = Marshal.ReadInt32(logSizePtr);
         }
 
         private void StartCaptureThread()
@@ -208,6 +224,7 @@ namespace oSpy.Capture
             try
             {
                 PrepareCapture(processes);
+
                 DoInjection();
             }
             catch (Error e)
@@ -224,7 +241,11 @@ namespace oSpy.Capture
             try
             {
                 DoUnInjection();
-                FinalizeCapture();
+
+                UpdateCaptureStatistics();
+
+                UnmapViewOfFile(cfgPtr);
+                CloseHandle(fileMapping);
             }
             catch (Error e)
             {
@@ -251,14 +272,14 @@ namespace oSpy.Capture
             // Create a temporary directory for the capture
             do
             {
-                tmpDir = String.Format("{0}{1}", Path.GetTempPath(), Path.GetRandomFileName());
+                capturePath = String.Format("{0}{1}", Path.GetTempPath(), Path.GetRandomFileName());
             }
-            while (Directory.Exists(tmpDir));
+            while (Directory.Exists(capturePath));
 
-            Directory.CreateDirectory(tmpDir);
+            Directory.CreateDirectory(capturePath);
 
             // Write the temporary directory to shared memory
-            char[] tmpDirChars = tmpDir.ToCharArray();
+            char[] tmpDirChars = capturePath.ToCharArray();
             IntPtr ptr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(Capture), "LogPath").ToInt64());
             Marshal.Copy(tmpDirChars, 0, ptr, tmpDirChars.Length);
 
@@ -287,20 +308,7 @@ namespace oSpy.Capture
 
             // Copy configuration XML
             string configPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) + "\\config.xml";
-            File.Copy(configPath, String.Format("{0}\\config.xml", tmpDir));
-        }
-
-        private void FinalizeCapture()
-        {
-            int evCount, evBytes;
-            GetCaptureStatistics(out evCount, out evBytes);
-
-            Converter conv = new Converter();
-            captureResult = conv.ConvertAll(tmpDir, evCount, progress);
-            Directory.Delete(tmpDir, true);
-
-            UnmapViewOfFile(cfgPtr);
-            CloseHandle(fileMapping);
+            File.Copy(configPath, String.Format("{0}\\config.xml", capturePath));
         }
 
         private void DoInjection()

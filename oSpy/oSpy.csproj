@@ -44,7 +44,6 @@
     <Compile Include="AboutBoxForm.Designer.cs">
       <DependentUpon>AboutBoxForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Capture\Converter.cs" />
     <Compile Include="Capture\ProgressForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -52,7 +51,6 @@
       <DependentUpon>ProgressForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Capture\Manager.cs" />
-    <Compile Include="Capture\DumpFile.cs" />
     <Compile Include="ProgressForm.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -46,12 +46,10 @@ namespace oSpy.Capture
 
         private void pollTimer_Tick(object sender, EventArgs e)
         {
-            int evCount, evBytes;
+            captureMgr.UpdateCaptureStatistics();
 
-            captureMgr.GetCaptureStatistics(out evCount, out evBytes);
-
-            evCountLabel.Text = Convert.ToString(evCount);
-            evBytesLabel.Text = Convert.ToString(evBytes);
+            evCountLabel.Text = Convert.ToString(captureMgr.EventCount);
+            evBytesLabel.Text = Convert.ToString(captureMgr.CaptureSize);
         }
 
         private void CaptureProgressForm_FormClosed(object sender, FormClosedEventArgs e)

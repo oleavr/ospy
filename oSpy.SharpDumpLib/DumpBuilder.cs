@@ -34,13 +34,13 @@ using System.Xml;
 
 namespace oSpy.SharpDumpLib
 {
-    public delegate void LoadDumpCompletedEventHandler(object sender, LoadDumpCompletedEventArgs e);
+    public delegate void BuildDumpCompletedEventHandler(object sender, BuildDumpCompletedEventArgs e);
 
-    public class DumpLoader : Component
+    public class DumpBuilder : Component
     {
         #region Events
         public event ProgressChangedEventHandler ProgressChanged;
-        public event LoadDumpCompletedEventHandler LoadDumpCompleted;
+        public event BuildDumpCompletedEventHandler BuildDumpCompleted;
         #endregion // Events
 
         #region Internal members
@@ -50,7 +50,7 @@ namespace oSpy.SharpDumpLib
         private SendOrPostCallback onCompletedDelegate;
         private SendOrPostCallback completionMethodDelegate;
 
-        private delegate void WorkerEventHandler(Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate);
+        private delegate void WorkerEventHandler(string logPath, int numEvents, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate);
         private WorkerEventHandler workerDelegate;
 
         private HybridDictionary userStateToLifetime = new HybridDictionary();
@@ -58,14 +58,14 @@ namespace oSpy.SharpDumpLib
 
         #region Construction and destruction
 
-        public DumpLoader(IContainer container)
+        public DumpBuilder(IContainer container)
         {
             container.Add(this);
             InitializeComponent();
             InitializeDelegates();
         }
 
-        public DumpLoader()
+        public DumpBuilder()
         {
             InitializeComponent();
             InitializeDelegates();
@@ -79,7 +79,7 @@ namespace oSpy.SharpDumpLib
         protected void InitializeDelegates()
         {
             onProgressReportDelegate = new SendOrPostCallback(ReportProgress);
-            onCompletedDelegate = new SendOrPostCallback(LoadCompleted);
+            onCompletedDelegate = new SendOrPostCallback(BuildCompleted);
             completionMethodDelegate = new SendOrPostCallback(CompletionMethod);
         }
 
@@ -99,12 +99,12 @@ namespace oSpy.SharpDumpLib
 
         #region Public interface
 
-        public virtual Dump Load(Stream stream)
+        public virtual Dump Build(string logPath, int numEvents)
         {
-            return DoLoad(stream, null);
+            return DoBuild(logPath, numEvents, null);
         }
 
-        public virtual void LoadAsync(Stream stream, object taskId)
+        public virtual void BuildAsync(string logPath, int numEvents, object taskId)
         {
             AsyncOperation asyncOp = AsyncOperationManager.CreateOperation(taskId);
 
@@ -116,8 +116,8 @@ namespace oSpy.SharpDumpLib
                 userStateToLifetime[taskId] = asyncOp;
             }
 
-            workerDelegate = new WorkerEventHandler(LoadWorker);
-            workerDelegate.BeginInvoke(stream, asyncOp, completionMethodDelegate, null, null);
+            workerDelegate = new WorkerEventHandler(BuildWorker);
+            workerDelegate.BeginInvoke(logPath, numEvents, asyncOp, completionMethodDelegate, null, null);
         }
 
         public virtual void CancelAsync(object taskId)
@@ -129,7 +129,7 @@ namespace oSpy.SharpDumpLib
                 {
                     AsyncOperation asyncOp = obj as AsyncOperation;
 
-                    LoadDumpCompletedEventArgs e = new LoadDumpCompletedEventArgs(null, null, true, asyncOp.UserSuppliedState);
+                    BuildDumpCompletedEventArgs e = new BuildDumpCompletedEventArgs(null, null, true, asyncOp.UserSuppliedState);
                     asyncOp.PostOperationCompleted(onCompletedDelegate, e);
                 }
             }
@@ -139,34 +139,36 @@ namespace oSpy.SharpDumpLib
 
         #region Core implementation
 
-        private Dump DoLoad(Stream stream, AsyncOperation asyncOp)
+        private Dump DoBuild(string logPath, int numEvents, AsyncOperation asyncOp)
         {
             Dump dump = new Dump();
 
             try
             {
-                BinaryReader reader = new BinaryReader(stream);
-                uint numEvents = reader.ReadUInt32();
+                uint n = 0;
 
-                XmlTextReader xmlReader = new XmlTextReader(stream);
-
-                uint n;
-                for (n = 0; xmlReader.Read() && n < numEvents; n++)
+                foreach (string filePath in Directory.GetFiles(logPath, "*.log", SearchOption.TopDirectoryOnly))
                 {
-                    if (asyncOp != null)
+                    FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+                    BinaryReader r = new BinaryReader(fs);
+
+                    while (fs.Position < fs.Length && n < numEvents)
                     {
-                        int pctComplete = (int)(((float)n / (float)numEvents) * 100.0f);
-                        ProgressChangedEventArgs e = new ProgressChangedEventArgs(pctComplete, asyncOp.UserSuppliedState);
-                        asyncOp.Post(onProgressReportDelegate, e);
+                        if (asyncOp != null)
+                        {
+                            int pctComplete = (int)(((float)n / (float)numEvents) * 100.0f);
+                            ProgressChangedEventArgs e = new ProgressChangedEventArgs(pctComplete, asyncOp.UserSuppliedState);
+                            asyncOp.Post(onProgressReportDelegate, e);
+                        }
+
+                        XmlDocument doc = new XmlDocument();
+                        doc.AppendChild(UnserializeNode(r, doc));
+                        dump.AddEvent(doc.DocumentElement);
+
+                        n++;
                     }
 
-                    if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "event")
-                    {
-                        XmlReader rdr = xmlReader.ReadSubtree();
-                        XmlDocument doc = new XmlDocument();
-                        doc.Load(rdr);
-                        dump.AddEvent(doc.DocumentElement);
-                    }
+                    r.Close();
                 }
 
                 if (n != numEvents)
@@ -181,6 +183,62 @@ namespace oSpy.SharpDumpLib
             return dump;
         }
 
+        private XmlNode UnserializeNode(BinaryReader r, XmlDocument doc)
+        {
+            XmlElement el = doc.CreateElement(UnserializeString(r));
+
+            uint attrCount = r.ReadUInt32();
+            for (int i = 0; i < attrCount; i++)
+            {
+                XmlAttribute attr = doc.CreateAttribute(UnserializeString(r));
+                attr.Value = UnserializeString(r);
+                el.Attributes.Append(attr);
+            }
+
+            UInt32 contentIsRaw = r.ReadUInt32();
+            string content = "";
+
+            if (contentIsRaw != 0)
+            {
+                uint len = r.ReadUInt32();
+                byte[] bytes = r.ReadBytes((int)len);
+                if (bytes.Length > 0)
+                {
+                    content = Convert.ToBase64String(bytes, Base64FormattingOptions.None);
+                }
+            }
+            else
+            {
+                content = UnserializeString(r);
+            }
+
+            if (content != String.Empty)
+            {
+                XmlText text = doc.CreateTextNode(content);
+                el.AppendChild(text);
+            }
+
+            uint childCount = r.ReadUInt32();
+            for (int i = 0; i < childCount; i++)
+            {
+                XmlNode childNode = UnserializeNode(r, doc);
+                el.AppendChild(childNode);
+            }
+
+            return el;
+        }
+
+        private string UnserializeString(BinaryReader r)
+        {
+            uint len = r.ReadUInt32();
+            byte[] buf = r.ReadBytes((int)len);
+
+            Decoder dec = Encoding.ASCII.GetDecoder();
+            char[] chars = new char[buf.Length];
+            dec.GetChars(buf, 0, buf.Length, chars, 0);
+            return new string(chars);
+        }
+
         #endregion // Core implementation
 
         #region Async glue
@@ -190,17 +248,17 @@ namespace oSpy.SharpDumpLib
             OnProgressChanged(state as ProgressChangedEventArgs);
         }
 
-        private void LoadCompleted(object operationState)
+        private void BuildCompleted(object operationState)
         {
-            OnLoadCompleted(operationState as LoadDumpCompletedEventArgs);
+            OnBuildCompleted(operationState as BuildDumpCompletedEventArgs);
         }
 
-        private void CompletionMethod(object loadDumpState)
+        private void CompletionMethod(object buildDumpState)
         {
-            LoadDumpState loadState = loadDumpState as LoadDumpState;
+            BuildDumpState buildState = buildDumpState as BuildDumpState;
 
-            AsyncOperation asyncOp = loadState.asyncOp;
-            LoadDumpCompletedEventArgs e = new LoadDumpCompletedEventArgs(loadState.dump, loadState.ex, false, asyncOp.UserSuppliedState);
+            AsyncOperation asyncOp = buildState.asyncOp;
+            BuildDumpCompletedEventArgs e = new BuildDumpCompletedEventArgs(buildState.dump, buildState.ex, false, asyncOp.UserSuppliedState);
 
             lock (userStateToLifetime.SyncRoot)
             {
@@ -216,29 +274,29 @@ namespace oSpy.SharpDumpLib
                 ProgressChanged(this, e);
         }
 
-        protected void OnLoadCompleted(LoadDumpCompletedEventArgs e)
+        protected void OnBuildCompleted(BuildDumpCompletedEventArgs e)
         {
-            if (LoadDumpCompleted != null)
-                LoadDumpCompleted(this, e);
+            if (BuildDumpCompleted != null)
+                BuildDumpCompleted(this, e);
         }
 
-        private void LoadWorker(Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
+        private void BuildWorker(string logPath, int numEvents, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
         {
             Dump dump = null;
             Exception e = null;
 
             try
             {
-                dump = DoLoad(stream, asyncOp);
+                dump = DoBuild(logPath, numEvents, asyncOp);
             }
             catch (Exception ex)
             {
                 e = ex;
             }
 
-            LoadDumpState loadState = new LoadDumpState(dump, e, asyncOp);
+            BuildDumpState buildState = new BuildDumpState(dump, e, asyncOp);
 
-            try { completionMethodDelegate(loadState); }
+            try { completionMethodDelegate(buildState); }
             catch (InvalidOperationException) {}
         }
 
@@ -247,13 +305,13 @@ namespace oSpy.SharpDumpLib
 
     #region Helper classes
 
-    internal class LoadDumpState
+    internal class BuildDumpState
     {
         public Dump dump = null;
         public Exception ex = null;
         public AsyncOperation asyncOp = null;
 
-        public LoadDumpState(Dump dump, Exception ex, AsyncOperation asyncOp)
+        public BuildDumpState(Dump dump, Exception ex, AsyncOperation asyncOp)
         {
             this.dump = dump;
             this.ex = ex;
@@ -261,11 +319,11 @@ namespace oSpy.SharpDumpLib
         }
     }
 
-    public class LoadDumpCompletedEventArgs : AsyncCompletedEventArgs
+    public class BuildDumpCompletedEventArgs : AsyncCompletedEventArgs
     {
         private Dump dump = null;
 
-        public LoadDumpCompletedEventArgs(Dump dump, Exception e, bool cancelled, object state)
+        public BuildDumpCompletedEventArgs(Dump dump, Exception e, bool cancelled, object state)
             : base(e, cancelled, state)
         {
             this.dump = dump;

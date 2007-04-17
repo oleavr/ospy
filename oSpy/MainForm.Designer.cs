@@ -48,14 +48,29 @@ namespace oSpy
             this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mainSplitContainer = new System.Windows.Forms.SplitContainer();
             this.dataGridView = new System.Windows.Forms.DataGridView();
+            this.idDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.timestampDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.eventDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.bindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this.dataSet = new System.Data.DataSet();
+            this.eventsTbl = new System.Data.DataTable();
+            this.idCol = new System.Data.DataColumn();
+            this.timestampCol = new System.Data.DataColumn();
+            this.eventCol = new System.Data.DataColumn();
             this.richTextBox = new System.Windows.Forms.RichTextBox();
             this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dumpBuilder = new oSpy.SharpDumpLib.DumpBuilder(this.components);
+            this.dumpSaver = new oSpy.SharpDumpLib.DumpSaver(this.components);
+            this.dumpLoader = new oSpy.SharpDumpLib.DumpLoader(this.components);
             this.menuStrip.SuspendLayout();
             this.dumpContextMenuStrip.SuspendLayout();
             this.mainSplitContainer.Panel1.SuspendLayout();
             this.mainSplitContainer.Panel2.SuspendLayout();
             this.mainSplitContainer.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.bindingSource)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.eventsTbl)).BeginInit();
             this.SuspendLayout();
             // 
             // openFileDialog
@@ -209,9 +224,15 @@ namespace oSpy
             this.dataGridView.AllowUserToAddRows = false;
             this.dataGridView.AllowUserToDeleteRows = false;
             this.dataGridView.AllowUserToResizeRows = false;
+            this.dataGridView.AutoGenerateColumns = false;
             this.dataGridView.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
             this.dataGridView.BackgroundColor = System.Drawing.SystemColors.ControlDark;
             this.dataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.idDataGridViewTextBoxColumn,
+            this.timestampDataGridViewTextBoxColumn,
+            this.eventDataGridViewTextBoxColumn});
+            this.dataGridView.DataSource = this.bindingSource;
             this.dataGridView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dataGridView.Location = new System.Drawing.Point(0, 0);
             this.dataGridView.MultiSelect = false;
@@ -222,6 +243,72 @@ namespace oSpy
             this.dataGridView.Size = new System.Drawing.Size(828, 254);
             this.dataGridView.TabIndex = 2;
             this.dataGridView.SelectionChanged += new System.EventHandler(this.dataGridView_SelectionChanged);
+            // 
+            // idDataGridViewTextBoxColumn
+            // 
+            this.idDataGridViewTextBoxColumn.DataPropertyName = "id";
+            this.idDataGridViewTextBoxColumn.HeaderText = "id";
+            this.idDataGridViewTextBoxColumn.Name = "idDataGridViewTextBoxColumn";
+            this.idDataGridViewTextBoxColumn.ReadOnly = true;
+            this.idDataGridViewTextBoxColumn.Width = 40;
+            // 
+            // timestampDataGridViewTextBoxColumn
+            // 
+            this.timestampDataGridViewTextBoxColumn.DataPropertyName = "timestamp";
+            this.timestampDataGridViewTextBoxColumn.HeaderText = "timestamp";
+            this.timestampDataGridViewTextBoxColumn.Name = "timestampDataGridViewTextBoxColumn";
+            this.timestampDataGridViewTextBoxColumn.ReadOnly = true;
+            this.timestampDataGridViewTextBoxColumn.Width = 79;
+            // 
+            // eventDataGridViewTextBoxColumn
+            // 
+            this.eventDataGridViewTextBoxColumn.DataPropertyName = "event";
+            this.eventDataGridViewTextBoxColumn.HeaderText = "event";
+            this.eventDataGridViewTextBoxColumn.Name = "eventDataGridViewTextBoxColumn";
+            this.eventDataGridViewTextBoxColumn.ReadOnly = true;
+            this.eventDataGridViewTextBoxColumn.Visible = false;
+            this.eventDataGridViewTextBoxColumn.Width = 59;
+            // 
+            // bindingSource
+            // 
+            this.bindingSource.DataMember = "events";
+            this.bindingSource.DataSource = this.dataSet;
+            // 
+            // dataSet
+            // 
+            this.dataSet.DataSetName = "events";
+            this.dataSet.Tables.AddRange(new System.Data.DataTable[] {
+            this.eventsTbl});
+            // 
+            // eventsTbl
+            // 
+            this.eventsTbl.Columns.AddRange(new System.Data.DataColumn[] {
+            this.idCol,
+            this.timestampCol,
+            this.eventCol});
+            this.eventsTbl.Constraints.AddRange(new System.Data.Constraint[] {
+            new System.Data.UniqueConstraint("Constraint1", new string[] {
+                        "id"}, false)});
+            this.eventsTbl.TableName = "events";
+            // 
+            // idCol
+            // 
+            this.idCol.AllowDBNull = false;
+            this.idCol.Caption = "Index";
+            this.idCol.ColumnName = "id";
+            this.idCol.DataType = typeof(uint);
+            // 
+            // timestampCol
+            // 
+            this.timestampCol.Caption = "Timestamp";
+            this.timestampCol.ColumnName = "timestamp";
+            // 
+            // eventCol
+            // 
+            this.eventCol.Caption = "Event";
+            this.eventCol.ColumnMapping = System.Data.MappingType.Hidden;
+            this.eventCol.ColumnName = "event";
+            this.eventCol.DataType = typeof(object);
             // 
             // richTextBox
             // 
@@ -246,6 +333,21 @@ namespace oSpy
             this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
             this.dataGridViewTextBoxColumn1.Visible = false;
             // 
+            // dumpBuilder
+            // 
+            this.dumpBuilder.BuildDumpCompleted += new oSpy.SharpDumpLib.BuildDumpCompletedEventHandler(this.dumpBuilder_BuildDumpCompleted);
+            this.dumpBuilder.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.curOperation_ProgressChanged);
+            // 
+            // dumpSaver
+            // 
+            this.dumpSaver.SaveDumpCompleted += new oSpy.SharpDumpLib.SaveDumpCompletedEventHandler(this.dumpSaver_SaveDumpCompleted);
+            this.dumpSaver.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.curOperation_ProgressChanged);
+            // 
+            // dumpLoader
+            // 
+            this.dumpLoader.LoadDumpCompleted += new oSpy.SharpDumpLib.LoadDumpCompletedEventHandler(this.dumpLoader_LoadDumpCompleted);
+            this.dumpLoader.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.curOperation_ProgressChanged);
+            // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(828, 585);
@@ -262,6 +364,9 @@ namespace oSpy
             this.mainSplitContainer.Panel2.ResumeLayout(false);
             this.mainSplitContainer.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.bindingSource)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dataSet)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.eventsTbl)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -290,6 +395,18 @@ namespace oSpy
         private System.Windows.Forms.ToolStripMenuItem copyToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem newCaptureToolStripMenuItem;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
+        private oSpy.SharpDumpLib.DumpBuilder dumpBuilder;
+        private System.Data.DataSet dataSet;
+        private System.Data.DataTable eventsTbl;
+        private System.Data.DataColumn idCol;
+        private System.Data.DataColumn timestampCol;
+        private System.Data.DataColumn eventCol;
+        private System.Windows.Forms.DataGridViewTextBoxColumn idDataGridViewTextBoxColumn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn timestampDataGridViewTextBoxColumn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn eventDataGridViewTextBoxColumn;
+        private System.Windows.Forms.BindingSource bindingSource;
+        private oSpy.SharpDumpLib.DumpSaver dumpSaver;
+        private oSpy.SharpDumpLib.DumpLoader dumpLoader;
     }
 }
 

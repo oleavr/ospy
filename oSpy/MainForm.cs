@@ -37,28 +37,45 @@ using System.Threading;
 using System.Xml;
 using System.Diagnostics;
 using oSpy.Util;
+using System.ComponentModel;
+using oSpy.SharpDumpLib;
 
 namespace oSpy
 {
     public partial class MainForm : Form
     {
-        private Capture.Manager captureMgr;
-        private SoftwallForm swForm;
+        private Capture.Manager captureMgr = new Capture.Manager();
+        private SoftwallForm swForm = new SoftwallForm();
 
-        private Capture.DumpFile curDump;
-        private ProgressForm curProgress;
+        private Dump curDump = null;
+        private ProgressForm curProgress = null;
+        private string curOperation = null;
 
         public MainForm()
         {
             InitializeComponent();
+        }
 
-            captureMgr = new Capture.Manager();
-            swForm = new SoftwallForm();
+        private void NewOperation(string name)
+        {
+            curOperation = name;
+            curProgress = new ProgressForm(curOperation);
+        }
+
+        private void curOperation_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            curProgress.ProgressUpdate(curOperation, e.ProgressPercentage);
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            closeMenuItem.PerformClick();
+            CloseCurrentDump();
+        }
+
+        private void fileToolStripMenuItem_DropDownOpening(object sender, EventArgs e)
+        {
+            saveMenuItem.Enabled = (curDump != null);
+            closeMenuItem.Enabled = (curDump != null);
         }
 
         private void newCaptureToolStripMenuItem_Click(object sender, EventArgs e)
@@ -69,127 +86,151 @@ namespace oSpy
             if (processes.Length == 0)
                 return;
 
-            curProgress = new ProgressForm("Starting capture");
+            NewOperation("Starting capture");
+            captureMgr.StartCapture(processes, curProgress);
+
+            if (curProgress.ShowDialog(this) != DialogResult.OK)
+            {
+                MessageBox.Show(String.Format("Failed to start capture: {0}", curProgress.GetOperationErrorMessage()),
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            Capture.ProgressForm capProgFrm = new Capture.ProgressForm(captureMgr);
+            capProgFrm.ShowDialog();
+
+            NewOperation("Stopping capture");
+            captureMgr.StopCapture(curProgress);
+
+            if (curProgress.ShowDialog(this) != DialogResult.OK)
+            {
+                MessageBox.Show(String.Format("Failed to stop capture: {0}", curProgress.GetOperationErrorMessage()),
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            NewOperation("Processing capture");
+            curProgress = new ProgressForm(curOperation);
+            dumpBuilder.BuildAsync(captureMgr.CapturePath, captureMgr.EventCount, curOperation);
+
+            curProgress.ShowDialog(this);
+        }
+
+        private void dumpBuilder_BuildDumpCompleted(object sender, BuildDumpCompletedEventArgs e)
+        {
+            captureMgr.CloseCapture();
+
+            curProgress.OperationComplete();
+
+            Dump dump = null;
 
             try
             {
-                captureMgr.StartCapture(processes, curProgress);
-
-                if (curProgress.ShowDialog(this) != DialogResult.OK)
-                {
-                    MessageBox.Show(String.Format("Failed to start capture: {0}", curProgress.GetOperationErrorMessage()),
-                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                Capture.ProgressForm capProgFrm = new Capture.ProgressForm(captureMgr);
-                capProgFrm.ShowDialog();
-
-                curProgress = new ProgressForm("Stopping capture");
-
-                captureMgr.StopCapture(curProgress);
-
-                if (curProgress.ShowDialog(this) != DialogResult.OK)
-                {
-                    MessageBox.Show(String.Format("Failed to stop capture: {0}", curProgress.GetOperationErrorMessage()),
-                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                curDump = captureMgr.CaptureResult;
-                curProgress = new ProgressForm("Opening");
-
-                Thread th = new Thread(new ParameterizedThreadStart(DoOpenDump));
-                th.Start(null);
-
-                if (curProgress.ShowDialog(this) != DialogResult.OK)
-                {
-                    MessageBox.Show(String.Format("Failed to open capture: {0}", curProgress.GetOperationErrorMessage()),
-                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
+                dump = e.Dump;
             }
-            finally
+            catch (Exception ex)
             {
-                curProgress = null;
+                MessageBox.Show(String.Format("Failed to process capture: {0}", ex.Message),
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
-        }
 
-        private SharpDumpLib.DumpLoader loader = new oSpy.SharpDumpLib.DumpLoader();
-        private object loadState = null;
+            OpenDump(dump);
+        }
 
         private void openMenuItem_Click(object sender, EventArgs e)
         {
-            if (loadState == null)
-            {
-                loadState = Guid.NewGuid();
-
-                loader.ProgressChanged += new oSpy.SharpDumpLib.ProgressChangedEventHandler(loader_ProgressChanged);
-                loader.LoadDumpCompleted += new oSpy.SharpDumpLib.LoadDumpCompletedEventHandler(loader_LoadDumpCompleted);
-                loader.LoadAsync(null, loadState);
-            }
-            else
-            {
-                loader.CancelAsync(loadState);
-            }
-
-#if false
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                closeMenuItem.PerformClick();
-
-                curDump = new Capture.DumpFile();
-                curProgress = new ProgressForm("Opening");
-
-                Thread th = new Thread(new ParameterizedThreadStart(DoOpenDump));
-                th.Start(openFileDialog.FileName);
-
-                if (curProgress.ShowDialog(this) != DialogResult.OK)
-                {
-                    MessageBox.Show(String.Format("Failed to open capture: {0}", curProgress.GetOperationErrorMessage()),
-                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-
-                curProgress = null;
-            }
-#endif
-        }
-
-        private void loader_ProgressChanged(System.ComponentModel.ProgressChangedEventArgs e)
-        {
-            richTextBox.Text += String.Format("{0}\n", e.ProgressPercentage);
-        }
-
-        private void loader_LoadDumpCompleted(object sender, oSpy.SharpDumpLib.LoadDumpCompletedEventArgs e)
-        {
-            if (!e.Cancelled)
-            {
-                try
-                {
-                    richTextBox.Text += String.Format("completed with result: {0}!\n", e.Dump);
-                }
-                catch (Exception ex)
-                {
-                    richTextBox.Text += String.Format("failed with error: {0}!\n", ex.Message);
-                }
-            }
-            else
-            {
-                richTextBox.Text += "cancelled\n";
+                NewOperation("Loading");
+                BZip2InputStream stream = new BZip2InputStream(File.OpenRead(openFileDialog.FileName));
+                dumpLoader.LoadAsync(stream, curOperation);
+                curProgress.ShowDialog(this);
             }
         }
 
-        private void DoOpenDump(object obj)
+        private void dumpLoader_LoadDumpCompleted(object sender, LoadDumpCompletedEventArgs e)
         {
-            string filename = obj as string;
+            curProgress.OperationComplete();
+
+            Dump dump = null;
 
             try
             {
-                curDump.Load(filename, curProgress);
+                dump = e.Dump;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(String.Format("Failed to load capture: {0}", ex.Message),
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            OpenDump(dump);
+        }
+
+        private void OpenDump(Dump dump)
+        {
+            CloseCurrentDump();
+
+            curDump = dump;
+
+            dataGridView.DataSource = null;
+
+            NewOperation("Opening");
+            Thread th = new Thread(new ThreadStart(DoOpenDump));
+            th.Start();
+
+            if (curProgress.ShowDialog(this) != DialogResult.OK)
+            {
+                MessageBox.Show(String.Format("Failed to open capture: {0}", curProgress.GetOperationErrorMessage()),
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+        }
+
+        private void CloseCurrentDump()
+        {
+            if (curDump == null)
+                return;
+
+            curDump.Close();
+            curDump = null;
+
+            dataSet.Tables[0].Clear();
+            richTextBox.Clear();
+        }
+
+        private void DoOpenDump()
+        {
+            int n = 0;
+            int count = curDump.Events.Count;
+
+            try
+            {
+                int prevPct = -1;
+
+                DataTable tbl = dataSet.Tables[0];
+                tbl.BeginLoadData();
+                DataRowCollection rows = tbl.Rows;
+
+                foreach (Event ev in curDump.Events.Values)
+                {
+                    int pct = (int)(((float)n / (float)count) * 100.0f);
+                    if (pct != prevPct)
+                    {
+                        prevPct = pct;
+                        curProgress.ProgressUpdate(curOperation, pct);
+                    }
+
+                    rows.Add(ev.Id, ev.Timestamp, ev);
+                }
+
+                tbl.EndLoadData();
             }
             catch (Exception e)
             {
-                curDump = null;
+                CloseCurrentDump();
                 curProgress.OperationFailed(e.Message);
                 return;
             }
@@ -201,66 +242,43 @@ namespace oSpy
 
         private void RestoreDataSource()
         {
-            dataGridView.DataSource = curDump.Events;
-            dataGridView.DataMember = "events";
+            dataGridView.DataSource = bindingSource;
         }
 
         private void saveMenuItem_Click(object sender, EventArgs e)
         {
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
-                curProgress = new ProgressForm("Saving");
-
-                Thread th = new Thread(new ParameterizedThreadStart(DoSaveDump));
-                th.Start(saveFileDialog.FileName);
-
-                if (curProgress.ShowDialog(this) != DialogResult.OK)
-                {
-                    MessageBox.Show(String.Format("Failed to save capture: {0}", curProgress.GetOperationErrorMessage()),
-                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-
-                curProgress = null;
+                NewOperation("Saving");
+                BZip2OutputStream stream = new BZip2OutputStream(File.Open(saveFileDialog.FileName, FileMode.Create));
+                dumpSaver.SaveAsync(curDump, stream, curOperation);
+                curProgress.ShowDialog(this);
             }
         }
 
-        private void DoSaveDump(object obj)
+        private void dumpSaver_SaveDumpCompleted(object sender, SaveDumpCompletedEventArgs e)
         {
-            string filename = obj as string;
+            curProgress.OperationComplete();
 
             try
             {
-                curDump.Save(filename, curProgress);
+                // TODO: this stream should be closed even if it fails
+                e.Stream.Close();
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                curProgress.OperationFailed(e.Message);
-                return;
+                MessageBox.Show(String.Format("Failed to save capture: {0}", ex.Message),
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
-            curProgress.OperationComplete();
         }
 
         private void closeMenuItem_Click(object sender, EventArgs e)
         {
-            dataGridView.DataSource = null;
-
-            if (curDump != null)
-            {
-                curDump.Close();
-                curDump = null;
-            }
-
-            richTextBox.Clear();
+            CloseCurrentDump();
         }
 
         private void exitMenuItem_Click(object sender, EventArgs e)
         {
-            if (curDump != null)
-            {
-                curDump.Close();
-            }
-
             Close();
         }
 
@@ -278,11 +296,11 @@ namespace oSpy
             if (row.Cells.Count <= 1)
                 return;
 
-            string evData = curDump.ExtractEventData((uint) dataGridView.SelectedRows[0].Cells[0].Value);
+            Event ev = dataGridView.SelectedRows[0].Cells[2].Value as Event;
 
             string prettyXml;
             XmlHighlighter highlighter = new XmlHighlighter(XmlHighlightColorScheme.DarkBlueScheme);
-            XmlUtils.PrettyPrint(evData, out prettyXml, highlighter);
+            XmlUtils.PrettyPrint(ev.RawData, out prettyXml, highlighter);
 
             richTextBox.Text = prettyXml;
             highlighter.HighlightRichTextBox(richTextBox);
@@ -297,12 +315,6 @@ namespace oSpy
         {
             AboutBoxForm frm = new AboutBoxForm();
             frm.ShowDialog();
-        }
-
-        private void fileToolStripMenuItem_DropDownOpening(object sender, EventArgs e)
-        {
-            saveMenuItem.Enabled = (curDump != null);
-            closeMenuItem.Enabled = (curDump != null);
         }
     }
 }

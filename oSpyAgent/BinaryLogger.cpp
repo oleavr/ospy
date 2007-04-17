@@ -85,21 +85,7 @@ BinaryLogger::FlushPending()
         do
         {
             BinarySerializer serializer;
-            {
-                // Reserve space for id and size to avoid a double copy
-                serializer.AppendDWord(0);
-                serializer.AppendDWord(0);
-
-                serializer.AppendNode(cur->ev);
-
-                // Now create and fill in the header
-                DWORD hdrSize = 2 * sizeof(DWORD);
-                BinarySerializer hdrSerializer;
-                hdrSerializer.AppendDWord(cur->ev->GetId());
-                hdrSerializer.AppendDWord(static_cast<DWORD>(serializer.GetData().size()) - hdrSize);
-
-                memcpy(const_cast<char *>(serializer.GetData().data()), hdrSerializer.GetData().data(), hdrSize);
-            }
+            serializer.AppendNode(cur->ev);
 
             PendingEvent *next = reinterpret_cast<PendingEvent *>(cur->entry.Next);
             delete cur->ev;
