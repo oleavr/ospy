@@ -27,6 +27,8 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 using System.Collections.Generic;
+using System.Xml;
+using System.IO;
 
 namespace oSpy.SharpDumpLib
 {
@@ -50,6 +52,11 @@ namespace oSpy.SharpDumpLib
         #endregion // Internal members
 
         #region Construction and destruction
+
+        public DumpAnalyzer()
+            : base()
+        {
+        }
 
         public DumpAnalyzer(IContainer container)
             : base(container)
@@ -144,7 +151,82 @@ namespace oSpy.SharpDumpLib
 
         private List<Resource> DoAnalysis(Dump dump, AsyncOperation asyncOp)
         {
-            return null;
+            List<Resource> resources = new List<Resource>();
+
+            SortedDictionary<uint, Event> pendingEvents = new SortedDictionary<uint, Event>(dump.Events);
+            List<Event> processedEvents = new List<Event>();
+            int n = 0;
+            int numEvents = dump.Events.Count;
+
+            while (pendingEvents.Count > 0)
+            {
+                Resource curRes = null;
+
+                foreach (Event ev in pendingEvents.Values)
+                {
+                    bool processed = false;
+
+                    if (ev.Type == DumpEventType.FunctionCall)
+                    {
+                        XmlElement data = ev.Data;
+
+                        ResourceType resType;
+                        UInt32 handle;
+                        if (GetResourceTypeAndHandle(data, out resType, out handle))
+                        {
+                        }
+                    }
+                    else
+                    {
+                        processed = true;
+                    }
+
+                    if (processed)
+                    {
+                        processedEvents.Add(ev);
+                        n++;
+                    }
+                }
+
+                //if (processedEvents.Count == 0)
+                //    throw new InvalidDataException(String.Format("{0} pending events could not be processed", pendingEvents.Count));
+
+                foreach (Event ev in processedEvents)
+                {
+                    pendingEvents.Remove(ev.Id);
+                }
+                processedEvents.Clear();
+
+                break;
+            }
+
+            return resources;
+        }
+
+        private bool GetResourceTypeAndHandle(XmlElement data, out ResourceType type, out UInt32 handle)
+        {
+            XmlNode node = data.SelectSingleNode("/event/name");
+            if (node == null)
+                throw new InvalidDataException("name element not found on FunctionCall event");
+            string functionName = node.InnerText.ToLower();
+
+            if (functionName == "ws2_32.dll::socket")
+            {
+                type = ResourceType.Socket;
+
+                node = data.SelectSingleNode("/event/returnValue/value/@value");
+                if (node == null)
+                    throw new InvalidDataException("returnValue element not found on FunctionCall event");
+                handle = Convert.ToUInt32(node.Value);
+            }
+            else
+            {
+                type = ResourceType.Unknown;
+                handle = 0;
+                return false;
+            }
+
+            return true;
         }
 
         #endregion // Core implementation

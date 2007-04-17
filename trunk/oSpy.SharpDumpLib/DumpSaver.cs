@@ -54,6 +54,11 @@ namespace oSpy.SharpDumpLib
 
         #region Construction and destruction
 
+        public DumpSaver()
+            : base()
+        {
+        }
+
         public DumpSaver(IContainer container)
             : base(container)
         {

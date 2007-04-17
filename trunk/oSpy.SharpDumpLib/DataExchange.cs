@@ -29,14 +29,7 @@ using System.Text;
 
 namespace oSpy.SharpDumpLib
 {
-    public class Resource
+    class DataExchange
     {
-    }
-
-    public enum ResourceType
-    {
-        Unknown,
-        Socket,
-        CryptoContext,
     }
 }
