@@ -116,7 +116,7 @@ namespace oSpy
             curProgress.ShowDialog(this);
         }
 
-        private void dumpBuilder_BuildDumpCompleted(object sender, BuildDumpCompletedEventArgs e)
+        private void dumpBuilder_BuildCompleted(object sender, BuildCompletedEventArgs e)
         {
             captureMgr.CloseCapture();
 
@@ -149,7 +149,7 @@ namespace oSpy
             }
         }
 
-        private void dumpLoader_LoadDumpCompleted(object sender, LoadDumpCompletedEventArgs e)
+        private void dumpLoader_LoadCompleted(object sender, LoadCompletedEventArgs e)
         {
             curProgress.OperationComplete();
 
@@ -256,7 +256,7 @@ namespace oSpy
             }
         }
 
-        private void dumpSaver_SaveDumpCompleted(object sender, SaveDumpCompletedEventArgs e)
+        private void dumpSaver_SaveCompleted(object sender, SaveCompletedEventArgs e)
         {
             curProgress.OperationComplete();
 

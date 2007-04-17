@@ -335,18 +335,18 @@ namespace oSpy
             // 
             // dumpBuilder
             // 
-            this.dumpBuilder.BuildDumpCompleted += new oSpy.SharpDumpLib.BuildDumpCompletedEventHandler(this.dumpBuilder_BuildDumpCompleted);
-            this.dumpBuilder.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.curOperation_ProgressChanged);
+            this.dumpBuilder.BuildCompleted += new oSpy.SharpDumpLib.BuildCompletedEventHandler(this.dumpBuilder_BuildCompleted);
+            this.dumpBuilder.BuildProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.curOperation_ProgressChanged);
             // 
             // dumpSaver
             // 
-            this.dumpSaver.SaveDumpCompleted += new oSpy.SharpDumpLib.SaveDumpCompletedEventHandler(this.dumpSaver_SaveDumpCompleted);
-            this.dumpSaver.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.curOperation_ProgressChanged);
+            this.dumpSaver.SaveCompleted += new oSpy.SharpDumpLib.SaveCompletedEventHandler(this.dumpSaver_SaveCompleted);
+            this.dumpSaver.SaveProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.curOperation_ProgressChanged);
             // 
             // dumpLoader
             // 
-            this.dumpLoader.LoadDumpCompleted += new oSpy.SharpDumpLib.LoadDumpCompletedEventHandler(this.dumpLoader_LoadDumpCompleted);
-            this.dumpLoader.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.curOperation_ProgressChanged);
+            this.dumpLoader.LoadCompleted += new oSpy.SharpDumpLib.LoadCompletedEventHandler(this.dumpLoader_LoadCompleted);
+            this.dumpLoader.LoadProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.curOperation_ProgressChanged);
             // 
             // MainForm
             // 

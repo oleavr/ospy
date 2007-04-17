@@ -34,65 +34,29 @@ using System.Xml;
 
 namespace oSpy.SharpDumpLib
 {
-    public delegate void SaveDumpCompletedEventHandler(object sender, SaveDumpCompletedEventArgs e);
+    public delegate void SaveCompletedEventHandler(object sender, SaveCompletedEventArgs e);
 
-    public class DumpSaver : Component
+    public class DumpSaver : AsyncWorker
     {
         #region Events
-        public event ProgressChangedEventHandler ProgressChanged;
-        public event SaveDumpCompletedEventHandler SaveDumpCompleted;
+
+        public event ProgressChangedEventHandler SaveProgressChanged;
+        public event SaveCompletedEventHandler SaveCompleted;
+
         #endregion // Events
 
         #region Internal members
-        private Container components = null;
-
-        private SendOrPostCallback onProgressReportDelegate;
-        private SendOrPostCallback onCompletedDelegate;
-        private SendOrPostCallback completionMethodDelegate;
 
         private delegate void WorkerEventHandler(Dump dump, Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate);
         private WorkerEventHandler workerDelegate;
 
-        private HybridDictionary userStateToLifetime = new HybridDictionary();
         #endregion // Internal members
 
         #region Construction and destruction
 
         public DumpSaver(IContainer container)
+            : base(container)
         {
-            container.Add(this);
-            InitializeComponent();
-            InitializeDelegates();
-        }
-
-        public DumpSaver()
-        {
-            InitializeComponent();
-            InitializeDelegates();
-        }
-
-        private void InitializeComponent()
-        {
-            components = new Container();
-        }
-
-        protected void InitializeDelegates()
-        {
-            onProgressReportDelegate = new SendOrPostCallback(ReportProgress);
-            onCompletedDelegate = new SendOrPostCallback(SaveCompleted);
-            completionMethodDelegate = new SendOrPostCallback(CompletionMethod);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                if (components != null)
-                {
-                    components.Dispose();
-                }
-            }
-            base.Dispose(disposing);
         }
 
         #endregion // Construction and destruction
@@ -106,110 +70,20 @@ namespace oSpy.SharpDumpLib
 
         public virtual void SaveAsync(Dump dump, Stream stream, object taskId)
         {
-            AsyncOperation asyncOp = AsyncOperationManager.CreateOperation(taskId);
-
-            lock (userStateToLifetime.SyncRoot)
-            {
-                if (userStateToLifetime.Contains(taskId))
-                    throw new ArgumentException("Task ID parameter must be unique", "taskId");
-
-                userStateToLifetime[taskId] = asyncOp;
-            }
+            AsyncOperation asyncOp = CreateOperation(taskId);
 
             workerDelegate = new WorkerEventHandler(SaveWorker);
             workerDelegate.BeginInvoke(dump, stream, asyncOp, completionMethodDelegate, null, null);
         }
 
-        public virtual void CancelAsync(object taskId)
+        public virtual void SaveAsyncCancel(object taskId)
         {
-            lock (userStateToLifetime.SyncRoot)
-            {
-                object obj = userStateToLifetime[taskId];
-                if (obj != null)
-                {
-                    AsyncOperation asyncOp = obj as AsyncOperation;
-
-                    SaveDumpCompletedEventArgs e = new SaveDumpCompletedEventArgs(null, null, null, true, asyncOp.UserSuppliedState);
-                    asyncOp.PostOperationCompleted(onCompletedDelegate, e);
-                }
-            }
+            CancelOperation(taskId);
         }
 
         #endregion // Public interface
 
-        #region Core implementation
-
-        private void DoSave(Dump dump, Stream stream, AsyncOperation asyncOp)
-        {
-            BinaryWriter binWriter = new BinaryWriter(stream, Encoding.UTF8);
-            binWriter.Write((uint) dump.Events.Count);
-            binWriter.Flush();
-            binWriter = null;
-
-            XmlTextWriter xmlWriter = new XmlTextWriter(stream, Encoding.UTF8);
-            xmlWriter.WriteStartDocument(true);
-            xmlWriter.WriteStartElement("events");
-
-            int n = 0;
-            int numEvents = dump.Events.Count;
-            foreach (Event ev in dump.Events.Values)
-            {
-                if (asyncOp != null)
-                {
-                    int pctComplete = (int)(((float)n / (float)numEvents) * 100.0f);
-                    ProgressChangedEventArgs e = new ProgressChangedEventArgs(pctComplete, asyncOp.UserSuppliedState);
-                    asyncOp.Post(onProgressReportDelegate, e);
-                }
-
-                xmlWriter.WriteRaw(ev.RawData);
-
-                n++;
-            }
-
-            xmlWriter.WriteEndElement();
-            xmlWriter.Flush();
-        }
-
-        #endregion // Core implementation
-
         #region Async glue
-
-        private void ReportProgress(object state)
-        {
-            OnProgressChanged(state as ProgressChangedEventArgs);
-        }
-
-        private void SaveCompleted(object operationState)
-        {
-            OnSaveCompleted(operationState as SaveDumpCompletedEventArgs);
-        }
-
-        private void CompletionMethod(object saveDumpState)
-        {
-            SaveDumpState saveState = saveDumpState as SaveDumpState;
-
-            AsyncOperation asyncOp = saveState.asyncOp;
-            SaveDumpCompletedEventArgs e = new SaveDumpCompletedEventArgs(saveState.dump, saveState.stream, saveState.ex, false, asyncOp.UserSuppliedState);
-
-            lock (userStateToLifetime.SyncRoot)
-            {
-                userStateToLifetime.Remove(asyncOp.UserSuppliedState);
-            }
-
-            asyncOp.PostOperationCompleted(onCompletedDelegate, e);
-        }
-
-        protected void OnProgressChanged(ProgressChangedEventArgs e)
-        {
-            if (ProgressChanged != null)
-                ProgressChanged(this, e);
-        }
-
-        protected void OnSaveCompleted(SaveDumpCompletedEventArgs e)
-        {
-            if (SaveDumpCompleted != null)
-                SaveDumpCompleted(this, e);
-        }
 
         private void SaveWorker(Dump dump, Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
         {
@@ -224,25 +98,96 @@ namespace oSpy.SharpDumpLib
                 e = ex;
             }
 
-            SaveDumpState saveState = new SaveDumpState(dump, stream, e, asyncOp);
+            SaveState saveState = new SaveState(dump, stream, e, asyncOp);
 
             try { completionMethodDelegate(saveState); }
             catch (InvalidOperationException) { }
         }
 
+        protected override object CreateCancelEventArgs(object userSuppliedState)
+        {
+            return new SaveCompletedEventArgs(null, null, null, true, userSuppliedState);
+        }
+
+        protected override void ReportProgress(object e)
+        {
+            OnSaveProgressChanged(e as ProgressChangedEventArgs);
+        }
+
+        protected virtual void OnSaveProgressChanged(ProgressChangedEventArgs e)
+        {
+            if (SaveProgressChanged != null)
+                SaveProgressChanged(this, e);
+        }
+
+        protected override void ReportCompletion(object e)
+        {
+            OnSaveCompleted(e as SaveCompletedEventArgs);
+        }
+
+        protected virtual void OnSaveCompleted(SaveCompletedEventArgs e)
+        {
+            if (SaveCompleted != null)
+                SaveCompleted(this, e);
+        }
+
+        protected override void CompletionMethod(object state)
+        {
+            SaveState saveState = state as SaveState;
+
+            AsyncOperation asyncOp = saveState.asyncOp;
+            SaveCompletedEventArgs e = new SaveCompletedEventArgs(saveState.dump, saveState.stream, saveState.ex, false, asyncOp.UserSuppliedState);
+            FinalizeOperation(asyncOp, e);
+        }
+
         #endregion // Async glue
+
+        #region Core implementation
+
+        private void DoSave(Dump dump, Stream stream, AsyncOperation asyncOp)
+        {
+            BinaryWriter binWriter = new BinaryWriter(stream, Encoding.UTF8);
+            binWriter.Write((uint)dump.Events.Count);
+            binWriter.Flush();
+            binWriter = null;
+
+            XmlTextWriter xmlWriter = new XmlTextWriter(stream, Encoding.UTF8);
+            xmlWriter.WriteStartDocument(true);
+            xmlWriter.WriteStartElement("events");
+
+            int n = 0;
+            int numEvents = dump.Events.Count;
+            foreach (Event ev in dump.Events.Values)
+            {
+                if (asyncOp != null)
+                {
+                    int pctComplete = (int)(((float)(n + 1) / (float)numEvents) * 100.0f);
+                    ProgressChangedEventArgs e = new ProgressChangedEventArgs(pctComplete, asyncOp.UserSuppliedState);
+                    asyncOp.Post(onProgressReportDelegate, e);
+                }
+
+                xmlWriter.WriteRaw(ev.RawData);
+
+                n++;
+            }
+
+            xmlWriter.WriteEndElement();
+            xmlWriter.Flush();
+        }
+
+        #endregion // Core implementation
     }
 
     #region Helper classes
 
-    internal class SaveDumpState
+    internal class SaveState
     {
         public Dump dump = null;
         public Stream stream = null;
         public Exception ex = null;
         public AsyncOperation asyncOp = null;
 
-        public SaveDumpState(Dump dump, Stream stream, Exception ex, AsyncOperation asyncOp)
+        public SaveState(Dump dump, Stream stream, Exception ex, AsyncOperation asyncOp)
         {
             this.dump = dump;
             this.stream = stream;
@@ -251,12 +196,12 @@ namespace oSpy.SharpDumpLib
         }
     }
 
-    public class SaveDumpCompletedEventArgs : AsyncCompletedEventArgs
+    public class SaveCompletedEventArgs : AsyncCompletedEventArgs
     {
         private Dump dump = null;
         private Stream stream = null;
 
-        public SaveDumpCompletedEventArgs(Dump dump, Stream stream, Exception e, bool cancelled, object state)
+        public SaveCompletedEventArgs(Dump dump, Stream stream, Exception e, bool cancelled, object state)
             : base(e, cancelled, state)
         {
             this.dump = dump;

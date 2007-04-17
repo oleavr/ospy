@@ -34,65 +34,29 @@ using System.Xml;
 
 namespace oSpy.SharpDumpLib
 {
-    public delegate void LoadDumpCompletedEventHandler(object sender, LoadDumpCompletedEventArgs e);
+    public delegate void LoadCompletedEventHandler(object sender, LoadCompletedEventArgs e);
 
-    public class DumpLoader : Component
+    public class DumpLoader : AsyncWorker
     {
         #region Events
-        public event ProgressChangedEventHandler ProgressChanged;
-        public event LoadDumpCompletedEventHandler LoadDumpCompleted;
+
+        public event ProgressChangedEventHandler LoadProgressChanged;
+        public event LoadCompletedEventHandler LoadCompleted;
+
         #endregion // Events
 
         #region Internal members
-        private Container components = null;
-
-        private SendOrPostCallback onProgressReportDelegate;
-        private SendOrPostCallback onCompletedDelegate;
-        private SendOrPostCallback completionMethodDelegate;
 
         private delegate void WorkerEventHandler(Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate);
         private WorkerEventHandler workerDelegate;
 
-        private HybridDictionary userStateToLifetime = new HybridDictionary();
         #endregion // Internal members
 
         #region Construction and destruction
 
         public DumpLoader(IContainer container)
+            : base(container)
         {
-            container.Add(this);
-            InitializeComponent();
-            InitializeDelegates();
-        }
-
-        public DumpLoader()
-        {
-            InitializeComponent();
-            InitializeDelegates();
-        }
-
-        private void InitializeComponent()
-        {
-            components = new Container();
-        }
-
-        protected void InitializeDelegates()
-        {
-            onProgressReportDelegate = new SendOrPostCallback(ReportProgress);
-            onCompletedDelegate = new SendOrPostCallback(LoadCompleted);
-            completionMethodDelegate = new SendOrPostCallback(CompletionMethod);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                if (components != null)
-                {
-                    components.Dispose();
-                }
-            }
-            base.Dispose(disposing);
         }
 
         #endregion // Construction and destruction
@@ -106,36 +70,78 @@ namespace oSpy.SharpDumpLib
 
         public virtual void LoadAsync(Stream stream, object taskId)
         {
-            AsyncOperation asyncOp = AsyncOperationManager.CreateOperation(taskId);
-
-            lock (userStateToLifetime.SyncRoot)
-            {
-                if (userStateToLifetime.Contains(taskId))
-                    throw new ArgumentException("Task ID parameter must be unique", "taskId");
-
-                userStateToLifetime[taskId] = asyncOp;
-            }
+            AsyncOperation asyncOp = CreateOperation(taskId);
 
             workerDelegate = new WorkerEventHandler(LoadWorker);
             workerDelegate.BeginInvoke(stream, asyncOp, completionMethodDelegate, null, null);
         }
 
-        public virtual void CancelAsync(object taskId)
+        public virtual void LoadAsyncCancel(object taskId)
         {
-            lock (userStateToLifetime.SyncRoot)
-            {
-                object obj = userStateToLifetime[taskId];
-                if (obj != null)
-                {
-                    AsyncOperation asyncOp = obj as AsyncOperation;
-
-                    LoadDumpCompletedEventArgs e = new LoadDumpCompletedEventArgs(null, null, true, asyncOp.UserSuppliedState);
-                    asyncOp.PostOperationCompleted(onCompletedDelegate, e);
-                }
-            }
+            CancelOperation(taskId);
         }
 
         #endregion // Public interface
+
+        #region Async glue
+
+        private void LoadWorker(Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
+        {
+            Dump dump = null;
+            Exception e = null;
+
+            try
+            {
+                dump = DoLoad(stream, asyncOp);
+            }
+            catch (Exception ex)
+            {
+                e = ex;
+            }
+
+            LoadState loadState = new LoadState(dump, e, asyncOp);
+
+            try { completionMethodDelegate(loadState); }
+            catch (InvalidOperationException) { }
+        }
+
+        protected override object CreateCancelEventArgs(object userSuppliedState)
+        {
+            return new LoadCompletedEventArgs(null, null, true, userSuppliedState);
+        }
+
+        protected override void ReportProgress(object e)
+        {
+            OnLoadProgressChanged(e as ProgressChangedEventArgs);
+        }
+
+        protected virtual void OnLoadProgressChanged(ProgressChangedEventArgs e)
+        {
+            if (LoadProgressChanged != null)
+                LoadProgressChanged(this, e);
+        }
+
+        protected override void ReportCompletion(object e)
+        {
+            OnLoadCompleted(e as LoadCompletedEventArgs);
+        }
+
+        protected virtual void OnLoadCompleted(LoadCompletedEventArgs e)
+        {
+            if (LoadCompleted != null)
+                LoadCompleted(this, e);
+        }
+
+        protected override void CompletionMethod(object state)
+        {
+            LoadState loadState = state as LoadState;
+
+            AsyncOperation asyncOp = loadState.asyncOp;
+            LoadCompletedEventArgs e = new LoadCompletedEventArgs(loadState.dump, loadState.ex, false, asyncOp.UserSuppliedState);
+            FinalizeOperation(asyncOp, e);
+        }
+
+        #endregion // Async glue
 
         #region Core implementation
 
@@ -155,7 +161,7 @@ namespace oSpy.SharpDumpLib
                 {
                     if (asyncOp != null)
                     {
-                        int pctComplete = (int)(((float)n / (float)numEvents) * 100.0f);
+                        int pctComplete = (int)(((float)(n + 1) / (float)numEvents) * 100.0f);
                         ProgressChangedEventArgs e = new ProgressChangedEventArgs(pctComplete, asyncOp.UserSuppliedState);
                         asyncOp.Post(onProgressReportDelegate, e);
                     }
@@ -182,78 +188,17 @@ namespace oSpy.SharpDumpLib
         }
 
         #endregion // Core implementation
-
-        #region Async glue
-
-        private void ReportProgress(object state)
-        {
-            OnProgressChanged(state as ProgressChangedEventArgs);
-        }
-
-        private void LoadCompleted(object operationState)
-        {
-            OnLoadCompleted(operationState as LoadDumpCompletedEventArgs);
-        }
-
-        private void CompletionMethod(object loadDumpState)
-        {
-            LoadDumpState loadState = loadDumpState as LoadDumpState;
-
-            AsyncOperation asyncOp = loadState.asyncOp;
-            LoadDumpCompletedEventArgs e = new LoadDumpCompletedEventArgs(loadState.dump, loadState.ex, false, asyncOp.UserSuppliedState);
-
-            lock (userStateToLifetime.SyncRoot)
-            {
-                userStateToLifetime.Remove(asyncOp.UserSuppliedState);
-            }
-
-            asyncOp.PostOperationCompleted(onCompletedDelegate, e);
-        }
-
-        protected void OnProgressChanged(ProgressChangedEventArgs e)
-        {
-            if (ProgressChanged != null)
-                ProgressChanged(this, e);
-        }
-
-        protected void OnLoadCompleted(LoadDumpCompletedEventArgs e)
-        {
-            if (LoadDumpCompleted != null)
-                LoadDumpCompleted(this, e);
-        }
-
-        private void LoadWorker(Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
-        {
-            Dump dump = null;
-            Exception e = null;
-
-            try
-            {
-                dump = DoLoad(stream, asyncOp);
-            }
-            catch (Exception ex)
-            {
-                e = ex;
-            }
-
-            LoadDumpState loadState = new LoadDumpState(dump, e, asyncOp);
-
-            try { completionMethodDelegate(loadState); }
-            catch (InvalidOperationException) {}
-        }
-
-        #endregion // Async glue
     }
 
     #region Helper classes
 
-    internal class LoadDumpState
+    internal class LoadState
     {
         public Dump dump = null;
         public Exception ex = null;
         public AsyncOperation asyncOp = null;
 
-        public LoadDumpState(Dump dump, Exception ex, AsyncOperation asyncOp)
+        public LoadState(Dump dump, Exception ex, AsyncOperation asyncOp)
         {
             this.dump = dump;
             this.ex = ex;
@@ -261,24 +206,22 @@ namespace oSpy.SharpDumpLib
         }
     }
 
-    public class LoadDumpCompletedEventArgs : AsyncCompletedEventArgs
+    public class LoadCompletedEventArgs : AsyncCompletedEventArgs
     {
         private Dump dump = null;
-
-        public LoadDumpCompletedEventArgs(Dump dump, Exception e, bool cancelled, object state)
-            : base(e, cancelled, state)
-        {
-            this.dump = dump;
-        }
-
         public Dump Dump
         {
             get
             {
                 RaiseExceptionIfNecessary();
-
                 return dump;
             }
+        }
+
+        public LoadCompletedEventArgs(Dump dump, Exception e, bool cancelled, object state)
+            : base(e, cancelled, state)
+        {
+            this.dump = dump;
         }
     }
 
