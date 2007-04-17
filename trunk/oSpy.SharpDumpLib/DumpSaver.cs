@@ -34,13 +34,13 @@ using System.Xml;
 
 namespace oSpy.SharpDumpLib
 {
-    public delegate void LoadDumpCompletedEventHandler(object sender, LoadDumpCompletedEventArgs e);
+    public delegate void SaveDumpCompletedEventHandler(object sender, SaveDumpCompletedEventArgs e);
 
-    public class DumpLoader : Component
+    public class DumpSaver : Component
     {
         #region Events
         public event ProgressChangedEventHandler ProgressChanged;
-        public event LoadDumpCompletedEventHandler LoadDumpCompleted;
+        public event SaveDumpCompletedEventHandler SaveDumpCompleted;
         #endregion // Events
 
         #region Internal members
@@ -50,7 +50,7 @@ namespace oSpy.SharpDumpLib
         private SendOrPostCallback onCompletedDelegate;
         private SendOrPostCallback completionMethodDelegate;
 
-        private delegate void WorkerEventHandler(Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate);
+        private delegate void WorkerEventHandler(Dump dump, Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate);
         private WorkerEventHandler workerDelegate;
 
         private HybridDictionary userStateToLifetime = new HybridDictionary();
@@ -58,14 +58,14 @@ namespace oSpy.SharpDumpLib
 
         #region Construction and destruction
 
-        public DumpLoader(IContainer container)
+        public DumpSaver(IContainer container)
         {
             container.Add(this);
             InitializeComponent();
             InitializeDelegates();
         }
 
-        public DumpLoader()
+        public DumpSaver()
         {
             InitializeComponent();
             InitializeDelegates();
@@ -79,7 +79,7 @@ namespace oSpy.SharpDumpLib
         protected void InitializeDelegates()
         {
             onProgressReportDelegate = new SendOrPostCallback(ReportProgress);
-            onCompletedDelegate = new SendOrPostCallback(LoadCompleted);
+            onCompletedDelegate = new SendOrPostCallback(SaveCompleted);
             completionMethodDelegate = new SendOrPostCallback(CompletionMethod);
         }
 
@@ -99,12 +99,12 @@ namespace oSpy.SharpDumpLib
 
         #region Public interface
 
-        public virtual Dump Load(Stream stream)
+        public virtual void Save(Dump dump, Stream stream)
         {
-            return DoLoad(stream, null);
+            DoSave(dump, stream, null);
         }
 
-        public virtual void LoadAsync(Stream stream, object taskId)
+        public virtual void SaveAsync(Dump dump, Stream stream, object taskId)
         {
             AsyncOperation asyncOp = AsyncOperationManager.CreateOperation(taskId);
 
@@ -116,8 +116,8 @@ namespace oSpy.SharpDumpLib
                 userStateToLifetime[taskId] = asyncOp;
             }
 
-            workerDelegate = new WorkerEventHandler(LoadWorker);
-            workerDelegate.BeginInvoke(stream, asyncOp, completionMethodDelegate, null, null);
+            workerDelegate = new WorkerEventHandler(SaveWorker);
+            workerDelegate.BeginInvoke(dump, stream, asyncOp, completionMethodDelegate, null, null);
         }
 
         public virtual void CancelAsync(object taskId)
@@ -129,7 +129,7 @@ namespace oSpy.SharpDumpLib
                 {
                     AsyncOperation asyncOp = obj as AsyncOperation;
 
-                    LoadDumpCompletedEventArgs e = new LoadDumpCompletedEventArgs(null, null, true, asyncOp.UserSuppliedState);
+                    SaveDumpCompletedEventArgs e = new SaveDumpCompletedEventArgs(null, null, null, true, asyncOp.UserSuppliedState);
                     asyncOp.PostOperationCompleted(onCompletedDelegate, e);
                 }
             }
@@ -139,46 +139,35 @@ namespace oSpy.SharpDumpLib
 
         #region Core implementation
 
-        private Dump DoLoad(Stream stream, AsyncOperation asyncOp)
+        private void DoSave(Dump dump, Stream stream, AsyncOperation asyncOp)
         {
-            Dump dump = new Dump();
+            BinaryWriter binWriter = new BinaryWriter(stream, Encoding.UTF8);
+            binWriter.Write((uint) dump.Events.Count);
+            binWriter.Flush();
+            binWriter = null;
 
-            try
+            XmlTextWriter xmlWriter = new XmlTextWriter(stream, Encoding.UTF8);
+            xmlWriter.WriteStartDocument(true);
+            xmlWriter.WriteStartElement("events");
+
+            int n = 0;
+            int numEvents = dump.Events.Count;
+            foreach (Event ev in dump.Events.Values)
             {
-                BinaryReader reader = new BinaryReader(stream);
-                uint numEvents = reader.ReadUInt32();
-
-                XmlTextReader xmlReader = new XmlTextReader(stream);
-
-                uint n;
-                for (n = 0; xmlReader.Read() && n < numEvents; n++)
+                if (asyncOp != null)
                 {
-                    if (asyncOp != null)
-                    {
-                        int pctComplete = (int)(((float)n / (float)numEvents) * 100.0f);
-                        ProgressChangedEventArgs e = new ProgressChangedEventArgs(pctComplete, asyncOp.UserSuppliedState);
-                        asyncOp.Post(onProgressReportDelegate, e);
-                    }
-
-                    if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "event")
-                    {
-                        XmlReader rdr = xmlReader.ReadSubtree();
-                        XmlDocument doc = new XmlDocument();
-                        doc.Load(rdr);
-                        dump.AddEvent(doc.DocumentElement);
-                    }
+                    int pctComplete = (int)(((float)n / (float)numEvents) * 100.0f);
+                    ProgressChangedEventArgs e = new ProgressChangedEventArgs(pctComplete, asyncOp.UserSuppliedState);
+                    asyncOp.Post(onProgressReportDelegate, e);
                 }
 
-                if (n != numEvents)
-                    throw new InvalidDataException(String.Format("expected {0} events, read {1}", numEvents, n));
-            }
-            catch (Exception ex)
-            {
-                dump.Close();
-                throw ex;
+                xmlWriter.WriteRaw(ev.RawData);
+
+                n++;
             }
 
-            return dump;
+            xmlWriter.WriteEndElement();
+            xmlWriter.Flush();
         }
 
         #endregion // Core implementation
@@ -190,17 +179,17 @@ namespace oSpy.SharpDumpLib
             OnProgressChanged(state as ProgressChangedEventArgs);
         }
 
-        private void LoadCompleted(object operationState)
+        private void SaveCompleted(object operationState)
         {
-            OnLoadCompleted(operationState as LoadDumpCompletedEventArgs);
+            OnSaveCompleted(operationState as SaveDumpCompletedEventArgs);
         }
 
-        private void CompletionMethod(object loadDumpState)
+        private void CompletionMethod(object saveDumpState)
         {
-            LoadDumpState loadState = loadDumpState as LoadDumpState;
+            SaveDumpState saveState = saveDumpState as SaveDumpState;
 
-            AsyncOperation asyncOp = loadState.asyncOp;
-            LoadDumpCompletedEventArgs e = new LoadDumpCompletedEventArgs(loadState.dump, loadState.ex, false, asyncOp.UserSuppliedState);
+            AsyncOperation asyncOp = saveState.asyncOp;
+            SaveDumpCompletedEventArgs e = new SaveDumpCompletedEventArgs(saveState.dump, saveState.stream, saveState.ex, false, asyncOp.UserSuppliedState);
 
             lock (userStateToLifetime.SyncRoot)
             {
@@ -216,30 +205,29 @@ namespace oSpy.SharpDumpLib
                 ProgressChanged(this, e);
         }
 
-        protected void OnLoadCompleted(LoadDumpCompletedEventArgs e)
+        protected void OnSaveCompleted(SaveDumpCompletedEventArgs e)
         {
-            if (LoadDumpCompleted != null)
-                LoadDumpCompleted(this, e);
+            if (SaveDumpCompleted != null)
+                SaveDumpCompleted(this, e);
         }
 
-        private void LoadWorker(Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
+        private void SaveWorker(Dump dump, Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
         {
-            Dump dump = null;
             Exception e = null;
 
             try
             {
-                dump = DoLoad(stream, asyncOp);
+                DoSave(dump, stream, asyncOp);
             }
             catch (Exception ex)
             {
                 e = ex;
             }
 
-            LoadDumpState loadState = new LoadDumpState(dump, e, asyncOp);
+            SaveDumpState saveState = new SaveDumpState(dump, stream, e, asyncOp);
 
-            try { completionMethodDelegate(loadState); }
-            catch (InvalidOperationException) {}
+            try { completionMethodDelegate(saveState); }
+            catch (InvalidOperationException) { }
         }
 
         #endregion // Async glue
@@ -247,28 +235,32 @@ namespace oSpy.SharpDumpLib
 
     #region Helper classes
 
-    internal class LoadDumpState
+    internal class SaveDumpState
     {
         public Dump dump = null;
+        public Stream stream = null;
         public Exception ex = null;
         public AsyncOperation asyncOp = null;
 
-        public LoadDumpState(Dump dump, Exception ex, AsyncOperation asyncOp)
+        public SaveDumpState(Dump dump, Stream stream, Exception ex, AsyncOperation asyncOp)
         {
             this.dump = dump;
+            this.stream = stream;
             this.ex = ex;
             this.asyncOp = asyncOp;
         }
     }
 
-    public class LoadDumpCompletedEventArgs : AsyncCompletedEventArgs
+    public class SaveDumpCompletedEventArgs : AsyncCompletedEventArgs
     {
         private Dump dump = null;
+        private Stream stream = null;
 
-        public LoadDumpCompletedEventArgs(Dump dump, Exception e, bool cancelled, object state)
+        public SaveDumpCompletedEventArgs(Dump dump, Stream stream, Exception e, bool cancelled, object state)
             : base(e, cancelled, state)
         {
             this.dump = dump;
+            this.stream = stream;
         }
 
         public Dump Dump
@@ -278,6 +270,16 @@ namespace oSpy.SharpDumpLib
                 RaiseExceptionIfNecessary();
 
                 return dump;
+            }
+        }
+
+        public Stream Stream
+        {
+            get
+            {
+                RaiseExceptionIfNecessary();
+
+                return stream;
             }
         }
     }
