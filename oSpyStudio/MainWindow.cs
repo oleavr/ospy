@@ -1,8 +1,10 @@
 using System;
 using System.IO;
+using System.ComponentModel;
 using Gtk;
 using oSpyStudio.Widgets;
-using ICSharpCode;
+using oSpy.SharpDumpLib;
+using ICSharpCode.SharpZipLib.BZip2;
 
 public class MainWindow : Gtk.Window
 {
@@ -10,6 +12,13 @@ public class MainWindow : Gtk.Window
     protected TreeView resourceList;
     protected TreeView processList;
     protected DataView dataView;
+    
+    protected Dump curDump = null;
+
+    protected ProgressDialog progressDlg = null;
+    protected string curOperation = null;
+
+    protected DumpLoader dumpLoader;
 
     public MainWindow()
         : base("")
@@ -37,16 +46,37 @@ public class MainWindow : Gtk.Window
         transactionList.AppendColumn("Time", new CellRendererText(), "text", 2);
         transactionList.AppendColumn("Sender", new CellRendererText(), "text", 3);
         transactionList.AppendColumn("Description", new CellRendererText(), "text", 4);
+        
+        dumpLoader = new DumpLoader();
+        dumpLoader.ProgressChanged += new ProgressChangedEventHandler(curOperation_ProgressChanged);
+        dumpLoader.LoadDumpCompleted += new LoadDumpCompletedEventHandler(dumpLoader_LoadDumpCompleted);
     }
     
+    private void CloseCurrentDump()
+    {
+        if (curDump != null)
+        {
+            curDump.Close();
+            curDump = null;
+        }
+    }
+
+    private void curOperation_ProgressChanged(object sender, ProgressChangedEventArgs e)
+    {
+        if (progressDlg != null)
+            progressDlg.UpdateProgress(e.ProgressPercentage);
+    }
+
     protected void OnDeleteEvent(object sender, DeleteEventArgs a)
     {
+        CloseCurrentDump();
         Application.Quit();
         a.RetVal = true;
     }
 
     protected virtual void OnQuit(object sender, System.EventArgs e)
     {
+        CloseCurrentDump();
         Application.Quit();
     }
     
@@ -72,13 +102,66 @@ public class MainWindow : Gtk.Window
 		ff.Name = "oSpy dump files (.osd)";
 		fc.AddFilter(ff);
 
-        if (fc.Run() == (int)ResponseType.Accept) 
-        {
-        	System.IO.FileStream file = System.IO.File.OpenRead(fc.Filename);
- 			//TODO: decode the input file and fill the viewer
- 			file.Close();
-        }
+        ResponseType response = (ResponseType) fc.Run();
+        string filename = fc.Filename;
         fc.Destroy();
+        
+        if (response == ResponseType.Accept)
+        {
+        	Stream file = new BZip2InputStream(File.OpenRead(filename));
+        	
+        	curOperation = "Loading";
+        	progressDlg = new ProgressDialog(curOperation);
+        	dumpLoader.LoadAsync(file, curOperation);
+        	
+        	int result = progressDlg.Run();
+        	if (result != (int) ResponseType.Accept)
+        	{
+        	    Console.Out.WriteLine("cancelling");
+        	    dumpLoader.CancelAsync(curOperation);
+        	}
+        	
+        	progressDlg.Destroy();
+        	progressDlg = null;
+        	curOperation = null;
+        }
+    }
+
+    private void dumpLoader_LoadDumpCompleted(object sender, LoadDumpCompletedEventArgs e)
+    {
+        if (e.Cancelled)
+        {
+        	Console.Out.WriteLine("cancelled");
+            return;
+        }
+
+        progressDlg.Respond(ResponseType.Accept);
+
+        Dump dump;
+
+        try
+        {
+            dump = e.Dump;
+        	Console.Out.WriteLine("opened successfully");
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage(String.Format("Failed to load dump: {0}", ex.Message));
+            return;
+        }
+        
+        CloseCurrentDump();
+        curDump = dump;    }
+
+    private void ShowErrorMessage(string message)
+    {
+        MessageDialog md = new MessageDialog(this,
+            DialogFlags.DestroyWithParent,
+            MessageType.Error,
+            ButtonsType.Close,
+            message);
+        md.Run();
+        md.Destroy();
     }
 
     protected virtual void OnAbout(object sender, System.EventArgs e)
