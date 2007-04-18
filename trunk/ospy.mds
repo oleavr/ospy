@@ -10,7 +10,7 @@
     </Configuration>
   </Configurations>
   <DeployTargets />
-  <StartMode startupentry="oSpy.SharpDumpLib" single="True">
+  <StartMode startupentry="oSpyStudio" single="True">
     <Execute type="None" entry="oSpy.SharpDumpLib" />
     <Execute type="None" entry="oSpyStudio" />
   </StartMode>
