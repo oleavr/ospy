@@ -34,7 +34,7 @@
     <ProjectReference type="Gac" localcopy="True" refto="pango-sharp, Version=2.8.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
     <ProjectReference type="Gac" localcopy="True" refto="System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
     <ProjectReference type="Assembly" localcopy="True" refto="./Deps/ICSharpCode.SharpZipLib.dll" />
-    <ProjectReference type="Assembly" localcopy="True" refto="../../../../../media/storage/Projects/oSpy/trunk/oSpy.SharpDumpLib/bin/Debug/oSpy.SharpDumpLib.dll" />
+    <ProjectReference type="Project" localcopy="True" refto="oSpy.SharpDumpLib" />
   </References>
   <GtkDesignInfo>
     <ExportedWidgets>

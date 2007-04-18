@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<UserCombinePreferences filename="/home/asabil/Devel/ospy/ospy/oSpy.SharpDumpLib/oSpy.SharpDumpLib.mds">
+  <Files />
+  <Views>
+    <ViewMemento Id="MonoDevelop.Ide.Gui.Pads.ProjectPad">
+      <TreeView>
+        <Node expanded="True">
+          <Node name="oSpy.SharpDumpLib" expanded="True">
+            <Node name="Resources" expanded="False" selected="True" />
+          </Node>
+        </Node>
+      </TreeView>
+    </ViewMemento>
+    <ViewMemento Id="MonoDevelop.Ide.Gui.Pads.ClassPad">
+      <TreeView>
+        <Node expanded="True" selected="True" />
+      </TreeView>
+    </ViewMemento>
+  </Views>
+  <Properties>
+    <Properties>
+      <Property key="ActiveConfiguration" value="Debug" />
+      <Property key="ActiveWindow" value="" />
+    </Properties>
+  </Properties>
+</UserCombinePreferences>

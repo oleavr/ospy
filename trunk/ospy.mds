@@ -1,17 +1,21 @@
-<Combine name="oSpyStudio" fileversion="2.0">
+<Combine name="ospy" fileversion="2.0">
   <Configurations active="Debug">
     <Configuration name="Debug" ctype="CombineConfiguration">
+      <Entry build="True" name="oSpy.SharpDumpLib" configuration="Debug" />
       <Entry build="True" name="oSpyStudio" configuration="Debug" />
     </Configuration>
     <Configuration name="Release" ctype="CombineConfiguration">
+      <Entry build="True" name="oSpy.SharpDumpLib" configuration="Release" />
       <Entry build="True" name="oSpyStudio" configuration="Release" />
     </Configuration>
   </Configurations>
   <DeployTargets />
-  <StartMode startupentry="oSpyStudio" single="True">
+  <StartMode startupentry="oSpy.SharpDumpLib" single="True">
+    <Execute type="None" entry="oSpy.SharpDumpLib" />
     <Execute type="None" entry="oSpyStudio" />
   </StartMode>
   <Entries>
-    <Entry filename="./oSpyStudio.mdp" />
+    <Entry filename="./oSpy.SharpDumpLib/oSpy.SharpDumpLib.mdp" />
+    <Entry filename="./oSpyStudio/oSpyStudio.mdp" />
   </Entries>
 </Combine>
