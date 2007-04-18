@@ -32,15 +32,15 @@ using System.IO;
 
 namespace oSpy.SharpDumpLib
 {
-    public delegate void AnalyzeDumpProgressChangedEventHandler(object sender, AnalyzeDumpProgressChangedEventArgs e);
-    public delegate void AnalyzeDumpCompletedEventHandler(object sender, AnalyzeDumpCompletedEventArgs e);
+    public delegate void AnalyzeProgressChangedEventHandler(object sender, AnalyzeProgressChangedEventArgs e);
+    public delegate void AnalyzeCompletedEventHandler(object sender, AnalyzeCompletedEventArgs e);
 
     public class DumpAnalyzer : AsyncWorker
     {
         #region Events
 
-        public event AnalyzeDumpProgressChangedEventHandler AnalyzeProgressChanged;
-        public event AnalyzeDumpCompletedEventHandler AnalyzeCompleted;
+        public event AnalyzeProgressChangedEventHandler AnalyzeProgressChanged;
+        public event AnalyzeCompletedEventHandler AnalyzeCompleted;
 
         #endregion // Events
 
@@ -111,15 +111,15 @@ namespace oSpy.SharpDumpLib
 
         protected override object CreateCancelEventArgs(object userSuppliedState)
         {
-            return new AnalyzeDumpCompletedEventArgs(null, null, null, true, userSuppliedState);
+            return new AnalyzeCompletedEventArgs(null, null, null, true, userSuppliedState);
         }
 
         protected override void ReportProgress(object e)
         {
-            OnAnalyzeProgressChanged(e as AnalyzeDumpProgressChangedEventArgs);
+            OnAnalyzeProgressChanged(e as AnalyzeProgressChangedEventArgs);
         }
 
-        protected virtual void OnAnalyzeProgressChanged(AnalyzeDumpProgressChangedEventArgs e)
+        protected virtual void OnAnalyzeProgressChanged(AnalyzeProgressChangedEventArgs e)
         {
             if (AnalyzeProgressChanged != null)
                 AnalyzeProgressChanged(this, e);
@@ -127,10 +127,10 @@ namespace oSpy.SharpDumpLib
 
         protected override void ReportCompletion(object e)
         {
-            OnAnalyzeCompleted(e as AnalyzeDumpCompletedEventArgs);
+            OnAnalyzeCompleted(e as AnalyzeCompletedEventArgs);
         }
 
-        protected virtual void OnAnalyzeCompleted(AnalyzeDumpCompletedEventArgs e)
+        protected virtual void OnAnalyzeCompleted(AnalyzeCompletedEventArgs e)
         {
             if (AnalyzeCompleted != null)
                 AnalyzeCompleted(this, e);
@@ -141,7 +141,7 @@ namespace oSpy.SharpDumpLib
             AnalyzeDumpState analyzeState = state as AnalyzeDumpState;
 
             AsyncOperation asyncOp = analyzeState.asyncOp;
-            AnalyzeDumpCompletedEventArgs e = new AnalyzeDumpCompletedEventArgs(analyzeState.dump, analyzeState.resources, analyzeState.ex, false, asyncOp.UserSuppliedState);
+            AnalyzeCompletedEventArgs e = new AnalyzeCompletedEventArgs(analyzeState.dump, analyzeState.resources, analyzeState.ex, false, asyncOp.UserSuppliedState);
             FinalizeOperation(asyncOp, e);
         }
 
@@ -171,8 +171,9 @@ namespace oSpy.SharpDumpLib
                         XmlElement data = ev.Data;
 
                         ResourceType resType;
+                        bool endOfLifetime;
                         UInt32 handle;
-                        if (GetResourceTypeAndHandle(data, out resType, out handle))
+                        if (GetResourceTypeAndHandle(data, out resType, out endOfLifetime, out handle))
                         {
                         }
                     }
@@ -203,8 +204,10 @@ namespace oSpy.SharpDumpLib
             return resources;
         }
 
-        private bool GetResourceTypeAndHandle(XmlElement data, out ResourceType type, out UInt32 handle)
+        private bool GetResourceTypeAndHandle(XmlElement data, out ResourceType type, out bool endOfLifetime, out UInt32 handle)
         {
+            endOfLifetime = false;
+
             XmlNode node = data.SelectSingleNode("/event/name");
             if (node == null)
                 throw new InvalidDataException("name element not found on FunctionCall event");
@@ -217,11 +220,22 @@ namespace oSpy.SharpDumpLib
                 node = data.SelectSingleNode("/event/returnValue/value/@value");
                 if (node == null)
                     throw new InvalidDataException("returnValue element not found on FunctionCall event");
+                handle = 0; // UInt32.Parse(node.Value);
+            }
+            else if (functionName == "ws2_32.dll::close")
+            {
+                type = ResourceType.Socket;
+                endOfLifetime = true;
+                /*
+                node = data.SelectSingleNode("/event/arguments[@direction=in]/value/@value");
+                if (node == null)
+                    throw new InvalidDataException("returnValue element not found on FunctionCall event");*/
                 handle = Convert.ToUInt32(node.Value);
             }
             else
             {
                 type = ResourceType.Unknown;
+                endOfLifetime = false;
                 handle = 0;
                 return false;
             }
@@ -250,7 +264,7 @@ namespace oSpy.SharpDumpLib
         }
     }
 
-    public class AnalyzeDumpProgressChangedEventArgs : ProgressChangedEventArgs
+    public class AnalyzeProgressChangedEventArgs : ProgressChangedEventArgs
     {
         private Resource latestResource = null;
         public Resource LatestResource
@@ -258,14 +272,14 @@ namespace oSpy.SharpDumpLib
             get { return latestResource; }
         }
 
-        public AnalyzeDumpProgressChangedEventArgs(Resource latestResource, int progressPercentage, object userToken)
+        public AnalyzeProgressChangedEventArgs(Resource latestResource, int progressPercentage, object userToken)
             : base(progressPercentage, userToken)
         {
             this.latestResource = latestResource;
         }
     }
 
-    public class AnalyzeDumpCompletedEventArgs : AsyncCompletedEventArgs
+    public class AnalyzeCompletedEventArgs : AsyncCompletedEventArgs
     {
         private Dump dump = null;
         public Dump Dump
@@ -287,7 +301,7 @@ namespace oSpy.SharpDumpLib
             }
         }
 
-        public AnalyzeDumpCompletedEventArgs(Dump dump, List<Resource> resources, Exception e, bool cancelled, object state)
+        public AnalyzeCompletedEventArgs(Dump dump, List<Resource> resources, Exception e, bool cancelled, object state)
             : base(e, cancelled, state)
         {
             this.dump = dump;
