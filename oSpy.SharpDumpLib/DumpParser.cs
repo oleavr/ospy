@@ -32,15 +32,15 @@ using System.IO;
 
 namespace oSpy.SharpDumpLib
 {
-    public delegate void AnalyzeProgressChangedEventHandler(object sender, AnalyzeProgressChangedEventArgs e);
-    public delegate void AnalyzeCompletedEventHandler(object sender, AnalyzeCompletedEventArgs e);
+    public delegate void ParseProgressChangedEventHandler(object sender, ParseProgressChangedEventArgs e);
+    public delegate void ParseCompletedEventHandler(object sender, ParseCompletedEventArgs e);
 
-    public class DumpAnalyzer : AsyncWorker
+    public class DumpParser : AsyncWorker
     {
         #region Events
 
-        public event AnalyzeProgressChangedEventHandler AnalyzeProgressChanged;
-        public event AnalyzeCompletedEventHandler AnalyzeCompleted;
+        public event ParseProgressChangedEventHandler ParseProgressChanged;
+        public event ParseCompletedEventHandler ParseCompleted;
 
         #endregion // Events
 
@@ -53,12 +53,12 @@ namespace oSpy.SharpDumpLib
 
         #region Construction and destruction
 
-        public DumpAnalyzer()
+        public DumpParser()
             : base()
         {
         }
 
-        public DumpAnalyzer(IContainer container)
+        public DumpParser(IContainer container)
             : base(container)
         {
         }
@@ -67,20 +67,20 @@ namespace oSpy.SharpDumpLib
 
         #region Public interface
 
-        public virtual List<Resource> Analyze(Dump dump)
+        public virtual List<Resource> Parse(Dump dump)
         {
-            return DoAnalysis(dump, null);
+            return DoParsing(dump, null);
         }
 
-        public virtual void AnalyzeAsync(Dump dump, object taskId)
+        public virtual void ParseAsync(Dump dump, object taskId)
         {
             AsyncOperation asyncOp = CreateOperation(taskId);
 
-            workerDelegate = new WorkerEventHandler(AnalyzeWorker);
+            workerDelegate = new WorkerEventHandler(ParseWorker);
             workerDelegate.BeginInvoke(dump, asyncOp, completionMethodDelegate, null, null);
         }
 
-        public virtual void AnalyzeAsyncCancel(object taskId)
+        public virtual void ParseAsyncCancel(object taskId)
         {
             CancelOperation(taskId);
         }
@@ -89,59 +89,59 @@ namespace oSpy.SharpDumpLib
 
         #region Async glue
 
-        private void AnalyzeWorker(Dump dump, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
+        private void ParseWorker(Dump dump, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
         {
             List<Resource> resources = null;
             Exception e = null;
 
             try
             {
-                resources = DoAnalysis(dump, asyncOp);
+                resources = DoParsing(dump, asyncOp);
             }
             catch (Exception ex)
             {
                 e = ex;
             }
 
-            AnalyzeDumpState analyzeState = new AnalyzeDumpState(dump, resources, e, asyncOp);
+            ParseDumpState parseState = new ParseDumpState(dump, resources, e, asyncOp);
 
-            try { completionMethodDelegate(analyzeState); }
+            try { completionMethodDelegate(parseState); }
             catch (InvalidOperationException) { }
         }
 
         protected override object CreateCancelEventArgs(object userSuppliedState)
         {
-            return new AnalyzeCompletedEventArgs(null, null, null, true, userSuppliedState);
+            return new ParseCompletedEventArgs(null, null, null, true, userSuppliedState);
         }
 
         protected override void ReportProgress(object e)
         {
-            OnAnalyzeProgressChanged(e as AnalyzeProgressChangedEventArgs);
+            OnParseProgressChanged(e as ParseProgressChangedEventArgs);
         }
 
-        protected virtual void OnAnalyzeProgressChanged(AnalyzeProgressChangedEventArgs e)
+        protected virtual void OnParseProgressChanged(ParseProgressChangedEventArgs e)
         {
-            if (AnalyzeProgressChanged != null)
-                AnalyzeProgressChanged(this, e);
+            if (ParseProgressChanged != null)
+                ParseProgressChanged(this, e);
         }
 
         protected override void ReportCompletion(object e)
         {
-            OnAnalyzeCompleted(e as AnalyzeCompletedEventArgs);
+            OnParseCompleted(e as ParseCompletedEventArgs);
         }
 
-        protected virtual void OnAnalyzeCompleted(AnalyzeCompletedEventArgs e)
+        protected virtual void OnParseCompleted(ParseCompletedEventArgs e)
         {
-            if (AnalyzeCompleted != null)
-                AnalyzeCompleted(this, e);
+            if (ParseCompleted != null)
+                ParseCompleted(this, e);
         }
 
         protected override void CompletionMethod(object state)
         {
-            AnalyzeDumpState analyzeState = state as AnalyzeDumpState;
+            ParseDumpState parseState = state as ParseDumpState;
 
-            AsyncOperation asyncOp = analyzeState.asyncOp;
-            AnalyzeCompletedEventArgs e = new AnalyzeCompletedEventArgs(analyzeState.dump, analyzeState.resources, analyzeState.ex, false, asyncOp.UserSuppliedState);
+            AsyncOperation asyncOp = parseState.asyncOp;
+            ParseCompletedEventArgs e = new ParseCompletedEventArgs(parseState.dump, parseState.resources, parseState.ex, false, asyncOp.UserSuppliedState);
             FinalizeOperation(asyncOp, e);
         }
 
@@ -149,7 +149,7 @@ namespace oSpy.SharpDumpLib
 
         #region Core implementation
 
-        private List<Resource> DoAnalysis(Dump dump, AsyncOperation asyncOp)
+        private List<Resource> DoParsing(Dump dump, AsyncOperation asyncOp)
         {
             List<Resource> resources = new List<Resource>();
 
@@ -219,17 +219,16 @@ namespace oSpy.SharpDumpLib
 
                 node = data.SelectSingleNode("/event/returnValue/value/@value");
                 if (node == null)
-                    throw new InvalidDataException("returnValue element not found on FunctionCall event");
+                    throw new InvalidDataException("returnValue element not found on ws2_32.dll::socket FunctionCall event");
                 handle = 0; // UInt32.Parse(node.Value);
             }
-            else if (functionName == "ws2_32.dll::close")
+            else if (functionName == "ws2_32.dll::closesocket")
             {
                 type = ResourceType.Socket;
                 endOfLifetime = true;
-                /*
-                node = data.SelectSingleNode("/event/arguments[@direction=in]/value/@value");
+                node = data.SelectSingleNode("/event/arguments[@direction='in']/argument[1]/value/@value");
                 if (node == null)
-                    throw new InvalidDataException("returnValue element not found on FunctionCall event");*/
+                    throw new InvalidDataException("first argument not found on ws2_32.dll::closesocket FunctionCall event");
                 handle = Convert.ToUInt32(node.Value);
             }
             else
@@ -248,14 +247,14 @@ namespace oSpy.SharpDumpLib
 
     #region Helper classes
 
-    internal class AnalyzeDumpState
+    internal class ParseDumpState
     {
         public Dump dump = null;
         public List<Resource> resources = null;
         public Exception ex = null;
         public AsyncOperation asyncOp = null;
 
-        public AnalyzeDumpState(Dump dump, List<Resource> resources, Exception ex, AsyncOperation asyncOp)
+        public ParseDumpState(Dump dump, List<Resource> resources, Exception ex, AsyncOperation asyncOp)
         {
             this.dump = dump;
             this.resources = resources;
@@ -264,7 +263,7 @@ namespace oSpy.SharpDumpLib
         }
     }
 
-    public class AnalyzeProgressChangedEventArgs : ProgressChangedEventArgs
+    public class ParseProgressChangedEventArgs : ProgressChangedEventArgs
     {
         private Resource latestResource = null;
         public Resource LatestResource
@@ -272,14 +271,14 @@ namespace oSpy.SharpDumpLib
             get { return latestResource; }
         }
 
-        public AnalyzeProgressChangedEventArgs(Resource latestResource, int progressPercentage, object userToken)
+        public ParseProgressChangedEventArgs(Resource latestResource, int progressPercentage, object userToken)
             : base(progressPercentage, userToken)
         {
             this.latestResource = latestResource;
         }
     }
 
-    public class AnalyzeCompletedEventArgs : AsyncCompletedEventArgs
+    public class ParseCompletedEventArgs : AsyncCompletedEventArgs
     {
         private Dump dump = null;
         public Dump Dump
@@ -301,7 +300,7 @@ namespace oSpy.SharpDumpLib
             }
         }
 
-        public AnalyzeCompletedEventArgs(Dump dump, List<Resource> resources, Exception e, bool cancelled, object state)
+        public ParseCompletedEventArgs(Dump dump, List<Resource> resources, Exception e, bool cancelled, object state)
             : base(e, cancelled, state)
         {
             this.dump = dump;
