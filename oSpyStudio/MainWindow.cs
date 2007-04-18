@@ -34,22 +34,14 @@ public class MainWindow : Gtk.Window
 		resourceList.AppendColumn("Resource", new CellRendererText(), "text", 0);
 
         // index, type, time, sender, description
-        Gtk.TreeStore eventListStore = new Gtk.TreeStore(typeof(int),
-                                                         typeof(Gdk.Pixbuf),
-                                                         typeof(string),
-                                                         typeof(string),
-                                                         typeof(string));
+        Gtk.TreeStore eventListStore = new Gtk.TreeStore(typeof(string));
         transactionList.Model = eventListStore;
 
-        transactionList.AppendColumn("Index", new CellRendererText(), "text", 0);
-        transactionList.AppendColumn("Type", new CellRendererPixbuf(), "pixbuf", 1);
-        transactionList.AppendColumn("Time", new CellRendererText(), "text", 2);
-        transactionList.AppendColumn("Sender", new CellRendererText(), "text", 3);
-        transactionList.AppendColumn("Description", new CellRendererText(), "text", 4);
+        transactionList.AppendColumn("Transaction", new CellRendererText(), "text", 0);
         
         dumpLoader = new DumpLoader();
-        dumpLoader.ProgressChanged += new ProgressChangedEventHandler(curOperation_ProgressChanged);
-        dumpLoader.LoadDumpCompleted += new LoadDumpCompletedEventHandler(dumpLoader_LoadDumpCompleted);
+        dumpLoader.LoadProgressChanged += new ProgressChangedEventHandler(curOperation_ProgressChanged);
+        dumpLoader.LoadCompleted += new LoadCompletedEventHandler(dumpLoader_LoadDumpCompleted);
     }
     
     private void CloseCurrentDump()
@@ -82,14 +74,14 @@ public class MainWindow : Gtk.Window
     
     protected virtual void OnOpen(object sender, System.EventArgs e)
     {
-#if false
+
         // Use this code for testing the DataView widget
-        byte[] bytes = File.ReadAllBytes("/home/oleavr/Desktop/base64.bin");
+        byte[] bytes = File.ReadAllBytes("/home/asabil/Desktop/bling.tar.bz2");
         ListStore store = new ListStore(typeof(object));
         store.AppendValues(new object[] { bytes });
         dataView.Model = store;
 		return;
-#endif
+
 
     	FileChooserDialog fc =
             new FileChooserDialog("Choose the file to open",
@@ -118,7 +110,7 @@ public class MainWindow : Gtk.Window
         	if (result != (int) ResponseType.Accept)
         	{
         	    Console.Out.WriteLine("cancelling");
-        	    dumpLoader.CancelAsync(curOperation);
+        	    dumpLoader.LoadAsyncCancel(curOperation);
         	}
         	
         	progressDlg.Destroy();
@@ -127,7 +119,7 @@ public class MainWindow : Gtk.Window
         }
     }
 
-    private void dumpLoader_LoadDumpCompleted(object sender, LoadDumpCompletedEventArgs e)
+    private void dumpLoader_LoadDumpCompleted(object sender, LoadCompletedEventArgs e)
     {
         if (e.Cancelled)
         {
