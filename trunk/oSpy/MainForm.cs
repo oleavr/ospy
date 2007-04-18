@@ -176,8 +176,8 @@ namespace oSpy
             curDump = dump;
 
 #if true
-            DumpAnalyzer analyzer = new DumpAnalyzer();
-            List<Resource> resources = analyzer.Analyze(curDump);
+            DumpParser analyzer = new DumpParser();
+            List<Resource> resources = analyzer.Parse(curDump);
 #endif
 
             dataGridView.DataSource = null;
