@@ -170,6 +170,8 @@ namespace oSpy.SharpDumpLib
             while (pendingEvents.Count > 0)
             {
                 Resource curRes = null;
+                uint processId = 0;
+                bool doneWithCurrent = false;
 
                 foreach (Event ev in pendingEvents.Values)
                 {
@@ -202,12 +204,14 @@ namespace oSpy.SharpDumpLib
                                         {
                                             curRes = new SocketResource(handle);
                                         }
+
+                                        processId = ev.ProcessId;
                                     }
                                 }
 
                                 break;
                             case FunctionCallType.SocketClose:
-                                if (curRes != null && handle == curRes.Handle)
+                                if (ev.ProcessId == processId && curRes != null && handle == curRes.Handle)
                                 {
                                     resources.Add(curRes);
                                     if (asyncOp != null)
@@ -217,6 +221,7 @@ namespace oSpy.SharpDumpLib
                                         asyncOp.Post(onProgressReportDelegate, e);
                                     }
                                     curRes = null;
+                                    doneWithCurrent = true;
 
                                     processed = true;
                                 }
@@ -228,7 +233,7 @@ namespace oSpy.SharpDumpLib
                                 break;
                         }
 
-                        if (curRes != null && handle == curRes.Handle)
+                        if (ev.ProcessId == processId && curRes != null && handle == curRes.Handle)
                         {
                             switch (callType)
                             {
@@ -266,6 +271,9 @@ namespace oSpy.SharpDumpLib
                             asyncOp.Post(onProgressReportDelegate, e);
                         }
                     }
+
+                    if (doneWithCurrent)
+                        break;
                 }
 
                 if (processedEvents.Count == 0)
@@ -276,6 +284,17 @@ namespace oSpy.SharpDumpLib
                     pendingEvents.Remove(ev.Id);
                 }
                 processedEvents.Clear();
+
+                if (curRes != null)
+                {
+                    resources.Add(curRes);
+                    if (asyncOp != null)
+                    {
+                        int pctComplete = (int)(((float)n / (float)numEvents) * 100.0f);
+                        ParseProgressChangedEventArgs e = new ParseProgressChangedEventArgs(curRes, pctComplete, asyncOp.UserSuppliedState);
+                        asyncOp.Post(onProgressReportDelegate, e);
+                    }
+                }
             }
 
             return resources;
