@@ -13,4 +13,4 @@ Imagine you'd have a TicTacToe game running over for example Windows Live Messen
 == How to present this in oSpy Studio ==
 We could have a timeline on the left and tiny thumbnails along the side, a bit like a more interactive version of the visualization feature that oSpy1 had. These thumbnails would be like a deck of cards
 \ | /
-rotated right by 90 degrees for example, and when you hover one of them, the edges would glow and the thumbnail slowly turn left (counter-clockwise) until horizontal, while scaling it up a bit.
+rotated right by 90 degrees for example, and when you hover one of them, the edges of this one card would glow and the thumbnail slowly turn left (counter-clockwise) until horizontal, while scaling it up a bit.
