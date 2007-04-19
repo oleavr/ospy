@@ -4,7 +4,7 @@ using Gtk;
 
 namespace oSpyStudio.Widgets
 {
-	public class DataView : Gtk.Bin
+	public partial class DataView : Gtk.Bin
 	{
 	    private class HexChunk : Gtk.HBox
 	    {
@@ -118,11 +118,7 @@ namespace oSpyStudio.Widgets
 	    }
 
 	    private delegate void ApplyStyleFunction(Widget w);
-	    
-	    protected ScrolledWindow scrollWin;
-	    protected Notebook notebook;
-	    protected VBox hexVBox;
-	    
+
 	    protected TreeModel model;
 	    public TreeModel Model
 	    {
@@ -139,7 +135,7 @@ namespace oSpyStudio.Widgets
 
 		public DataView()
 		{
-			Stetic.Gui.Build(this, typeof(oSpyStudio.Widgets.DataView));
+		    this.Build();
 
             ApplyHaxorStyle(scrollWin.Child);
 		}

@@ -39,7 +39,7 @@
     <ProjectReference type="Project" localcopy="True" refto="oSpy.SharpDumpLib" />
     <ProjectReference type="Gac" localcopy="True" refto="Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756" />
   </References>
-  <GtkDesignInfo>
+  <GtkDesignInfo partialTypes="True">
     <ExportedWidgets>
       <Widget>oSpyStudio.Widgets.DataView</Widget>
     </ExportedWidgets>

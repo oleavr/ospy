@@ -2,14 +2,11 @@ using System;
 
 namespace oSpyStudio.Widgets
 {
-	public class ProgressDialog : Gtk.Dialog
+	public partial class ProgressDialog : Gtk.Dialog
 	{
-	    protected Gtk.Label operationLbl;
-	    protected Gtk.ProgressBar progressbar;
-
 		public ProgressDialog(string operation)
 		{
-			Stetic.Gui.Build(this, typeof(oSpyStudio.Widgets.ProgressDialog));
+		    this.Build();
 			
 			operationLbl.Text = operation;
 		}

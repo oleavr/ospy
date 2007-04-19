@@ -1,45 +1,35 @@
 using System;
 using System.IO;
 using System.ComponentModel;
-using Gtk;
 using oSpyStudio.Widgets;
 using oSpy.SharpDumpLib;
 using ICSharpCode.SharpZipLib.BZip2;
 
-public class MainWindow : Gtk.Window
+public partial class MainWindow : Gtk.Window
 {
-    protected TreeView transactionList;
-    protected TreeView resourceList;
-    protected TreeView processList;
-    protected DataView dataView;
-    
     protected Dump curDump = null;
 
     protected string curOperation = null;
-
     protected DumpLoader dumpLoader;
-    protected Gtk.ProgressBar loadProgress;
-    protected Gtk.Statusbar statusBar;
-    protected Gtk.Button cancelLoadButton;
 
     public MainWindow()
         : base("")
     {
-        Stetic.Gui.Build(this, typeof(MainWindow));
+        this.Build();
 
-		Gtk.TreeStore processListStore = new TreeStore(typeof(string));
+		Gtk.TreeStore processListStore = new Gtk.TreeStore(typeof(string));
 		processList.Model = processListStore;
-		processList.AppendColumn("Process", new CellRendererText(), "text", 0);
+		processList.AppendColumn("Process", new Gtk.CellRendererText(), "text", 0);
 		
-		Gtk.TreeStore resourceListStore = new TreeStore(typeof(string));
+		Gtk.TreeStore resourceListStore = new Gtk.TreeStore(typeof(string));
 		resourceList.Model = resourceListStore;
-		resourceList.AppendColumn("Resource", new CellRendererText(), "text", 0);
+		resourceList.AppendColumn("Resource", new Gtk.CellRendererText(), "text", 0);
 
         // index, type, time, sender, description
         Gtk.TreeStore eventListStore = new Gtk.TreeStore(typeof(string));
         transactionList.Model = eventListStore;
 
-        transactionList.AppendColumn("Transaction", new CellRendererText(), "text", 0);
+        transactionList.AppendColumn("Transaction", new Gtk.CellRendererText(), "text", 0);
         
         dumpLoader = new DumpLoader();
         dumpLoader.LoadProgressChanged += new ProgressChangedEventHandler(curOperation_ProgressChanged);
@@ -61,17 +51,17 @@ public class MainWindow : Gtk.Window
             loadProgress.Fraction = (float) e.ProgressPercentage / 100.0f;
     }
 
-    protected void OnDeleteEvent(object sender, DeleteEventArgs a)
+    protected void OnDeleteEvent(object sender, Gtk.DeleteEventArgs a)
     {
         CloseCurrentDump();
-        Application.Quit();
+        Gtk.Application.Quit();
         a.RetVal = true;
     }
 
     protected virtual void OnQuit(object sender, System.EventArgs e)
     {
         CloseCurrentDump();
-        Application.Quit();
+        Gtk.Application.Quit();
     }
     
     protected virtual void OnOpen(object sender, System.EventArgs e)
@@ -84,22 +74,22 @@ public class MainWindow : Gtk.Window
         dataView.Model = store;
 		return;
 */
-    	FileChooserDialog fc =
-            new FileChooserDialog("Choose the file to open",
+    	Gtk.FileChooserDialog fc =
+            new Gtk.FileChooserDialog("Choose the file to open",
         	                      this,
-                                  FileChooserAction.Open,
-                                  "Cancel", ResponseType.Cancel,
-                                  "Open", ResponseType.Accept);
-		FileFilter ff = new FileFilter();
+                                  Gtk.FileChooserAction.Open,
+                                  "Cancel", Gtk.ResponseType.Cancel,
+                                  "Open", Gtk.ResponseType.Accept);
+		Gtk.FileFilter ff = new Gtk.FileFilter();
 		ff.AddPattern("*.osd");
 		ff.Name = "oSpy dump files (.osd)";
 		fc.AddFilter(ff);
 
-        ResponseType response = (ResponseType) fc.Run();
+        Gtk.ResponseType response = (Gtk.ResponseType) fc.Run();
         string filename = fc.Filename;
         fc.Destroy();
         
-        if (response == ResponseType.Accept)
+        if (response == Gtk.ResponseType.Accept)
         {
         	Stream file = new BZip2InputStream(File.OpenRead(filename));
         	
@@ -140,10 +130,10 @@ public class MainWindow : Gtk.Window
 
     private void ShowErrorMessage(string message)
     {
-        MessageDialog md = new MessageDialog(this,
-            DialogFlags.DestroyWithParent,
-            MessageType.Error,
-            ButtonsType.Close,
+        Gtk.MessageDialog md = new Gtk.MessageDialog(this,
+            Gtk.DialogFlags.DestroyWithParent,
+            Gtk.MessageType.Error,
+            Gtk.ButtonsType.Close,
             message);
         md.Run();
         md.Destroy();
@@ -151,7 +141,7 @@ public class MainWindow : Gtk.Window
 
     protected virtual void OnAbout(object sender, System.EventArgs e)
     {
-    	AboutDialog ad = new AboutDialog();
+    	Gtk.AboutDialog ad = new Gtk.AboutDialog();
     	ad.Name = "oSpy Studio";
     	ad.Website = "http://code.google.com/p/ospy/";
     	string[] authors = new string[3];
