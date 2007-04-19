@@ -30,12 +30,12 @@ using System.IO;
 
 namespace oSpy.SharpDumpLib
 {
-    public class DataStorage
+    public class BulkStorage
     {
         private string tmpFilePath = null;
         private Stream stream = null;
 
-        public DataStorage()
+        public BulkStorage()
         {
             tmpFilePath = Path.GetTempFileName();
 
@@ -57,14 +57,14 @@ namespace oSpy.SharpDumpLib
             }
         }
 
-        public DataSlot AppendData(byte[] data)
+        public BulkSlot AppendData(byte[] data)
         {
             long offset = stream.Position;
             stream.Write(data, 0, data.Length);
-            return new DataSlot(this, offset, data.Length);
+            return new BulkSlot(this, offset, data.Length);
         }
 
-        public byte[] GetData(DataSlot slot)
+        public byte[] GetData(BulkSlot slot)
         {
             stream.Seek(slot.Offset, SeekOrigin.Begin);
             byte[] buf = new byte[slot.Size];
@@ -73,10 +73,10 @@ namespace oSpy.SharpDumpLib
         }
     }
 
-    public class DataSlot
+    public class BulkSlot
     {
-        private DataStorage storage;
-        public DataStorage Storage
+        private BulkStorage storage;
+        public BulkStorage Storage
         {
             get { return storage; }
         }
@@ -98,7 +98,7 @@ namespace oSpy.SharpDumpLib
             get { return storage.GetData(this); }
         }
 
-        public DataSlot(DataStorage storage, long offset, int size)
+        public BulkSlot(BulkStorage storage, long offset, int size)
         {
             this.storage = storage;
             this.offset = offset;

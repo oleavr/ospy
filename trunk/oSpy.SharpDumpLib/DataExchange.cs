@@ -37,9 +37,9 @@ namespace oSpy.SharpDumpLib
             get { return resource; }
         }
 
-        private DataStorage storage = null;
+        private BulkStorage storage = null;
 
-        private List<DataSlot> slots = new List<DataSlot>();
+        private List<BulkSlot> slots = new List<BulkSlot>();
         private List<DataDirection> directions = new List<DataDirection>();
 
         public DataExchange(Resource resource)
@@ -47,7 +47,7 @@ namespace oSpy.SharpDumpLib
             this.resource = resource;
         }
 
-        public DataExchange(Resource resource, DataSlot resourceSlot, DataDirection direction)
+        public DataExchange(Resource resource, BulkSlot resourceSlot, DataDirection direction)
         {
             this.resource = resource;
 
@@ -71,10 +71,10 @@ namespace oSpy.SharpDumpLib
         {
             if (storage == null)
             {
-                storage = new DataStorage();
+                storage = new BulkStorage();
             }
 
-            DataSlot slot = storage.AppendData(data);
+            BulkSlot slot = storage.AppendData(data);
             slots.Add(slot);
             directions.Add(direction);
         }

@@ -37,7 +37,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="DataExchange.cs" />
-    <Compile Include="DataStorage.cs" />
+    <Compile Include="BulkStorage.cs" />
     <Compile Include="Dump.cs" />
     <Compile Include="DumpBuilder.cs">
       <SubType>Component</SubType>
