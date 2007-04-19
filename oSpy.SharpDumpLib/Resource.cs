@@ -31,6 +31,73 @@ namespace oSpy.SharpDumpLib
 {
     public class Resource
     {
+        private UInt32 handle = 0;
+        public UInt32 Handle
+        {
+            get { return handle; }
+        }
+
+        private List<DataExchange> dataExchanges = new List<DataExchange>();
+        public List<DataExchange> DataExchanges
+        {
+            get { return dataExchanges; }
+        }
+
+        private DataStorage storage = null;
+
+        public Resource(UInt32 handle)
+        {
+            this.handle = handle;
+        }
+
+        public void Close()
+        {
+            foreach (DataExchange exchange in dataExchanges)
+            {
+                exchange.Close();
+            }
+            dataExchanges.Clear();
+
+            if (storage != null)
+            {
+                storage.Close();
+                storage = null;
+            }
+        }
+
+        public void AppendData(byte[] data, DataDirection direction)
+        {
+            if (DataIsContinuous())
+            {
+                DataExchange exchange = null;
+
+                if (dataExchanges.Count != 0)
+                {
+                    exchange = dataExchanges[0];
+                }
+                else
+                {
+                    exchange = new DataExchange(this);
+                    dataExchanges.Add(exchange);
+                }
+
+                exchange.Append(data, direction);
+            }
+            else
+            {
+                if (storage == null)
+                {
+                    storage = new DataStorage();
+                }
+
+                dataExchanges.Add(new DataExchange(this, storage.AppendData(data), direction));
+            }
+        }
+
+        protected virtual bool DataIsContinuous()
+        {
+            return true;
+        }
     }
 
     public enum ResourceType
