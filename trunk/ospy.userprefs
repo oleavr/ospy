@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<UserCombinePreferences filename="/home/asabil/Devel/ospy/ospy/ospy.mds">
+  <Files>
+    <File filename="./oSpyStudio/MainWindow.cs" />
+    <File filename="./oSpyStudio/Widgets/ProgressDialog.cs" />
+    <File filename="Documentation" />
+  </Files>
+  <Views>
+    <ViewMemento Id="MonoDevelop.Ide.Gui.Pads.ProjectPad">
+      <TreeView>
+        <Node expanded="True">
+          <Node name="oSpyStudio" expanded="True">
+            <Node name="UserInterface" expanded="True" />
+            <Node name="Widgets" expanded="True" />
+            <Node name="MainWindow.cs" expanded="False" selected="True" />
+          </Node>
+        </Node>
+      </TreeView>
+    </ViewMemento>
+    <ViewMemento Id="MonoDevelop.Ide.Gui.Pads.ClassPad">
+      <TreeView>
+        <Node expanded="True" />
+      </TreeView>
+    </ViewMemento>
+  </Views>
+  <Properties>
+    <Properties>
+      <Property key="ActiveConfiguration" value="Debug" />
+      <Property key="ActiveWindow" value="/home/asabil/Devel/ospy/ospy/oSpyStudio/MainWindow.cs" />
+    </Properties>
+  </Properties>
+</UserCombinePreferences>

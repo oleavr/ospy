@@ -18,12 +18,14 @@
     <File name="./AsyncWorker.cs" subtype="Code" buildaction="Compile" />
     <File name="./DataExchange.cs" subtype="Code" buildaction="Compile" />
     <File name="./Dump.cs" subtype="Code" buildaction="Compile" />
-    <File name="./DumpAnalyzer.cs" subtype="Code" buildaction="Compile" />
     <File name="./DumpBuilder.cs" subtype="Code" buildaction="Compile" />
     <File name="./DumpLoader.cs" subtype="Code" buildaction="Compile" />
     <File name="./DumpSaver.cs" subtype="Code" buildaction="Compile" />
     <File name="./Resource.cs" subtype="Code" buildaction="Compile" />
     <File name="./Properties/AssemblyInfo.cs" subtype="Code" buildaction="Compile" />
+    <File name="./BulkStorage.cs" subtype="Code" buildaction="Compile" />
+    <File name="./DumpParser.cs" subtype="Code" buildaction="Compile" />
+    <File name="./SocketResource.cs" subtype="Code" buildaction="Compile" />
   </Contents>
   <References>
     <ProjectReference type="Gac" localcopy="True" refto="System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
