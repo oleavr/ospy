@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.ComponentModel;
 using oSpyStudio.Widgets;
@@ -11,6 +12,7 @@ public partial class MainWindow : Gtk.Window
 
     protected string curOperation = null;
     protected DumpLoader dumpLoader;
+    protected DumpParser dumpParser;
 
     public MainWindow()
         : base("")
@@ -33,7 +35,11 @@ public partial class MainWindow : Gtk.Window
         
         dumpLoader = new DumpLoader();
         dumpLoader.LoadProgressChanged += new ProgressChangedEventHandler(curOperation_ProgressChanged);
-        dumpLoader.LoadCompleted += new LoadCompletedEventHandler(dumpLoader_LoadDumpCompleted);
+        dumpLoader.LoadCompleted += new LoadCompletedEventHandler(dumpLoader_LoadCompleted);
+        
+        dumpParser = new DumpParser();
+        dumpParser.ParseProgressChanged += new ParseProgressChangedEventHandler(dumpParser_ParseProgressChanged);
+        dumpParser.ParseCompleted += new ParseCompletedEventHandler(dumpParser_ParseCompleted);
     }
     
     private void CloseCurrentDump()
@@ -100,7 +106,7 @@ public partial class MainWindow : Gtk.Window
         }
     }
 
-    private void dumpLoader_LoadDumpCompleted(object sender, LoadCompletedEventArgs e)
+    private void dumpLoader_LoadCompleted(object sender, LoadCompletedEventArgs e)
     {
         loadProgress.Fraction = 0;
         cancelLoadButton.Sensitive = false;
@@ -108,7 +114,7 @@ public partial class MainWindow : Gtk.Window
         curOperation = null;
         if (e.Cancelled)
         {
-        	Console.Out.WriteLine("cancelled");
+        	Console.Out.WriteLine("load cancelled");
             return;
         }
 
@@ -117,7 +123,8 @@ public partial class MainWindow : Gtk.Window
         try
         {
             dump = e.Dump;
-        	Console.Out.WriteLine("opened successfully");
+
+        	Console.Out.WriteLine("load cancelled");
         }
         catch (Exception ex)
         {
@@ -126,7 +133,59 @@ public partial class MainWindow : Gtk.Window
         }
         
         CloseCurrentDump();
-        curDump = dump;    }
+        curDump = dump;
+        curOperation = "Parsing";
+        statusBar.Push(1, curOperation);
+        cancelLoadButton.Sensitive = true;
+        dumpParser.ParseAsync(curDump, curOperation);
+    }
+    
+    private Resource latestResource = null;
+    
+    private void dumpParser_ParseProgressChanged(object sender, ParseProgressChangedEventArgs e)
+    {
+        curOperation_ProgressChanged(sender, e);
+
+        if (e.LatestResource != null)
+            latestResource = e.LatestResource;
+
+        if (latestResource != null)
+        {
+            loadProgress.Text = String.Format("Found handle 0x{0:x}", latestResource.Handle);
+        }
+    }
+    
+    private void dumpParser_ParseCompleted(object sender, ParseCompletedEventArgs e)
+    {
+        loadProgress.Fraction = 0;
+        loadProgress.Text = "";
+        cancelLoadButton.Sensitive = false;
+        statusBar.Pop(1);
+        curOperation = null;
+        if (e.Cancelled)
+        {
+        	Console.Out.WriteLine("parse cancelled");
+            return;
+        }
+
+        List<Resource> resources;
+
+        try
+        {
+            resources = e.Resources;
+            
+            // Just clean up for now
+            foreach (Resource res in resources)
+            {
+                res.Close();
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage(String.Format("Failed to parse dump: {0}", ex.Message));
+            return;
+        }
+    }
 
     private void ShowErrorMessage(string message)
     {
@@ -155,7 +214,16 @@ public partial class MainWindow : Gtk.Window
 
     protected virtual void cancelLoadButton_clicked(object sender, System.EventArgs e)
     {
-        Console.Out.WriteLine("cancelling");
-        dumpLoader.LoadAsyncCancel(curOperation);
+        // FIXME: this is ugly
+        if (curOperation == "Loading")
+        {
+            Console.Out.WriteLine("cancelling load");
+            dumpLoader.LoadAsyncCancel(curOperation);
+        }
+        else        
+        {
+            Console.Out.WriteLine("cancelling parse");
+            dumpParser.ParseAsyncCancel(curOperation);
+        }
     }
 }
