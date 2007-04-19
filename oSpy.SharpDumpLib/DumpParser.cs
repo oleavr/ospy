@@ -76,7 +76,7 @@ namespace oSpy.SharpDumpLib
 
         #region Public interface
 
-        public virtual List<Resource> Parse(Dump dump)
+        public virtual List<Process> Parse(Dump dump)
         {
             return DoParsing(dump, null);
         }
@@ -100,19 +100,19 @@ namespace oSpy.SharpDumpLib
 
         private void ParseWorker(Dump dump, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
         {
-            List<Resource> resources = null;
+            List<Process> processes = null;
             Exception e = null;
 
             try
             {
-                resources = DoParsing(dump, asyncOp);
+                processes = DoParsing(dump, asyncOp);
             }
             catch (Exception ex)
             {
                 e = ex;
             }
 
-            ParseDumpState parseState = new ParseDumpState(dump, resources, e, asyncOp);
+            ParseDumpState parseState = new ParseDumpState(dump, processes, e, asyncOp);
 
             try { completionMethodDelegate(parseState); }
             catch (InvalidOperationException) { }
@@ -150,7 +150,7 @@ namespace oSpy.SharpDumpLib
             ParseDumpState parseState = state as ParseDumpState;
 
             AsyncOperation asyncOp = parseState.asyncOp;
-            ParseCompletedEventArgs e = new ParseCompletedEventArgs(parseState.dump, parseState.resources, parseState.ex, false, asyncOp.UserSuppliedState);
+            ParseCompletedEventArgs e = new ParseCompletedEventArgs(parseState.dump, parseState.processes, parseState.ex, false, asyncOp.UserSuppliedState);
             FinalizeOperation(asyncOp, e);
         }
 
@@ -158,9 +158,9 @@ namespace oSpy.SharpDumpLib
 
         #region Core implementation
 
-        private List<Resource> DoParsing(Dump dump, AsyncOperation asyncOp)
+        private List<Process> DoParsing(Dump dump, AsyncOperation asyncOp)
         {
-            List<Resource> resources = new List<Resource>();
+            SortedDictionary<uint, Process> processes = new SortedDictionary<uint, Process>();
 
             SortedDictionary<uint, Event> pendingEvents = new SortedDictionary<uint, Event>(dump.Events);
             List<Event> processedEvents = new List<Event>();
@@ -169,8 +169,8 @@ namespace oSpy.SharpDumpLib
 
             while (pendingEvents.Count > 0)
             {
+                Process curProcess = null;
                 Resource curRes = null;
-                uint processId = 0;
                 bool doneWithCurrent = false;
 
                 foreach (Event ev in pendingEvents.Values)
@@ -194,6 +194,12 @@ namespace oSpy.SharpDumpLib
                                 {
                                     processed = true;
 
+                                    if (!processes.ContainsKey(ev.ProcessId))
+                                    {
+                                        processes[ev.ProcessId] = new Process(ev.ProcessId, ev.ProcessName);
+                                    }
+                                    curProcess = processes[ev.ProcessId];
+
                                     if (resType == ResourceType.Socket)
                                     {
                                         if (callType == FunctionCallType.SocketCreate)
@@ -204,22 +210,23 @@ namespace oSpy.SharpDumpLib
                                         {
                                             curRes = new SocketResource(handle);
                                         }
-
-                                        processId = ev.ProcessId;
                                     }
+                                    // TODO: add the rest of the cases here
+
+                                    curProcess.Resources.Add(curRes);
                                 }
 
                                 break;
                             case FunctionCallType.SocketClose:
-                                if (ev.ProcessId == processId && curRes != null && handle == curRes.Handle)
+                                if (curProcess != null && handle == curRes.Handle && ev.ProcessId == curProcess.Id)
                                 {
-                                    resources.Add(curRes);
                                     if (asyncOp != null)
                                     {
                                         int pctComplete = (int)(((float)n / (float)numEvents) * 100.0f);
                                         ParseProgressChangedEventArgs e = new ParseProgressChangedEventArgs(curRes, pctComplete, asyncOp.UserSuppliedState);
                                         asyncOp.Post(onProgressReportDelegate, e);
                                     }
+                                    curProcess = null;
                                     curRes = null;
                                     doneWithCurrent = true;
 
@@ -233,7 +240,7 @@ namespace oSpy.SharpDumpLib
                                 break;
                         }
 
-                        if (ev.ProcessId == processId && curRes != null && handle == curRes.Handle)
+                        if (curProcess != null && handle == curRes.Handle && ev.ProcessId == curProcess.Id)
                         {
                             switch (callType)
                             {
@@ -287,7 +294,6 @@ namespace oSpy.SharpDumpLib
 
                 if (curRes != null)
                 {
-                    resources.Add(curRes);
                     if (asyncOp != null)
                     {
                         int pctComplete = (int)(((float)n / (float)numEvents) * 100.0f);
@@ -297,7 +303,7 @@ namespace oSpy.SharpDumpLib
                 }
             }
 
-            return resources;
+            return new List<Process>(processes.Values);
         }
 
         private const string firstArgInValQuery = "/event/arguments[@direction='in']/argument[1]/value/@value";
@@ -421,14 +427,14 @@ namespace oSpy.SharpDumpLib
     internal class ParseDumpState
     {
         public Dump dump = null;
-        public List<Resource> resources = null;
+        public List<Process> processes = null;
         public Exception ex = null;
         public AsyncOperation asyncOp = null;
 
-        public ParseDumpState(Dump dump, List<Resource> resources, Exception ex, AsyncOperation asyncOp)
+        public ParseDumpState(Dump dump, List<Process> processes, Exception ex, AsyncOperation asyncOp)
         {
             this.dump = dump;
-            this.resources = resources;
+            this.processes = processes;
             this.ex = ex;
             this.asyncOp = asyncOp;
         }
@@ -461,21 +467,21 @@ namespace oSpy.SharpDumpLib
             }
         }
 
-        private List<Resource> resources = null;
-        public List<Resource> Resources
+        private List<Process> processes = null;
+        public List<Process> Processes
         {
             get
             {
                 RaiseExceptionIfNecessary();
-                return resources;
+                return processes;
             }
         }
 
-        public ParseCompletedEventArgs(Dump dump, List<Resource> resources, Exception e, bool cancelled, object state)
+        public ParseCompletedEventArgs(Dump dump, List<Process> processes, Exception e, bool cancelled, object state)
             : base(e, cancelled, state)
         {
             this.dump = dump;
-            this.resources = resources;
+            this.processes = processes;
         }
     }
 
