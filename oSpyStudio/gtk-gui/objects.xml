@@ -4,10 +4,19 @@
       <itemgroup ref="Gtk.Widget" />
       <itemgroup label="DataView Properties">
         <property name="DataColIndex" />
+        <property name="BorderWidth" />
+        <property name="FocusHadjustment" />
+        <property name="FocusVadjustment" />
       </itemgroup>
     </itemgroups>
     <signals>
       <itemgroup ref="Gtk.Widget" />
+      <itemgroup label="Container Signals">
+        <signal name="ResizeChecked" />
+        <signal name="Removed" />
+        <signal name="FocusChildSet" />
+        <signal name="Added" />
+      </itemgroup>
     </signals>
   </object>
 </objects>

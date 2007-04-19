@@ -15,7 +15,6 @@ public class MainWindow : Gtk.Window
     
     protected Dump curDump = null;
 
-    protected ProgressDialog progressDlg = null;
     protected string curOperation = null;
 
     protected DumpLoader dumpLoader;
@@ -58,8 +57,6 @@ public class MainWindow : Gtk.Window
 
     private void curOperation_ProgressChanged(object sender, ProgressChangedEventArgs e)
     {
-        if (progressDlg != null)
-            progressDlg.UpdateProgress(e.ProgressPercentage);
         if (loadProgress != null)
             loadProgress.Fraction = (float) e.ProgressPercentage / 100.0f;
     }
@@ -107,21 +104,9 @@ public class MainWindow : Gtk.Window
         	Stream file = new BZip2InputStream(File.OpenRead(filename));
         	
         	curOperation = "Loading";
-            //progressDlg = new ProgressDialog(curOperation);
             statusBar.Push(1, curOperation);
             cancelLoadButton.Sensitive = true;
         	dumpLoader.LoadAsync(file, curOperation);
-        	
-        	/*int result = progressDlg.Run();
-        	if (result != (int) ResponseType.Accept)
-        	{
-        	    Console.Out.WriteLine("cancelling");
-        	    dumpLoader.LoadAsyncCancel(curOperation);
-        	}
-        	progressDlg.Destroy();
-        	progressDlg = null;
-        	*/
-
         }
     }
 
@@ -136,8 +121,6 @@ public class MainWindow : Gtk.Window
         	Console.Out.WriteLine("cancelled");
             return;
         }
-
-        //progressDlg.Respond(ResponseType.Accept);
 
         Dump dump;
 
