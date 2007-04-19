@@ -96,7 +96,7 @@ namespace oSpy.SharpDumpLib
 
         protected virtual bool DataIsContinuous()
         {
-            return true;
+            return false;
         }
     }
 

@@ -57,7 +57,7 @@ namespace oSpy.SharpDumpLib
 
         protected override bool DataIsContinuous()
         {
-            return (socketType != SocketType.SOCK_DGRAM);
+            return (socketType == SocketType.SOCK_STREAM);
         }
     }
 
