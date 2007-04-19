@@ -19,6 +19,9 @@ public class MainWindow : Gtk.Window
     protected string curOperation = null;
 
     protected DumpLoader dumpLoader;
+    protected Gtk.ProgressBar loadProgress;
+    protected Gtk.Statusbar statusBar;
+    protected Gtk.Button cancelLoadButton;
 
     public MainWindow()
         : base("")
@@ -57,6 +60,8 @@ public class MainWindow : Gtk.Window
     {
         if (progressDlg != null)
             progressDlg.UpdateProgress(e.ProgressPercentage);
+        if (loadProgress != null)
+            loadProgress.Fraction = (float) e.ProgressPercentage / 100.0f;
     }
 
     protected void OnDeleteEvent(object sender, DeleteEventArgs a)
@@ -74,15 +79,14 @@ public class MainWindow : Gtk.Window
     
     protected virtual void OnOpen(object sender, System.EventArgs e)
     {
-
+/*
         // Use this code for testing the DataView widget
         byte[] bytes = File.ReadAllBytes("/home/asabil/Desktop/bling.tar.bz2");
         ListStore store = new ListStore(typeof(object));
         store.AppendValues(new object[] { bytes });
         dataView.Model = store;
 		return;
-
-
+*/
     	FileChooserDialog fc =
             new FileChooserDialog("Choose the file to open",
         	                      this,
@@ -103,31 +107,37 @@ public class MainWindow : Gtk.Window
         	Stream file = new BZip2InputStream(File.OpenRead(filename));
         	
         	curOperation = "Loading";
-        	progressDlg = new ProgressDialog(curOperation);
+            //progressDlg = new ProgressDialog(curOperation);
+            statusBar.Push(1, curOperation);
+            cancelLoadButton.Sensitive = true;
         	dumpLoader.LoadAsync(file, curOperation);
         	
-        	int result = progressDlg.Run();
+        	/*int result = progressDlg.Run();
         	if (result != (int) ResponseType.Accept)
         	{
         	    Console.Out.WriteLine("cancelling");
         	    dumpLoader.LoadAsyncCancel(curOperation);
         	}
-        	
         	progressDlg.Destroy();
         	progressDlg = null;
-        	curOperation = null;
+        	*/
+
         }
     }
 
     private void dumpLoader_LoadDumpCompleted(object sender, LoadCompletedEventArgs e)
     {
+        loadProgress.Fraction = 0;
+        cancelLoadButton.Sensitive = false;
+        statusBar.Pop(1);
+        curOperation = null;
         if (e.Cancelled)
         {
         	Console.Out.WriteLine("cancelled");
             return;
         }
 
-        progressDlg.Respond(ResponseType.Accept);
+        //progressDlg.Respond(ResponseType.Accept);
 
         Dump dump;
 
@@ -168,5 +178,11 @@ public class MainWindow : Gtk.Window
     	ad.Authors = authors;
     	ad.Run();
     	ad.Destroy();
+    }
+
+    protected virtual void cancelLoadButton_clicked(object sender, System.EventArgs e)
+    {
+        Console.Out.WriteLine("cancelling");
+        dumpLoader.LoadAsyncCancel(curOperation);
     }
 }
