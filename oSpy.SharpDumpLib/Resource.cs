@@ -43,7 +43,7 @@ namespace oSpy.SharpDumpLib
             get { return dataExchanges; }
         }
 
-        private DataStorage storage = null;
+        private BulkStorage storage = null;
 
         public Resource(UInt32 handle)
         {
@@ -87,7 +87,7 @@ namespace oSpy.SharpDumpLib
             {
                 if (storage == null)
                 {
-                    storage = new DataStorage();
+                    storage = new BulkStorage();
                 }
 
                 dataExchanges.Add(new DataExchange(this, storage.AppendData(data), direction));
