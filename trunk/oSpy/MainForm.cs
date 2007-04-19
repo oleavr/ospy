@@ -35,7 +35,6 @@ using ICSharpCode.SharpZipLib.BZip2;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
-using System.Diagnostics;
 using oSpy.Util;
 using System.ComponentModel;
 using oSpy.SharpDumpLib;
@@ -82,7 +81,7 @@ namespace oSpy
         {
             Capture.ChooseForm frm = new Capture.ChooseForm();
 
-            Process[] processes = frm.GetSelectedProcesses();
+            System.Diagnostics.Process[] processes = frm.GetSelectedProcesses();
             if (processes.Length == 0)
                 return;
 
@@ -278,18 +277,24 @@ namespace oSpy
         {
             curProgress.OperationComplete();
 
-            List<Resource> resources = null;
+            List<Process> processes = null;
 
             try
             {
-                resources = e.Resources;
+                processes = e.Processes;
 
-                MessageBox.Show(String.Format("Successfully parsed {0} resources", resources.Count),
+                int resCount = 0;
+                foreach (Process proc in processes)
+                {
+                    resCount += proc.Resources.Count;
+                }
+
+                MessageBox.Show(String.Format("Successfully parsed data from {0} process(es) with a total of {1} resource(s).", processes.Count, resCount),
                                 "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                foreach (Resource res in resources)
+                foreach (Process proc in processes)
                 {
-                    res.Close();
+                    proc.Close();
                 }
             }
             catch (Exception ex)
