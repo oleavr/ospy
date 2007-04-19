@@ -29,61 +29,74 @@ using System.Text;
 
 namespace oSpy.SharpDumpLib
 {
-    public class DataExchange
+    public class SocketResource : Resource
     {
-        private Resource resource = null;
-        public Resource Resource
+        private AddressFamily addressFamily = AddressFamily.Unknown;
+        public AddressFamily AddressFamily
         {
-            get { return resource; }
+            get { return addressFamily; }
         }
 
-        private DataStorage storage = null;
-
-        private List<DataSlot> slots = new List<DataSlot>();
-        private List<DataDirection> directions = new List<DataDirection>();
-
-        public DataExchange(Resource resource)
+        private SocketType socketType = SocketType.Unknown;
+        public SocketType SocketType
         {
-            this.resource = resource;
+            get { return socketType; }
         }
 
-        public DataExchange(Resource resource, DataSlot resourceSlot, DataDirection direction)
+        public SocketResource(UInt32 handle)
+            : base(handle)
         {
-            this.resource = resource;
-
-            this.slots.Add(resourceSlot);
-            this.directions.Add(direction);
         }
 
-        public void Close()
+        public SocketResource(UInt32 handle, AddressFamily addressFamily, SocketType socketType)
+            : base(handle)
         {
-            slots.Clear();
-            directions.Clear();
-
-            if (storage != null)
-            {
-                storage.Close();
-                storage = null;
-            }
+            this.addressFamily = addressFamily;
+            this.socketType = socketType;
         }
 
-        public void Append(byte[] data, DataDirection direction)
+        protected override bool DataIsContinuous()
         {
-            if (storage == null)
-            {
-                storage = new DataStorage();
-            }
-
-            DataSlot slot = storage.AppendData(data);
-            slots.Add(slot);
-            directions.Add(direction);
+            return (socketType != SocketType.SOCK_DGRAM);
         }
     }
 
-    public enum DataDirection
+    public enum AddressFamily
     {
         Unknown,
-        Incoming,
-        Outgoing,
+        AF_APPLETALK,
+        AF_BAN,
+        AF_CCITT,
+        AF_CHAOS,
+        AF_DATAKIT,
+        AF_DECnet,
+        AF_DLI,
+        AF_ECMA,
+        AF_FIREFOX,
+        AF_HYLINK,
+        AF_IMPLINK,
+        AF_INET,
+        AF_INET6,
+        AF_IPX,
+        AF_ISO,
+        AF_LAT,
+        AF_NETBIOS,
+        AF_PUP,
+        AF_SNA,
+        AF_UNIX,
+        AF_UNKNOWN1,
+        AF_UNSPEC,
+        AF_VOICEVIEW,
+        AF_MAX,
+    }
+
+    public enum SocketType
+    {
+        Unknown,
+        SOCK_DGRAM,
+        SOCK_RAW,
+        SOCK_RDM,
+        SOCK_SEQPACKET,
+        SOCK_STREAM,
     }
 }

@@ -174,12 +174,6 @@ namespace oSpy
             CloseCurrentDump();
 
             curDump = dump;
-
-#if true
-            DumpParser analyzer = new DumpParser();
-            List<Resource> resources = analyzer.Parse(curDump);
-#endif
-
             dataGridView.DataSource = null;
 
             NewOperation("Opening");
@@ -192,6 +186,16 @@ namespace oSpy
                                 "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
+
+#if true
+            DumpParser parser = new DumpParser();
+            parser.ParseProgressChanged += new ParseProgressChangedEventHandler(parser_ParseProgressChanged);
+            parser.ParseCompleted += new ParseCompletedEventHandler(parser_ParseCompleted);
+
+            NewOperation("Parsing");
+            parser.ParseAsync(curDump, curOperation);
+            curProgress.ShowDialog(this);
+#endif
         }
 
         private void CloseCurrentDump()
@@ -249,6 +253,53 @@ namespace oSpy
         {
             dataGridView.DataSource = bindingSource;
         }
+
+#if true
+        private Resource latestResource = null;
+
+        private void parser_ParseProgressChanged(object sender, ParseProgressChangedEventArgs e)
+        {
+            string msg = curOperation;
+
+            if (e.LatestResource != null)
+            {
+                latestResource = e.LatestResource;
+            }
+
+            if (latestResource != null)
+            {
+                msg = String.Format("{0}: last resource had handle 0x{1:x}", curOperation, latestResource.Handle);
+            }
+
+            curProgress.ProgressUpdate(msg, e.ProgressPercentage);
+        }
+
+        private void parser_ParseCompleted(object sender, ParseCompletedEventArgs e)
+        {
+            curProgress.OperationComplete();
+
+            List<Resource> resources = null;
+
+            try
+            {
+                resources = e.Resources;
+
+                MessageBox.Show(String.Format("Successfully parsed {0} resources", resources.Count),
+                                "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                foreach (Resource res in resources)
+                {
+                    res.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(String.Format("Failed to parse capture: {0}\n{1}", ex.InnerException.Message, ex.InnerException.StackTrace),
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+        }
+#endif
 
         private void saveMenuItem_Click(object sender, EventArgs e)
         {

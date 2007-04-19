@@ -35,6 +35,15 @@ namespace oSpy.SharpDumpLib
     public delegate void ParseProgressChangedEventHandler(object sender, ParseProgressChangedEventArgs e);
     public delegate void ParseCompletedEventHandler(object sender, ParseCompletedEventArgs e);
 
+    //
+    // DumpParser takes care of the low-level details of a dump, recognizing
+    // related recv()/send() (for example) and grouping them into DataExchange
+    // objects attached to a Resource, representing the OS handle.
+    //
+    // TransactionBuilder will be written later, and will take care of parsing
+    // the DataExchange objects and building Transaction objects from them by
+    // recognizing the protocols.
+    //
     public class DumpParser : AsyncWorker
     {
         #region Events
@@ -168,13 +177,76 @@ namespace oSpy.SharpDumpLib
 
                     if (ev.Type == DumpEventType.FunctionCall)
                     {
-                        XmlElement data = ev.Data;
+                        XmlElement eventRoot = ev.Data;
 
                         ResourceType resType;
-                        bool endOfLifetime;
                         UInt32 handle;
-                        if (GetResourceTypeAndHandle(data, out resType, out endOfLifetime, out handle))
+                        FunctionCallType callType = InspectFunctionCallEvent(eventRoot, out resType, out handle);
+
+                        switch (callType)
                         {
+                            case FunctionCallType.SocketCreate:
+                            case FunctionCallType.SocketRecv:
+                            case FunctionCallType.SocketSend:
+                                if (curRes == null)
+                                {
+                                    processed = true;
+
+                                    if (resType == ResourceType.Socket)
+                                    {
+                                        if (callType == FunctionCallType.SocketCreate)
+                                        {
+                                            curRes = ParseSocketCreateEvent(eventRoot, handle);
+                                        }
+                                        else
+                                        {
+                                            curRes = new SocketResource(handle);
+                                        }
+                                    }
+                                }
+
+                                break;
+                            case FunctionCallType.SocketClose:
+                                if (curRes != null && handle == curRes.Handle)
+                                {
+                                    resources.Add(curRes);
+                                    if (asyncOp != null)
+                                    {
+                                        int pctComplete = (int)(((float)n / (float)numEvents) * 100.0f);
+                                        ParseProgressChangedEventArgs e = new ParseProgressChangedEventArgs(curRes, pctComplete, asyncOp.UserSuppliedState);
+                                        asyncOp.Post(onProgressReportDelegate, e);
+                                    }
+                                    curRes = null;
+
+                                    processed = true;
+                                }
+
+                                break;
+                            case FunctionCallType.Unknown:
+                            default:
+                                processed = true;
+                                break;
+                        }
+
+                        if (curRes != null && handle == curRes.Handle)
+                        {
+                            switch (callType)
+                            {
+                                case FunctionCallType.SocketRecv:
+                                case FunctionCallType.SocketSend:
+                                    byte[] buf = ParseSocketRecvSendEvent(eventRoot);
+                                    if (buf != null)
+                                    {
+                                        DataDirection direction =
+                                            (callType == FunctionCallType.SocketRecv) ? DataDirection.Incoming : DataDirection.Outgoing;
+
+                                        curRes.AppendData(buf, direction);
+                                    }
+                                    processed = true;
+                                    break;
+                                default:
+                                    break;
+                            }
                         }
                     }
                     else
@@ -186,64 +258,144 @@ namespace oSpy.SharpDumpLib
                     {
                         processedEvents.Add(ev);
                         n++;
+
+                        if (asyncOp != null)
+                        {
+                            int pctComplete = (int)(((float)n / (float)numEvents) * 100.0f);
+                            ParseProgressChangedEventArgs e = new ParseProgressChangedEventArgs(curRes, pctComplete, asyncOp.UserSuppliedState);
+                            asyncOp.Post(onProgressReportDelegate, e);
+                        }
                     }
                 }
 
-                //if (processedEvents.Count == 0)
-                //    throw new InvalidDataException(String.Format("{0} pending events could not be processed", pendingEvents.Count));
+                if (processedEvents.Count == 0)
+                    throw new InvalidDataException(String.Format("{0} pending events could not be processed", pendingEvents.Count));
 
                 foreach (Event ev in processedEvents)
                 {
                     pendingEvents.Remove(ev.Id);
                 }
                 processedEvents.Clear();
-
-                break;
             }
 
             return resources;
         }
 
-        private bool GetResourceTypeAndHandle(XmlElement data, out ResourceType type, out bool endOfLifetime, out UInt32 handle)
-        {
-            endOfLifetime = false;
+        private const string firstArgInValQuery = "/event/arguments[@direction='in']/argument[1]/value/@value";
+        private const string secondArgInValQuery = "/event/arguments[@direction='in']/argument[2]/value/@value";
+        private const string retValQuery = "/event/returnValue/value/@value";
 
-            XmlNode node = data.SelectSingleNode("/event/name");
+        private FunctionCallType InspectFunctionCallEvent(XmlElement eventRoot, out ResourceType type, out UInt32 handle)
+        {
+            type = ResourceType.Unknown;
+            handle = 0;
+            FunctionCallType callType = FunctionCallType.Unknown;
+            string query = null;
+
+            XmlNode node = eventRoot.SelectSingleNode("/event/name");
             if (node == null)
                 throw new InvalidDataException("name element not found on FunctionCall event");
             string functionName = node.InnerText.ToLower();
 
-            if (functionName == "ws2_32.dll::socket")
+            if (functionName.StartsWith("ws2_32.dll::"))
             {
                 type = ResourceType.Socket;
 
-                node = data.SelectSingleNode("/event/returnValue/value/@value");
-                if (node == null)
-                    throw new InvalidDataException("returnValue element not found on ws2_32.dll::socket FunctionCall event");
-                handle = 0; // UInt32.Parse(node.Value);
+                functionName = functionName.Substring(12);
+
+                if (functionName == "recv")
+                {
+                    callType = FunctionCallType.SocketRecv;
+                    query = firstArgInValQuery;
+                }
+                else if (functionName == "send")
+                {
+                    callType = FunctionCallType.SocketSend;
+                    query = firstArgInValQuery;
+                }
+                else if (functionName == "socket")
+                {
+                    callType = FunctionCallType.SocketCreate;
+                    query = retValQuery;
+                }
+                else if (functionName == "closesocket")
+                {
+                    callType = FunctionCallType.SocketClose;
+                    query = firstArgInValQuery;
+                }
             }
-            else if (functionName == "ws2_32.dll::closesocket")
+
+            if (query != null)
             {
-                type = ResourceType.Socket;
-                endOfLifetime = true;
-                node = data.SelectSingleNode("/event/arguments[@direction='in']/argument[1]/value/@value");
+                node = eventRoot.SelectSingleNode(query);
                 if (node == null)
-                    throw new InvalidDataException("first argument not found on ws2_32.dll::closesocket FunctionCall event");
-                handle = Convert.ToUInt32(node.Value);
+                    throw new InvalidDataException("value element not found");
+                handle = ParseUIntNumber(node.Value);
             }
+
+            return callType;
+        }
+
+        private SocketResource ParseSocketCreateEvent(XmlElement eventRoot, UInt32 handle)
+        {
+            XmlNode node = eventRoot.SelectSingleNode(firstArgInValQuery);
+            if (node == null)
+                throw new InvalidDataException("first argument to socket() not found");
+            AddressFamily addrFamily = (AddressFamily) Enum.Parse(typeof(AddressFamily), node.Value);
+
+            node = eventRoot.SelectSingleNode(secondArgInValQuery);
+            if (node == null)
+                throw new InvalidDataException("second argument to socket() not found");
+            SocketType sockType = (SocketType)Enum.Parse(typeof(SocketType), node.Value);
+
+            return new SocketResource(handle, addrFamily, sockType);
+        }
+
+        private byte[] ParseSocketRecvSendEvent(XmlElement eventRoot)
+        {
+            XmlNode node = eventRoot.SelectSingleNode("/event/arguments/argument/value[@type='Pointer']/value[@type='ByteArray']");
+            if (node == null)
+                return null;
+            byte[] buf = Convert.FromBase64String(node.InnerText);
+
+            node = eventRoot.SelectSingleNode(retValQuery);
+            if (node == null)
+                throw new InvalidDataException("ReturnValue element not found");
+            UInt32 retVal = ParseUIntNumber(node.Value);
+
+            if (retVal == buf.Length)
+                return buf;
             else
             {
-                type = ResourceType.Unknown;
-                endOfLifetime = false;
-                handle = 0;
-                return false;
+                byte[] bufSubset = new byte[retVal];
+                Array.Copy(buf, bufSubset, retVal);
+                return bufSubset;
             }
+        }
 
-            return true;
+        private UInt32 ParseUIntNumber(string s)
+        {
+            if (s.StartsWith("0x"))
+                return UInt32.Parse(s.Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier);
+            else
+                return UInt32.Parse(s);
         }
 
         #endregion // Core implementation
     }
+
+    #region Internal enums
+
+    internal enum FunctionCallType
+    {
+        Unknown,
+        SocketCreate,
+        SocketClose,
+        SocketRecv,
+        SocketSend,
+    }
+
+    #endregion // Internal enums
 
     #region Helper classes
 
