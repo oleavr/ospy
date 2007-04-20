@@ -186,7 +186,7 @@ namespace oSpy
                 return;
             }
 
-#if true
+#if false
             DumpParser parser = new DumpParser();
             parser.ParseProgressChanged += new ParseProgressChangedEventHandler(parser_ParseProgressChanged);
             parser.ParseCompleted += new ParseCompletedEventHandler(parser_ParseCompleted);
@@ -253,7 +253,7 @@ namespace oSpy
             dataGridView.DataSource = bindingSource;
         }
 
-#if true
+#if false
         private Resource latestResource = null;
 
         private void parser_ParseProgressChanged(object sender, ParseProgressChangedEventArgs e)
