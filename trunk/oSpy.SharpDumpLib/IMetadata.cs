@@ -28,39 +28,11 @@ using System.Collections.Generic;
 
 namespace oSpy.SharpDumpLib
 {
-    public class Process
+    public interface IMetadata
     {
-        private uint id;
-        public uint Id
-        {
-            get { return id; }
-        }
-
-        private string name;
-        public string Name
-        {
-            get { return name; }
-        }
-
-        private List<Resource> resources = new List<Resource>();
-        public List<Resource> Resources
-        {
-            get { return resources; }
-        }
-
-        public Process(uint id, string name)
-        {
-            this.id = id;
-            this.name = name;
-        }
-
-        public void Close()
-        {
-            foreach (Resource res in resources)
-            {
-                res.Close();
-            }
-            resources.Clear();
-        }
+        List<string> GetMetaKeys();
+        bool HasMetaKey(string name);
+        object GetMetaValue(string name);
+        void SetMetaValue(string name, object value);
     }
 }

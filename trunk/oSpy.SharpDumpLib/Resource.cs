@@ -25,19 +25,18 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace oSpy.SharpDumpLib
 {
     public class Resource
     {
-        private UInt32 handle = 0;
+        protected UInt32 handle = 0;
         public UInt32 Handle
         {
             get { return handle; }
         }
 
-        private List<DataExchange> dataExchanges = new List<DataExchange>();
+        protected List<DataExchange> dataExchanges = new List<DataExchange>();
         public List<DataExchange> DataExchanges
         {
             get { return dataExchanges; }
@@ -50,7 +49,7 @@ namespace oSpy.SharpDumpLib
             this.handle = handle;
         }
 
-        public void Close()
+        public virtual void Close()
         {
             foreach (DataExchange exchange in dataExchanges)
             {
@@ -65,22 +64,17 @@ namespace oSpy.SharpDumpLib
             }
         }
 
-        public void AppendData(byte[] data, DataDirection direction)
+        public virtual DataExchange AppendData(byte[] data, DataDirection direction)
         {
+            DataExchange exchange = null;
+
             if (DataIsContinuous())
             {
-                DataExchange exchange = null;
-
-                if (dataExchanges.Count != 0)
+                if (dataExchanges.Count == 0)
                 {
-                    exchange = dataExchanges[0];
+                    dataExchanges.Add(new DataExchange(this));
                 }
-                else
-                {
-                    exchange = new DataExchange(this);
-                    dataExchanges.Add(exchange);
-                }
-
+                exchange = dataExchanges[0];
                 exchange.Append(data, direction);
             }
             else
@@ -90,8 +84,11 @@ namespace oSpy.SharpDumpLib
                     storage = new BulkStorage();
                 }
 
-                dataExchanges.Add(new DataExchange(this, storage.AppendData(data), direction));
+                exchange = new DataExchange(this, storage.AppendData(data), direction);
+                dataExchanges.Add(exchange);
             }
+
+            return exchange;
         }
 
         protected virtual bool DataIsContinuous()

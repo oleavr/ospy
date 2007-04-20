@@ -25,11 +25,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace oSpy.SharpDumpLib
 {
-    public class DataExchange
+    public class DataExchange : IMetadata
     {
         private Resource resource = null;
         public Resource Resource
@@ -41,6 +40,8 @@ namespace oSpy.SharpDumpLib
 
         private List<BulkSlot> slots = new List<BulkSlot>();
         private List<DataDirection> directions = new List<DataDirection>();
+
+        private Dictionary<string, object> metadata = new Dictionary<string, object>();
 
         public DataExchange(Resource resource)
         {
@@ -78,6 +79,30 @@ namespace oSpy.SharpDumpLib
             slots.Add(slot);
             directions.Add(direction);
         }
+
+        #region IMetadata implementation
+
+        public List<string> GetMetaKeys()
+        {
+            return new List<string>(metadata.Keys);
+        }
+
+        public bool HasMetaKey(string name)
+        {
+            return metadata.ContainsKey(name);
+        }
+
+        public object GetMetaValue(string name)
+        {
+            return metadata[name];
+        }
+
+        public void SetMetaValue(string name, object value)
+        {
+            metadata[name] = value;
+        }
+
+        #endregion // IMetadata implementation
     }
 
     public enum DataDirection
