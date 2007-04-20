@@ -212,6 +212,9 @@ namespace oSpy.SharpDumpLib
                             case FunctionCallType.SocketConnect:
                             case FunctionCallType.SocketRecv:
                             case FunctionCallType.SocketSend:
+                            // TODO: Add recvfrom() and sendto() handling
+                            case FunctionCallType.EncryptMessage:
+                            case FunctionCallType.DecryptMessage:
                                 if (curRes == null)
                                 {
                                     processed = true;
@@ -233,7 +236,10 @@ namespace oSpy.SharpDumpLib
                                             curRes = new SocketResource(handle);
                                         }
                                     }
-                                    // TODO: add the rest of the cases here
+                                    else if (resType == ResourceType.CryptoContext)
+                                    {
+                                        curRes = new Resource(handle);
+                                    }
 
                                     curProcess.Resources.Add(curRes);
                                 }
@@ -242,6 +248,8 @@ namespace oSpy.SharpDumpLib
                             case FunctionCallType.SocketClose:
                                 if (curProcess != null && handle == curRes.Handle && ev.ProcessId == curProcess.Id)
                                 {
+                                    processed = true;
+
                                     if (asyncOp != null)
                                     {
                                         int pctComplete = (int)(((float)n / (float)numEvents) * 100.0f);
@@ -251,8 +259,6 @@ namespace oSpy.SharpDumpLib
                                     curProcess = null;
                                     curRes = null;
                                     doneWithCurrent = true;
-
-                                    processed = true;
                                 }
 
                                 break;
@@ -264,6 +270,9 @@ namespace oSpy.SharpDumpLib
 
                         if (curProcess != null && handle == curRes.Handle && ev.ProcessId == curProcess.Id)
                         {
+                            byte[] buf;
+                            DataDirection direction;
+
                             switch (callType)
                             {
                                 case FunctionCallType.SocketConnect:
@@ -271,15 +280,24 @@ namespace oSpy.SharpDumpLib
                                     break;
                                 case FunctionCallType.SocketRecv:
                                 case FunctionCallType.SocketSend:
-                                    byte[] buf = ParseSocketRecvOrSendEvent(eventRoot);
+                                    processed = true;
+
+                                    buf = ParseSocketRecvOrSendEvent(eventRoot);
                                     if (buf != null)
                                     {
-                                        DataDirection direction =
-                                            (callType == FunctionCallType.SocketRecv) ? DataDirection.Incoming : DataDirection.Outgoing;
+                                        direction = (callType == FunctionCallType.SocketRecv) ? DataDirection.Incoming : DataDirection.Outgoing;
 
                                         curRes.AppendData(buf, direction);
                                     }
+                                    break;
+                                case FunctionCallType.EncryptMessage:
+                                case FunctionCallType.DecryptMessage:
                                     processed = true;
+
+                                    buf = ParseEncryptOrDecryptMessageEvent(eventRoot, (callType == FunctionCallType.EncryptMessage));
+                                    direction = (callType == FunctionCallType.DecryptMessage) ? DataDirection.Incoming : DataDirection.Outgoing;
+
+                                    curRes.AppendData(buf, direction);
                                     break;
                                 default:
                                     break;
@@ -377,6 +395,23 @@ namespace oSpy.SharpDumpLib
                     query = firstArgInValQuery;
                 }
             }
+            else if (functionName.StartsWith("secur32.dll::"))
+            {
+                type = ResourceType.CryptoContext;
+
+                functionName = functionName.Substring(13);
+
+                if (functionName == "encryptmessage")
+                {
+                    callType = FunctionCallType.EncryptMessage;
+                    query = firstArgInValQuery;
+                }
+                else if (functionName == "decryptmessage")
+                {
+                    callType = FunctionCallType.DecryptMessage;
+                    query = firstArgInValQuery;
+                }
+            }
 
             if (query != null)
             {
@@ -441,6 +476,26 @@ namespace oSpy.SharpDumpLib
             }
         }
 
+        private byte[] ParseEncryptOrDecryptMessageEvent(XmlElement eventRoot, bool isEncryptEvent)
+        {
+            MemoryStream stream = new MemoryStream(2048);
+
+            string query = String.Format("((/event/arguments[@direction='{0}']/argument/value/value/field/value/value/value)[field/value/@value='SECBUFFER_DATA'])/field/value/value",
+                (isEncryptEvent) ? "in" : "out");
+            XmlNodeList nodes = eventRoot.SelectNodes(query);
+            foreach (XmlNode node in nodes)
+            {
+                uint size = ParseUInt32Number(node.Attributes["size"].Value);
+
+                byte[] buf = Convert.FromBase64String(node.InnerText);
+                if (buf.Length != size)
+                    throw new InvalidDataException("Failed to base64-decode data in EncryptMessage event");
+                stream.Write(buf, 0, buf.Length);
+            }
+
+            return stream.ToArray();
+        }
+
         private UInt16 ParseUInt16Number(string s)
         {
             if (s.StartsWith("0x"))
@@ -470,6 +525,8 @@ namespace oSpy.SharpDumpLib
         SocketClose,
         SocketRecv,
         SocketSend,
+        EncryptMessage,
+        DecryptMessage,
     }
 
     #endregion // Internal enums
