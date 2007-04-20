@@ -24,8 +24,6 @@
 //
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace oSpy.SharpDumpLib
 {
@@ -43,6 +41,8 @@ namespace oSpy.SharpDumpLib
             get { return socketType; }
         }
 
+        private System.Net.IPEndPoint curRemoteEndpoint = null;
+
         public SocketResource(UInt32 handle)
             : base(handle)
         {
@@ -58,6 +58,21 @@ namespace oSpy.SharpDumpLib
         protected override bool DataIsContinuous()
         {
             return (socketType == SocketType.SOCK_STREAM);
+        }
+
+        public override DataExchange AppendData(byte[] data, DataDirection direction)
+        {
+            DataExchange exchange = base.AppendData(data, direction);
+
+            if (curRemoteEndpoint != null && curRemoteEndpoint.Address != System.Net.IPAddress.Any)
+                exchange.SetMetaValue("net.ipv4.remoteEndpoint", curRemoteEndpoint);
+
+            return exchange;
+        }
+
+        public void SetCurrentRemoteEndpoint(System.Net.IPEndPoint endpoint)
+        {
+            curRemoteEndpoint = endpoint;
         }
     }
 

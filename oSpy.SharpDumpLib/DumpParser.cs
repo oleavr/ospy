@@ -29,6 +29,7 @@ using System.Threading;
 using System.Collections.Generic;
 using System.Xml;
 using System.IO;
+using System.Net;
 
 namespace oSpy.SharpDumpLib
 {
@@ -162,6 +163,26 @@ namespace oSpy.SharpDumpLib
         {
             SortedDictionary<uint, Process> processes = new SortedDictionary<uint, Process>();
 
+            try
+            {
+                ProcessDumpEvents(dump, asyncOp, processes);
+            }
+            catch (Exception e)
+            {
+                foreach (Process proc in processes.Values)
+                {
+                    proc.Close();
+                }
+                processes.Clear();
+
+                throw e;
+            }
+
+            return new List<Process>(processes.Values);
+        }
+
+        private void ProcessDumpEvents(Dump dump, AsyncOperation asyncOp, SortedDictionary<uint, Process> processes)
+        {
             SortedDictionary<uint, Event> pendingEvents = new SortedDictionary<uint, Event>(dump.Events);
             List<Event> processedEvents = new List<Event>();
             int n = 0;
@@ -246,11 +267,11 @@ namespace oSpy.SharpDumpLib
                             switch (callType)
                             {
                                 case FunctionCallType.SocketConnect:
-                                    ParseSocketConnectEvent(eventRoot);
+                                    (curRes as SocketResource).SetCurrentRemoteEndpoint(ParseSocketConnectEvent(eventRoot));
                                     break;
                                 case FunctionCallType.SocketRecv:
                                 case FunctionCallType.SocketSend:
-                                    byte[] buf = ParseSocketRecvSendEvent(eventRoot);
+                                    byte[] buf = ParseSocketRecvOrSendEvent(eventRoot);
                                     if (buf != null)
                                     {
                                         DataDirection direction =
@@ -306,8 +327,6 @@ namespace oSpy.SharpDumpLib
                     }
                 }
             }
-
-            return new List<Process>(processes.Values);
         }
 
         private const string firstArgInValQuery = "/event/arguments[@direction='in']/argument[1]/value/@value";
@@ -385,20 +404,22 @@ namespace oSpy.SharpDumpLib
             return new SocketResource(handle, addrFamily, sockType);
         }
 
-        private void ParseSocketConnectEvent(XmlElement eventRoot)
+        private IPEndPoint ParseSocketConnectEvent(XmlElement eventRoot)
         {
             XmlNode structNode = eventRoot.SelectSingleNode("/event/arguments[@direction='in']/argument[2]/value/value");
             if (structNode == null)
-                return;
+                throw new InvalidDataException("second argument to connect() not found");
 
             XmlNode node = structNode.SelectSingleNode("field[@name='sin_addr']/value/@value");
             string addr = node.InnerText;
 
             node = structNode.SelectSingleNode("field[@name='sin_port']/value/@value");
             UInt16 port = ParseUInt16Number(node.InnerText);
+
+            return new IPEndPoint(IPAddress.Parse(addr), port);
         }
 
-        private byte[] ParseSocketRecvSendEvent(XmlElement eventRoot)
+        private byte[] ParseSocketRecvOrSendEvent(XmlElement eventRoot)
         {
             XmlNode node = eventRoot.SelectSingleNode("/event/arguments/argument/value[@type='Pointer']/value[@type='ByteArray']");
             if (node == null)
