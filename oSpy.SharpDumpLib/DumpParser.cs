@@ -188,6 +188,7 @@ namespace oSpy.SharpDumpLib
                         switch (callType)
                         {
                             case FunctionCallType.SocketCreate:
+                            case FunctionCallType.SocketConnect:
                             case FunctionCallType.SocketRecv:
                             case FunctionCallType.SocketSend:
                                 if (curRes == null)
@@ -244,6 +245,9 @@ namespace oSpy.SharpDumpLib
                         {
                             switch (callType)
                             {
+                                case FunctionCallType.SocketConnect:
+                                    ParseSocketConnectEvent(eventRoot);
+                                    break;
                                 case FunctionCallType.SocketRecv:
                                 case FunctionCallType.SocketSend:
                                     byte[] buf = ParseSocketRecvSendEvent(eventRoot);
@@ -343,6 +347,11 @@ namespace oSpy.SharpDumpLib
                     callType = FunctionCallType.SocketCreate;
                     query = retValQuery;
                 }
+                else if (functionName == "connect")
+                {
+                    callType = FunctionCallType.SocketConnect;
+                    query = firstArgInValQuery;
+                }
                 else if (functionName == "closesocket")
                 {
                     callType = FunctionCallType.SocketClose;
@@ -355,7 +364,7 @@ namespace oSpy.SharpDumpLib
                 node = eventRoot.SelectSingleNode(query);
                 if (node == null)
                     throw new InvalidDataException("value element not found");
-                handle = ParseUIntNumber(node.Value);
+                handle = ParseUInt32Number(node.Value);
             }
 
             return callType;
@@ -376,6 +385,19 @@ namespace oSpy.SharpDumpLib
             return new SocketResource(handle, addrFamily, sockType);
         }
 
+        private void ParseSocketConnectEvent(XmlElement eventRoot)
+        {
+            XmlNode structNode = eventRoot.SelectSingleNode("/event/arguments[@direction='in']/argument[2]/value/value");
+            if (structNode == null)
+                return;
+
+            XmlNode node = structNode.SelectSingleNode("field[@name='sin_addr']/value/@value");
+            string addr = node.InnerText;
+
+            node = structNode.SelectSingleNode("field[@name='sin_port']/value/@value");
+            UInt16 port = ParseUInt16Number(node.InnerText);
+        }
+
         private byte[] ParseSocketRecvSendEvent(XmlElement eventRoot)
         {
             XmlNode node = eventRoot.SelectSingleNode("/event/arguments/argument/value[@type='Pointer']/value[@type='ByteArray']");
@@ -386,7 +408,7 @@ namespace oSpy.SharpDumpLib
             node = eventRoot.SelectSingleNode(retValQuery);
             if (node == null)
                 throw new InvalidDataException("ReturnValue element not found");
-            UInt32 retVal = ParseUIntNumber(node.Value);
+            UInt32 retVal = ParseUInt32Number(node.Value);
 
             if (retVal == buf.Length)
                 return buf;
@@ -398,7 +420,15 @@ namespace oSpy.SharpDumpLib
             }
         }
 
-        private UInt32 ParseUIntNumber(string s)
+        private UInt16 ParseUInt16Number(string s)
+        {
+            if (s.StartsWith("0x"))
+                return UInt16.Parse(s.Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier);
+            else
+                return UInt16.Parse(s);
+        }
+
+        private UInt32 ParseUInt32Number(string s)
         {
             if (s.StartsWith("0x"))
                 return UInt32.Parse(s.Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier);
@@ -415,6 +445,7 @@ namespace oSpy.SharpDumpLib
     {
         Unknown,
         SocketCreate,
+        SocketConnect,
         SocketClose,
         SocketRecv,
         SocketSend,
