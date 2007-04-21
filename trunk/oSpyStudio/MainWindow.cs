@@ -40,7 +40,8 @@ public partial class MainWindow : Gtk.Window
         dataExchangeList.Model = dataExchangeListStore;
         dataExchangeList.AppendColumn("DataExchange", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataExchangeList_CellDataFunc));
 
-        dataChunkStore = new Gtk.ListStore(typeof(object));
+        dataChunkStore = new Gtk.ListStore(typeof(object), typeof(string), typeof(string));
+        dataView.Model = dataChunkStore;
 
         dumpLoader = new DumpLoader();
         dumpLoader.LoadProgressChanged += new ProgressChangedEventHandler(curOperation_ProgressChanged);
@@ -93,6 +94,7 @@ public partial class MainWindow : Gtk.Window
 
     protected virtual void resourceList_CursorChanged(object sender, System.EventArgs e)
     {
+        dataChunkStore.Clear();
         dataExchangeListStore.Clear();
 
         Gtk.TreePath[] selected = resourceList.Selection.GetSelectedRows();
@@ -143,7 +145,7 @@ public partial class MainWindow : Gtk.Window
     protected virtual void dataExchangeList_CursorChanged(object sender, System.EventArgs e)
     {
         dataChunkStore.Clear();
-        
+
         Gtk.TreePath[] selected = dataExchangeList.Selection.GetSelectedRows();
         if (selected.Length < 1)
             return;
@@ -155,9 +157,21 @@ public partial class MainWindow : Gtk.Window
         DataExchange selectedExchange = dataExchangeListStore.GetValue(iter, 0) as DataExchange;
         for (int i = 0; i < selectedExchange.Count; i++)
         {
-            dataChunkStore.AppendValues(new object[] { selectedExchange.GetData(i) });
+            string linePrefixStr = null;
+            string linePrefixColor = null;
+            if (selectedExchange.GetDirection(i) == DataDirection.Incoming)
+            {
+                linePrefixStr = "<<";
+                linePrefixColor = "red";
+            }
+            else
+            {
+                linePrefixStr = ">>";
+                linePrefixColor = "blue";
+            }
+
+            dataChunkStore.AppendValues(new object[] { selectedExchange.GetData(i), linePrefixStr, linePrefixColor });
         }
-        dataView.Model = dataChunkStore;
     }
 
     private void dataExchangeList_CellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
@@ -289,7 +303,7 @@ public partial class MainWindow : Gtk.Window
 
         if (latestResource != null)
         {
-            loadProgress.Text = String.Format("Found handle 0x{0:x}", latestResource.Handle);
+            loadProgress.Text = String.Format("Last resource: 0x{0:x8}", latestResource.Handle);
         }
     }
     

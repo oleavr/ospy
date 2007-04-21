@@ -206,6 +206,8 @@ HEX</property>
                     <property name="Events">ButtonPressMask</property>
                     <property name="DataColIndex">0</property>
                     <property name="BorderWidth">0</property>
+                    <property name="LinePrefixTextColIndex">1</property>
+                    <property name="LinePrefixColorColIndex">2</property>
                   </widget>
                   <packing>
                     <property name="Position">1</property>

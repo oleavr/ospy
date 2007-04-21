@@ -1,6 +1,5 @@
 using System;
 using System.Text;
-using Gtk;
 
 namespace oSpyStudio.Widgets
 {
@@ -8,9 +7,12 @@ namespace oSpyStudio.Widgets
 	{
 	    private class HexChunk : Gtk.HBox
 	    {
-    	    protected TextView offsetView;
-    	    protected TextView mainView;
-    	    protected TextView asciiView;
+	        protected Gtk.TextView prefixView;
+    	    protected Gtk.TextView offsetView;
+    	    protected Gtk.TextView mainView;
+    	    protected Gtk.TextView asciiView;
+    	    
+    	    private bool frozen = false;
     	    
     	    protected int colsPerRow = 16;
     	    public int ColsPerRow
@@ -18,34 +20,66 @@ namespace oSpyStudio.Widgets
     	        get { return colsPerRow; }
     	    }
     	    
-    	    protected byte[] bytes;
+    	    protected byte[] bytes = null;
     	    public byte[] Bytes
     	    {
     	        get { return bytes; }
     	        set { bytes = value; Update(); }
     	    }
 	        
-	        public HexChunk()
-	        {	            
-	            offsetView = new TextView();
-	            mainView = new TextView();
-	            asciiView = new TextView();
+	        protected string linePrefix = null;
+	        public string LinePrefix
+	        {
+	            get { return linePrefix; }
+	            set { linePrefix = value; Update(); }
+	        }
 
+	        protected string linePrefixColor = null;
+	        public string LinePrefixColor
+	        {
+	            get { return linePrefixColor; }
+	            set { linePrefixColor = value; Update(); }
+	        }
+
+	        public HexChunk()
+	        {
+	            prefixView = new Gtk.TextView();
+	            offsetView = new Gtk.TextView();
+	            mainView = new Gtk.TextView();
+	            asciiView = new Gtk.TextView();
+
+                prefixView.Editable = false;
 	            offsetView.Editable = false;
 	            mainView.Editable = false;
 	            asciiView.Editable = false;
 	            
+	            PackStart(prefixView, false, true, 5);
 	            PackStart(offsetView, false, true, 0);
 	            PackStart(mainView, false, true, 15);
 	            PackStart(asciiView, false, true, 0);
 
+                prefixView.Show();
 	            offsetView.Show();
 	            mainView.Show();
 	            asciiView.Show();
 	        }
 	        
+	        public void Freeze()
+	        {
+	            frozen = true;
+	        }
+	        
+	        public void UnFreeze()
+	        {
+	            if (!frozen)
+	                return;
+	            frozen = false;
+	            Update();
+	        }
+	        
     		public void ApplyCustomStyle(ApplyStyleFunction f)
     		{
+    		    f(prefixView);
     		    f(offsetView);
     		    f(mainView);
     		    f(asciiView);
@@ -53,11 +87,20 @@ namespace oSpyStudio.Widgets
     		
     		private void Update()
     		{
-    		    int rowCount = (bytes.Length / colsPerRow) + 1;
+    		    if (frozen || bytes == null)
+    		        return;
 
-    		    StringBuilder offStr = new StringBuilder(5 * rowCount);
-    		    StringBuilder mainStr = new StringBuilder(colsPerRow * 3 * rowCount);
-    		    StringBuilder asciiStr = new StringBuilder((colsPerRow + 1) * rowCount);
+    		    int rowCount = (bytes.Length / colsPerRow) + 1;
+    		    
+    		    Gtk.TextBuffer pfxBuf = prefixView.Buffer;
+    		    Gtk.TextBuffer offBuf = offsetView.Buffer;
+    		    Gtk.TextBuffer mainBuf = mainView.Buffer;
+    		    Gtk.TextBuffer asciiBuf = asciiView.Buffer;
+
+                Gtk.TextIter pfxIter = pfxBuf.StartIter;
+    		    Gtk.TextIter offIter = offBuf.StartIter;
+    		    Gtk.TextIter mainIter = mainBuf.StartIter;
+    		    Gtk.TextIter asciiIter = asciiBuf.StartIter;
 
                 int offset = 0, remaining = bytes.Length;
     		    for (int i = 0; i < rowCount; i++)
@@ -68,35 +111,34 @@ namespace oSpyStudio.Widgets
 
     		        if (i > 0)
     		        {
-    		            offStr.Append("\n");
-    		            mainStr.Append("\n");
-    		            asciiStr.Append("\n");
+    		            pfxBuf.Insert(ref pfxIter, "\n");
+            		    offBuf.Insert(ref offIter, "\n");
+            		    mainBuf.Insert(ref mainIter, "\n");
+            		    asciiBuf.Insert(ref asciiIter, "\n");
     		        }
 
-    		        offStr.AppendFormat("{0:x4}", offset);
-    		        
+    		        if (linePrefix != null)
+    		            pfxBuf.Insert(ref pfxIter, linePrefix); 
+
+           		    offBuf.Insert(ref offIter, String.Format("{0:x4}", offset));
+
+        		    StringBuilder builder = new StringBuilder(colsPerRow * 3);
         		    for (int j = 0; j < len; j++)
         		    {
         		        if (j > 0)
-        		            mainStr.Append(" ");
+                   		    builder.Append(" ");
 
-        		        mainStr.AppendFormat("{0:x2}", bytes[offset + j]);
+        		        builder.AppendFormat("{0:x2}", bytes[offset + j]);
         		    }
+        		    mainBuf.Insert(ref mainIter, builder.ToString());
 
-    		        ToNormalizedAscii(bytes, offset, len, asciiStr);
+        		    builder = new StringBuilder(16);
+    		        ToNormalizedAscii(bytes, offset, len, builder);
+    		        asciiBuf.Insert(ref asciiIter, builder.ToString());
     		        
     		        offset += colsPerRow;
     		        remaining -= colsPerRow;
     		    }
-
-    		    TextIter iter = offsetView.Buffer.StartIter;
-    		    offsetView.Buffer.Insert(ref iter, offStr.ToString());
-
-    		    iter = mainView.Buffer.StartIter;
-    		    mainView.Buffer.Insert(ref iter, mainStr.ToString());
-
-    		    iter = asciiView.Buffer.StartIter;
-    		    asciiView.Buffer.Insert(ref iter, asciiStr.ToString());
     		}
     		
             private void ToNormalizedAscii(byte[] bytes, int offset, int len, StringBuilder str)
@@ -120,35 +162,100 @@ namespace oSpyStudio.Widgets
             }
 	    }
 
-	    private delegate void ApplyStyleFunction(Widget w);
+	    private delegate void ApplyStyleFunction(Gtk.Widget w);
 
-	    protected TreeModel model;
-	    public TreeModel Model
+        private bool frozen = false;
+
+	    protected Gtk.TreeModel model = null;
+	    public Gtk.TreeModel Model
 	    {
 	        get { return model; }
-	        set { model = value; Update(); }
+	        set
+	        {
+    		    if (model != null)
+    		    {
+    		        model.RowChanged -= rowChangedHandler;
+    		        model.RowDeleted -= rowDeletedHandler;
+    		        model.RowInserted -= rowInsertedHandler;
+    		        model.RowsReordered -= rowsReorderedHandler;
+    		    }
+
+	            model = value;
+	            model.RowChanged += rowChangedHandler;
+	            model.RowDeleted += rowDeletedHandler;
+	            model.RowInserted += rowInsertedHandler;
+	            model.RowsReordered += rowsReorderedHandler;
+
+	            DoFullUpdate();
+	        }
 	    }
 	    
+	    private Gtk.RowChangedHandler rowChangedHandler = null;
+	    private Gtk.RowDeletedHandler rowDeletedHandler = null;
+	    private Gtk.RowInsertedHandler rowInsertedHandler = null;
+	    private Gtk.RowsReorderedHandler rowsReorderedHandler = null;
+
 	    protected int dataColIndex = -1;
 	    public int DataColIndex
 	    {
 	        get { return dataColIndex; }
-	        set { dataColIndex = value; Update(); }
+	        set { dataColIndex = value; DoFullUpdate(); }
+	    }
+	    
+	    protected int linePrefixTextColIndex = -1;
+	    public int LinePrefixTextColIndex
+	    {
+	        get { return linePrefixTextColIndex; }
+	        set { linePrefixTextColIndex = value; DoFullUpdate(); }
+	    }
+
+	    protected int linePrefixColorColIndex = -1;
+	    public int LinePrefixColorColIndex
+	    {
+	        get { return linePrefixColorColIndex; }
+	        set { linePrefixColorColIndex = value; DoFullUpdate(); }
 	    }
 
 		public DataView()
 		{
 		    this.Build();
+		    
+		    rowChangedHandler = new Gtk.RowChangedHandler(model_RowChanged);
+		    rowDeletedHandler = new Gtk.RowDeletedHandler(model_RowDeleted);
+		    rowInsertedHandler = new Gtk.RowInsertedHandler(model_RowInserted);
+		    rowsReorderedHandler = new Gtk.RowsReorderedHandler(model_RowsReordered);
 
             ApplyHaxorStyle(scrollWin.Child);
 		}
-
-		private void Update()
+		
+		public void Freeze()
 		{
+		    frozen = true;
+		}
+		
+		public void UnFreeze()
+		{
+		    if (!frozen)
+		        return;
+		        
+		    frozen = false;
+		    DoFullUpdate();
+		}
+
+		private void DoFullUpdate()
+		{
+		    if (frozen)
+		        return;
+
+		    foreach (Gtk.Widget w in hexVBox.Children)
+		    {
+		        hexVBox.Remove(w);
+		    }
+
 		    if (model == null || dataColIndex < 0)
 		        return;
 
-		    TreeIter iter;
+		    Gtk.TreeIter iter;
 		    if (!model.GetIterFirst(out iter))
 		        return;
 
@@ -157,28 +264,62 @@ namespace oSpyStudio.Widgets
 		        HexChunk chunk = new HexChunk();
 		        chunk.ApplyCustomStyle(ApplyHaxorStyle);
 		        chunk.Show();
+
+		        chunk.Freeze();
 		        chunk.Bytes = model.GetValue(iter, dataColIndex) as byte[];
-		        hexVBox.PackStart(chunk);
+		        if (linePrefixTextColIndex >= 0)
+		            chunk.LinePrefix = model.GetValue(iter, linePrefixTextColIndex) as string;
+		        if (linePrefixColorColIndex >= 0)
+		            chunk.LinePrefixColor = model.GetValue(iter, linePrefixColorColIndex) as string;
+		        chunk.UnFreeze();
+
+		        hexVBox.PackStart(chunk, false, true, 0);
 		    }
             while (model.IterNext(ref iter));
 		}
+
+        #region Model change handlers
+        // TODO: these should be optimized in the future to just
+        //       do incremental updates
+        
+		private void model_RowChanged(object o, Gtk.RowChangedArgs e)
+		{
+		    DoFullUpdate();
+		}
 		
-		private void ApplyHaxorStyle(Widget w)
+		private void model_RowDeleted(object o, Gtk.RowDeletedArgs e)
+		{
+		    DoFullUpdate();
+		}
+		
+		private void model_RowInserted(object o, Gtk.RowInsertedArgs e)
+		{
+		    DoFullUpdate();
+		}
+		
+		private void model_RowsReordered(object o, Gtk.RowsReorderedArgs e)
+		{
+		    DoFullUpdate();
+		}
+		
+        #endregion // Model change handlers
+
+		private void ApplyHaxorStyle(Gtk.Widget w)
 		{
 		    Gdk.Color bg = new Gdk.Color(0, 0, 0);
 		    Gdk.Color fg = new Gdk.Color(192, 192, 192);
 		    
-			w.ModifyBase(StateType.Normal, bg);
-			w.ModifyBase(StateType.Prelight, bg);
-			w.ModifyBase(StateType.Active, bg);
-			w.ModifyBase(StateType.Insensitive, bg);
+			w.ModifyBase(Gtk.StateType.Normal, bg);
+			w.ModifyBase(Gtk.StateType.Prelight, bg);
+			w.ModifyBase(Gtk.StateType.Active, bg);
+			w.ModifyBase(Gtk.StateType.Insensitive, bg);
 			
-			w.ModifyBg(StateType.Normal, bg);
-			w.ModifyBg(StateType.Prelight, bg);
-			w.ModifyBg(StateType.Active, bg);
-			w.ModifyBg(StateType.Insensitive, bg);
+			w.ModifyBg(Gtk.StateType.Normal, bg);
+			w.ModifyBg(Gtk.StateType.Prelight, bg);
+			w.ModifyBg(Gtk.StateType.Active, bg);
+			w.ModifyBg(Gtk.StateType.Insensitive, bg);
 
-		    w.ModifyText(StateType.Normal, fg);
+		    w.ModifyText(Gtk.StateType.Normal, fg);
 		    
 		    w.ModifyFont(Pango.FontDescription.FromString("Monospace 10"));
 		}
