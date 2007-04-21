@@ -40,7 +40,6 @@
     </action-group>
     <property name="MemberName" />
     <property name="Title" translatable="yes">oSpy Studio</property>
-    <property name="WindowPosition">None</property>
     <signal name="DeleteEvent" handler="OnDeleteEvent" />
     <child>
       <widget class="Gtk.VBox" id="MainVBox">
@@ -316,8 +315,10 @@ HEX</property>
     <property name="MemberName" />
     <property name="Events">ButtonPressMask</property>
     <property name="Title" translatable="yes">Please wait...</property>
+    <property name="WindowPosition">CenterOnParent</property>
     <property name="Buttons">1</property>
     <property name="HelpButton">False</property>
+    <property name="HasSeparator">False</property>
     <child internal-child="VBox">
       <widget class="Gtk.VBox" id="dialog_VBox">
         <property name="MemberName" />
