@@ -168,16 +168,16 @@ public partial class MainWindow : Gtk.Window
             return;
         }
 
-        List<Resource> resources;
+        List<Process> processes;
 
         try
         {
-            resources = e.Resources;
+            processes = e.Processes;
             
             // Just clean up for now
-            foreach (Resource res in resources)
+            foreach (Process proc in processes)
             {
-                res.Close();
+                proc.Close();
             }
         }
         catch (Exception ex)
