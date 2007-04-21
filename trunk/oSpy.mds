@@ -1,4 +1,4 @@
-<Combine name="ospy" fileversion="2.0">
+<Combine name="oSpy" fileversion="2.0">
   <Configurations active="Debug">
     <Configuration name="Debug" ctype="CombineConfiguration">
       <Entry build="True" name="oSpy.SharpDumpLib" configuration="Debug" />
