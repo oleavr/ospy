@@ -95,6 +95,11 @@ namespace oSpy.SharpDumpLib
         {
             return false;
         }
+        
+        public override string ToString()
+        {
+        	return String.Format("0x{0:x}", handle);
+        }
     }
 
     public enum ResourceType
