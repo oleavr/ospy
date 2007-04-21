@@ -8,7 +8,11 @@ using ICSharpCode.SharpZipLib.BZip2;
 
 public partial class MainWindow : Gtk.Window
 {
+	protected Gtk.TreeStore processListStore;
+	protected Gtk.TreeStore resourceListStore;
+
     protected Dump curDump = null;
+    protected List<Process> curProcesses = null;
 
     protected string curOperation = null;
     protected DumpLoader dumpLoader;
@@ -19,13 +23,13 @@ public partial class MainWindow : Gtk.Window
     {
         this.Build();
 
-		Gtk.TreeStore processListStore = new Gtk.TreeStore(typeof(string));
+		processListStore = new Gtk.TreeStore(typeof(Process));
 		processList.Model = processListStore;
-		processList.AppendColumn("Process", new Gtk.CellRendererText(), "text", 0);
+		processList.AppendColumn("Process", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(processlist_CellDataFunc));
 		
-		Gtk.TreeStore resourceListStore = new Gtk.TreeStore(typeof(string));
+		resourceListStore = new Gtk.TreeStore(typeof(Resource));
 		resourceList.Model = resourceListStore;
-		resourceList.AppendColumn("Resource", new Gtk.CellRendererText(), "text", 0);
+		resourceList.AppendColumn("Resource", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(resourceList_CellDataFunc));
 
         // index, type, time, sender, description
         Gtk.TreeStore eventListStore = new Gtk.TreeStore(typeof(string));
@@ -42,8 +46,29 @@ public partial class MainWindow : Gtk.Window
         dumpParser.ParseCompleted += new ParseCompletedEventHandler(dumpParser_ParseCompleted);
     }
     
+    private void processlist_CellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+    {
+    	Process proc = model.GetValue(iter, 0) as Process;
+    	(cell as Gtk.CellRendererText).Text = proc.ToString();
+    }
+
+    private void resourceList_CellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+    {
+    	Resource res = model.GetValue(iter, 0) as Resource;
+    	(cell as Gtk.CellRendererText).Text = res.ToString(); 
+    }
+    
     private void CloseCurrentDump()
     {
+    	if (curProcesses != null)
+    	{
+    		foreach (Process proc in curProcesses)
+    		{
+    			proc.Close();
+    		}
+    		curProcesses = null;
+    	}
+    	
         if (curDump != null)
         {
             curDump.Close();
@@ -168,22 +193,25 @@ public partial class MainWindow : Gtk.Window
             return;
         }
 
-        List<Process> processes;
-
         try
         {
-            processes = e.Processes;
-            
-            // Just clean up for now
-            foreach (Process proc in processes)
-            {
-                proc.Close();
-            }
+        	curProcesses = e.Processes;
         }
         catch (Exception ex)
         {
             ShowErrorMessage(String.Format("Failed to parse dump: {0}", ex.Message));
             return;
+        }
+        
+        
+        foreach (Process proc in curProcesses)
+        {
+        	processListStore.AppendValues(new object[] { proc, });
+        	
+        	foreach (Resource res in proc.Resources)
+        	{
+        		resourceListStore.AppendValues(new object[] { res, });
+        	}
         }
     }
 
