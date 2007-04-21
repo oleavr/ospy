@@ -37,9 +37,14 @@ namespace oSpy.SharpDumpLib
         }
 
         private BulkStorage storage = null;
-
+        
         private List<BulkSlot> slots = new List<BulkSlot>();
         private List<DataDirection> directions = new List<DataDirection>();
+
+        public int Count
+        {
+            get { return slots.Count; }
+        }
 
         private Dictionary<string, object> metadata = new Dictionary<string, object>();
 
@@ -78,6 +83,36 @@ namespace oSpy.SharpDumpLib
             BulkSlot slot = storage.AppendData(data);
             slots.Add(slot);
             directions.Add(direction);
+        }
+        
+        public byte[] GetData(int index)
+        {
+            return slots[index].Data;
+        }
+        
+        public DataDirection GetDirection(int index)
+        {
+            return directions[index];
+        }
+        
+        public override string ToString()
+        {
+        	if (metadata.Count == 1)
+        	{
+        	    string firstKey = null;
+        	    foreach (string key in metadata.Keys)
+        	        firstKey = key;
+
+        	    return String.Format("DataExchange [{0} = {1}]", firstKey, metadata[firstKey]);  
+        	}
+        	else if (metadata.Count == 0)
+        	{
+        	    return "DataExchange [no metadata]";
+        	}
+        	else
+        	{
+        	    return String.Format("DataExchange [{0} metadata keys]", metadata.Count);
+        	}
         }
 
         #region IMetadata implementation

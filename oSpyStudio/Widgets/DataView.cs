@@ -62,6 +62,10 @@ namespace oSpyStudio.Widgets
                 int offset = 0, remaining = bytes.Length;
     		    for (int i = 0; i < rowCount; i++)
     		    {
+    		        int len = Math.Min(remaining, colsPerRow);
+    		        if (len == 0)
+    		            break;
+
     		        if (i > 0)
     		        {
     		            offStr.Append("\n");
@@ -71,7 +75,6 @@ namespace oSpyStudio.Widgets
 
     		        offStr.AppendFormat("{0:x4}", offset);
     		        
-    		        int len = Math.Min(remaining, colsPerRow);
         		    for (int j = 0; j < len; j++)
         		    {
         		        if (j > 0)
