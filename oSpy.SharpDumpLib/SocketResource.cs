@@ -57,7 +57,7 @@ namespace oSpy.SharpDumpLib
 
         protected override bool DataIsContinuous()
         {
-            return (socketType == SocketType.SOCK_STREAM);
+            return (socketType != SocketType.SOCK_DGRAM);
         }
 
         public override DataExchange AppendData(byte[] data, DataDirection direction)

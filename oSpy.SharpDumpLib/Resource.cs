@@ -93,7 +93,7 @@ namespace oSpy.SharpDumpLib
 
         protected virtual bool DataIsContinuous()
         {
-            return false;
+            return true;
         }
         
         public override string ToString()
