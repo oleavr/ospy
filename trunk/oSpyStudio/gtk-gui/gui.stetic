@@ -117,7 +117,7 @@ HEX</property>
           <widget class="Gtk.VPaned" id="MainVPaned">
             <property name="MemberName" />
             <property name="CanFocus">True</property>
-            <property name="Position">123</property>
+            <property name="Position">110</property>
             <child>
               <widget class="Gtk.HBox" id="hbox1">
                 <property name="MemberName" />
@@ -126,17 +126,18 @@ HEX</property>
                     <property name="MemberName" />
                     <property name="CanFocus">True</property>
                     <property name="VscrollbarPolicy">Automatic</property>
-                    <property name="HscrollbarPolicy">Automatic</property>
+                    <property name="HscrollbarPolicy">Never</property>
                     <child>
                       <widget class="Gtk.TreeView" id="processList">
                         <property name="MemberName" />
                         <property name="CanFocus">True</property>
+                        <signal name="CursorChanged" handler="processList_CursorChanged" />
                       </widget>
                     </child>
                   </widget>
                   <packing>
                     <property name="Position">0</property>
-                    <property name="AutoSize">True</property>
+                    <property name="AutoSize">False</property>
                   </packing>
                 </child>
                 <child>
@@ -144,35 +145,37 @@ HEX</property>
                     <property name="MemberName" />
                     <property name="CanFocus">True</property>
                     <property name="VscrollbarPolicy">Automatic</property>
-                    <property name="HscrollbarPolicy">Automatic</property>
+                    <property name="HscrollbarPolicy">Never</property>
                     <child>
                       <widget class="Gtk.TreeView" id="resourceList">
                         <property name="MemberName" />
                         <property name="CanFocus">True</property>
+                        <signal name="CursorChanged" handler="resourceList_CursorChanged" />
                       </widget>
                     </child>
                   </widget>
                   <packing>
                     <property name="Position">1</property>
-                    <property name="AutoSize">True</property>
+                    <property name="AutoSize">False</property>
                   </packing>
                 </child>
                 <child>
-                  <widget class="Gtk.ScrolledWindow" id="transactionScrolledwindow">
+                  <widget class="Gtk.ScrolledWindow" id="dataExchangeScrolledwindow">
                     <property name="MemberName" />
                     <property name="CanFocus">True</property>
                     <property name="VscrollbarPolicy">Automatic</property>
-                    <property name="HscrollbarPolicy">Automatic</property>
+                    <property name="HscrollbarPolicy">Never</property>
                     <child>
-                      <widget class="Gtk.TreeView" id="transactionList">
+                      <widget class="Gtk.TreeView" id="dataExchangeList">
                         <property name="MemberName" />
                         <property name="CanFocus">True</property>
+                        <signal name="CursorChanged" handler="dataExchangeList_CursorChanged" />
                       </widget>
                     </child>
                   </widget>
                   <packing>
                     <property name="Position">2</property>
-                    <property name="AutoSize">True</property>
+                    <property name="AutoSize">False</property>
                   </packing>
                 </child>
               </widget>
@@ -287,6 +290,7 @@ HEX</property>
                 <child>
                   <widget class="Gtk.VBox" id="hexVBox">
                     <property name="MemberName" />
+                    <property name="Spacing">15</property>
                     <child>
                       <placeholder />
                     </child>

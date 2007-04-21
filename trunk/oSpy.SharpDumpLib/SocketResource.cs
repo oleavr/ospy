@@ -77,16 +77,7 @@ namespace oSpy.SharpDumpLib
         
         public override string ToString()
         {
-        	if (curRemoteEndpoint != null && dataExchanges.Count == 1)
-	   		{
-	   			return String.Format("socket 0x{0:x} (addressFamily={1}, socketType={2}, remote={3})",
-	   							     handle, addressFamily, socketType, curRemoteEndpoint.ToString());
-	   		}
-	   		else
-	   		{
-	   			return String.Format("socket 0x{0:x} (addressFamily={1}, socketType={2})",
-	   							     handle, addressFamily, socketType);
-			}
+   			return String.Format("0x{0:x} socket with af={1}, type={2}", handle, addressFamily, socketType);
         }
     }
 
