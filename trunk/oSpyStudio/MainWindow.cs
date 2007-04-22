@@ -162,12 +162,12 @@ public partial class MainWindow : Gtk.Window
             if (selectedExchange.GetDirection(i) == DataDirection.Incoming)
             {
                 linePrefixStr = "<<";
-                linePrefixColor = "red";
+                linePrefixColor = "#8ae899";
             }
             else
             {
                 linePrefixStr = ">>";
-                linePrefixColor = "blue";
+                linePrefixColor = "#9cb7d1";
             }
 
             dataChunkStore.AppendValues(new object[] { selectedExchange.GetData(i), linePrefixStr, linePrefixColor });

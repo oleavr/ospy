@@ -34,16 +34,26 @@ namespace oSpyStudio.Widgets
 	            set { linePrefix = value; Update(); }
 	        }
 
-	        protected string linePrefixColor = null;
+            protected Gtk.TextTag[] linePrefixTags = null;
 	        public string LinePrefixColor
 	        {
-	            get { return linePrefixColor; }
-	            set { linePrefixColor = value; Update(); }
+	            set
+	            {
+	                if (value == null || value == String.Empty)
+	                    throw new ArgumentException("LinePrefixColor can't be null or blank");
+	                linePrefixTags[0].Foreground = value;
+	                Update();
+	            }
 	        }
 
 	        public HexChunk()
 	        {
 	            prefixView = new Gtk.TextView();
+	            linePrefixTags = new Gtk.TextTag[1];
+	            Gtk.TextTag tag = new Gtk.TextTag("default");
+	            linePrefixTags[0] = tag;
+	            prefixView.Buffer.TagTable.Add(linePrefixTags[0]);
+	            
 	            offsetView = new Gtk.TextView();
 	            mainView = new Gtk.TextView();
 	            asciiView = new Gtk.TextView();
@@ -118,7 +128,7 @@ namespace oSpyStudio.Widgets
     		        }
 
     		        if (linePrefix != null)
-    		            pfxBuf.Insert(ref pfxIter, linePrefix); 
+    		            pfxBuf.InsertWithTags(ref pfxIter, linePrefix, linePrefixTags);
 
            		    offBuf.Insert(ref offIter, String.Format("{0:x4}", offset));
 
@@ -268,9 +278,17 @@ namespace oSpyStudio.Widgets
 		        chunk.Freeze();
 		        chunk.Bytes = model.GetValue(iter, dataColIndex) as byte[];
 		        if (linePrefixTextColIndex >= 0)
-		            chunk.LinePrefix = model.GetValue(iter, linePrefixTextColIndex) as string;
+		        {
+		            string s = model.GetValue(iter, linePrefixTextColIndex) as string;
+		            if (s != null && s != String.Empty)
+		                chunk.LinePrefix = s;
+		        }
 		        if (linePrefixColorColIndex >= 0)
-		            chunk.LinePrefixColor = model.GetValue(iter, linePrefixColorColIndex) as string;
+		        {
+		            string s = model.GetValue(iter, linePrefixColorColIndex) as string;
+		            if (s != null && s != String.Empty)
+    		            chunk.LinePrefixColor = s;
+		        }
 		        chunk.UnFreeze();
 
 		        hexVBox.PackStart(chunk, false, true, 0);
@@ -306,6 +324,9 @@ namespace oSpyStudio.Widgets
 
 		private void ApplyHaxorStyle(Gtk.Widget w)
 		{
+		    //Gdk.Color bg = Gdk.Color.Zero, fg = Gdk.Color.Zero;
+		    //Gdk.Color.Parse("Gray", ref bg);
+		    //Gdk.Color.Parse("Black", ref fg);
 		    Gdk.Color bg = new Gdk.Color(0, 0, 0);
 		    Gdk.Color fg = new Gdk.Color(192, 192, 192);
 		    
@@ -321,7 +342,7 @@ namespace oSpyStudio.Widgets
 
 		    w.ModifyText(Gtk.StateType.Normal, fg);
 		    
-		    w.ModifyFont(Pango.FontDescription.FromString("Monospace 10"));
+		    w.ModifyFont(Pango.FontDescription.FromString("Monospace 8"));
 		}
 	}
 }
