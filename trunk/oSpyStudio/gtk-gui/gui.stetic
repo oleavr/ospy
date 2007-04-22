@@ -160,16 +160,15 @@ HEX</property>
                   </packing>
                 </child>
                 <child>
-                  <widget class="Gtk.ScrolledWindow" id="dataExchangeScrolledwindow">
+                  <widget class="Gtk.ScrolledWindow" id="dataTransferScrolledwindow">
                     <property name="MemberName" />
                     <property name="CanFocus">True</property>
                     <property name="VscrollbarPolicy">Automatic</property>
                     <property name="HscrollbarPolicy">Never</property>
                     <child>
-                      <widget class="Gtk.TreeView" id="dataExchangeList">
+                      <widget class="Gtk.TreeView" id="dataTransferList">
                         <property name="MemberName" />
                         <property name="CanFocus">True</property>
-                        <signal name="CursorChanged" handler="dataExchangeList_CursorChanged" />
                       </widget>
                     </child>
                   </widget>

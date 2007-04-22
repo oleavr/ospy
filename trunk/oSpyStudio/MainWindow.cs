@@ -6,11 +6,17 @@ using oSpyStudio.Widgets;
 using oSpy.SharpDumpLib;
 using ICSharpCode.SharpZipLib.BZip2;
 
+internal enum DataTransferColumn {
+    From,
+    Size,
+    Description,
+}
+
 public partial class MainWindow : Gtk.Window
 {
 	protected Gtk.TreeStore processListStore;
 	protected Gtk.TreeStore resourceListStore;
-    protected Gtk.TreeStore dataExchangeListStore;
+    protected Gtk.TreeStore dataTransferListStore;
     
     protected Gtk.ListStore dataChunkStore;
 
@@ -28,6 +34,8 @@ public partial class MainWindow : Gtk.Window
     {
         this.Build();
 
+        dataChunkStore = new Gtk.ListStore(typeof(object), typeof(string), typeof(string));
+
 		processListStore = new Gtk.TreeStore(typeof(Process));
 		processList.Model = processListStore;
 		processList.AppendColumn("Process", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(processList_CellDataFunc));
@@ -36,11 +44,19 @@ public partial class MainWindow : Gtk.Window
 		resourceList.Model = resourceListStore;
 		resourceList.AppendColumn("Resource", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(resourceList_CellDataFunc));
 
-        dataExchangeListStore = new Gtk.TreeStore(typeof(DataExchange));
-        dataExchangeList.Model = dataExchangeListStore;
-        dataExchangeList.AppendColumn("DataExchange", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataExchangeList_CellDataFunc));
+        dataTransferListStore = new Gtk.TreeStore(typeof(DataTransfer));
+        dataTransferList.Selection.Mode = Gtk.SelectionMode.Multiple;
+        dataTransferList.Selection.Changed += new EventHandler(dataTransferList_SelectionChanged);
+        dataTransferList.Model = dataTransferListStore;
 
-        dataChunkStore = new Gtk.ListStore(typeof(object), typeof(string), typeof(string));
+        Gtk.TreeViewColumn col;
+        col = dataTransferList.AppendColumn("From", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_CellDataFunc));
+        col.UserData = (IntPtr) DataTransferColumn.From;
+        col = dataTransferList.AppendColumn("Size", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_CellDataFunc));
+        col.UserData = (IntPtr) DataTransferColumn.Size;
+        col = dataTransferList.AppendColumn("Description", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_CellDataFunc));
+        col.UserData = (IntPtr) DataTransferColumn.Description;
+
         dataView.Model = dataChunkStore;
 
         dumpLoader = new DumpLoader();
@@ -95,7 +111,7 @@ public partial class MainWindow : Gtk.Window
     protected virtual void resourceList_CursorChanged(object sender, System.EventArgs e)
     {
         dataChunkStore.Clear();
-        dataExchangeListStore.Clear();
+        dataTransferListStore.Clear();
 
         Gtk.TreePath[] selected = resourceList.Selection.GetSelectedRows();
         if (selected.Length < 1)
@@ -124,9 +140,9 @@ public partial class MainWindow : Gtk.Window
 
         foreach (Resource res in resources)
         {
-            foreach (DataExchange exchange in res.DataExchanges)
-            {
-                dataExchangeListStore.AppendValues(new object[] { exchange, });
+            foreach (DataTransfer transfer in res.DataTransfers)
+            {                
+                dataTransferListStore.AppendValues(new object[] { transfer, });
             }
         }
     }
@@ -142,24 +158,25 @@ public partial class MainWindow : Gtk.Window
     	    textCell.Text = "(all)";
     }
 
-    protected virtual void dataExchangeList_CursorChanged(object sender, System.EventArgs e)
+    private void dataTransferList_SelectionChanged(object sender, EventArgs e)
     {
         dataChunkStore.Clear();
 
-        Gtk.TreePath[] selected = dataExchangeList.Selection.GetSelectedRows();
+        Gtk.TreePath[] selected = dataTransferList.Selection.GetSelectedRows();
         if (selected.Length < 1)
             return;
 
-        Gtk.TreeIter iter;
-        if (!dataExchangeListStore.GetIter(out iter, selected[0]))
-            return;
-
-        DataExchange selectedExchange = dataExchangeListStore.GetValue(iter, 0) as DataExchange;
-        for (int i = 0; i < selectedExchange.Count; i++)
+        foreach (Gtk.TreePath path in selected)
         {
+            Gtk.TreeIter iter;
+            if (!dataTransferListStore.GetIter(out iter, path))
+                return;
+
+            DataTransfer transfer = dataTransferListStore.GetValue(iter, 0) as DataTransfer;
+            
             string linePrefixStr = null;
             string linePrefixColor = null;
-            if (selectedExchange.GetDirection(i) == DataDirection.Incoming)
+            if (transfer.Direction == DataDirection.Incoming)
             {
                 linePrefixStr = "<<";
                 linePrefixColor = "#8ae899";
@@ -170,16 +187,32 @@ public partial class MainWindow : Gtk.Window
                 linePrefixColor = "#9cb7d1";
             }
 
-            dataChunkStore.AppendValues(new object[] { selectedExchange.GetData(i), linePrefixStr, linePrefixColor });
+            dataChunkStore.AppendValues(new object[] { transfer.Data, linePrefixStr, linePrefixColor });
         }
     }
 
-    private void dataExchangeList_CellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+    private void dataTransferList_CellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
     {
     	Gtk.CellRendererText textCell = cell as Gtk.CellRendererText;
 
-    	DataExchange exchange = model.GetValue(iter, 0) as DataExchange;
-	    textCell.Text = exchange.ToString();
+    	DataTransfer transfer = model.GetValue(iter, 0) as DataTransfer;
+    	
+    	DataTransferColumn col = (DataTransferColumn) treeCol.UserData;
+    	switch (col)
+    	{
+    	    case DataTransferColumn.From:
+        	    textCell.Text = transfer.FunctionName;
+        	    break;
+        	case DataTransferColumn.Size:
+        	    textCell.Text = Convert.ToString(transfer.Size);
+        	    break;
+        	case DataTransferColumn.Description:
+        	    if (transfer.HasMetaKey("net.ipv4.remoteEndpoint"))
+        	        textCell.Text = String.Format("remoteEndpoint={0}", transfer.GetMetaValue("net.ipv4.remoteEndpoint")); 
+        	    else
+        	        textCell.Text = "";
+        	    break;
+        }
     }
 
     private void CloseCurrentDump()
@@ -188,14 +221,14 @@ public partial class MainWindow : Gtk.Window
 
         processListStore.Clear();
         resourceListStore.Clear();
-        dataExchangeListStore.Clear();
+        dataTransferListStore.Clear();
         
         dataChunkStore.Clear();
 
         // TODO: might not be necessary
         processList.Selection.UnselectAll();
         resourceList.Selection.UnselectAll();
-        dataExchangeList.Selection.UnselectAll();
+        dataTransferList.Selection.UnselectAll();
 
     	if (curProcesses != null)
     	{

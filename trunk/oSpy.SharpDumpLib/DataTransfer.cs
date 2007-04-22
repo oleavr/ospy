@@ -28,7 +28,7 @@ using System.Collections.Generic;
 
 namespace oSpy.SharpDumpLib
 {
-    public class DataExchange : IMetadata
+    public class DataTransfer : IMetadata
     {
         private Resource resource = null;
         public Resource Resource
@@ -36,65 +36,45 @@ namespace oSpy.SharpDumpLib
             get { return resource; }
         }
 
-        private BulkStorage storage = null;
-        
-        private List<BulkSlot> slots = new List<BulkSlot>();
-        private List<DataDirection> directions = new List<DataDirection>();
-
-        public int Count
+        private BulkSlot slot = null;
+        public byte[] Data
         {
-            get { return slots.Count; }
+            get { return slot.Data; }
+        }
+        
+        public int Size
+        {
+            get { return slot.Size; }
+        }
+
+        private DataDirection direction;
+        public DataDirection Direction
+        {
+            get { return direction; }
+        }
+
+        private uint eventId = 0;
+        public uint EventId
+        {
+            get { return eventId; }
+        }
+        
+        private string functionName = null;
+        public string FunctionName
+        {
+            get { return functionName; }
         }
 
         private Dictionary<string, object> metadata = new Dictionary<string, object>();
 
-        public DataExchange(Resource resource)
+        public DataTransfer(Resource resource, BulkSlot slot, DataDirection direction, uint eventId, string functionName)
         {
             this.resource = resource;
+            this.slot = slot;
+            this.direction = direction;            this.eventId = eventId;
+            this.functionName = functionName;
         }
 
-        public DataExchange(Resource resource, BulkSlot resourceSlot, DataDirection direction)
-        {
-            this.resource = resource;
-
-            this.slots.Add(resourceSlot);
-            this.directions.Add(direction);
-        }
-
-        public void Close()
-        {
-            slots.Clear();
-            directions.Clear();
-
-            if (storage != null)
-            {
-                storage.Close();
-                storage = null;
-            }
-        }
-
-        public void Append(byte[] data, DataDirection direction)
-        {
-            if (storage == null)
-            {
-                storage = new BulkStorage();
-            }
-
-            BulkSlot slot = storage.AppendData(data);
-            slots.Add(slot);
-            directions.Add(direction);
-        }
-        
-        public byte[] GetData(int index)
-        {
-            return slots[index].Data;
-        }
-        
-        public DataDirection GetDirection(int index)
-        {
-            return directions[index];
-        }
-        
         public override string ToString()
         {
         	if (metadata.Count == 1)

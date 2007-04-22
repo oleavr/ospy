@@ -36,10 +36,10 @@ namespace oSpy.SharpDumpLib
             get { return handle; }
         }
 
-        protected List<DataExchange> dataExchanges = new List<DataExchange>();
-        public List<DataExchange> DataExchanges
+        protected List<DataTransfer> dataTransfers = new List<DataTransfer>();
+        public List<DataTransfer> DataTransfers
         {
-            get { return dataExchanges; }
+            get { return dataTransfers; }
         }
 
         private BulkStorage storage = null;
@@ -51,11 +51,7 @@ namespace oSpy.SharpDumpLib
 
         public virtual void Close()
         {
-            foreach (DataExchange exchange in dataExchanges)
-            {
-                exchange.Close();
-            }
-            dataExchanges.Clear();
+            dataTransfers.Clear();
 
             if (storage != null)
             {
@@ -64,31 +60,17 @@ namespace oSpy.SharpDumpLib
             }
         }
 
-        public virtual DataExchange AppendData(byte[] data, DataDirection direction)
+        public virtual DataTransfer AppendData(byte[] data, DataDirection direction, uint eventId, string functionName)
         {
-            DataExchange exchange = null;
+            DataTransfer transfer = null;
 
-            if (DataIsContinuous())
-            {
-                if (dataExchanges.Count == 0)
-                {
-                    dataExchanges.Add(new DataExchange(this));
-                }
-                exchange = dataExchanges[0];
-                exchange.Append(data, direction);
-            }
-            else
-            {
-                if (storage == null)
-                {
-                    storage = new BulkStorage();
-                }
+            if (storage == null)
+                storage = new BulkStorage();
 
-                exchange = new DataExchange(this, storage.AppendData(data), direction);
-                dataExchanges.Add(exchange);
-            }
+            transfer = new DataTransfer(this, storage.AppendData(data), direction, eventId, functionName);
+            dataTransfers.Add(transfer);
 
-            return exchange;
+            return transfer;
         }
 
         protected virtual bool DataIsContinuous()

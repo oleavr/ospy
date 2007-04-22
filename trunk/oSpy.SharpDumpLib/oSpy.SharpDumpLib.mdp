@@ -15,7 +15,7 @@
   </Configurations>
   <Contents>
     <File name="./AsyncWorker.cs" subtype="Code" buildaction="Compile" />
-    <File name="./DataExchange.cs" subtype="Code" buildaction="Compile" />
+    <File name="./DataTransfer.cs" subtype="Code" buildaction="Compile" />
     <File name="./Dump.cs" subtype="Code" buildaction="Compile" />
     <File name="./DumpBuilder.cs" subtype="Code" buildaction="Compile" />
     <File name="./DumpLoader.cs" subtype="Code" buildaction="Compile" />

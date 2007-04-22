@@ -202,9 +202,10 @@ namespace oSpy.SharpDumpLib
                     {
                         XmlElement eventRoot = ev.Data;
 
+                        string functionName;
                         ResourceType resType;
                         UInt32 handle;
-                        FunctionCallType callType = InspectFunctionCallEvent(eventRoot, out resType, out handle);
+                        FunctionCallType callType = InspectFunctionCallEvent(eventRoot, out functionName, out resType, out handle);
 
                         switch (callType)
                         {
@@ -287,7 +288,7 @@ namespace oSpy.SharpDumpLib
                                     {
                                         direction = (callType == FunctionCallType.SocketRecv) ? DataDirection.Incoming : DataDirection.Outgoing;
 
-                                        curRes.AppendData(buf, direction);
+                                        curRes.AppendData(buf, direction, ev.Id, functionName);
                                     }
                                     break;
                                 case FunctionCallType.EncryptMessage:
@@ -299,7 +300,7 @@ namespace oSpy.SharpDumpLib
                                     {
                                         direction = (callType == FunctionCallType.DecryptMessage) ? DataDirection.Incoming : DataDirection.Outgoing;
 
-                                        curRes.AppendData(buf, direction);
+                                        curRes.AppendData(buf, direction, ev.Id, functionName);
                                     }
                                     break;
                                 default:
@@ -354,7 +355,7 @@ namespace oSpy.SharpDumpLib
         private const string secondArgInValQuery = "/event/arguments[@direction='in']/argument[2]/value/@value";
         private const string retValQuery = "/event/returnValue/value/@value";
 
-        private FunctionCallType InspectFunctionCallEvent(XmlElement eventRoot, out ResourceType type, out UInt32 handle)
+        private FunctionCallType InspectFunctionCallEvent(XmlElement eventRoot, out string functionName, out ResourceType type, out UInt32 handle)
         {
             type = ResourceType.Unknown;
             handle = 0;
@@ -364,52 +365,51 @@ namespace oSpy.SharpDumpLib
             XmlNode node = eventRoot.SelectSingleNode("/event/name");
             if (node == null)
                 throw new InvalidDataException("name element not found on FunctionCall event");
-            string functionName = node.InnerText.ToLower();
+            functionName = node.InnerText;
 
-            if (functionName.StartsWith("ws2_32.dll::"))
+            string fn = functionName.ToLower();
+            if (fn.StartsWith("ws2_32.dll::"))
             {
                 type = ResourceType.Socket;
+                fn = fn.Substring(12);
 
-                functionName = functionName.Substring(12);
-
-                if (functionName == "recv")
+                if (fn == "recv")
                 {
                     callType = FunctionCallType.SocketRecv;
                     query = firstArgInValQuery;
                 }
-                else if (functionName == "send")
+                else if (fn == "send")
                 {
                     callType = FunctionCallType.SocketSend;
                     query = firstArgInValQuery;
                 }
-                else if (functionName == "socket")
+                else if (fn == "socket")
                 {
                     callType = FunctionCallType.SocketCreate;
                     query = retValQuery;
                 }
-                else if (functionName == "connect")
+                else if (fn == "connect")
                 {
                     callType = FunctionCallType.SocketConnect;
                     query = firstArgInValQuery;
                 }
-                else if (functionName == "closesocket")
+                else if (fn == "closesocket")
                 {
                     callType = FunctionCallType.SocketClose;
                     query = firstArgInValQuery;
                 }
             }
-            else if (functionName.StartsWith("secur32.dll::"))
+            else if (fn.StartsWith("secur32.dll::"))
             {
                 type = ResourceType.CryptoContext;
+                fn = fn.Substring(13);
 
-                functionName = functionName.Substring(13);
-
-                if (functionName == "encryptmessage")
+                if (fn == "encryptmessage")
                 {
                     callType = FunctionCallType.EncryptMessage;
                     query = firstArgInValQuery;
                 }
-                else if (functionName == "decryptmessage")
+                else if (fn == "decryptmessage")
                 {
                     callType = FunctionCallType.DecryptMessage;
                     query = firstArgInValQuery;

@@ -60,14 +60,14 @@ namespace oSpy.SharpDumpLib
             return (socketType != SocketType.SOCK_DGRAM);
         }
 
-        public override DataExchange AppendData(byte[] data, DataDirection direction)
+        public override DataTransfer AppendData(byte[] data, DataDirection direction, uint eventId, string functionName)
         {
-            DataExchange exchange = base.AppendData(data, direction);
+            DataTransfer transfer = base.AppendData(data, direction, eventId, functionName);
 
             if (curRemoteEndpoint != null && curRemoteEndpoint.Address != System.Net.IPAddress.Any)
-                exchange.SetMetaValue("net.ipv4.remoteEndpoint", curRemoteEndpoint);
+                transfer.SetMetaValue("net.ipv4.remoteEndpoint", curRemoteEndpoint);
 
-            return exchange;
+            return transfer;
         }
 
         public void SetCurrentRemoteEndpoint(System.Net.IPEndPoint endpoint)
