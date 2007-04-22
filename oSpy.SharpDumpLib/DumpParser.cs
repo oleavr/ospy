@@ -295,9 +295,12 @@ namespace oSpy.SharpDumpLib
                                     processed = true;
 
                                     buf = ParseEncryptOrDecryptMessageEvent(eventRoot, (callType == FunctionCallType.EncryptMessage));
-                                    direction = (callType == FunctionCallType.DecryptMessage) ? DataDirection.Incoming : DataDirection.Outgoing;
+                                    if (buf.Length > 0)
+                                    {
+                                        direction = (callType == FunctionCallType.DecryptMessage) ? DataDirection.Incoming : DataDirection.Outgoing;
 
-                                    curRes.AppendData(buf, direction);
+                                        curRes.AppendData(buf, direction);
+                                    }
                                     break;
                                 default:
                                     break;
