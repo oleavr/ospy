@@ -64,9 +64,9 @@ namespace oSpyStudio.Widgets
 	            asciiView.Editable = false;
 	            
 	            PackStart(prefixView, false, true, 5);
-	            PackStart(offsetView, false, true, 0);
-	            PackStart(mainView, false, true, 15);
-	            PackStart(asciiView, false, true, 0);
+	            PackStart(offsetView, false, true, 5);
+	            PackStart(mainView, false, true, 10);
+	            PackStart(asciiView, false, true, 5);
 
                 prefixView.Show();
 	            offsetView.Show();
@@ -139,6 +139,13 @@ namespace oSpyStudio.Widgets
                    		    builder.Append(" ");
 
         		        builder.AppendFormat("{0:x2}", bytes[offset + j]);
+        		    }
+        		    for (int j = len; j < colsPerRow; j++)
+        		    {
+        		        if (j > 0)
+        		            builder.Append(" ");
+
+        		        builder.Append("  ");
         		    }
         		    mainBuf.Insert(ref mainIter, builder.ToString());
 
@@ -324,11 +331,10 @@ namespace oSpyStudio.Widgets
 
 		private void ApplyHaxorStyle(Gtk.Widget w)
 		{
-		    //Gdk.Color bg = Gdk.Color.Zero, fg = Gdk.Color.Zero;
-		    //Gdk.Color.Parse("Gray", ref bg);
-		    //Gdk.Color.Parse("Black", ref fg);
-		    Gdk.Color bg = new Gdk.Color(0, 0, 0);
-		    Gdk.Color fg = new Gdk.Color(192, 192, 192);
+		    //Gdk.Color bg = new Gdk.Color(0, 0, 0);
+		    //Gdk.Color fg = new Gdk.Color(192, 192, 192);
+		    Gdk.Color bg = new Gdk.Color(128, 128, 128);
+		    Gdk.Color fg = new Gdk.Color(0, 0, 0);
 		    
 			w.ModifyBase(Gtk.StateType.Normal, bg);
 			w.ModifyBase(Gtk.StateType.Prelight, bg);
