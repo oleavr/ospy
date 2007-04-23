@@ -77,7 +77,7 @@ namespace oSpy.SharpDumpLib
         
         public override string ToString()
         {
-   			return String.Format("0x{0:x} socket with af={1}, type={2}", handle, addressFamily, socketType);
+   			return String.Format("<SocketResource Handle=0x{0:x8} AddressFamily={1} SocketType={2}>", handle, addressFamily, socketType);
         }
     }
 
