@@ -237,9 +237,9 @@ namespace oSpy.SharpDumpLib
                                             curRes = new SocketResource(handle);
                                         }
                                     }
-                                    else if (resType == ResourceType.CryptoContext)
+                                    else if (resType == ResourceType.Crypto)
                                     {
-                                        curRes = new Resource(handle);
+                                        curRes = new CryptoResource(handle);
                                     }
 
                                     curProcess.Resources.Add(curRes);
@@ -401,7 +401,7 @@ namespace oSpy.SharpDumpLib
             }
             else if (fn.StartsWith("secur32.dll::"))
             {
-                type = ResourceType.CryptoContext;
+                type = ResourceType.Crypto;
                 fn = fn.Substring(13);
 
                 if (fn == "encryptmessage")
