@@ -715,11 +715,12 @@ UnicodeString::ToString(void *start, bool deep, IPropertyProvider *propProv, Pro
     OOStringStream ss;
 
     const WCHAR *strPtr = static_cast<const WCHAR *>(start);
-    unsigned int len = static_cast<unsigned int>(wcslen(strPtr));
 
+    int size = WideCharToMultiByte(CP_UTF8, 0, strPtr, -1, NULL, 0, NULL, NULL);
     OString result;
-    result.resize(len);
-    WideCharToMultiByte(CP_ACP, 0, strPtr, -1, const_cast<char *>(result.data()),
+    result.resize(size);
+
+    WideCharToMultiByte(CP_UTF8, 0, strPtr, -1, const_cast<char *>(result.data()),
                         static_cast<int>(result.size()), NULL, NULL);
 
     return result;
@@ -775,11 +776,11 @@ UnicodeFormatString::ToString(void *start, bool deep, IPropertyProvider *propPro
         p = fmtPtr;
     }
 
-    unsigned int len = static_cast<unsigned int>(wcslen(p));
-
+    int size = WideCharToMultiByte(CP_UTF8, 0, p, -1, NULL, 0, NULL, NULL);
     OString result;
-    result.resize(len);
-    WideCharToMultiByte(CP_ACP, 0, p, -1, const_cast<char *>(result.data()),
+    result.resize(size);
+
+    WideCharToMultiByte(CP_UTF8, 0, p, -1, const_cast<char *>(result.data()),
                         static_cast<int>(result.size()), NULL, NULL);
 
     return result;
