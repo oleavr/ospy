@@ -14,6 +14,11 @@ internal enum DataTransferColumn {
 
 public partial class MainWindow : Gtk.Window
 {
+    protected Gdk.Pixbuf incomingPixbuf = null; 
+    protected Gdk.Pixbuf outgoingPixbuf = null; 
+    protected Gdk.Pixbuf socketPixbuf = null; 
+    protected Gdk.Pixbuf securePixbuf = null; 
+
 	protected Gtk.TreeStore processListStore;
 	protected Gtk.TreeStore resourceListStore;
     protected Gtk.TreeStore dataTransferListStore;
@@ -33,6 +38,12 @@ public partial class MainWindow : Gtk.Window
         : base("")
     {
         this.Build();
+        
+        System.Reflection.Assembly asm = System.Reflection.Assembly.GetExecutingAssembly();
+        incomingPixbuf = new Gdk.Pixbuf(asm, "incoming.png");
+        outgoingPixbuf = new Gdk.Pixbuf(asm, "outgoing.png");
+        socketPixbuf = new Gdk.Pixbuf(asm, "socket.png");
+        securePixbuf = new Gdk.Pixbuf(asm, "secure.png");
 
         dataChunkStore = new Gtk.ListStore(typeof(object), typeof(string), typeof(string));
 
@@ -42,14 +53,21 @@ public partial class MainWindow : Gtk.Window
 
 		resourceListStore = new Gtk.TreeStore(typeof(Resource));
 		resourceList.Model = resourceListStore;
-		resourceList.AppendColumn("Resource", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(resourceList_CellDataFunc));
+		Gtk.TreeViewColumn col = new Gtk.TreeViewColumn();
+		col.Title = "Resource";
+		Gtk.CellRendererPixbuf pbRenderer = new Gtk.CellRendererPixbuf();
+		Gtk.CellRendererText txtRenderer = new Gtk.CellRendererText();
+		col.PackStart(pbRenderer, false);
+		col.PackStart(txtRenderer, true);
+		col.SetCellDataFunc(pbRenderer, new Gtk.TreeCellDataFunc(resourceList_pixbufCellDataFunc));
+		col.SetCellDataFunc(txtRenderer, new Gtk.TreeCellDataFunc(resourceList_textCellDataFunc));
+		resourceList.AppendColumn(col);
 
         dataTransferListStore = new Gtk.TreeStore(typeof(DataTransfer));
         dataTransferList.Selection.Mode = Gtk.SelectionMode.Multiple;
         dataTransferList.Selection.Changed += new EventHandler(dataTransferList_SelectionChanged);
         dataTransferList.Model = dataTransferListStore;
 
-        Gtk.TreeViewColumn col;
         col = dataTransferList.AppendColumn("From", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_CellDataFunc));
         col.UserData = (IntPtr) DataTransferColumn.From;
         col = dataTransferList.AppendColumn("Size", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_CellDataFunc));
@@ -147,7 +165,22 @@ public partial class MainWindow : Gtk.Window
         }
     }
 
-    private void resourceList_CellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+    private void resourceList_pixbufCellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+    {
+        Gtk.CellRendererPixbuf pbCell = cell as Gtk.CellRendererPixbuf;
+        pbCell.Pixbuf = null;
+
+    	Resource res = model.GetValue(iter, 0) as Resource;
+    	if (res == null)
+    	    return;
+
+        if (res is SocketResource)
+            pbCell.Pixbuf = socketPixbuf;
+        else if (res is CryptoResource)
+            pbCell.Pixbuf = securePixbuf;
+    }
+
+    private void resourceList_textCellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
     {
     	Gtk.CellRendererText textCell = cell as Gtk.CellRendererText;
 

@@ -88,6 +88,6 @@ namespace oSpy.SharpDumpLib
     {
         Unknown,
         Socket,
-        CryptoContext,
+        Crypto,
     }
 }
