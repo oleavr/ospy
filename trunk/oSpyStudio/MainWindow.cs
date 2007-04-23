@@ -6,7 +6,8 @@ using oSpyStudio.Widgets;
 using oSpy.SharpDumpLib;
 using ICSharpCode.SharpZipLib.BZip2;
 
-internal enum DataTransferColumn {
+internal enum DataTransferColumn
+{
     From,
     Size,
     Description,
@@ -59,8 +60,8 @@ public partial class MainWindow : Gtk.Window
 		Gtk.CellRendererText txtRenderer = new Gtk.CellRendererText();
 		col.PackStart(pbRenderer, false);
 		col.PackStart(txtRenderer, true);
-		col.SetCellDataFunc(pbRenderer, new Gtk.TreeCellDataFunc(resourceList_pixbufCellDataFunc));
-		col.SetCellDataFunc(txtRenderer, new Gtk.TreeCellDataFunc(resourceList_textCellDataFunc));
+		col.SetCellDataFunc(pbRenderer, new Gtk.TreeCellDataFunc(resourceList_PixbufCellDataFunc));
+		col.SetCellDataFunc(txtRenderer, new Gtk.TreeCellDataFunc(resourceList_TextCellDataFunc));
 		resourceList.AppendColumn(col);
 
         dataTransferListStore = new Gtk.TreeStore(typeof(DataTransfer));
@@ -68,11 +69,12 @@ public partial class MainWindow : Gtk.Window
         dataTransferList.Selection.Changed += new EventHandler(dataTransferList_SelectionChanged);
         dataTransferList.Model = dataTransferListStore;
 
-        col = dataTransferList.AppendColumn("From", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_CellDataFunc));
+        dataTransferList.AppendColumn("", new Gtk.CellRendererPixbuf(), new Gtk.TreeCellDataFunc(dataTransferList_DirectionCellDataFunc));
+        col = dataTransferList.AppendColumn("From", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_TextCellDataFunc));
         col.UserData = (IntPtr) DataTransferColumn.From;
-        col = dataTransferList.AppendColumn("Size", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_CellDataFunc));
+        col = dataTransferList.AppendColumn("Size", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_TextCellDataFunc));
         col.UserData = (IntPtr) DataTransferColumn.Size;
-        col = dataTransferList.AppendColumn("Description", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_CellDataFunc));
+        col = dataTransferList.AppendColumn("Description", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_TextCellDataFunc));
         col.UserData = (IntPtr) DataTransferColumn.Description;
 
         dataView.Model = dataChunkStore;
@@ -165,7 +167,7 @@ public partial class MainWindow : Gtk.Window
         }
     }
 
-    private void resourceList_pixbufCellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+    private void resourceList_PixbufCellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
     {
         Gtk.CellRendererPixbuf pbCell = cell as Gtk.CellRendererPixbuf;
         pbCell.Pixbuf = null;
@@ -180,15 +182,33 @@ public partial class MainWindow : Gtk.Window
             pbCell.Pixbuf = securePixbuf;
     }
 
-    private void resourceList_textCellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+    private void resourceList_TextCellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
     {
     	Gtk.CellRendererText textCell = cell as Gtk.CellRendererText;
 
     	Resource res = model.GetValue(iter, 0) as Resource;
     	if (res != null)
-    	    textCell.Text = res.ToString();
+    	{
+    	    bool handled = false;
+
+    	    if (res is SocketResource)
+    	    {
+    	        SocketResource sockRes = res as SocketResource;
+
+                if (sockRes.AddressFamily != AddressFamily.Unknown)
+                {
+        	        textCell.Text = String.Format("0x{0:x8} - {1}, {2}", sockRes.Handle, sockRes.AddressFamily, sockRes.SocketType);
+        	        handled = true;
+        	    }
+    	    }
+    	    
+    	    if (!handled)
+        	    textCell.Text = String.Format("0x{0:x8}", res.Handle);
+    	}
     	else
+    	{
     	    textCell.Text = "(all)";
+    	}
     }
 
     private void dataTransferList_SelectionChanged(object sender, EventArgs e)
@@ -224,13 +244,23 @@ public partial class MainWindow : Gtk.Window
         }
     }
 
-    private void dataTransferList_CellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+    private void dataTransferList_DirectionCellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
     {
-    	Gtk.CellRendererText textCell = cell as Gtk.CellRendererText;
-
+    	Gtk.CellRendererPixbuf pbCell = cell as Gtk.CellRendererPixbuf;
     	DataTransfer transfer = model.GetValue(iter, 0) as DataTransfer;
     	
+    	if (transfer.Direction == DataDirection.Incoming)
+    	    pbCell.Pixbuf = incomingPixbuf;
+    	else
+    	    pbCell.Pixbuf = outgoingPixbuf;
+    }
+    
+    private void dataTransferList_TextCellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+    {
+    	Gtk.CellRendererText textCell = cell as Gtk.CellRendererText;
+    	DataTransfer transfer = model.GetValue(iter, 0) as DataTransfer;
     	DataTransferColumn col = (DataTransferColumn) treeCol.UserData;
+
     	switch (col)
     	{
     	    case DataTransferColumn.From:
@@ -241,7 +271,7 @@ public partial class MainWindow : Gtk.Window
         	    break;
         	case DataTransferColumn.Description:
         	    if (transfer.HasMetaKey("net.ipv4.remoteEndpoint"))
-        	        textCell.Text = String.Format("remoteEndpoint={0}", transfer.GetMetaValue("net.ipv4.remoteEndpoint")); 
+        	        textCell.Text = String.Format("remote: {0}", transfer.GetMetaValue("net.ipv4.remoteEndpoint")); 
         	    else
         	        textCell.Text = "";
         	    break;

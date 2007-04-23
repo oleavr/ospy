@@ -33,5 +33,10 @@ namespace oSpy.SharpDumpLib
             : base(handle)
         {
         }
+
+        public override string ToString()
+        {
+        	return String.Format("<CryptoResource Handle=0x{0:x8}>", handle);
+        }
 	}
 }
