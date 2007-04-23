@@ -40,10 +40,11 @@ public:
 
     Error(const WCHAR *message)
     {
-        char buf[2048];
-        WideCharToMultiByte(CP_ACP, 0, message, -1, buf, sizeof(buf), NULL, NULL);
+        int size = WideCharToMultiByte(CP_UTF8, 0, message, -1, NULL, 0, NULL, NULL);
+        m_what.resize(size);
 
-        m_what = buf;
+        WideCharToMultiByte(CP_UTF8, 0, message, -1, const_cast<char *>(m_what.data()),
+                            static_cast<int>(m_what.size()), NULL, NULL);
     }
 
     virtual const char* what() const throw()

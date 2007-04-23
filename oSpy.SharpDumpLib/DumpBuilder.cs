@@ -243,8 +243,10 @@ namespace oSpy.SharpDumpLib
             uint len = r.ReadUInt32();
             byte[] buf = r.ReadBytes((int)len);
 
-            Decoder dec = Encoding.ASCII.GetDecoder();
-            char[] chars = new char[buf.Length];
+            Decoder dec = Encoding.UTF8.GetDecoder();
+
+            int charCount = dec.GetCharCount(buf, 0, buf.Length);
+            char[] chars = new char[charCount];
             dec.GetChars(buf, 0, buf.Length, chars, 0);
             return new string(chars);
         }
