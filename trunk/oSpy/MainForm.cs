@@ -23,7 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 //
 
-//#define TEST_PARSER
+//#define TESTING_PARSER
 
 using System.Windows.Forms;
 using System.Data;
@@ -188,7 +188,7 @@ namespace oSpy
                 return;
             }
 
-#if TEST_PARSER
+#if TESTING_PARSER
             DumpParser parser = new DumpParser();
             parser.ParseProgressChanged += new ParseProgressChangedEventHandler(parser_ParseProgressChanged);
             parser.ParseCompleted += new ParseCompletedEventHandler(parser_ParseCompleted);
@@ -255,7 +255,7 @@ namespace oSpy
             dataGridView.DataSource = bindingSource;
         }
 
-#if TEST_PARSER
+#if TESTING_PARSER
         private Resource latestResource = null;
 
         private void parser_ParseProgressChanged(object sender, ParseProgressChangedEventArgs e)

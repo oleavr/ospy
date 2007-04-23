@@ -37,6 +37,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="BulkStorage.cs" />
+    <Compile Include="CryptoResource.cs" />
     <Compile Include="DataTransfer.cs" />
     <Compile Include="Dump.cs" />
     <Compile Include="DumpBuilder.cs">
