@@ -45,6 +45,9 @@ public:
 
         WideCharToMultiByte(CP_UTF8, 0, message, -1, const_cast<char *>(m_what.data()),
                             static_cast<int>(m_what.size()), NULL, NULL);
+
+        // Discard the NUL byte
+        m_what.resize(size - 1);
     }
 
     virtual const char* what() const throw()
