@@ -723,6 +723,9 @@ UnicodeString::ToString(void *start, bool deep, IPropertyProvider *propProv, Pro
     WideCharToMultiByte(CP_UTF8, 0, strPtr, -1, const_cast<char *>(result.data()),
                         static_cast<int>(result.size()), NULL, NULL);
 
+    // Discard the NUL byte
+    result.resize(size - 1);
+
     return result;
 }
 
@@ -782,6 +785,9 @@ UnicodeFormatString::ToString(void *start, bool deep, IPropertyProvider *propPro
 
     WideCharToMultiByte(CP_UTF8, 0, p, -1, const_cast<char *>(result.data()),
                         static_cast<int>(result.size()), NULL, NULL);
+
+    // Discard the NUL byte
+    result.resize(size - 1);
 
     return result;
 }
