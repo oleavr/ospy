@@ -371,9 +371,11 @@
         </dllModule>
 
         <!-- Internal functions -->
+        <!-- ...disabled for now due to invalid format strings sometimes being passed...
         <functions processName="msnmsgr.exe">
             <function specId="WLMDebug" sigId="WLMDebug" sigOffset="-11"/>
         </functions>
+        -->
 
         <!-- Internal vtables -->
         <vtables processName="msnmsgr.exe">
