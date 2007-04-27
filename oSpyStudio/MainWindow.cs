@@ -5,6 +5,7 @@ using System.ComponentModel;
 using oSpyStudio.Widgets;
 using oSpy.SharpDumpLib;
 using ICSharpCode.SharpZipLib.BZip2;
+using Gdl;
 
 internal enum DataTransferColumn
 {
@@ -20,11 +21,17 @@ public partial class MainWindow : Gtk.Window
     protected Gdk.Pixbuf socketPixbuf = null; 
     protected Gdk.Pixbuf securePixbuf = null; 
 
+	protected Gtk.TreeView processList;
+	protected Gtk.TreeView resourceList;
+	protected Gtk.TreeView dataTransferList;
 	protected Gtk.TreeStore processListStore;
 	protected Gtk.TreeStore resourceListStore;
     protected Gtk.TreeStore dataTransferListStore;
     
+    protected DataView dataView;
     protected Gtk.ListStore dataChunkStore;
+    
+    protected Gdl.Dock dock;
 
     private List<Process> selectedProcesses = new List<Process>();
 
@@ -39,7 +46,8 @@ public partial class MainWindow : Gtk.Window
         : base("")
     {
         this.Build();
-        
+
+		// Main widgets configuration        
         System.Reflection.Assembly asm = System.Reflection.Assembly.GetExecutingAssembly();
         incomingPixbuf = new Gdk.Pixbuf(asm, "incoming.png");
         outgoingPixbuf = new Gdk.Pixbuf(asm, "outgoing.png");
@@ -49,11 +57,14 @@ public partial class MainWindow : Gtk.Window
         dataChunkStore = new Gtk.ListStore(typeof(object), typeof(string), typeof(string));
 
 		processListStore = new Gtk.TreeStore(typeof(Process));
-		processList.Model = processListStore;
+		processList = new Gtk.TreeView(processListStore);
+		processList.HeadersVisible = false;
 		processList.AppendColumn("Process", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(processList_CellDataFunc));
+		processList.CursorChanged += new EventHandler(processList_CursorChanged);
 
 		resourceListStore = new Gtk.TreeStore(typeof(Resource));
-		resourceList.Model = resourceListStore;
+		resourceList = new Gtk.TreeView(resourceListStore);
+		resourceList.HeadersVisible = false;
 		Gtk.TreeViewColumn col = new Gtk.TreeViewColumn();
 		col.Title = "Resource";
 		Gtk.CellRendererPixbuf pbRenderer = new Gtk.CellRendererPixbuf();
@@ -63,12 +74,13 @@ public partial class MainWindow : Gtk.Window
 		col.SetCellDataFunc(pbRenderer, new Gtk.TreeCellDataFunc(resourceList_PixbufCellDataFunc));
 		col.SetCellDataFunc(txtRenderer, new Gtk.TreeCellDataFunc(resourceList_TextCellDataFunc));
 		resourceList.AppendColumn(col);
+		resourceList.CursorChanged += new EventHandler(resourceList_CursorChanged);
 
         dataTransferListStore = new Gtk.TreeStore(typeof(DataTransfer));
+        dataTransferList = new Gtk.TreeView(dataTransferListStore);
         dataTransferList.Selection.Mode = Gtk.SelectionMode.Multiple;
         dataTransferList.Selection.Changed += new EventHandler(dataTransferList_SelectionChanged);
-        dataTransferList.Model = dataTransferListStore;
-
+        
         dataTransferList.AppendColumn("", new Gtk.CellRendererPixbuf(), new Gtk.TreeCellDataFunc(dataTransferList_DirectionCellDataFunc));
         col = dataTransferList.AppendColumn("From", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_TextCellDataFunc));
         col.UserData = (IntPtr) DataTransferColumn.From;
@@ -76,9 +88,32 @@ public partial class MainWindow : Gtk.Window
         col.UserData = (IntPtr) DataTransferColumn.Size;
         col = dataTransferList.AppendColumn("Description", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_TextCellDataFunc));
         col.UserData = (IntPtr) DataTransferColumn.Description;
-
+		dataView = new DataView();
         dataView.Model = dataChunkStore;
+		
+		// Docking
+		dock = new Gdl.Dock();
+		Gdl.DockBar dockBar = new Gdl.DockBar(dock);
+		Gtk.Box workspace = new Gtk.HBox(false, 5);
+		workspace.PackStart(dockBar, false, false, 0);
+		workspace.PackEnd(dock, true, true, 0);
+		MainVBox.PackStart(workspace, true, true, 0);
+		
+		Gdl.DockItem processDock = getDockItem(processList, "process", "Process", Gtk.Stock.Execute);
+		dock.AddItem(processDock, DockPlacement.Left);
+		Gdl.DockItem resourceDock = getDockItem(resourceList, "resource", "Resource", Gtk.Stock.File);
+		dock.AddItem(resourceDock, DockPlacement.Center);
+		Gdl.DockItem dataTransferDock = getDockItem(dataTransferList, "datatransfer", "Data transfer", Gtk.Stock.File);
+		dock.AddItem(dataTransferDock, DockPlacement.Right);
+		Gdl.DockItem dataViewDock= getDockItem(dataView, "dataview", "Data view", Gtk.Stock.File);
+		dock.AddItem(dataViewDock, DockPlacement.Bottom);
+		
+		resourceDock.DockTo(dataTransferDock, DockPlacement.Left);
+		processDock.DockTo(resourceDock, DockPlacement.Left);
 
+		MainVBox.ShowAll();
+		
+		// Dump related objects
         dumpLoader = new DumpLoader();
         dumpLoader.LoadProgressChanged += new ProgressChangedEventHandler(curOperation_ProgressChanged);
         dumpLoader.LoadCompleted += new LoadCompletedEventHandler(dumpLoader_LoadCompleted);
@@ -86,7 +121,17 @@ public partial class MainWindow : Gtk.Window
         dumpParser = new DumpParser();
         dumpParser.ParseProgressChanged += new ParseProgressChangedEventHandler(dumpParser_ParseProgressChanged);
         dumpParser.ParseCompleted += new ParseCompletedEventHandler(dumpParser_ParseCompleted);
+        
     }
+
+	private Gdl.DockItem getDockItem(Gtk.Widget widget, string id, string label, string icon)
+	{
+		Gdl.DockItem dockItem = new Gdl.DockItem(id, label, icon, Gdl.DockItemBehavior.Normal);
+		Gtk.ScrolledWindow scroll = new Gtk.ScrolledWindow();
+		scroll.Add(widget);
+		dockItem.Add(scroll);
+		return dockItem;	
+	}
 
     protected virtual void processList_CursorChanged(object sender, System.EventArgs e)
     {

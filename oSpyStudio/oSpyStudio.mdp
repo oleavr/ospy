@@ -42,6 +42,8 @@
     <ProjectReference type="Gac" localcopy="True" refto="ICSharpCode.SharpZipLib, Version=2.84.0.0, Culture=neutral, PublicKeyToken=1b03e6acf1164f73" />
     <ProjectReference type="Project" localcopy="True" refto="oSpy.SharpDumpLib" />
     <ProjectReference type="Gac" localcopy="True" refto="Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756" />
+    <ProjectReference type="Gac" localcopy="True" refto="System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+    <ProjectReference type="Project" localcopy="True" refto="Gdl" />
   </References>
   <GtkDesignInfo partialTypes="True">
     <ExportedWidgets>
