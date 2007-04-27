@@ -4,11 +4,11 @@
       <itemgroup ref="Gtk.Widget" />
       <itemgroup label="DataView Properties">
         <property name="DataColIndex" />
+        <property name="LinePrefixTextColIndex" />
+        <property name="LinePrefixColorColIndex" />
         <property name="BorderWidth" />
         <property name="FocusHadjustment" />
         <property name="FocusVadjustment" />
-        <property name="LinePrefixTextColIndex" />
-        <property name="LinePrefixColorColIndex" />
       </itemgroup>
     </itemgroups>
     <signals>

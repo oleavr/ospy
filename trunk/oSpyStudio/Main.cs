@@ -1,4 +1,3 @@
-// project created on 4/12/2007 at 1:07 AM
 using System;
 using Gtk;
 

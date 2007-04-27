@@ -88,7 +88,7 @@
               </widget>
               <packing>
                 <property name="Position">1</property>
-                <property name="AutoSize">True</property>
+                <property name="AutoSize">False</property>
               </packing>
             </child>
             <child>
@@ -114,112 +114,7 @@ HEX</property>
           </packing>
         </child>
         <child>
-          <widget class="Gtk.VPaned" id="MainVPaned">
-            <property name="MemberName" />
-            <property name="CanFocus">True</property>
-            <property name="Position">110</property>
-            <child>
-              <widget class="Gtk.HBox" id="hbox1">
-                <property name="MemberName" />
-                <child>
-                  <widget class="Gtk.ScrolledWindow" id="processScrolledWindow">
-                    <property name="MemberName" />
-                    <property name="CanFocus">True</property>
-                    <property name="VscrollbarPolicy">Automatic</property>
-                    <property name="HscrollbarPolicy">Never</property>
-                    <child>
-                      <widget class="Gtk.TreeView" id="processList">
-                        <property name="MemberName" />
-                        <property name="CanFocus">True</property>
-                        <signal name="CursorChanged" handler="processList_CursorChanged" />
-                      </widget>
-                    </child>
-                  </widget>
-                  <packing>
-                    <property name="Position">0</property>
-                    <property name="AutoSize">False</property>
-                  </packing>
-                </child>
-                <child>
-                  <widget class="Gtk.ScrolledWindow" id="resourceScrolledwindow">
-                    <property name="MemberName" />
-                    <property name="CanFocus">True</property>
-                    <property name="VscrollbarPolicy">Automatic</property>
-                    <property name="HscrollbarPolicy">Never</property>
-                    <child>
-                      <widget class="Gtk.TreeView" id="resourceList">
-                        <property name="MemberName" />
-                        <property name="CanFocus">True</property>
-                        <signal name="CursorChanged" handler="resourceList_CursorChanged" />
-                      </widget>
-                    </child>
-                  </widget>
-                  <packing>
-                    <property name="Position">1</property>
-                    <property name="AutoSize">False</property>
-                  </packing>
-                </child>
-                <child>
-                  <widget class="Gtk.ScrolledWindow" id="dataTransferScrolledwindow">
-                    <property name="MemberName" />
-                    <property name="CanFocus">True</property>
-                    <property name="VscrollbarPolicy">Automatic</property>
-                    <property name="HscrollbarPolicy">Never</property>
-                    <child>
-                      <widget class="Gtk.TreeView" id="dataTransferList">
-                        <property name="MemberName" />
-                        <property name="CanFocus">True</property>
-                      </widget>
-                    </child>
-                  </widget>
-                  <packing>
-                    <property name="Position">2</property>
-                    <property name="AutoSize">False</property>
-                  </packing>
-                </child>
-              </widget>
-              <packing>
-                <property name="Resize">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="Gtk.VBox" id="vbox1">
-                <property name="MemberName" />
-                <child>
-                  <widget class="Gtk.Toolbar" id="toolbar1">
-                    <property name="MemberName" />
-                    <property name="ShowArrow">False</property>
-                    <property name="ButtonStyle">Icons</property>
-                    <node name="toolbar1" type="Toolbar" />
-                  </widget>
-                  <packing>
-                    <property name="Position">0</property>
-                    <property name="AutoSize">True</property>
-                    <property name="Expand">False</property>
-                    <property name="Fill">False</property>
-                  </packing>
-                </child>
-                <child>
-                  <widget class="oSpyStudio.Widgets.DataView" id="dataView">
-                    <property name="MemberName" />
-                    <property name="Events">ButtonPressMask</property>
-                    <property name="DataColIndex">0</property>
-                    <property name="BorderWidth">0</property>
-                    <property name="LinePrefixTextColIndex">1</property>
-                    <property name="LinePrefixColorColIndex">2</property>
-                  </widget>
-                  <packing>
-                    <property name="Position">1</property>
-                    <property name="AutoSize">False</property>
-                  </packing>
-                </child>
-              </widget>
-            </child>
-          </widget>
-          <packing>
-            <property name="Position">2</property>
-            <property name="AutoSize">False</property>
-          </packing>
+          <placeholder />
         </child>
         <child>
           <widget class="Gtk.Statusbar" id="statusBar">
