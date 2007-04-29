@@ -131,7 +131,7 @@ namespace oSpy
             }
             catch (Exception ex)
             {
-                MessageBox.Show(String.Format("Failed to process capture: {0}", ex.Message),
+                MessageBox.Show(String.Format("Failed to process capture: {0}\n{1}", ex.InnerException.Message, ex.InnerException.StackTrace),
                                 "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
