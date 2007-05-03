@@ -72,6 +72,8 @@ SetLogger(Logger *logger)
         delete prevLogger;
 }
 
+FARPROC Function::tlsGetValueFunc = NULL;
+DWORD Function::tlsIdx = 0xFFFFFFFF;
 const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 	{
 		{
@@ -328,6 +330,9 @@ Function::Function(FunctionSpec *spec, DWORD offset)
 void
 Function::Initialize()
 {
+    tlsGetValueFunc = GetProcAddress(LoadLibraryW(L"kernel32.dll"), "TlsGetValue");
+    tlsIdx = TlsAlloc();
+
 	for (int i = 0; i < sizeof(prologSignatureSpecs) / sizeof(PrologSignatureSpec); i++)
 	{
         prologSignatures.push_back(Signature(prologSignatureSpecs[i].sig.signature));
@@ -338,6 +343,8 @@ void
 Function::UnInitialize()
 {
     prologSignatures.clear();
+
+    TlsFree(tlsIdx);
 }
 
 OString
@@ -454,6 +461,9 @@ Function::Hook()
     stub->JMP_opcode = 0xE9;
     stub->JMP_offset = reinterpret_cast<DWORD>(trampoline) - (reinterpret_cast<DWORD>(reinterpret_cast<unsigned char *>(redirStub) + sizeof(FunctionRedirectStub)));
 
+    // HACK: make sure we start with a fresh timeslice
+    //       (we might be able to fix this later on by doing the swap atomically)
+    Sleep(0);
     memcpy(redirStub, buf, sizeof(buf));
     FlushInstructionCache(GetCurrentProcess(), NULL, 0);
 }
@@ -461,6 +471,8 @@ Function::Hook()
 void
 Function::UnHook()
 {
+    // HACK: see above
+    Sleep(0);
     memcpy(reinterpret_cast<void *>(m_offset), m_origStart, sizeof(m_origStart));
     FlushInstructionCache(GetCurrentProcess(), NULL, 0);
 
@@ -476,8 +488,18 @@ Function::OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, FunctionTramp
 	FunctionTrampoline *nextTrampoline;
 
 	__asm {
-											// *** We're coming in hot from the modified vtable through the trampoline ***
+											// *** We're coming in hot from the modified prolog/vtable through the trampoline ***
 
+                                            // First off, is this a nested call?
+        push [tlsIdx];
+        call [tlsGetValueFunc];
+        test eax, eax;
+        jz NOT_NESTED;
+
+        add [esp], 4;                       // We're in a nested call, just short-circuit this trampoline.
+        ret;
+
+NOT_NESTED:
 		sub esp, 12;						//  1. Reserve space for the last 3 arguments.
 
 		push 16;							//  2. Set unwindSize to the size of the last 4 arguments.
@@ -502,6 +524,8 @@ Function::OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, FunctionTramp
 	}
 
 	lastError = GetLastError();
+
+    TlsSetValue(tlsIdx, reinterpret_cast<LPVOID>(1));
 
 	function = static_cast<Function *>(trampoline->data);
 	nextTrampoline = function->OnEnterWrapper(&cpuCtx, &unwindSize, trampoline, finalRet, &lastError);
@@ -536,7 +560,7 @@ Function::OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, FunctionT
 	call->SetCpuContextLive(cpuCtx);
 	call->SetLastErrorLive(lastError);
 
-	OnEnter(call);
+    OnEnter(call);
 
 	bool carryOn = call->GetShouldCarryOn();
 
@@ -564,7 +588,9 @@ Function::OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, FunctionT
 		return retTrampoline;
 	}
 	else
-	{	
+    {
+        TlsSetValue(tlsIdx, NULL);
+
 		// Clear off the proxy return address.
 		*unwindSize += sizeof(void *);
 
@@ -618,6 +644,8 @@ Function::OnLeaveProxy(CpuContext cpuCtx, FunctionTrampoline *trampoline)
 
 	call = static_cast<FunctionCall *>(trampoline->data);
 	call->GetFunction()->OnLeaveWrapper(&cpuCtx, trampoline, call, &lastError);
+
+    TlsSetValue(tlsIdx, NULL);
 
     SetLastError(lastError);
 

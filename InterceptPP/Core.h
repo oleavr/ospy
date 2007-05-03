@@ -243,6 +243,8 @@ public:
 protected:
     FunctionSpec *m_spec;
     DWORD m_offset;
+    static FARPROC tlsGetValueFunc;
+    static DWORD tlsIdx;
     static const PrologSignatureSpec prologSignatureSpecs[];
     static OVector<Signature>::Type prologSignatures;
 
