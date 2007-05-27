@@ -63,7 +63,8 @@ public:
     Logging::Node *CreateBacktraceNode(void *address);
 
 private:
-    static bool OnLoadLibrary(FunctionCall *call);
+	static void OnLoadLibrary(FunctionCall *call, void *userData, bool &shouldLog);
+
 	OModuleInfo *GetModuleInfoForAddress(DWORD address);
 
 	CRITICAL_SECTION m_cs;

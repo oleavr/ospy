@@ -156,7 +156,7 @@
         <functions>
             <!-- Winsock -->
             <!-- FIXME: should have a built-in SockAddrAuto type instead of assuming AF_INET -->
-            <function name="socket">
+            <function name="socket" callingConvention="stdcall">
                 <returnValue type="UInt32" hex="true"/>
                 <arguments>
                     <argument name="af" direction="in" type="SockAddrFamily"/>
@@ -165,13 +165,13 @@
                               typeNameBase="arg.af" typeNameSuffix="_Protocol"/>
                 </arguments>
             </function>
-            <function name="closesocket">
+            <function name="closesocket" callingConvention="stdcall">
                 <returnValue type="Int32"/>
                 <arguments>
                     <argument name="s" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
-            <function name="connect">
+            <function name="connect" callingConvention="stdcall">
                 <returnValue type="Int32"/>
                 <arguments>
                     <argument name="s" direction="in" type="UInt32" hex="true"/>
@@ -179,7 +179,7 @@
                     <argument name="namelen" direction="in" type="Int32"/>
                 </arguments>
             </function>
-            <function name="recv">
+            <function name="recv" callingConvention="stdcall">
                 <returnValue type="Int32"/>
                 <arguments>
                     <argument name="s" direction="in" type="UInt32" hex="true"/>
@@ -188,7 +188,7 @@
                     <argument name="flags" direction="in" type="Int32" hex="true"/>
                 </arguments>
             </function>
-            <function name="send">
+            <function name="send" callingConvention="stdcall">
                 <returnValue type="Int32"/>
                 <arguments>
                     <argument name="s" direction="in" type="UInt32" hex="true"/>
@@ -197,7 +197,7 @@
                     <argument name="flags" direction="in" type="Int32" hex="true"/>
                 </arguments>
             </function>
-            <function name="recvfrom">
+            <function name="recvfrom" callingConvention="stdcall">
                 <returnValue type="Int32"/>
                 <arguments>
                     <argument name="s" direction="in" type="UInt32" hex="true"/>
@@ -208,7 +208,7 @@
                     <argument name="fromlen" direction="out" type="Int32Ptr"/>
                 </arguments>
             </function>
-            <function name="sendto">
+            <function name="sendto" callingConvention="stdcall">
                 <returnValue type="Int32"/>
                 <arguments>
                     <argument name="s" direction="in" type="UInt32" hex="true"/>
@@ -219,7 +219,7 @@
                     <argument name="tolen" direction="in" type="Int32"/>
                 </arguments>
             </function>
-            <function name="WSAConnect">
+            <function name="WSAConnect" callingConvention="stdcall">
                 <returnValue type="Int32"/>
                 <arguments>
                     <argument name="s" direction="in" type="UInt32" hex="true"/>
@@ -231,7 +231,7 @@
                     <argument name="lpGQOS" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
-            <function name="WSARecv">
+            <function name="WSARecv" callingConvention="stdcall">
                 <returnValue type="Int32"/>
                 <arguments>
                     <argument name="s" direction="in" type="UInt32" hex="true"/>
@@ -244,7 +244,7 @@
                     <argument name="lpCompletionRoutine" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
-            <function name="WSASend">
+            <function name="WSASend" callingConvention="stdcall">
                 <returnValue type="Int32"/>
                 <arguments>
                     <argument name="s" direction="in" type="UInt32" hex="true"/>
@@ -259,7 +259,7 @@
             </function>
 
             <!-- Secur32 -->
-            <function name="EncryptMessage">
+            <function name="EncryptMessage" callingConvention="stdcall">
                 <returnValue type="Int32"/>
                 <arguments>
                     <argument name="phContext" direction="in" type="UInt32" hex="true"/>
@@ -268,7 +268,7 @@
                     <argument name="MessageSeqNo" direction="in" type="UInt32"/>
                 </arguments>
             </function>
-            <function name="DecryptMessage">
+            <function name="DecryptMessage" callingConvention="stdcall">
                 <returnValue type="Int32"/>
                 <arguments>
                     <argument name="phContext" direction="in" type="UInt32" hex="true"/>
@@ -279,7 +279,7 @@
             </function>
 
             <!-- WinCrypt -->
-            <function name="CryptAcquireContextA">
+            <function name="CryptAcquireContextA" callingConvention="stdcall">
                 <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
                 <arguments>
                     <argument name="phProv" direction="out" type="UInt32Ptr" hex="true"/>
@@ -289,7 +289,7 @@
                     <argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
-            <function name="CryptAcquireContextW">
+            <function name="CryptAcquireContextW" callingConvention="stdcall">
                 <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
                 <arguments>
                     <argument name="phProv" direction="out" type="UInt32Ptr" hex="true"/>
@@ -299,14 +299,14 @@
                     <argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
-            <function name="CryptReleaseContext">
+            <function name="CryptReleaseContext" callingConvention="stdcall">
                 <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
                 <arguments>
                     <argument name="hProv" direction="in" type="UInt32" hex="true"/>
                     <argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
-            <function name="CryptCreateHash">
+            <function name="CryptCreateHash" callingConvention="stdcall">
                 <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
                 <arguments>
                     <argument name="hProv" direction="in" type="UInt32" hex="true"/>
@@ -316,13 +316,13 @@
                     <argument name="phHash" direction="out" type="UInt32Ptr" hex="true"/>
                 </arguments>
             </function>
-            <function name="CryptDestroyHash">
+            <function name="CryptDestroyHash" callingConvention="stdcall">
                 <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
                 <arguments>
                     <argument name="hHash" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
-            <function name="CryptHashData">
+            <function name="CryptHashData" callingConvention="stdcall">
                 <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
                 <arguments>
                     <argument name="hHash" direction="in" type="UInt32" hex="true"/>
@@ -333,7 +333,7 @@
             </function>
 
             <!-- Registry -->
-            <function name="RegOpenKeyExW">
+            <function name="RegOpenKeyExW" callingConvention="stdcall">
                 <returnValue type="UInt32"/>
                 <arguments>
                     <argument name="hKey" direction="in" type="RegKeyHandle"/>

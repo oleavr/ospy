@@ -30,6 +30,14 @@
 
 #define MAX_SOFTWALL_RULES   128
 
+#define SOFTWALL_CONDITION_PROCESS_NAME    1
+#define SOFTWALL_CONDITION_FUNCTION_NAME   2
+#define SOFTWALL_CONDITION_RETURN_ADDRESS  4
+#define SOFTWALL_CONDITION_LOCAL_ADDRESS   8
+#define SOFTWALL_CONDITION_LOCAL_PORT     16
+#define SOFTWALL_CONDITION_PEER_ADDRESS   32
+#define SOFTWALL_CONDITION_PEER_PORT      64
+
 typedef struct {
     /* mask of conditions */
     DWORD Conditions;
@@ -37,11 +45,11 @@ typedef struct {
     /* condition values */
     char ProcessName[32];
     char FunctionName[16];
-    DWORD ReturnAddress;
+    void *ReturnAddress;
     in_addr LocalAddress;
     int LocalPort;
-    in_addr RemoteAddress;
-    int RemotePort;
+    in_addr PeerAddress;
+    int PeerPort;
 
     /* return value and lasterror to set if all conditions match */
     int Retval;
@@ -71,4 +79,10 @@ public:
 protected:
     HANDLE m_map;
     Capture *m_capture;
+    OICString m_processName;
+
+	static void OnSocketConnectWrapper(FunctionCall *call, void *userData, bool &shouldLog);
+	void OnSocketConnect(FunctionCall *call);
+
+    bool HaveMatchingSoftwallRule(const OString &functionName, void *returnAddress, const sockaddr_in *localAddress, const sockaddr_in *peerAddress, DWORD &retval, DWORD &lastError);
 };

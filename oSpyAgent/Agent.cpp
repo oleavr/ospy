@@ -57,6 +57,8 @@ Agent::Initialize()
         InterceptPP::SetLogger(new BinaryLogger(this, ss.str()));
     }
 
+    m_processName = Util::Instance()->GetProcessName().c_str();
+
     // Load hook definitions from XML
     HookManager *mgr = HookManager::Instance();
     try
@@ -68,11 +70,140 @@ Agent::Initialize()
     catch (Error &e)
     {
         GetLogger()->LogError("LoadDefinitions failed: %s", e.what());
+		return;
     }
     catch (...)
     {
         GetLogger()->LogError("LoadDefinitions failed: unknown error");
+		return;
     }
+
+	// Trap calls to socket functions for softwalling
+	FunctionSpec *funcSpec = mgr->GetFunctionSpecById("connect");
+    if (funcSpec != NULL)
+	    funcSpec->SetHandler(OnSocketConnectWrapper, this);
+}
+
+void
+Agent::OnSocketConnectWrapper(FunctionCall *call, void *userData, bool &shouldLog)
+{
+	Agent *self = static_cast<Agent *>(userData);
+	self->OnSocketConnect(call);
+}
+
+void
+Agent::OnSocketConnect(FunctionCall *call)
+{
+    if (call->GetState() != FUNCTION_CALL_ENTERING)
+        return;
+
+    char *argumentList = const_cast<char *>(call->GetArgumentsData().c_str());
+    struct sockaddr_in *peerAddr = *reinterpret_cast<struct sockaddr_in **>(argumentList + sizeof(SOCKET));
+    if (peerAddr->sin_family != AF_INET)
+        return;
+
+    DWORD retval, lastError;
+    if (!HaveMatchingSoftwallRule("connect", call->GetReturnAddress(),
+        NULL, peerAddr, retval, lastError))
+    {
+        return;
+    }
+
+    call->SetShouldCarryOn(false);
+    call->GetCpuContextLive()->eax = retval;
+    *(call->GetLastErrorLive()) = lastError;
+}
+
+#if 0
+    const void *argumentList = call->GetArgumentsData().c_str();
+    SOCKET s = *static_cast<const SOCKET *>(argumentList);    
+
+    struct sockaddr_in localAddr, peerAddr;
+    int sinLen;
+
+    sinLen = sizeof(localAddr);
+    getsockname(s, reinterpret_cast<struct sockaddr *>(&localAddr), &sinLen);
+
+    sinLen = sizeof(peerAddr);
+    getpeername(s, reinterpret_cast<struct sockaddr *>(&peerAddr), &sinLen);
+#endif
+
+bool
+Agent::HaveMatchingSoftwallRule(const OString &functionName,
+                                void *returnAddress,
+                                const sockaddr_in *localAddress,
+                                const sockaddr_in *peerAddress,
+                                DWORD &retval,
+                                DWORD &lastError)
+{
+    GetLogger()->LogDebug("Checking %s against %d rules", functionName.c_str(), m_capture->NumSoftwallRules);
+
+    for (int i = 0; i < m_capture->NumSoftwallRules; i++)
+    {
+        SoftwallRule *rule = &m_capture->rules[i];
+
+        if ((rule->Conditions & SOFTWALL_CONDITION_PROCESS_NAME) != 0)
+        {
+            if (m_processName != rule->ProcessName)
+                continue;
+        }
+
+        if ((rule->Conditions & SOFTWALL_CONDITION_FUNCTION_NAME) != 0)
+        {
+            if (functionName != rule->FunctionName)
+                continue;
+        }
+
+        if ((rule->Conditions & SOFTWALL_CONDITION_RETURN_ADDRESS) != 0)
+        {
+            if (returnAddress != rule->ReturnAddress)
+                continue;
+        }
+        
+        if ((rule->Conditions & SOFTWALL_CONDITION_LOCAL_ADDRESS) != 0)
+        {
+            if (localAddress == NULL ||
+                memcmp(&localAddress->sin_addr, &rule->LocalAddress, sizeof(in_addr)) != 0)
+            {
+                continue;
+            }
+        }
+
+        if ((rule->Conditions & SOFTWALL_CONDITION_LOCAL_PORT) != 0)
+        {
+            if (localAddress == NULL || localAddress->sin_port != rule->LocalPort)
+            {
+                continue;
+            }
+        }
+
+        if ((rule->Conditions & SOFTWALL_CONDITION_PEER_ADDRESS) != 0)
+        {
+            if (peerAddress == NULL ||
+                memcmp(&peerAddress->sin_addr, &rule->PeerAddress, sizeof(in_addr)) != 0)
+            {
+                continue;
+            }
+        }
+
+        if ((rule->Conditions & SOFTWALL_CONDITION_PEER_PORT) != 0)
+        {
+            if (peerAddress == NULL || peerAddress->sin_port != rule->PeerPort)
+            {
+                continue;
+            }
+        }
+
+        retval = rule->Retval;
+        lastError = rule->LastError;
+
+        GetLogger()->LogDebug("Matched, setting retval to %d and lastError to %d", retval, lastError);
+
+        return true;
+    }
+
+    GetLogger()->LogDebug("No match");
+    return false;
 }
 
 void

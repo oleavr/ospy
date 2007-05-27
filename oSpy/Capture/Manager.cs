@@ -127,28 +127,6 @@ namespace oSpy.Capture
 
         public const int MAX_SOFTWALL_RULES = 128;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Ansi)]
-        public struct SoftwallRule
-        {
-            /* mask of conditions */
-            public Int32 Conditions;
-
-            /* condition values */
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-            public string ProcessName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
-            public string FunctionName;
-            public UInt32 ReturnAddress;
-            public UInt32 LocalAddress;
-            public UInt32 LocalPort;
-            public UInt32 RemoteAddress;
-            public UInt32 RemotePort;
-
-            /* return value and lasterror to set if all conditions match */
-            public Int32 Retval;
-            public UInt32 LastError;
-        }
-
         [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
         public struct Capture
         {
@@ -159,10 +137,11 @@ namespace oSpy.Capture
 
             public UInt32 NumSoftwallRules;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = MAX_SOFTWALL_RULES)]
-            public SoftwallRule[] SoftwallRules;
+            public Softwall.Rule[] SoftwallRules;
         }
 
         private Process[] processes = null;
+        private Softwall.Rule[] softwallRules = null;
         private IntPtr[] handles = null;
         private IProgressFeedback progress = null;
 
@@ -191,9 +170,10 @@ namespace oSpy.Capture
         {
         }
 
-        public void StartCapture(Process[] processes, IProgressFeedback progress)
+        public void StartCapture(Process[] processes, Softwall.Rule[] softwallRules, IProgressFeedback progress)
         {
             this.processes = processes;
+            this.softwallRules = softwallRules;
             this.progress = progress;
 
             Thread th = new Thread(StartCaptureThread);
@@ -223,7 +203,7 @@ namespace oSpy.Capture
         {
             try
             {
-                PrepareCapture(processes);
+                PrepareCapture(processes, softwallRules);
 
                 DoInjection();
             }
@@ -256,7 +236,7 @@ namespace oSpy.Capture
             progress.OperationComplete();
         }
 
-        private void PrepareCapture(Process[] processes)
+        private void PrepareCapture(Process[] processes, Softwall.Rule[] softwallRules)
         {
             progress.ProgressUpdate("Preparing capture", 100);
 
@@ -294,16 +274,14 @@ namespace oSpy.Capture
             Marshal.WriteInt32(logSizePtr, 0);
 
             // Initialize softwall rules
-            SoftwallRule[] rules = new SoftwallRule[0];
-
-            Marshal.WriteInt32(cfgPtr, Marshal.OffsetOf(typeof(Capture), "NumSoftwallRules").ToInt32(), rules.Length);
+            Marshal.WriteInt32(cfgPtr, Marshal.OffsetOf(typeof(Capture), "NumSoftwallRules").ToInt32(), softwallRules.Length);
 
             ptr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(Capture), "SoftwallRules").ToInt64());
-            foreach (SoftwallRule rule in rules)
+            foreach (Softwall.Rule rule in softwallRules)
             {
                 Marshal.StructureToPtr(rule, ptr, false);
 
-                ptr = (IntPtr)(ptr.ToInt64() + Marshal.SizeOf(typeof(SoftwallRule)));
+                ptr = (IntPtr)(ptr.ToInt64() + Marshal.SizeOf(typeof(Softwall.Rule)));
             }
 
             // Copy configuration XML
