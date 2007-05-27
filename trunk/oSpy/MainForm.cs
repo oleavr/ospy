@@ -88,7 +88,7 @@ namespace oSpy
                 return;
 
             NewOperation("Starting capture");
-            captureMgr.StartCapture(processes, curProgress);
+            captureMgr.StartCapture(processes, swForm.GetRules(), curProgress);
 
             if (curProgress.ShowDialog(this) != DialogResult.OK)
             {

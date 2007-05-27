@@ -255,7 +255,8 @@ FunctionSpec::FunctionSpec(const OString &name,
 	  m_argsSize(argsSize),
       m_argList(NULL),
       m_retValMarshaller(NULL),
-	  m_handler(handler)
+	  m_handler(handler),
+	  m_handlerUserData(NULL)
 {
 }
 
@@ -566,10 +567,13 @@ Function::OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, FunctionT
 
 	FunctionSpec *spec = call->GetFunction()->GetSpec();
 	CallingConvention conv = spec->GetCallingConvention();
-	if (conv == CALLING_CONV_UNKNOWN ||
-		(conv != CALLING_CONV_CDECL && spec->GetArgsSize() == FUNCTION_ARGS_SIZE_UNKNOWN))
+	if (!carryOn && (conv == CALLING_CONV_UNKNOWN ||
+		    (conv != CALLING_CONV_CDECL && spec->GetArgsSize() == FUNCTION_ARGS_SIZE_UNKNOWN)))
 	{
-		// TODO: log a warning here
+        Logger *logger = GetLogger();
+        if (logger != NULL)
+            logger->LogWarning("Ignoring ShouldCarryOn override for %s because of lack of information",
+                spec->GetName().c_str());
 		carryOn = true;
 	}
 
@@ -684,10 +688,14 @@ Function::OnLeaveWrapper(CpuContext *cpuCtx, FunctionTrampoline *trampoline, Fun
 void
 Function::OnEnter(FunctionCall *call)
 {
+	bool shouldLog = true;
 	FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetHandler();
 
-	if (handler == NULL || !handler(call))
-	{        
+	if (handler != NULL)
+		handler(call, call->GetFunction()->GetSpec()->GetHandlerUserData(), shouldLog);
+
+	if (shouldLog)
+	{
         Logging::Event *ev = GetLogger()->NewEvent("FunctionCall");
 
         Logging::TextNode *textNode = new Logging::TextNode("name", GetFullName());
@@ -697,16 +705,23 @@ Function::OnEnter(FunctionCall *call)
         call->AppendCpuContextToElement(ev);
         call->AppendArgumentsToElement(ev);
 
-        call->SetUserData(ev);
+        if (call->GetShouldCarryOn())
+            call->SetUserData(ev);
+        else
+            ev->Submit();
 	}
 }
 
 void
 Function::OnLeave(FunctionCall *call)
 {
+	bool shouldLog = true;
 	FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetHandler();
 
-	if (handler == NULL || !handler(call))
+	if (handler != NULL)
+		handler(call, call->GetFunction()->GetSpec()->GetHandlerUserData(), shouldLog);
+
+	if (shouldLog)
 	{
         Logging::Event *ev = static_cast<Logging::Event *>(call->GetUserData());
         if (ev != NULL)

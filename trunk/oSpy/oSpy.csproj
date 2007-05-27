@@ -60,6 +60,7 @@
     <Compile Include="ProgressForm.Designer.cs">
       <DependentUpon>ProgressForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Softwall.cs" />
     <Compile Include="SoftwallForm.cs">
       <SubType>Form</SubType>
     </Compile>

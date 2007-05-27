@@ -90,7 +90,7 @@ typedef struct {
 
 class FunctionCall;
 
-typedef bool (*FunctionCallHandler) (FunctionCall *call);
+typedef void (*FunctionCallHandler) (FunctionCall *call, void *userData, bool &shouldLog);
 
 class ArgumentSpec : public BaseObject
 {
@@ -210,7 +210,8 @@ public:
 	void SetArgsSize(int size) { m_argsSize = size; }
 
 	FunctionCallHandler GetHandler() const { return m_handler; }
-	void SetHandler(FunctionCallHandler handler) { m_handler = handler; }
+	void *GetHandlerUserData() const { return m_handlerUserData; }
+	void SetHandler(FunctionCallHandler handler, void *userData=NULL) { m_handler = handler; m_handlerUserData = userData; }
 
 protected:
 	OString m_name;
@@ -219,6 +220,7 @@ protected:
     ArgumentListSpec *m_argList;
     BaseMarshaller *m_retValMarshaller;
 	FunctionCallHandler m_handler;
+	void *m_handlerUserData;
 };
 
 class Function : public BaseObject

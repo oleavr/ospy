@@ -231,6 +231,15 @@ HookManager::Reset()
     m_signatures.clear();
 }
 
+FunctionSpec *
+HookManager::GetFunctionSpecById(const OString &id)
+{
+	if (m_funcSpecs.find(id) != m_funcSpecs.end())
+		return m_funcSpecs[id];
+	else
+		return NULL;
+}
+
 void
 HookManager::ParseTypeNode(MSXML2::IXMLDOMNodePtr &typeNode)
 {

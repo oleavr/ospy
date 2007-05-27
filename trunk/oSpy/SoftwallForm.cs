@@ -290,76 +290,74 @@ namespace oSpy
             ruleListView.SelectedIndices.Add(ruleListView.Items.Count - 1);
         }
 
-#if false
-        public AgentListener.SoftwallRule[] GetRules()
+        public Softwall.Rule[] GetRules()
         {
             DataRowCollection rows = softwallDataSet.Tables[0].Rows;
 
-            List<AgentListener.SoftwallRule> rules = new List<AgentListener.SoftwallRule>(rows.Count);
+            List<Softwall.Rule> rules = new List<Softwall.Rule>(rows.Count);
             foreach (DataRow row in rows)
             {
-                AgentListener.SoftwallRule rule = new AgentListener.SoftwallRule();
+                Softwall.Rule rule = new Softwall.Rule();
 
-                rule.conditions = 0;
+                rule.Conditions = 0;
 
                 object obj = row["ProcessName"];
                 if (!(obj is DBNull))
                 {
-                    rule.conditions |= AgentListener.SOFTWALL_CONDITION_PROCESS_NAME;
-                    rule.process_name = obj as string;
+                    rule.Conditions |= Softwall.CONDITION_PROCESS_NAME;
+                    rule.ProcessName = obj as string;
                 }
 
                 obj = row["FunctionName"];
                 if (!(obj is DBNull))
                 {
-                    rule.conditions |= AgentListener.SOFTWALL_CONDITION_FUNCTION_NAME;
-                    rule.function_name = obj as string;
+                    rule.Conditions |= Softwall.CONDITION_FUNCTION_NAME;
+                    rule.FunctionName = obj as string;
                 }
 
                 obj = row["ReturnAddress"];
                 if (!(obj is DBNull))
                 {
-                    rule.conditions |= AgentListener.SOFTWALL_CONDITION_RETURN_ADDRESS;
-                    rule.return_address = (UInt32) obj;
+                    rule.Conditions |= Softwall.CONDITION_RETURN_ADDRESS;
+                    rule.ReturnAddress = (UInt32) obj;
                 }
 
                 obj = row["LocalAddress"];
                 if (!(obj is DBNull))
                 {
-                    rule.conditions |= AgentListener.SOFTWALL_CONDITION_LOCAL_ADDRESS;
-                    rule.local_address = IPAddrFromStr(obj as string);
+                    rule.Conditions |= Softwall.CONDITION_LOCAL_ADDRESS;
+                    rule.LocalAddress = IPAddrFromStr(obj as string);
                 }
 
                 obj = row["LocalPort"];
                 if (!(obj is DBNull))
                 {
-                    rule.conditions |= AgentListener.SOFTWALL_CONDITION_LOCAL_PORT;
-                    rule.local_port = PortToBigEndian((UInt16) obj);
+                    rule.Conditions |= Softwall.CONDITION_LOCAL_PORT;
+                    rule.LocalPort = PortToBigEndian((UInt16) obj);
                 }
 
                 obj = row["RemoteAddress"];
                 if (!(obj is DBNull))
                 {
-                    rule.conditions |= AgentListener.SOFTWALL_CONDITION_REMOTE_ADDRESS;
-                    rule.remote_address = IPAddrFromStr(obj as string);
+                    rule.Conditions |= Softwall.CONDITION_PEER_ADDRESS;
+                    rule.RemoteAddress = IPAddrFromStr(obj as string);
                 }
 
                 obj = row["RemotePort"];
                 if (!(obj is DBNull))
                 {
-                    rule.conditions |= AgentListener.SOFTWALL_CONDITION_REMOTE_PORT;
-                    rule.remote_port = PortToBigEndian((UInt16) obj);
+                    rule.Conditions |= Softwall.CONDITION_PEER_PORT;
+                    rule.RemotePort = PortToBigEndian((UInt16) obj);
                 }
 
-                rule.retval = (Int32) row["ReturnValue"];
-                rule.last_error = (UInt32) row["LastError"];
+                rule.Retval = (Int32) row["ReturnValue"];
+                rule.LastError = (UInt32) row["LastError"];
 
                 rules.Add(rule);
             }
 
             return rules.ToArray();
         }
-#endif
 
         private UInt32 IPAddrFromStr(string str)
         {

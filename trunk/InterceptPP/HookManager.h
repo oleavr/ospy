@@ -54,6 +54,8 @@ public:
     unsigned int GetFunctionCount() const { return static_cast<unsigned int>(m_functions.size()); }
     unsigned int GetVTableCount() const { return static_cast<unsigned int>(m_vtables.size()); }
 
+	FunctionSpec *GetFunctionSpecById(const OString &id);
+
 protected:
     typedef OMap<OString, FunctionSpec *>::Type FunctionSpecMap;
     typedef OMap<OString, VTableSpec *>::Type VTableSpecMap;

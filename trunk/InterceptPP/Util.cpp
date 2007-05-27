@@ -115,15 +115,15 @@ Util::UnInitialize()
     m_highestAddress = 0;
 }
 
-bool
-Util::OnLoadLibrary(FunctionCall *call)
+void
+Util::OnLoadLibrary(FunctionCall *call, void *userData, bool &shouldLog)
 {
     if (call->GetState() == FUNCTION_CALL_LEAVING)
     {
         Instance()->UpdateModuleList();
     }
 
-    return true;
+	shouldLog = false;
 }
 
 void
