@@ -36,7 +36,7 @@ class DebugExtractor:
         funcs = Functions(*self._range)
 
         print "Parsing functions"
-        print "  0%%"
+        print "  0%"
         for ea in funcs:
             chunks = []
             names = []
