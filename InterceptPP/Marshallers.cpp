@@ -165,6 +165,9 @@ Factory::Factory()
     REGISTER_MARSHALLER(UInt32Ptr);
     REGISTER_MARSHALLER(Int32);
     REGISTER_MARSHALLER(Int32Ptr);
+    REGISTER_MARSHALLER(Boolean);
+    REGISTER_MARSHALLER(CPPBool);
+    REGISTER_MARSHALLER(MSBool);    
     REGISTER_MARSHALLER(Array);
     REGISTER_MARSHALLER(ArrayPtr);
     REGISTER_MARSHALLER(ByteArray);
@@ -511,6 +514,66 @@ Integer<T>::ToUInt(void *start, unsigned int &result) const
 
     result = i;
     return true;
+}
+
+Boolean::Boolean()
+    : BaseMarshaller("Boolean"), m_marshaller(new UInt8())
+{
+}
+
+Boolean::Boolean(BaseMarshaller *marshaller)
+    : BaseMarshaller("Boolean"), m_marshaller(marshaller)
+{
+}
+
+Boolean::Boolean(const Boolean &b)
+    : BaseMarshaller("Boolean"), m_marshaller(b.m_marshaller->Clone())
+{
+}
+
+Boolean::~Boolean()
+{
+    delete m_marshaller;
+}
+
+bool
+Boolean::SetProperty(const OString &name, const OString &value)
+{
+    if (name != "size")
+        return false;
+
+    BaseMarshaller *marshaller = NULL;
+    int size = atoi(value.c_str());
+
+    switch (size)
+    {
+        case 1:
+            marshaller = new UInt8();
+            break;
+        case 2:
+            marshaller = new UInt16();
+            break;
+        case 4:
+            marshaller = new UInt32();
+            break;
+        default:
+            return false;
+    }
+
+    delete m_marshaller;
+    m_marshaller = marshaller;
+
+    return true;
+}
+
+OString
+Boolean::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
+{
+    int value;
+    if (m_marshaller == NULL || !m_marshaller->ToInt(start, value))
+        return "unknown";
+
+    return (value) ? "true" : "false";
 }
 
 Array::Array()

@@ -142,18 +142,71 @@
         <!-- Windows Live Messenger -->
         <structure name="P2PBridgeProperties">
             <field name="field_0" offset="0" type="UInt32"/>
-            <field name="field_4" offset="4" type="UInt32"/>
+            <field name="field_4" offset="4" type="CPPBool"/>
             <field name="field_8" offset="8" type="UInt32"/>
             <field name="field_C" offset="0xC" type="UInt32"/>
-            <field name="field_10" offset="0x10" type="UInt32"/>
-            <field name="field_14" offset="0x14" type="UInt32"/>
+            <field name="Priority" offset="0x10" type="UInt32"/>
+            <field name="MaxChunkSize" offset="0x14" type="UInt32"/>
             <field name="field_18" offset="0x18" type="UInt32"/>
+            <field name="field_1C" offset="0x1C" type="UInt32"/>
             <field name="field_20" offset="0x20" type="UInt32"/>
         </structure>
     </types>
 
     <specs>
         <functions>
+            <!-- kernel32 -->
+            <function name="WaitForSingleObject" callingConvention="stdcall">
+                <returnValue type="UInt32" hex="true"/>
+                <arguments>
+                    <argument name="hHandle" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwMilliseconds" direction="in" type="UInt32"/>
+                </arguments>
+            </function>
+            <function name="WaitForSingleObjectEx" callingConvention="stdcall">
+                <returnValue type="UInt32" hex="true"/>
+                <arguments>
+                    <argument name="hHandle" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwMilliseconds" direction="in" type="UInt32"/>
+                    <argument name="bAlertable" direction="in" type="UInt32"/>
+                </arguments>
+            </function>
+            <function name="WaitForMultipleObjects" callingConvention="stdcall">
+                <returnValue type="UInt32" hex="true"/>
+                <arguments>
+                    <argument name="nCount" direction="in" type="UInt32"/>
+                    <argument name="lpHandles" direction="in" type="ArrayPtr"
+                        elementType="UInt32" elementCount="arg.nCount"/>
+                    <argument name="bWaitAll" direction="in" type="UInt32"/>
+                    <argument name="dwMilliseconds" direction="in" type="UInt32"/>
+                </arguments>
+            </function>
+            <function name="WaitForMultipleObjectsEx" callingConvention="stdcall">
+                <returnValue type="UInt32" hex="true"/>
+                <arguments>
+                    <argument name="nCount" direction="in" type="UInt32"/>
+                    <argument name="lpHandles" direction="in" type="ArrayPtr"
+                        elementType="UInt32" elementCount="arg.nCount"/>
+                    <argument name="bWaitAll" direction="in" type="UInt32"/>
+                    <argument name="dwMilliseconds" direction="in" type="UInt32"/>
+                    <argument name="bAlertable" direction="in" type="UInt32"/>
+                </arguments>
+            </function>
+            <function name="GetTickCount">
+                <returnValue type="UInt32"/>
+            </function>
+
+            <!-- user32 -->
+            <function name="SetTimer">
+                <returnValue type="UInt32" hex="true"/>
+                <arguments>
+                    <argument name="hWnd" direction="in" type="UInt32" hex="true"/>
+                    <argument name="nIDEvent" direction="in" type="UInt32" hex="true"/>
+                    <argument name="uElapse" direction="in" type="UInt32"/>
+                    <argument name="lpTimerFunc" direction="in" type="UInt32" hex="true"/>
+                </arguments>
+            </function>
+
             <!-- Winsock -->
             <!-- FIXME: should have a built-in SockAddrAuto type instead of assuming AF_INET -->
             <function name="socket" callingConvention="stdcall">
@@ -280,7 +333,7 @@
 
             <!-- WinCrypt -->
             <function name="CryptAcquireContextA" callingConvention="stdcall">
-                <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
+                <returnValue type="MSBool"/>
                 <arguments>
                     <argument name="phProv" direction="out" type="UInt32Ptr" hex="true"/>
                     <argument name="pszContainer" direction="in" type="AsciiStringPtr"/>
@@ -290,7 +343,7 @@
                 </arguments>
             </function>
             <function name="CryptAcquireContextW" callingConvention="stdcall">
-                <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
+                <returnValue type="MSBool"/>
                 <arguments>
                     <argument name="phProv" direction="out" type="UInt32Ptr" hex="true"/>
                     <argument name="pszContainer" direction="in" type="UnicodeStringPtr"/>
@@ -300,14 +353,14 @@
                 </arguments>
             </function>
             <function name="CryptReleaseContext" callingConvention="stdcall">
-                <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
+                <returnValue type="MSBool"/>
                 <arguments>
                     <argument name="hProv" direction="in" type="UInt32" hex="true"/>
                     <argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
             <function name="CryptCreateHash" callingConvention="stdcall">
-                <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
+                <returnValue type="MSBool"/>
                 <arguments>
                     <argument name="hProv" direction="in" type="UInt32" hex="true"/>
                     <argument name="Algid" direction="in" type="AlgId"/>
@@ -317,13 +370,13 @@
                 </arguments>
             </function>
             <function name="CryptDestroyHash" callingConvention="stdcall">
-                <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
+                <returnValue type="MSBool"/>
                 <arguments>
                     <argument name="hHash" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
             <function name="CryptHashData" callingConvention="stdcall">
-                <returnValue type="Int32"/> <!-- FIXME: should be Bool -->
+                <returnValue type="MSBool"/>
                 <arguments>
                     <argument name="hHash" direction="in" type="UInt32" hex="true"/>
                     <argument name="pbData" direction="in" type="ByteArrayPtr" size="arg.dwDataLen"/>
@@ -414,6 +467,19 @@
 
     <hooks>
         <!-- DLLs -->
+
+        <dllModule name="kernel32.dll">
+            <function specId="WaitForSingleObject"/>
+            <function specId="WaitForSingleObjectEx"/>
+            <function specId="WaitForMultipleObjects"/>
+            <function specId="WaitForMultipleObjectsEx"/>
+            <!-- <function specId="GetTickCount"/> -->
+        </dllModule>
+
+        <dllModule name="user32.dll">
+            <function specId="SetTimer"/>
+        </dllModule>
+
         <dllModule name="ws2_32.dll">
             <function specId="socket"/>
             <function specId="closesocket"/>
@@ -432,13 +498,16 @@
             <function specId="recvfrom"/>
         </dllModule>
 
+        <!--
         <dllModule name="secur32.dll">
             <function specId="EncryptMessage"/>
             <function specId="DecryptMessage"/>
         </dllModule>
+        -->
 
+        <!--
         <dllModule name="advapi32.dll">
-            <!-- <function specId="RegOpenKeyExW"/> -->
+            <function specId="RegOpenKeyExW"/>
 
             <function specId="CryptAcquireContextA"/>
             <function specId="CryptAcquireContextW"/>
@@ -447,6 +516,7 @@
             <function specId="CryptDestroyHash"/>
             <function specId="CryptHashData"/>
         </dllModule>
+        -->
 
         <!-- Internal functions -->
         <!-- ...disabled for now due to invalid format strings sometimes being passed...

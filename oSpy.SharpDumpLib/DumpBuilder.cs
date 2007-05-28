@@ -181,8 +181,9 @@ namespace oSpy.SharpDumpLib
                     r.Close();
                 }
 
-                if (n != numEvents)
-                    throw new InvalidDataException(String.Format("expected {0} events, read {1}", numEvents, n));
+                // FIXME: queue a warning instead
+                //if (n != numEvents)
+                //    throw new InvalidDataException(String.Format("expected {0} events, read {1}", numEvents, n));
             }
             catch (Exception ex)
             {
