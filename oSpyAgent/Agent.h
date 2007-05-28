@@ -29,7 +29,7 @@
 #include "BinaryLogger.h"
 
 // FIXME: move this into a separate plugin once the planned plugin architecture has been introduced
-#define RESEARCH_MODE
+//#define RESEARCH_MODE
 
 #define MAX_SOFTWALL_RULES   128
 

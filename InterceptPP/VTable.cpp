@@ -80,6 +80,8 @@ VMethodSpec::StealFrom(FunctionSpec *funcSpec)
     {
         m_retValMarshaller = marshaller->Clone();
     }
+
+    m_logNestedCalls = funcSpec->GetLogNestedCalls();
 }
 
 VTableSpec::VTableSpec(const OString &name, int methodCount)

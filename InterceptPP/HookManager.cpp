@@ -546,6 +546,7 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
     OString name;
     CallingConvention conv = CALLING_CONV_UNKNOWN;
     int argsSize = -1;
+    bool logNested = false;
 
     MSXML2::IXMLDOMNamedNodeMapPtr attrs = funcSpecNode->attributes;
     MSXML2::IXMLDOMNodePtr attrNode;
@@ -589,6 +590,19 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
         {
             argsSize = attrNode->nodeTypedValue;
         }
+        else if (attrName == "logNested")
+        {
+            OICString logNestedStr;
+            
+            logNestedStr = static_cast<bstr_t>(attrNode->nodeTypedValue);
+            if (logNestedStr == "true")
+                logNested = true;
+            else if (logNestedStr == "false")
+                logNested = false;
+            else
+                GetLogger()->LogWarning("invalid value '%s' specified for attribute '%s'",
+                    logNestedStr.c_str(), attrName.c_str());
+        }
         else
         {
             if (!ignoreUnknown)
@@ -605,7 +619,7 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
         if (id.size() == 0)
             id = name;
 
-        funcSpec = new FunctionSpec(name, conv, argsSize);
+        funcSpec = new FunctionSpec(name, conv, argsSize, NULL, logNested);
 
         MSXML2::IXMLDOMNodePtr node;
         MSXML2::IXMLDOMNodeListPtr nodeList;

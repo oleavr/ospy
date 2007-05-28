@@ -412,25 +412,32 @@
         <vtables>
             <!-- Windows Live Messenger -->
             <vtable id="CP2PTransportBridge" methodCount="22">
-                <method index="0" name="OnBridgePeerConnectingEndpointsUpdated" callingConvention="thiscall" argsSize="8"/>
-                <method index="1" name="OnBridgePeerListeningEndpointsUpdated" callingConvention="thiscall" argsSize="4"/>
-                <method index="4" name="P2PListen" callingConvention="thiscall" argsSize="8"/>
-                <method index="5" name="P2PConnect" callingConvention="thiscall" argsSize="8"/>
-                <method index="7" name="Destroy" callingConvention="thiscall" argsSize="4"/>
-                <method index="8" name="Shutdown" callingConvention="thiscall" argsSize="0"/>
-                <method index="9" name="Init" callingConvention="thiscall" argsSize="4"/>
-                <method index="10" name="Send" callingConvention="thiscall" argsSize="16"/>
-                <method index="11" name="GetProperties" callingConvention="thiscall">
+                <method index="0" name="OnBridgePeerConnectingEndpointsUpdated" callingConvention="thiscall" argsSize="8" logNested="true"/>
+                <method index="1" name="OnBridgePeerListeningEndpointsUpdated" callingConvention="thiscall" argsSize="4" logNested="true"/>
+                <method index="4" name="P2PListen" callingConvention="thiscall" argsSize="8" logNested="true"/>
+                <method index="5" name="P2PConnect" callingConvention="thiscall" argsSize="8" logNested="true"/>
+                <method index="7" name="Destroy" callingConvention="thiscall" argsSize="4" logNested="true"/>
+                <method index="8" name="Shutdown" callingConvention="thiscall" argsSize="0" logNested="true"/>
+                <method index="9" name="Init" callingConvention="thiscall" argsSize="4" logNested="true"/>
+                <method index="10" name="Send" callingConvention="thiscall" logNested="true">
+                    <arguments>
+                        <argument name="buf" direction="in" type="ByteArrayPtr" size="arg.len"/>
+                        <argument name="len" direction="in" type="Int32"/>
+                        <argument name="id" direction="in" type="Int32" hex="true"/>
+                        <argument name="type" direction="in" type="Int32" hex="true"/>
+                    </arguments>
+                </method>
+                <method index="11" name="GetProperties" callingConvention="thiscall" logNested="true">
                     <arguments>
                         <argument name="lpProperties" direction="out" type="P2PBridgePropertiesPtr"/>
                     </arguments>
                 </method>
-                <method index="12" name="ReadyToSend" callingConvention="thiscall" argsSize="0"/>
-                <method index="13" name="ConnectBridge" callingConvention="thiscall" argsSize="0"/>
-                <method index="17" name="OnReceivedConnectRequest" callingConvention="thiscall" argsSize="4"/>
-                <method index="18" name="OnDataReceived" callingConvention="thiscall" argsSize="16"/>
-                <method index="19" name="OnDataResponse" callingConvention="thiscall" argsSize="12"/>
-                <method index="20" name="OnBridgeStateChange" callingConvention="thiscall" argsSize="8"/>
+                <method index="12" name="ReadyToSend" callingConvention="thiscall" argsSize="0" logNested="true"/>
+                <method index="13" name="ConnectBridge" callingConvention="thiscall" argsSize="0" logNested="true"/>
+                <method index="17" name="OnReceivedConnectRequest" callingConvention="thiscall" argsSize="4" logNested="true"/>
+                <method index="18" name="OnDataReceived" callingConvention="thiscall" argsSize="16" logNested="true"/>
+                <method index="19" name="OnDataResponse" callingConvention="thiscall" argsSize="12" logNested="true"/>
+                <method index="20" name="OnBridgeStateChange" callingConvention="thiscall" argsSize="8" logNested="true"/>
             </vtable>
         </vtables>
     </specs>
@@ -468,17 +475,18 @@
     <hooks>
         <!-- DLLs -->
 
+        <!--
         <dllModule name="kernel32.dll">
             <function specId="WaitForSingleObject"/>
             <function specId="WaitForSingleObjectEx"/>
             <function specId="WaitForMultipleObjects"/>
             <function specId="WaitForMultipleObjectsEx"/>
-            <!-- <function specId="GetTickCount"/> -->
         </dllModule>
 
         <dllModule name="user32.dll">
             <function specId="SetTimer"/>
         </dllModule>
+        -->
 
         <dllModule name="ws2_32.dll">
             <function specId="socket"/>
@@ -498,12 +506,10 @@
             <function specId="recvfrom"/>
         </dllModule>
 
-        <!--
         <dllModule name="secur32.dll">
             <function specId="EncryptMessage"/>
             <function specId="DecryptMessage"/>
         </dllModule>
-        -->
 
         <!--
         <dllModule name="advapi32.dll">

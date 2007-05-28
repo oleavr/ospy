@@ -99,6 +99,13 @@ Agent::Initialize()
     funcSpec = mgr->GetFunctionSpecById("WaitForMultipleObjectsEx");
     if (funcSpec != NULL)
         funcSpec->SetHandler(OnWaitForMultipleObjects, this);
+
+    if (m_processName == "msnmsgr.exe")
+    {
+        funcSpec = new FunctionSpec("CP2PTransport::SendControlPacket", CALLING_CONV_STDCALL, 12);
+        Function *func = new Function(funcSpec, 0x4EDD4A);
+        func->Hook();
+    }
 #endif
 }
 

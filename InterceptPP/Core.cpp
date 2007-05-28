@@ -249,14 +249,16 @@ ArgumentList::ArgumentList(ArgumentListSpec *spec, void *data)
 FunctionSpec::FunctionSpec(const OString &name,
                            CallingConvention conv,
                            int argsSize,
-                           FunctionCallHandler handler)
+                           FunctionCallHandler handler,
+                           bool logNestedCalls)
 	: m_name(name),
       m_callingConvention(conv),
 	  m_argsSize(argsSize),
       m_argList(NULL),
       m_retValMarshaller(NULL),
 	  m_handler(handler),
-	  m_handlerUserData(NULL)
+	  m_handlerUserData(NULL),
+      m_logNestedCalls(logNestedCalls)
 {
 }
 
@@ -273,12 +275,14 @@ void
 FunctionSpec::SetParams(const OString &name,
                         CallingConvention conv,
                         int argsSize,
-                        FunctionCallHandler handler)
+                        FunctionCallHandler handler,
+                        bool logNestedCalls)
 {
 	SetName(name);
     SetCallingConvention(conv);
 	SetArgsSize(argsSize);
     SetHandler(handler);
+    SetLogNestedCalls(logNestedCalls);
 }
 
 void
@@ -528,9 +532,11 @@ NOT_NESTED:
 
 	lastError = GetLastError();
 
-    TlsSetValue(tlsIdx, reinterpret_cast<LPVOID>(1));
-
 	function = static_cast<Function *>(trampoline->data);
+
+    if (!function->GetSpec()->GetLogNestedCalls())
+        TlsSetValue(tlsIdx, reinterpret_cast<LPVOID>(1));
+
 	nextTrampoline = function->OnEnterWrapper(&cpuCtx, &unwindSize, trampoline, finalRet, &lastError);
 	if (nextTrampoline != NULL)
 	{
