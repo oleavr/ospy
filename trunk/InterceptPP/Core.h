@@ -185,13 +185,15 @@ public:
 	FunctionSpec(const OString &name="",
                  CallingConvention conv=CALLING_CONV_UNKNOWN,
                  int argsSize=FUNCTION_ARGS_SIZE_UNKNOWN,
-                 FunctionCallHandler handler=NULL);
+                 FunctionCallHandler handler=NULL,
+                 bool logNestedCalls=false);
     ~FunctionSpec();
 
     void SetParams(const OString &name,
                    CallingConvention conv=CALLING_CONV_UNKNOWN,
                    int argsSize=FUNCTION_ARGS_SIZE_UNKNOWN,
-                   FunctionCallHandler handler=NULL);
+                   FunctionCallHandler handler=NULL,
+                   bool logNestedCalls=false);
 
     ArgumentListSpec *GetArguments() const { return m_argList; }
     void SetArguments(ArgumentListSpec *argList);
@@ -213,6 +215,9 @@ public:
 	void *GetHandlerUserData() const { return m_handlerUserData; }
 	void SetHandler(FunctionCallHandler handler, void *userData=NULL) { m_handler = handler; m_handlerUserData = userData; }
 
+    bool GetLogNestedCalls() const { return m_logNestedCalls; }
+    void SetLogNestedCalls(bool logNestedCalls) { m_logNestedCalls = logNestedCalls; }
+
 protected:
 	OString m_name;
 	CallingConvention m_callingConvention;
@@ -221,6 +226,7 @@ protected:
     BaseMarshaller *m_retValMarshaller;
 	FunctionCallHandler m_handler;
 	void *m_handlerUserData;
+    bool m_logNestedCalls;
 };
 
 class Function : public BaseObject
