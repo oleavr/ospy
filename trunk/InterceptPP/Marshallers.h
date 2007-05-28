@@ -314,6 +314,47 @@ public:
     {}
 };
 
+class Boolean : public BaseMarshaller
+{
+public:
+    Boolean();
+    Boolean(BaseMarshaller *marshaller);
+    Boolean(const Boolean &b);
+    virtual ~Boolean();
+
+    virtual BaseMarshaller *Clone() const { return new Boolean(*this); }
+
+    virtual bool SetProperty(const OString &name, const OString &value);
+
+    virtual unsigned int GetSize() const { return m_marshaller->GetSize(); }
+	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+    virtual bool ToInt(void *start, int &result) const { return m_marshaller->ToInt(start, result); }
+    virtual bool ToUInt(void *start, unsigned int &result) const { return m_marshaller->ToUInt(start, result); }
+
+protected:
+    BaseMarshaller *m_marshaller;
+};
+
+class CPPBool : public Boolean
+{
+public:
+    CPPBool()
+        : Boolean(new UInt8())
+    {}
+
+    virtual BaseMarshaller *Clone() const { return new CPPBool(*this); }
+};
+
+class MSBool : public Boolean
+{
+public:
+    MSBool()
+        : Boolean(new UInt32())
+    {}
+
+    virtual BaseMarshaller *Clone() const { return new MSBool(*this); }
+};
+
 class Array : public BaseMarshaller
 {
 public:

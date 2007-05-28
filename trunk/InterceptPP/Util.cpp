@@ -312,7 +312,8 @@ Util::CreateBacktraceNode(void *address)
 
         if (*(codeAddr - 5) == OPCODE_CALL_NEAR_RELATIVE ||
             *(codeAddr - 6) == OPCODE_CALL_NEAR_ABS_INDIRECT ||
-            *(codeAddr - 3) == OPCODE_CALL_NEAR_ABS_INDIRECT)
+            *(codeAddr - 3) == OPCODE_CALL_NEAR_ABS_INDIRECT ||
+            *(codeAddr - 2) == OPCODE_CALL_NEAR_ABS_INDIRECT)
 		{
             EnterCriticalSection(&m_cs);
 

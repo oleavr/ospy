@@ -82,6 +82,24 @@ Agent::Initialize()
 	FunctionSpec *funcSpec = mgr->GetFunctionSpecById("connect");
     if (funcSpec != NULL)
 	    funcSpec->SetHandler(OnSocketConnectWrapper, this);
+
+#ifdef RESEARCH_MODE
+    funcSpec = mgr->GetFunctionSpecById("WaitForSingleObject");
+    if (funcSpec != NULL)
+        funcSpec->SetHandler(OnWaitForSingleObject, this);
+
+    funcSpec = mgr->GetFunctionSpecById("WaitForSingleObjectEx");
+    if (funcSpec != NULL)
+        funcSpec->SetHandler(OnWaitForSingleObject, this);
+
+    funcSpec = mgr->GetFunctionSpecById("WaitForMultipleObjects");
+    if (funcSpec != NULL)
+        funcSpec->SetHandler(OnWaitForMultipleObjects, this);
+
+    funcSpec = mgr->GetFunctionSpecById("WaitForMultipleObjectsEx");
+    if (funcSpec != NULL)
+        funcSpec->SetHandler(OnWaitForMultipleObjects, this);
+#endif
 }
 
 void
@@ -128,6 +146,28 @@ Agent::OnSocketConnect(FunctionCall *call)
     getpeername(s, reinterpret_cast<struct sockaddr *>(&peerAddr), &sinLen);
 #endif
 
+#ifdef RESEARCH_MODE
+
+void
+Agent::OnWaitForSingleObject(FunctionCall *call, void *userData, bool &shouldLog)
+{
+    char *argumentList = const_cast<char *>(call->GetArgumentsData().c_str());
+    DWORD timeout = *reinterpret_cast<DWORD *>(argumentList + sizeof(HANDLE));
+
+    shouldLog = (timeout != 0 && timeout != INFINITE);
+}
+
+void
+Agent::OnWaitForMultipleObjects(FunctionCall *call, void *userData, bool &shouldLog)
+{
+    char *argumentList = const_cast<char *>(call->GetArgumentsData().c_str());
+    DWORD timeout = *reinterpret_cast<DWORD *>(argumentList + sizeof(DWORD) + sizeof(DWORD *) + sizeof(BOOL));
+
+    shouldLog = (timeout != 0 && timeout != INFINITE);
+}
+
+#endif
+
 bool
 Agent::HaveMatchingSoftwallRule(const OString &functionName,
                                 void *returnAddress,
@@ -136,9 +176,9 @@ Agent::HaveMatchingSoftwallRule(const OString &functionName,
                                 DWORD &retval,
                                 DWORD &lastError)
 {
-    GetLogger()->LogDebug("Checking %s against %d rules", functionName.c_str(), m_capture->NumSoftwallRules);
+    //GetLogger()->LogDebug("Checking %s against %d rules", functionName.c_str(), m_capture->NumSoftwallRules);
 
-    for (int i = 0; i < m_capture->NumSoftwallRules; i++)
+    for (unsigned int i = 0; i < m_capture->NumSoftwallRules; i++)
     {
         SoftwallRule *rule = &m_capture->rules[i];
 
@@ -197,12 +237,11 @@ Agent::HaveMatchingSoftwallRule(const OString &functionName,
         retval = rule->Retval;
         lastError = rule->LastError;
 
-        GetLogger()->LogDebug("Matched, setting retval to %d and lastError to %d", retval, lastError);
-
+        //GetLogger()->LogDebug("Matched, setting retval to %d and lastError to %d", retval, lastError);
         return true;
     }
 
-    GetLogger()->LogDebug("No match");
+    //GetLogger()->LogDebug("No match");
     return false;
 }
 

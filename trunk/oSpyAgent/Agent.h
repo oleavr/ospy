@@ -28,6 +28,9 @@
 #include <winsock2.h>
 #include "BinaryLogger.h"
 
+// FIXME: move this into a separate plugin once the planned plugin architecture has been introduced
+#define RESEARCH_MODE
+
 #define MAX_SOFTWALL_RULES   128
 
 #define SOFTWALL_CONDITION_PROCESS_NAME    1
@@ -83,6 +86,11 @@ protected:
 
 	static void OnSocketConnectWrapper(FunctionCall *call, void *userData, bool &shouldLog);
 	void OnSocketConnect(FunctionCall *call);
+
+#ifdef RESEARCH_MODE
+	static void OnWaitForSingleObject(FunctionCall *call, void *userData, bool &shouldLog);
+	static void OnWaitForMultipleObjects(FunctionCall *call, void *userData, bool &shouldLog);
+#endif
 
     bool HaveMatchingSoftwallRule(const OString &functionName, void *returnAddress, const sockaddr_in *localAddress, const sockaddr_in *peerAddress, DWORD &retval, DWORD &lastError);
 };
