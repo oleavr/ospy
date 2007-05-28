@@ -492,9 +492,11 @@ Function::OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, FunctionTramp
 											// *** We're coming in hot from the modified prolog/vtable through the trampoline ***
 
                                             // First off, is this a nested call?
+        pushad;
         push [tlsIdx];
         call [tlsGetValueFunc];
         test eax, eax;
+        popad;
         jz NOT_NESTED;
 
         add [esp], 4;                       // We're in a nested call, just short-circuit this trampoline.
