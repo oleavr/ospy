@@ -105,6 +105,16 @@ Agent::Initialize()
         funcSpec = new FunctionSpec("CP2PTransport::SendControlPacket", CALLING_CONV_STDCALL, 12);
         Function *func = new Function(funcSpec, 0x4EDD4A);
         func->Hook();
+
+        const DWORD getQueueOffset = 0x4E4EC5;
+        DWORD oldMemProtect;
+        if (!VirtualProtect(reinterpret_cast<LPVOID>(getQueueOffset), sizeof(FunctionRedirectStub), PAGE_EXECUTE_WRITECOPY, &oldMemProtect))
+            throw Error("VirtualProtected failed");
+
+        FunctionRedirectStub *stub = reinterpret_cast<FunctionRedirectStub *>(getQueueOffset);
+        stub->JMP_opcode = 0xE9;
+        stub->JMP_offset = reinterpret_cast<DWORD>(PacketSchedulerRunAfterGetSendQueue)
+            - (reinterpret_cast<DWORD>(stub) + sizeof(FunctionRedirectStub));
     }
 #endif
 }
@@ -171,6 +181,111 @@ Agent::OnWaitForMultipleObjects(FunctionCall *call, void *userData, bool &should
     DWORD timeout = *reinterpret_cast<DWORD *>(argumentList + sizeof(DWORD) + sizeof(DWORD *) + sizeof(BOOL));
 
     shouldLog = (timeout != 0 && timeout != INFINITE);
+}
+
+typedef struct {
+    DWORD field_0;
+    void *m_object;
+    DWORD field_8;
+    DWORD field_C;
+} CQueueElement;
+
+typedef struct {
+    CQueueElement **m_elements;
+    DWORD field_4;
+    DWORD m_numElements;
+    float m_fVal1;
+    float m_fVal2;
+    float m_fVal3;
+    DWORD field_18;
+    DWORD field_1C;
+    DWORD field_20;
+    DWORD m_iVal;
+    DWORD field_28;
+    DWORD field_2C;
+} CDynamicQueue;
+
+const DWORD afterGetSendQueueNextHop = 0x4E4ECB;
+
+static void
+LogDynamicQueue(CDynamicQueue *queue)
+{
+    Logging::Logger *logger = GetLogger();
+
+    Logging::Event *ev = logger->NewEvent("Debug");
+
+    Logging::Element *queueNode = new Logging::Element("CDynamicQueue");
+
+    Logging::Element *elementsNode = new Logging::Element("m_elements");
+    queueNode->AppendChild(elementsNode);
+
+    queueNode->AppendChild(new Logging::TextNode("field_4", queue->field_4));
+    queueNode->AppendChild(new Logging::TextNode("m_numElements", queue->m_numElements));
+    queueNode->AppendChild(new Logging::TextNode("m_fVal1", queue->m_fVal1));
+    queueNode->AppendChild(new Logging::TextNode("m_fVal2", queue->m_fVal2));
+    queueNode->AppendChild(new Logging::TextNode("m_fVal3", queue->m_fVal3));
+    queueNode->AppendChild(new Logging::TextNode("field_18", queue->field_18));
+    queueNode->AppendChild(new Logging::TextNode("field_1C", queue->field_1C));
+    queueNode->AppendChild(new Logging::TextNode("field_20", queue->field_20));
+    queueNode->AppendChild(new Logging::TextNode("m_iVal", queue->m_iVal));
+    queueNode->AppendChild(new Logging::TextNode("field_28", queue->field_28));
+    queueNode->AppendChild(new Logging::TextNode("field_2C", queue->field_2C));
+
+    if (queue->field_4 != 0)
+    {
+        for (unsigned int i = 0; i < queue->m_numElements; i++)
+        {
+            CQueueElement *element = queue->m_elements[i];
+
+            Logging::Element *elementNode = new Logging::Element("CQueueElement");
+            if (element != NULL)
+                elementNode->AddField("Pointer", reinterpret_cast<DWORD>(element));
+            else
+                elementNode->AddField("Pointer", "NULL");
+
+            if (element != NULL)
+            {
+                elementNode->AppendChild(new Logging::TextNode("field_0", element->field_0));
+                elementNode->AppendChild(new Logging::TextNode("m_object", element->m_object));
+                elementNode->AppendChild(new Logging::TextNode("field_8", element->field_8));
+                elementNode->AppendChild(new Logging::TextNode("field_C", element->field_C));
+            }
+
+            elementsNode->AppendChild(elementNode);
+        }
+    }
+
+    ev->AppendChild(queueNode);
+
+    logger->SubmitEvent(ev);
+}
+
+__declspec(naked) void
+Agent::PacketSchedulerRunAfterGetSendQueue()
+{
+    CDynamicQueue *queue;
+
+    __asm {
+        pushad;
+
+        push ebp;
+        mov ebp, esp;
+        sub esp, __LOCAL_SIZE;
+
+        mov [queue], eax;
+    }
+
+    LogDynamicQueue(queue);
+
+    __asm {
+        leave;
+
+        popad;
+
+        lea ecx, [ebp-5Ch]; // Overwritten
+        mov [ebp-1Ch], eax; //        code
+        jmp [afterGetSendQueueNextHop];
+    }
 }
 
 #endif

@@ -90,6 +90,8 @@ protected:
 #ifdef RESEARCH_MODE
 	static void OnWaitForSingleObject(FunctionCall *call, void *userData, bool &shouldLog);
 	static void OnWaitForMultipleObjects(FunctionCall *call, void *userData, bool &shouldLog);
+
+    static void PacketSchedulerRunAfterGetSendQueue();
 #endif
 
     bool HaveMatchingSoftwallRule(const OString &functionName, void *returnAddress, const sockaddr_in *localAddress, const sockaddr_in *peerAddress, DWORD &retval, DWORD &lastError);

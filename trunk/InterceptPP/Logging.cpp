@@ -28,6 +28,8 @@
 #include "Util.h"
 #include <strsafe.h>
 
+#pragma warning( disable : 4311 4312 )
+
 namespace InterceptPP {
 
 namespace Logging {
@@ -139,6 +141,42 @@ Node::AddField(const OString &name, unsigned long long value)
     OOStringStream ss;
     ss << value;
     AddField(name, ss.str());
+}
+
+TextNode::TextNode(const OString &name, const OString &text)
+    : Node(name)
+{
+    m_content = text;
+}
+
+TextNode::TextNode(const OString &name, const char *text)
+    : Node(name)
+{
+    m_content = text;
+}
+
+TextNode::TextNode(const OString &name, void *pointer)
+    : Node(name)
+{
+    OOStringStream ss;
+    ss << "0x" << hex << reinterpret_cast<DWORD>(pointer);
+    m_content = ss.str();
+}
+
+TextNode::TextNode(const OString &name, DWORD value)
+    : Node(name)
+{
+    OOStringStream ss;
+    ss << value;
+    m_content = ss.str();
+}
+
+TextNode::TextNode(const OString &name, float value)
+    : Node(name)
+{
+    OOStringStream ss;
+    ss << value;
+    m_content = ss.str();
 }
 
 DataNode::DataNode(const OString &name)
