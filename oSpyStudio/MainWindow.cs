@@ -85,7 +85,7 @@ namespace oSpyStudio
 
         private void dumpLoader_LoadProgressChanged (object sender, ProgressChangedEventArgs e)
         {
-            Console.WriteLine ("Progress changed: ", e.ProgressPercentage);
+            Console.WriteLine ("Progress changed: {0}", e.ProgressPercentage);
         }
 
         private void dumpLoader_LoadCompleted (object sender, LoadCompletedEventArgs e)
