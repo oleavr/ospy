@@ -15,6 +15,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HookManagerTest", "Intercep
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "oSpy.SharpDumpLib", "oSpy.SharpDumpLib\oSpy.SharpDumpLib.csproj", "{4888CEE7-9E21-4558-89EB-7D2D2838B48B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "oSpyStudio", "oSpyStudio\oSpyStudio.csproj", "{F1E10651-6B51-4E12-A312-F587788D3A01}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -95,6 +97,16 @@ Global
 		{4888CEE7-9E21-4558-89EB-7D2D2838B48B}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{4888CEE7-9E21-4558-89EB-7D2D2838B48B}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{4888CEE7-9E21-4558-89EB-7D2D2838B48B}.Release|Win32.ActiveCfg = Release|Any CPU
+		{F1E10651-6B51-4E12-A312-F587788D3A01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1E10651-6B51-4E12-A312-F587788D3A01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1E10651-6B51-4E12-A312-F587788D3A01}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{F1E10651-6B51-4E12-A312-F587788D3A01}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{F1E10651-6B51-4E12-A312-F587788D3A01}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{F1E10651-6B51-4E12-A312-F587788D3A01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1E10651-6B51-4E12-A312-F587788D3A01}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1E10651-6B51-4E12-A312-F587788D3A01}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{F1E10651-6B51-4E12-A312-F587788D3A01}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{F1E10651-6B51-4E12-A312-F587788D3A01}.Release|Win32.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

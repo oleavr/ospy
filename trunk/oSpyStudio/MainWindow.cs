@@ -1,12 +1,125 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.ComponentModel;
-using oSpyStudio.Widgets;
 using oSpy.SharpDumpLib;
 using ICSharpCode.SharpZipLib.BZip2;
-using Gdl;
 
+namespace oSpyStudio
+{
+    public class MainWindow
+    {
+        [Glade.Widget]
+        private Gtk.Window mainWindow;
+
+        [Glade.Widget]
+        private Gtk.VBox mainVBox;
+
+        [Glade.Widget]
+        private Gtk.MenuBar menubar;
+
+        private Gtk.ActionGroup fileActions;
+
+        private DumpLoader dumpLoader = new DumpLoader ();
+
+        public MainWindow ()
+        {
+            Glade.XML xml = new Glade.XML (new System.IO.MemoryStream (oSpyStudio.Properties.Resources.ui), "mainWindow", null);
+            xml.Autoconnect (this);
+
+            dumpLoader.LoadProgressChanged += new System.ComponentModel.ProgressChangedEventHandler (dumpLoader_LoadProgressChanged);
+            dumpLoader.LoadCompleted += new LoadCompletedEventHandler (dumpLoader_LoadCompleted);
+        }
+
+        private void OnWindowDeleted (object sender, Gtk.DeleteEventArgs e)
+        {
+            Gtk.Application.Quit ();
+        }
+
+        private void OnOpen (object sender, EventArgs e)
+        {
+            Gtk.FileChooserDialog fc = new Gtk.FileChooserDialog (
+                "Choose the file to open", mainWindow,
+                Gtk.FileChooserAction.Open,
+                "Cancel", Gtk.ResponseType.Cancel,
+                "Open", Gtk.ResponseType.Accept);
+
+            Gtk.FileFilter ff = new Gtk.FileFilter ();
+            ff.AddPattern ("*.osd");
+            ff.Name = "oSpy dump files (.osd)";
+            fc.AddFilter (ff);
+
+            Gtk.ResponseType response = (Gtk.ResponseType) fc.Run ();
+            string filename = fc.Filename;
+            fc.Destroy ();
+
+            if (response == Gtk.ResponseType.Accept)
+            {
+                Stream file = new BZip2InputStream (File.OpenRead (filename));
+
+                /*
+                curOperation = "Loading";
+                statusBar.Push (1, curOperation);
+                cancelLoadButton.Sensitive = true;*/
+                dumpLoader.LoadAsync (file, "Open");
+            }
+        }
+
+        private void OnQuit (object sender, EventArgs e)
+        {
+            Gtk.Application.Quit ();
+        }
+
+        protected virtual void OnAbout (object sender, System.EventArgs e)
+        {
+            Gtk.AboutDialog ad = new Gtk.AboutDialog ();
+            ad.Name = "oSpy Studio";
+            ad.Website = "http://code.google.com/p/ospy/";
+            string[] authors = new string[3];
+            authors[0] = "Ole André Vadla Ravnås";
+            authors[1] = "Ali Sabil";
+            authors[2] = "Johann Prieur";
+            ad.Authors = authors;
+            ad.Run ();
+            ad.Destroy ();
+        }
+
+        private void dumpLoader_LoadProgressChanged (object sender, ProgressChangedEventArgs e)
+        {
+            Console.WriteLine ("Progress changed: ", e.ProgressPercentage);
+        }
+
+        private void dumpLoader_LoadCompleted (object sender, LoadCompletedEventArgs e)
+        {
+            Console.WriteLine ("Load completed");
+        }
+
+        private void ShowErrorMessage (string message)
+        {
+            Gtk.MessageDialog md = new Gtk.MessageDialog (mainWindow,
+                Gtk.DialogFlags.DestroyWithParent,
+                Gtk.MessageType.Error,
+                Gtk.ButtonsType.Close,
+                message);
+            md.Run ();
+            md.Destroy ();
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if false
 internal enum DataTransferColumn
 {
     From,
@@ -14,12 +127,12 @@ internal enum DataTransferColumn
     Description,
 }
 
-public partial class MainWindow : Gtk.Window
+public class MainWindow : Gtk.Window
 {
-    protected Gdk.Pixbuf incomingPixbuf = null; 
-    protected Gdk.Pixbuf outgoingPixbuf = null; 
-    protected Gdk.Pixbuf socketPixbuf = null; 
-    protected Gdk.Pixbuf securePixbuf = null; 
+    protected Gdk.Pixbuf incomingPixbuf = null;
+    protected Gdk.Pixbuf outgoingPixbuf = null;
+    protected Gdk.Pixbuf socketPixbuf = null;
+    protected Gdk.Pixbuf securePixbuf = null;
 
 	protected Gtk.TreeView processList;
 	protected Gtk.TreeView resourceList;
@@ -31,8 +144,6 @@ public partial class MainWindow : Gtk.Window
     protected DataView dataView;
     protected Gtk.ListStore dataChunkStore;
     
-    protected Gdl.Dock dock;
-
     private List<Process> selectedProcesses = new List<Process>();
 
     protected Dump curDump = null;
@@ -478,31 +589,6 @@ public partial class MainWindow : Gtk.Window
         }
     }
 
-    private void ShowErrorMessage(string message)
-    {
-        Gtk.MessageDialog md = new Gtk.MessageDialog(this,
-            Gtk.DialogFlags.DestroyWithParent,
-            Gtk.MessageType.Error,
-            Gtk.ButtonsType.Close,
-            message);
-        md.Run();
-        md.Destroy();
-    }
-
-    protected virtual void OnAbout(object sender, System.EventArgs e)
-    {
-    	Gtk.AboutDialog ad = new Gtk.AboutDialog();
-    	ad.Name = "oSpy Studio";
-    	ad.Website = "http://code.google.com/p/ospy/";
-    	string[] authors = new string[3];
-    	authors[0] = "Ole André Vadla Ravnås";
-    	authors[1] = "Ali Sabil";
-    	authors[2] = "Johann Prieur";
-    	ad.Authors = authors;
-    	ad.Run();
-    	ad.Destroy();
-    }
-
     protected virtual void cancelLoadButton_clicked(object sender, System.EventArgs e)
     {
         // FIXME: this is ugly
@@ -518,3 +604,4 @@ public partial class MainWindow : Gtk.Window
         }
     }
 }
+#endif
