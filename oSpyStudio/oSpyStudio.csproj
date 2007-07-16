@@ -38,6 +38,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="widgets\DataView.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="atk-sharp, Version=2.10.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f, processorArchitecture=MSIL">
@@ -73,6 +74,7 @@
       <HintPath>..\..\..\OABuild\Release\bin\pango-sharp.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\oSpy.SharpDumpLib\oSpy.SharpDumpLib.csproj">
@@ -89,6 +91,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="data\glade\ui.glade" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="data\images\incoming.png" />
+    <Content Include="data\images\outgoing.png" />
+    <Content Include="data\images\secure.png" />
+    <Content Include="data\images\socket.png" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
