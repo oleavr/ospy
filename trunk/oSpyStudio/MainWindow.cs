@@ -84,7 +84,7 @@ namespace oSpyStudio
             col.SetCellDataFunc (pbRenderer, new Gtk.TreeCellDataFunc (resourceView_PixbufCellDataFunc));
             col.SetCellDataFunc (txtRenderer, new Gtk.TreeCellDataFunc (resourceView_TextCellDataFunc));
             resourceView.Selection.Mode = Gtk.SelectionMode.Multiple;
-            resourceView.AppendColumn (col);            
+            resourceView.AppendColumn (col);
             resourceView.Model = resourceModel;
             resourceView.Selection.Changed += new EventHandler(resourceView_SelectionChanged);
 
@@ -92,10 +92,13 @@ namespace oSpyStudio
             transferView.Model = transferModel;
             transferView.Selection.Mode = Gtk.SelectionMode.Multiple;
             transferView.Selection.Changed += new EventHandler (transferView_SelectionChanged);
+            transferModel.SetSortColumnId (0, Gtk.SortType.Ascending);
+            transferModel.SetSortFunc (0, new Gtk.TreeIterCompareFunc (transferModel_SortFunc));
 
             transferView.AppendColumn ("", new Gtk.CellRendererPixbuf (), new Gtk.TreeCellDataFunc (transferView_DirectionCellDataFunc));
             col = transferView.AppendColumn ("From", new Gtk.CellRendererText (), new Gtk.TreeCellDataFunc (transferView_FromCellDataFunc));
             col = transferView.AppendColumn ("Size", new Gtk.CellRendererText (), new Gtk.TreeCellDataFunc (transferView_SizeCellDataFunc));
+            col = transferView.AppendColumn ("When", new Gtk.CellRendererText (), new Gtk.TreeCellDataFunc (transferView_TimestampCellDataFunc));
             col = transferView.AppendColumn ("Description", new Gtk.CellRendererText (), new Gtk.TreeCellDataFunc (transferView_DescriptionCellDataFunc));
 
             chunkView.Model = chunkModel;
@@ -220,8 +223,11 @@ namespace oSpyStudio
 
         protected virtual void resourceView_SelectionChanged (object sender, System.EventArgs e)
         {
-            chunkModel.Clear ();
             transferModel.Clear ();
+
+            chunkView.Freeze ();
+            chunkModel.Clear ();
+            chunkView.UnFreeze ();
 
             Gtk.TreePath[] selectedPaths = resourceView.Selection.GetSelectedRows ();
             if (selectedPaths.Length < 1)
@@ -303,35 +309,38 @@ namespace oSpyStudio
 
         private void transferView_SelectionChanged (object sender, EventArgs e)
         {
+            chunkView.Freeze ();
             chunkModel.Clear ();
 
             Gtk.TreePath[] selected = transferView.Selection.GetSelectedRows ();
-            if (selected.Length < 1)
-                return;
-
-            foreach (Gtk.TreePath path in selected)
+            if (selected.Length > 0)
             {
-                Gtk.TreeIter iter;
-                if (!transferModel.GetIter (out iter, path))
-                    return;
-
-                DataTransfer transfer = transferModel.GetValue (iter, 0) as DataTransfer;
-
-                string linePrefixStr = null;
-                string linePrefixColor = null;
-                if (transfer.Direction == DataDirection.Incoming)
+                foreach (Gtk.TreePath path in selected)
                 {
-                    linePrefixStr = "<<";
-                    linePrefixColor = "#8ae899";
-                }
-                else
-                {
-                    linePrefixStr = ">>";
-                    linePrefixColor = "#9cb7d1";
-                }
+                    Gtk.TreeIter iter;
+                    if (!transferModel.GetIter (out iter, path))
+                        break;
 
-                chunkModel.AppendValues (new object[] { transfer.Data, linePrefixStr, linePrefixColor });
+                    DataTransfer transfer = transferModel.GetValue (iter, 0) as DataTransfer;
+
+                    string linePrefixStr = null;
+                    string linePrefixColor = null;
+                    if (transfer.Direction == DataDirection.Incoming)
+                    {
+                        linePrefixStr = "<<";
+                        linePrefixColor = "#8ae899";
+                    }
+                    else
+                    {
+                        linePrefixStr = ">>";
+                        linePrefixColor = "#9cb7d1";
+                    }
+
+                    chunkModel.AppendValues (new object[] { transfer.Data, linePrefixStr, linePrefixColor });
+                }
             }
+
+            chunkView.UnFreeze ();
         }
 
         private void transferView_DirectionCellDataFunc (Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
@@ -357,6 +366,12 @@ namespace oSpyStudio
             (cell as Gtk.CellRendererText).Text = Convert.ToString (transfer.Size);
         }
 
+        private void transferView_TimestampCellDataFunc (Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+        {
+            DataTransfer transfer = model.GetValue (iter, 0) as DataTransfer;
+            (cell as Gtk.CellRendererText).Text = Convert.ToString (curDump.Events[transfer.EventId].Timestamp.ToLongTimeString ());
+        }
+
         private void transferView_DescriptionCellDataFunc (Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
         {
             DataTransfer transfer = model.GetValue (iter, 0) as DataTransfer;
@@ -364,6 +379,14 @@ namespace oSpyStudio
                 (cell as Gtk.CellRendererText).Text = String.Format ("remote: {0}", transfer.GetMetaValue ("net.ipv4.remoteEndpoint"));
             else
                 (cell as Gtk.CellRendererText).Text = "";
+        }
+
+        private int transferModel_SortFunc (Gtk.TreeModel model, Gtk.TreeIter a, Gtk.TreeIter b)
+        {
+            uint i1 = (model.GetValue (a, 0) as DataTransfer).EventId;
+            uint i2 = (model.GetValue (b, 0) as DataTransfer).EventId;
+
+            return i1.CompareTo (i2);
         }
 
         #endregion // UI callbacks
@@ -383,13 +406,13 @@ namespace oSpyStudio
 
         private void CloseDump ()
         {
-            //selectedProcesses.Clear ();
+            selectedProcesses.Clear ();
 
             processModel.Clear ();
             resourceModel.Clear ();
             transferModel.Clear ();
 
-            //chunkModel.Clear ();
+            chunkModel.Clear ();
 
             // TODO: might not be necessary
             processView.Selection.UnselectAll ();

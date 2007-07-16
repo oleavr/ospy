@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.2.2 on Sun Jul 15 23:15:38 2007 by Ole André@OLEAVR-T60P-->
+<!--Generated with glade3 3.2.2 on Mon Jul 16 03:46:08 2007 by Ole André@OLEAVR-T60P-->
 <glade-interface>
   <widget class="GtkWindow" id="mainWindow">
     <property name="visible">True</property>
@@ -103,7 +103,8 @@
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                     <property name="spacing">5</property>
                     <child>
-                      <widget class="GtkScrolledWindow" id="scrolledwindow1">
+                      <widget class="GtkScrolledWindow" id="processScrollWin">
+                        <property name="width_request">135</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -118,9 +119,13 @@
                           </widget>
                         </child>
                       </widget>
+                      <packing>
+                        <property name="expand">False</property>
+                      </packing>
                     </child>
                     <child>
-                      <widget class="GtkScrolledWindow" id="scrolledwindow2">
+                      <widget class="GtkScrolledWindow" id="resourceScrollWin">
+                        <property name="width_request">250</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -136,11 +141,12 @@
                         </child>
                       </widget>
                       <packing>
+                        <property name="expand">False</property>
                         <property name="position">1</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkScrolledWindow" id="scrolledwindow3">
+                      <widget class="GtkScrolledWindow" id="transferScrollWin">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
