@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.ComponentModel;
 using oSpy.SharpDumpLib;
@@ -8,37 +9,131 @@ namespace oSpyStudio
 {
     public class MainWindow
     {
-        [Glade.Widget]
-        private Gtk.Window mainWindow;
+        #region Fields - UI
+
+        [Glade.Widget("mainWindow")]
+        private Gtk.Window window = null;
 
         [Glade.Widget]
-        private Gtk.VBox mainVBox;
+        private Gtk.TreeView processView = null;
+        private Gtk.ListStore processModel = new Gtk.ListStore (typeof (Process));
 
         [Glade.Widget]
-        private Gtk.MenuBar menubar;
+        private Gtk.TreeView resourceView = null;
+        private Gtk.ListStore resourceModel = new Gtk.ListStore (typeof (Resource));
 
-        private Gtk.ActionGroup fileActions;
+        [Glade.Widget]
+        private Gtk.TreeView transferView = null;
+        private Gtk.ListStore transferModel = new Gtk.ListStore (typeof (DataTransfer));
+
+        [Glade.Widget]
+        private Gtk.VPaned mainVPaned = null;
+
+        private Widgets.DataView chunkView = new Widgets.DataView ();
+        private Gtk.ListStore chunkModel = new Gtk.ListStore (typeof (byte []), typeof (string), typeof (string));
+
+        [Glade.Widget]
+        private Gtk.Statusbar statusbar = null;
+
+        private Gdk.Pixbuf incomingPixbuf;
+        private Gdk.Pixbuf outgoingPixbuf;
+        private Gdk.Pixbuf socketPixbuf;
+        private Gdk.Pixbuf securePixbuf;
+
+        private Gtk.Button cancelButton = new Gtk.Button ();
+        private Gtk.ProgressBar progressbar = new Gtk.ProgressBar ();
+
+        #endregion // Fields - Glade
+
+        #region Fields - task-related
+
+        private Dump curDump;
+        private UITask curTask;
+        private List<Process> curProcesses;
+        private List<Process> selectedProcesses = new List<Process> ();
 
         private DumpLoader dumpLoader = new DumpLoader ();
+        private DumpParser dumpParser = new DumpParser ();
+
+        #endregion // Fields - task-related
+
+        #region Construction
 
         public MainWindow ()
         {
             Glade.XML xml = new Glade.XML (new System.IO.MemoryStream (oSpyStudio.Properties.Resources.ui), "mainWindow", null);
             xml.Autoconnect (this);
 
-            dumpLoader.LoadProgressChanged += new System.ComponentModel.ProgressChangedEventHandler (dumpLoader_LoadProgressChanged);
+            System.Reflection.Assembly asm = System.Reflection.Assembly.GetExecutingAssembly ();
+
+            incomingPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.incoming));
+            outgoingPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.outgoing));
+            socketPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.socket));
+            securePixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.secure));
+
+            processView.AppendColumn ("Process", new Gtk.CellRendererText (), new Gtk.TreeCellDataFunc (processView_CellDataFunc));
+            processView.Model = processModel;
+            processView.Selection.Changed += new EventHandler(processView_SelectionChanged);
+
+            Gtk.TreeViewColumn col = new Gtk.TreeViewColumn ();
+            col.Title = "Resource";
+            Gtk.CellRendererPixbuf pbRenderer = new Gtk.CellRendererPixbuf ();
+            Gtk.CellRendererText txtRenderer = new Gtk.CellRendererText ();
+            col.PackStart (pbRenderer, false);
+            col.PackStart (txtRenderer, true);
+            col.SetCellDataFunc (pbRenderer, new Gtk.TreeCellDataFunc (resourceView_PixbufCellDataFunc));
+            col.SetCellDataFunc (txtRenderer, new Gtk.TreeCellDataFunc (resourceView_TextCellDataFunc));
+            resourceView.Selection.Mode = Gtk.SelectionMode.Multiple;
+            resourceView.AppendColumn (col);            
+            resourceView.Model = resourceModel;
+            resourceView.Selection.Changed += new EventHandler(resourceView_SelectionChanged);
+
+            transferView.Selection.Mode = Gtk.SelectionMode.Multiple;
+            transferView.Model = transferModel;
+            transferView.Selection.Mode = Gtk.SelectionMode.Multiple;
+            transferView.Selection.Changed += new EventHandler (transferView_SelectionChanged);
+
+            transferView.AppendColumn ("", new Gtk.CellRendererPixbuf (), new Gtk.TreeCellDataFunc (transferView_DirectionCellDataFunc));
+            col = transferView.AppendColumn ("From", new Gtk.CellRendererText (), new Gtk.TreeCellDataFunc (transferView_FromCellDataFunc));
+            col = transferView.AppendColumn ("Size", new Gtk.CellRendererText (), new Gtk.TreeCellDataFunc (transferView_SizeCellDataFunc));
+            col = transferView.AppendColumn ("Description", new Gtk.CellRendererText (), new Gtk.TreeCellDataFunc (transferView_DescriptionCellDataFunc));
+
+            chunkView.Model = chunkModel;
+            chunkView.DataColIndex = 0;
+            chunkView.LinePrefixTextColIndex = 1;
+            chunkView.LinePrefixColorColIndex = 2;
+            chunkView.Show ();
+            mainVPaned.Add2 (chunkView);
+
+            // TODO: investigate why libglade fails to pack the progressbar inside the statusbar
+            cancelButton.Image = new Gtk.Image (Gtk.Stock.Cancel, Gtk.IconSize.Button);
+            cancelButton.Clicked += new EventHandler (cancelButton_Clicked);
+            statusbar.PackStart (progressbar, false, true, 0);
+            statusbar.PackStart (cancelButton, false, true, 0);
+
+            // Hook up the async events
+            dumpLoader.LoadProgressChanged += delegate (object sender, ProgressChangedEventArgs e) { SetTaskProgress (e.ProgressPercentage); };
+            dumpParser.ParseProgressChanged += delegate (object sender, ParseProgressChangedEventArgs e) { SetTaskProgress (e.ProgressPercentage); };
+
             dumpLoader.LoadCompleted += new LoadCompletedEventHandler (dumpLoader_LoadCompleted);
+            dumpParser.ParseCompleted += new ParseCompletedEventHandler (dumpParser_ParseCompleted);
         }
 
-        private void OnWindowDeleted (object sender, Gtk.DeleteEventArgs e)
+        #endregion // Construction
+
+        #region UI callbacks
+
+        private void window_DeleteEvent (object sender, Gtk.DeleteEventArgs e)
         {
+            CancelTask ();
+            CloseDump ();
             Gtk.Application.Quit ();
         }
 
-        private void OnOpen (object sender, EventArgs e)
+        private void openMenuItem_Activate (object sender, EventArgs e)
         {
             Gtk.FileChooserDialog fc = new Gtk.FileChooserDialog (
-                "Choose the file to open", mainWindow,
+                "Choose the file to open", window,
                 Gtk.FileChooserAction.Open,
                 "Cancel", Gtk.ResponseType.Cancel,
                 "Open", Gtk.ResponseType.Accept);
@@ -54,22 +149,16 @@ namespace oSpyStudio
 
             if (response == Gtk.ResponseType.Accept)
             {
-                Stream file = new BZip2InputStream (File.OpenRead (filename));
-
-                /*
-                curOperation = "Loading";
-                statusBar.Push (1, curOperation);
-                cancelLoadButton.Sensitive = true;*/
-                dumpLoader.LoadAsync (file, "Open");
+                OpenDump (new BZip2InputStream (File.OpenRead (filename)));
             }
         }
 
-        private void OnQuit (object sender, EventArgs e)
+        private void quitMenuItem_Activate (object sender, EventArgs e)
         {
             Gtk.Application.Quit ();
         }
 
-        protected virtual void OnAbout (object sender, System.EventArgs e)
+        protected virtual void aboutMenuItem_Activate (object sender, System.EventArgs e)
         {
             Gtk.AboutDialog ad = new Gtk.AboutDialog ();
             ad.Name = "oSpy Studio";
@@ -83,525 +172,392 @@ namespace oSpyStudio
             ad.Destroy ();
         }
 
-        private void dumpLoader_LoadProgressChanged (object sender, ProgressChangedEventArgs e)
+        private void cancelButton_Clicked (object sender, EventArgs e)
         {
-            Console.WriteLine ("Progress changed: {0}", e.ProgressPercentage);
+            CancelTask ();
         }
+
+        protected virtual void processView_SelectionChanged (object sender, System.EventArgs e)
+        {
+            resourceModel.Clear ();
+            selectedProcesses.Clear ();
+
+            Gtk.TreePath[] selected = processView.Selection.GetSelectedRows ();
+            if (selected.Length < 1)
+                return;
+
+            Gtk.TreeIter iter;
+            if (!processModel.GetIter (out iter, selected[0]))
+                return;
+
+            Process selectedProc = processModel.GetValue (iter, 0) as Process;
+            if (selectedProc != null)
+                selectedProcesses.Add (selectedProc);
+            else
+                selectedProcesses.AddRange (curProcesses);
+
+            resourceModel.AppendValues (new object[] { null, });
+            foreach (Process proc in selectedProcesses)
+            {
+                foreach (Resource res in proc.Resources)
+                {
+                    if (res.DataTransfers.Count > 0)
+                        resourceModel.AppendValues (new object[] { res, });
+                }
+            }
+        }
+
+        private void processView_CellDataFunc (Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+        {
+            Gtk.CellRendererText textCell = cell as Gtk.CellRendererText;
+
+            Process process = model.GetValue (iter, 0) as Process;
+            if (process != null)
+                textCell.Text = process.ToString ();
+            else
+                textCell.Text = "(all)";
+        }
+
+        protected virtual void resourceView_SelectionChanged (object sender, System.EventArgs e)
+        {
+            chunkModel.Clear ();
+            transferModel.Clear ();
+
+            Gtk.TreePath[] selectedPaths = resourceView.Selection.GetSelectedRows ();
+            if (selectedPaths.Length < 1)
+                return;
+
+            List<Resource> selected = new List<Resource> ();
+            foreach (Gtk.TreePath path in selectedPaths)
+            {
+                Gtk.TreeIter iter;
+                if (!resourceModel.GetIter (out iter, path))
+                    return;
+
+                Resource resource = resourceModel.GetValue (iter, 0) as Resource;
+                if (resource == null)
+                {
+                    selected.Clear ();
+                    break;
+                }
+
+                selected.Add (resource);
+            }
+
+            if (selected.Count == 0)
+            {
+                foreach (Process proc in selectedProcesses)
+                    selected.AddRange (proc.Resources);
+            }
+
+            foreach (Resource res in selected)
+            {
+                foreach (DataTransfer transfer in res.DataTransfers)
+                    transferModel.AppendValues (new object[] { transfer, });
+            }
+        }
+
+        private void resourceView_PixbufCellDataFunc (Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+        {
+            Gtk.CellRendererPixbuf pbCell = cell as Gtk.CellRendererPixbuf;
+            pbCell.Pixbuf = null;
+
+            Resource res = model.GetValue (iter, 0) as Resource;
+            if (res == null)
+                return;
+
+            if (res is SocketResource)
+                pbCell.Pixbuf = socketPixbuf;
+            else if (res is CryptoResource)
+                pbCell.Pixbuf = securePixbuf;
+        }
+
+        private void resourceView_TextCellDataFunc (Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+        {
+            Gtk.CellRendererText textCell = cell as Gtk.CellRendererText;
+
+            Resource res = model.GetValue (iter, 0) as Resource;
+            if (res != null)
+            {
+                bool handled = false;
+
+                if (res is SocketResource)
+                {
+                    SocketResource sockRes = res as SocketResource;
+
+                    if (sockRes.AddressFamily != AddressFamily.Unknown)
+                    {
+                        textCell.Text = String.Format ("0x{0:x8} - {1}, {2}", sockRes.Handle, sockRes.AddressFamily, sockRes.SocketType);
+                        handled = true;
+                    }
+                }
+
+                if (!handled)
+                    textCell.Text = String.Format ("0x{0:x8}", res.Handle);
+            }
+            else
+            {
+                textCell.Text = "(all)";
+            }
+        }
+
+        private void transferView_SelectionChanged (object sender, EventArgs e)
+        {
+            chunkModel.Clear ();
+
+            Gtk.TreePath[] selected = transferView.Selection.GetSelectedRows ();
+            if (selected.Length < 1)
+                return;
+
+            foreach (Gtk.TreePath path in selected)
+            {
+                Gtk.TreeIter iter;
+                if (!transferModel.GetIter (out iter, path))
+                    return;
+
+                DataTransfer transfer = transferModel.GetValue (iter, 0) as DataTransfer;
+
+                string linePrefixStr = null;
+                string linePrefixColor = null;
+                if (transfer.Direction == DataDirection.Incoming)
+                {
+                    linePrefixStr = "<<";
+                    linePrefixColor = "#8ae899";
+                }
+                else
+                {
+                    linePrefixStr = ">>";
+                    linePrefixColor = "#9cb7d1";
+                }
+
+                chunkModel.AppendValues (new object[] { transfer.Data, linePrefixStr, linePrefixColor });
+            }
+        }
+
+        private void transferView_DirectionCellDataFunc (Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+        {
+            Gtk.CellRendererPixbuf pbCell = cell as Gtk.CellRendererPixbuf;
+            DataTransfer transfer = model.GetValue (iter, 0) as DataTransfer;
+
+            if (transfer.Direction == DataDirection.Incoming)
+                pbCell.Pixbuf = incomingPixbuf;
+            else
+                pbCell.Pixbuf = outgoingPixbuf;
+        }
+
+        private void transferView_FromCellDataFunc (Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+        {
+            DataTransfer transfer = model.GetValue (iter, 0) as DataTransfer;
+            (cell as Gtk.CellRendererText).Text = transfer.FunctionName;
+        }
+
+        private void transferView_SizeCellDataFunc (Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+        {
+            DataTransfer transfer = model.GetValue (iter, 0) as DataTransfer;
+            (cell as Gtk.CellRendererText).Text = Convert.ToString (transfer.Size);
+        }
+
+        private void transferView_DescriptionCellDataFunc (Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+        {
+            DataTransfer transfer = model.GetValue (iter, 0) as DataTransfer;
+            if (transfer.HasMetaKey ("net.ipv4.remoteEndpoint"))
+                (cell as Gtk.CellRendererText).Text = String.Format ("remote: {0}", transfer.GetMetaValue ("net.ipv4.remoteEndpoint"));
+            else
+                (cell as Gtk.CellRendererText).Text = "";
+        }
+
+        #endregion // UI callbacks
+
+        #region Dump management
+
+        private void OpenDump (Stream dump)
+        {
+            CloseDump ();
+
+            object state = StartTask ("Opening", delegate (object sender, EventArgs e) {
+                dumpLoader.LoadAsyncCancel (sender);
+            });
+
+            dumpLoader.LoadAsync (dump, state);
+        }
+
+        private void CloseDump ()
+        {
+            //selectedProcesses.Clear ();
+
+            processModel.Clear ();
+            resourceModel.Clear ();
+            transferModel.Clear ();
+
+            //chunkModel.Clear ();
+
+            // TODO: might not be necessary
+            processView.Selection.UnselectAll ();
+            resourceView.Selection.UnselectAll ();
+            transferView.Selection.UnselectAll ();
+
+            if (curProcesses != null)
+            {
+                foreach (Process process in curProcesses)
+                {
+                    process.Close ();
+                }
+
+                curProcesses = null;
+            }
+
+            if (curDump != null)
+            {
+                curDump.Close ();
+                curDump = null;
+            }
+        }
+
+        #endregion
+
+        #region Async operation callbacks
 
         private void dumpLoader_LoadCompleted (object sender, LoadCompletedEventArgs e)
         {
-            Console.WriteLine ("Load completed");
+            SetTaskCompleted ();
+
+            if (e.Cancelled)
+                return;
+
+            try
+            {
+                curDump = e.Dump;
+            }
+            catch (Exception ex)
+            {
+                ShowErrorMessage ("Error opening dump: " + ex.Message);
+                return;
+            }
+
+            object state = StartTask ("Parsing", delegate (object s, EventArgs ea) {
+                dumpParser.ParseAsyncCancel (s);
+            });
+
+            dumpParser.ParseAsync (curDump, state);
+        }
+
+        private void dumpParser_ParseCompleted (object sender, ParseCompletedEventArgs e)
+        {
+            SetTaskCompleted ();
+
+            if (e.Cancelled)
+                return;
+
+            try
+            {
+                curProcesses = e.Processes;
+
+                //ShowInfoMessage ("Opened successfully");
+            }
+            catch (Exception ex)
+            {
+                ShowErrorMessage ("Error parsing dump: " + ex.Message);
+                return;
+            }
+
+            processModel.Clear ();
+            processModel.AppendValues (new object[] { null, });
+            foreach (Process process in curProcesses)
+            {
+                processModel.AppendValues (new object[] { process, });
+            }
+        }
+
+        #endregion // Async operation callbacks
+
+        #region Task management helpers
+
+        private object StartTask (string description, EventHandler cancelHandler)
+        {
+            if (curTask != null)
+                throw new InvalidOperationException ("A task is already in progress");
+
+            curTask = new UITask (description, cancelHandler);
+            progressbar.Text = description;
+            cancelButton.Visible = true;
+            progressbar.Visible = true;
+
+            return curTask;
+        }
+
+        private void SetTaskProgress (int newProgress)
+        {
+            progressbar.Fraction = newProgress / 100.0;
+        }
+
+        private void SetTaskCompleted ()
+        {
+            curTask = null;
+
+            cancelButton.Visible = false;
+            progressbar.Visible = false;
+            progressbar.Text = "";
+            progressbar.Fraction = 0.0;
+        }
+
+        private void CancelTask ()
+        {
+            if (curTask != null)
+            {
+                curTask.Cancel ();
+                curTask = null;
+            }
+        }
+
+        #endregion // Task management helpers
+
+        #region Convenience
+
+        private void ShowInfoMessage (string message)
+        {
+            ShowMessage (message, Gtk.MessageType.Info);
         }
 
         private void ShowErrorMessage (string message)
         {
-            Gtk.MessageDialog md = new Gtk.MessageDialog (mainWindow,
+            ShowMessage (message, Gtk.MessageType.Error);
+        }
+
+        private void ShowMessage (string message, Gtk.MessageType messageType)
+        {
+            Gtk.MessageDialog md = new Gtk.MessageDialog (window,
                 Gtk.DialogFlags.DestroyWithParent,
-                Gtk.MessageType.Error,
-                Gtk.ButtonsType.Close,
+                messageType,
+                Gtk.ButtonsType.Ok,
                 message);
             md.Run ();
             md.Destroy ();
         }
+
+        #endregion
     }
+
+    #region Task management helper class
+    internal class UITask
+    {
+        private string description;
+        public string Description
+        {
+            get { return description; }
+        }
+
+        public event EventHandler Canceled;
+
+        public UITask (string description, EventHandler canceled)
+        {
+            this.description = description;
+            Canceled += canceled;
+        }
+
+        public void Cancel ()
+        {
+            Canceled (this, EventArgs.Empty);
+        }
+    }
+    #endregion // Task management helper class
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if false
-internal enum DataTransferColumn
-{
-    From,
-    Size,
-    Description,
-}
-
-public class MainWindow : Gtk.Window
-{
-    protected Gdk.Pixbuf incomingPixbuf = null;
-    protected Gdk.Pixbuf outgoingPixbuf = null;
-    protected Gdk.Pixbuf socketPixbuf = null;
-    protected Gdk.Pixbuf securePixbuf = null;
-
-	protected Gtk.TreeView processList;
-	protected Gtk.TreeView resourceList;
-	protected Gtk.TreeView dataTransferList;
-	protected Gtk.TreeStore processListStore;
-	protected Gtk.TreeStore resourceListStore;
-    protected Gtk.TreeStore dataTransferListStore;
-    
-    protected DataView dataView;
-    protected Gtk.ListStore dataChunkStore;
-    
-    private List<Process> selectedProcesses = new List<Process>();
-
-    protected Dump curDump = null;
-    protected List<Process> curProcesses = null;
-
-    protected string curOperation = null;
-    protected DumpLoader dumpLoader;
-    protected DumpParser dumpParser;
-
-    public MainWindow()
-        : base("")
-    {
-        this.Build();
-
-		// Main widgets configuration        
-        System.Reflection.Assembly asm = System.Reflection.Assembly.GetExecutingAssembly();
-        incomingPixbuf = new Gdk.Pixbuf(asm, "incoming.png");
-        outgoingPixbuf = new Gdk.Pixbuf(asm, "outgoing.png");
-        socketPixbuf = new Gdk.Pixbuf(asm, "socket.png");
-        securePixbuf = new Gdk.Pixbuf(asm, "secure.png");
-
-        dataChunkStore = new Gtk.ListStore(typeof(object), typeof(string), typeof(string));
-
-		processListStore = new Gtk.TreeStore(typeof(Process));
-		processList = new Gtk.TreeView(processListStore);
-		processList.HeadersVisible = false;
-		processList.AppendColumn("Process", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(processList_CellDataFunc));
-		processList.CursorChanged += new EventHandler(processList_CursorChanged);
-
-		resourceListStore = new Gtk.TreeStore(typeof(Resource));
-		resourceList = new Gtk.TreeView(resourceListStore);
-		resourceList.HeadersVisible = false;
-		Gtk.TreeViewColumn col = new Gtk.TreeViewColumn();
-		col.Title = "Resource";
-		Gtk.CellRendererPixbuf pbRenderer = new Gtk.CellRendererPixbuf();
-		Gtk.CellRendererText txtRenderer = new Gtk.CellRendererText();
-		col.PackStart(pbRenderer, false);
-		col.PackStart(txtRenderer, true);
-		col.SetCellDataFunc(pbRenderer, new Gtk.TreeCellDataFunc(resourceList_PixbufCellDataFunc));
-		col.SetCellDataFunc(txtRenderer, new Gtk.TreeCellDataFunc(resourceList_TextCellDataFunc));
-		resourceList.AppendColumn(col);
-		resourceList.CursorChanged += new EventHandler(resourceList_CursorChanged);
-
-        dataTransferListStore = new Gtk.TreeStore(typeof(DataTransfer));
-        dataTransferList = new Gtk.TreeView(dataTransferListStore);
-        dataTransferList.Selection.Mode = Gtk.SelectionMode.Multiple;
-        dataTransferList.Selection.Changed += new EventHandler(dataTransferList_SelectionChanged);
-        
-        dataTransferList.AppendColumn("", new Gtk.CellRendererPixbuf(), new Gtk.TreeCellDataFunc(dataTransferList_DirectionCellDataFunc));
-        col = dataTransferList.AppendColumn("From", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_TextCellDataFunc));
-        col.UserData = (IntPtr) DataTransferColumn.From;
-        col = dataTransferList.AppendColumn("Size", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_TextCellDataFunc));
-        col.UserData = (IntPtr) DataTransferColumn.Size;
-        col = dataTransferList.AppendColumn("Description", new Gtk.CellRendererText(), new Gtk.TreeCellDataFunc(dataTransferList_TextCellDataFunc));
-        col.UserData = (IntPtr) DataTransferColumn.Description;
-		dataView = new DataView();
-        dataView.Model = dataChunkStore;
-		
-		// Docking
-		dock = new Gdl.Dock();
-		Gdl.DockBar dockBar = new Gdl.DockBar(dock);
-		Gtk.Box workspace = new Gtk.HBox(false, 5);
-		workspace.PackStart(dockBar, false, false, 0);
-		workspace.PackEnd(dock, true, true, 0);
-		MainVBox.PackStart(workspace, true, true, 0);
-		
-		Gdl.DockItem processDock = getDockItem(processList, "process", "Process", Gtk.Stock.Execute);
-		dock.AddItem(processDock, DockPlacement.Left);
-		Gdl.DockItem resourceDock = getDockItem(resourceList, "resource", "Resource", Gtk.Stock.File);
-		dock.AddItem(resourceDock, DockPlacement.Center);
-		Gdl.DockItem dataTransferDock = getDockItem(dataTransferList, "datatransfer", "Data transfer", Gtk.Stock.File);
-		dock.AddItem(dataTransferDock, DockPlacement.Right);
-		Gdl.DockItem dataViewDock= getDockItem(dataView, "dataview", "Data view", Gtk.Stock.File);
-		dock.AddItem(dataViewDock, DockPlacement.Bottom);
-		
-		resourceDock.DockTo(dataTransferDock, DockPlacement.Left);
-		processDock.DockTo(resourceDock, DockPlacement.Left);
-
-		MainVBox.ShowAll();
-		
-		// Dump related objects
-        dumpLoader = new DumpLoader();
-        dumpLoader.LoadProgressChanged += new ProgressChangedEventHandler(curOperation_ProgressChanged);
-        dumpLoader.LoadCompleted += new LoadCompletedEventHandler(dumpLoader_LoadCompleted);
-
-        dumpParser = new DumpParser();
-        dumpParser.ParseProgressChanged += new ParseProgressChangedEventHandler(dumpParser_ParseProgressChanged);
-        dumpParser.ParseCompleted += new ParseCompletedEventHandler(dumpParser_ParseCompleted);
-        
-    }
-
-	private Gdl.DockItem getDockItem(Gtk.Widget widget, string id, string label, string icon)
-	{
-		Gdl.DockItem dockItem = new Gdl.DockItem(id, label, icon, Gdl.DockItemBehavior.Normal);
-		Gtk.ScrolledWindow scroll = new Gtk.ScrolledWindow();
-		scroll.Add(widget);
-		dockItem.Add(scroll);
-		return dockItem;	
-	}
-
-    protected virtual void processList_CursorChanged(object sender, System.EventArgs e)
-    {
-        resourceListStore.Clear();
-        selectedProcesses.Clear();
-
-        Gtk.TreePath[] selected = processList.Selection.GetSelectedRows();
-        if (selected.Length < 1)
-            return;
-
-        Gtk.TreeIter iter;
-        if (!processListStore.GetIter(out iter, selected[0]))
-            return;
-
-        Process selectedProc = processListStore.GetValue(iter, 0) as Process;
-        if (selectedProc != null)
-            selectedProcesses.Add(selectedProc);
-        else
-            selectedProcesses.AddRange(curProcesses);
-
-        resourceListStore.AppendValues(new object[] { null, });
-        foreach (Process proc in selectedProcesses)
-        {
-            foreach (Resource res in proc.Resources)
-            {
-                resourceListStore.AppendValues(new object[] { res, });
-            }
-        }
-    }
-
-    private void processList_CellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
-    {
-    	Gtk.CellRendererText textCell = cell as Gtk.CellRendererText;
-
-    	Process proc = model.GetValue(iter, 0) as Process;
-    	if (proc != null)
-    	    textCell.Text = proc.ToString();
-    	else
-    	    textCell.Text = "(all)";
-    }
-
-    protected virtual void resourceList_CursorChanged(object sender, System.EventArgs e)
-    {
-        dataChunkStore.Clear();
-        dataTransferListStore.Clear();
-
-        Gtk.TreePath[] selected = resourceList.Selection.GetSelectedRows();
-        if (selected.Length < 1)
-            return;
-
-        Gtk.TreeIter iter;
-        if (!resourceListStore.GetIter(out iter, selected[0]))
-            return;
-
-        List<Resource> resources = null;
-        Resource selectedResource = resourceListStore.GetValue(iter, 0) as Resource;
-        if (selectedResource != null)
-        {
-            resources = new List<Resource>(1);
-            resources.Add(selectedResource);
-        }
-        else
-        {
-            resources = new List<Resource>();
-
-            foreach (Process proc in selectedProcesses)
-            {
-                resources.AddRange(proc.Resources);
-            }
-        }
-
-        foreach (Resource res in resources)
-        {
-            foreach (DataTransfer transfer in res.DataTransfers)
-            {                
-                dataTransferListStore.AppendValues(new object[] { transfer, });
-            }
-        }
-    }
-
-    private void resourceList_PixbufCellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
-    {
-        Gtk.CellRendererPixbuf pbCell = cell as Gtk.CellRendererPixbuf;
-        pbCell.Pixbuf = null;
-
-    	Resource res = model.GetValue(iter, 0) as Resource;
-    	if (res == null)
-    	    return;
-
-        if (res is SocketResource)
-            pbCell.Pixbuf = socketPixbuf;
-        else if (res is CryptoResource)
-            pbCell.Pixbuf = securePixbuf;
-    }
-
-    private void resourceList_TextCellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
-    {
-    	Gtk.CellRendererText textCell = cell as Gtk.CellRendererText;
-
-    	Resource res = model.GetValue(iter, 0) as Resource;
-    	if (res != null)
-    	{
-    	    bool handled = false;
-
-    	    if (res is SocketResource)
-    	    {
-    	        SocketResource sockRes = res as SocketResource;
-
-                if (sockRes.AddressFamily != AddressFamily.Unknown)
-                {
-        	        textCell.Text = String.Format("0x{0:x8} - {1}, {2}", sockRes.Handle, sockRes.AddressFamily, sockRes.SocketType);
-        	        handled = true;
-        	    }
-    	    }
-    	    
-    	    if (!handled)
-        	    textCell.Text = String.Format("0x{0:x8}", res.Handle);
-    	}
-    	else
-    	{
-    	    textCell.Text = "(all)";
-    	}
-    }
-
-    private void dataTransferList_SelectionChanged(object sender, EventArgs e)
-    {
-        dataChunkStore.Clear();
-
-        Gtk.TreePath[] selected = dataTransferList.Selection.GetSelectedRows();
-        if (selected.Length < 1)
-            return;
-
-        foreach (Gtk.TreePath path in selected)
-        {
-            Gtk.TreeIter iter;
-            if (!dataTransferListStore.GetIter(out iter, path))
-                return;
-
-            DataTransfer transfer = dataTransferListStore.GetValue(iter, 0) as DataTransfer;
-            
-            string linePrefixStr = null;
-            string linePrefixColor = null;
-            if (transfer.Direction == DataDirection.Incoming)
-            {
-                linePrefixStr = "<<";
-                linePrefixColor = "#8ae899";
-            }
-            else
-            {
-                linePrefixStr = ">>";
-                linePrefixColor = "#9cb7d1";
-            }
-
-            dataChunkStore.AppendValues(new object[] { transfer.Data, linePrefixStr, linePrefixColor });
-        }
-    }
-
-    private void dataTransferList_DirectionCellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
-    {
-    	Gtk.CellRendererPixbuf pbCell = cell as Gtk.CellRendererPixbuf;
-    	DataTransfer transfer = model.GetValue(iter, 0) as DataTransfer;
-    	
-    	if (transfer.Direction == DataDirection.Incoming)
-    	    pbCell.Pixbuf = incomingPixbuf;
-    	else
-    	    pbCell.Pixbuf = outgoingPixbuf;
-    }
-    
-    private void dataTransferList_TextCellDataFunc(Gtk.TreeViewColumn treeCol, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
-    {
-    	Gtk.CellRendererText textCell = cell as Gtk.CellRendererText;
-    	DataTransfer transfer = model.GetValue(iter, 0) as DataTransfer;
-    	DataTransferColumn col = (DataTransferColumn) treeCol.UserData;
-
-    	switch (col)
-    	{
-    	    case DataTransferColumn.From:
-        	    textCell.Text = transfer.FunctionName;
-        	    break;
-        	case DataTransferColumn.Size:
-        	    textCell.Text = Convert.ToString(transfer.Size);
-        	    break;
-        	case DataTransferColumn.Description:
-        	    if (transfer.HasMetaKey("net.ipv4.remoteEndpoint"))
-        	        textCell.Text = String.Format("remote: {0}", transfer.GetMetaValue("net.ipv4.remoteEndpoint")); 
-        	    else
-        	        textCell.Text = "";
-        	    break;
-        }
-    }
-
-    private void CloseCurrentDump()
-    {
-        selectedProcesses.Clear();
-
-        processListStore.Clear();
-        resourceListStore.Clear();
-        dataTransferListStore.Clear();
-        
-        dataChunkStore.Clear();
-
-        // TODO: might not be necessary
-        processList.Selection.UnselectAll();
-        resourceList.Selection.UnselectAll();
-        dataTransferList.Selection.UnselectAll();
-
-    	if (curProcesses != null)
-    	{
-    		foreach (Process proc in curProcesses)
-    		{
-    			proc.Close();
-    		}
-    		curProcesses = null;
-    	}
-    	
-        if (curDump != null)
-        {
-            curDump.Close();
-            curDump = null;
-        }
-    }
-
-    private void curOperation_ProgressChanged(object sender, ProgressChangedEventArgs e)
-    {
-        if (loadProgress != null)
-            loadProgress.Fraction = (float) e.ProgressPercentage / 100.0f;
-    }
-
-    protected void OnDeleteEvent(object sender, Gtk.DeleteEventArgs a)
-    {
-        CloseCurrentDump();
-        Gtk.Application.Quit();
-        a.RetVal = true;
-    }
-
-    protected virtual void OnQuit(object sender, System.EventArgs e)
-    {
-        CloseCurrentDump();
-        Gtk.Application.Quit();
-    }
-    
-    protected virtual void OnOpen(object sender, System.EventArgs e)
-    {
-    	Gtk.FileChooserDialog fc =
-            new Gtk.FileChooserDialog("Choose the file to open",
-        	                      this,
-                                  Gtk.FileChooserAction.Open,
-                                  "Cancel", Gtk.ResponseType.Cancel,
-                                  "Open", Gtk.ResponseType.Accept);
-		Gtk.FileFilter ff = new Gtk.FileFilter();
-		ff.AddPattern("*.osd");
-		ff.Name = "oSpy dump files (.osd)";
-		fc.AddFilter(ff);
-
-        Gtk.ResponseType response = (Gtk.ResponseType) fc.Run();
-        string filename = fc.Filename;
-        fc.Destroy();
-        
-        if (response == Gtk.ResponseType.Accept)
-        {
-        	Stream file = new BZip2InputStream(File.OpenRead(filename));
-        	
-        	curOperation = "Loading";
-            statusBar.Push(1, curOperation);
-            cancelLoadButton.Sensitive = true;
-        	dumpLoader.LoadAsync(file, curOperation);
-        }
-    }
-
-    private void dumpLoader_LoadCompleted(object sender, LoadCompletedEventArgs e)
-    {
-        loadProgress.Fraction = 0;
-        cancelLoadButton.Sensitive = false;
-        statusBar.Pop(1);
-        curOperation = null;
-        if (e.Cancelled)
-        {
-        	Console.Out.WriteLine("load cancelled");
-            return;
-        }
-
-        Dump dump;
-
-        try
-        {
-            dump = e.Dump;
-        }
-        catch (Exception ex)
-        {
-            ShowErrorMessage(String.Format("Failed to load dump: {0}", ex.Message));
-            return;
-        }
-        
-        CloseCurrentDump();
-        curDump = dump;
-        curOperation = "Parsing";
-        statusBar.Push(1, curOperation);
-        cancelLoadButton.Sensitive = true;
-        dumpParser.ParseAsync(curDump, curOperation);
-    }
-    
-    private Resource latestResource = null;
-    
-    private void dumpParser_ParseProgressChanged(object sender, ParseProgressChangedEventArgs e)
-    {
-        curOperation_ProgressChanged(sender, e);
-
-        if (e.LatestResource != null)
-            latestResource = e.LatestResource;
-
-        if (latestResource != null)
-        {
-            loadProgress.Text = String.Format("Last resource: 0x{0:x8}", latestResource.Handle);
-        }
-    }
-    
-    private void dumpParser_ParseCompleted(object sender, ParseCompletedEventArgs e)
-    {
-        loadProgress.Fraction = 0;
-        loadProgress.Text = "";
-        cancelLoadButton.Sensitive = false;
-        statusBar.Pop(1);
-        curOperation = null;
-        if (e.Cancelled)
-        {
-        	Console.Out.WriteLine("parse cancelled");
-            return;
-        }
-
-        try
-        {
-        	curProcesses = e.Processes;
-        }
-        catch (Exception ex)
-        {
-            ShowErrorMessage(String.Format("Failed to parse dump: {0}", ex.Message));
-            return;
-        }
-
-        processListStore.AppendValues(new object[] { null, });
-        foreach (Process proc in curProcesses)
-        {
-        	processListStore.AppendValues(new object[] { proc, });
-        }
-    }
-
-    protected virtual void cancelLoadButton_clicked(object sender, System.EventArgs e)
-    {
-        // FIXME: this is ugly
-        if (curOperation == "Loading")
-        {
-            Console.Out.WriteLine("cancelling load");
-            dumpLoader.LoadAsyncCancel(curOperation);
-        }
-        else        
-        {
-            Console.Out.WriteLine("cancelling parse");
-            dumpParser.ParseAsyncCancel(curOperation);
-        }
-    }
-}
-#endif

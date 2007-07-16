@@ -277,18 +277,19 @@ namespace oSpy.SharpDumpLib
                             switch (callType)
                             {
                                 case FunctionCallType.SocketConnect:
+                                    processed = true;
                                     (curRes as SocketResource).SetCurrentRemoteEndpoint(ParseSocketConnectEvent(eventRoot));
                                     break;
                                 case FunctionCallType.SocketRecv:
                                 case FunctionCallType.SocketSend:
                                     processed = true;
 
-                                    buf = ParseSocketRecvOrSendEvent(eventRoot);
+                                    buf = ParseSocketRecvOrSendEvent (eventRoot);
                                     if (buf != null)
                                     {
                                         direction = (callType == FunctionCallType.SocketRecv) ? DataDirection.Incoming : DataDirection.Outgoing;
 
-                                        curRes.AppendData(buf, direction, ev.Id, functionName);
+                                        curRes.AppendData (buf, direction, ev.Id, functionName);
                                     }
                                     break;
                                 case FunctionCallType.EncryptMessage:
@@ -367,11 +368,12 @@ namespace oSpy.SharpDumpLib
                 throw new InvalidDataException("name element not found on FunctionCall event");
             functionName = node.InnerText;
 
-            string fn = functionName.ToLower();
-            if (fn.StartsWith("ws2_32.dll::"))
+            string[] parts = functionName.ToLower ().Split (new string[] { "::" }, 2, StringSplitOptions.None);
+            string module = parts[0];
+            string fn = parts[1];
+            if (module == "ws2_32.dll" || module == "wsock32.dll")
             {
                 type = ResourceType.Socket;
-                fn = fn.Substring(12);
 
                 if (fn == "recv")
                 {
@@ -399,10 +401,9 @@ namespace oSpy.SharpDumpLib
                     query = firstArgInValQuery;
                 }
             }
-            else if (fn.StartsWith("secur32.dll::"))
+            else if (module == "secur32.dll")
             {
                 type = ResourceType.Crypto;
-                fn = fn.Substring(13);
 
                 if (fn == "encryptmessage")
                 {
