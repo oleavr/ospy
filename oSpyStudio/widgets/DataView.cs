@@ -288,29 +288,34 @@ namespace oSpyStudio.Widgets
 
             do
             {
-                HexChunk chunk = new HexChunk ();
-                chunk.ApplyCustomStyle (ApplyCustomStyle);
-                chunk.Show ();
-
-                chunk.Freeze ();
-                chunk.Bytes = model.GetValue (iter, dataColIndex) as byte[];
-                if (linePrefixTextColIndex >= 0)
-                {
-                    string s = model.GetValue (iter, linePrefixTextColIndex) as string;
-                    if (s != null && s != String.Empty)
-                        chunk.LinePrefix = s;
-                }
-                if (linePrefixColorColIndex >= 0)
-                {
-                    string s = model.GetValue (iter, linePrefixColorColIndex) as string;
-                    if (s != null && s != String.Empty)
-                        chunk.LinePrefixColor = s;
-                }
-                chunk.UnFreeze ();
-
-                chunkVBox.PackStart (chunk, false, true, 0);
+                AppendChunk (iter);
             }
             while (model.IterNext (ref iter));
+        }
+
+        private void AppendChunk (Gtk.TreeIter iter)
+        {
+            HexChunk chunk = new HexChunk ();
+            chunk.ApplyCustomStyle (ApplyCustomStyle);
+            chunk.Show ();
+
+            chunk.Freeze ();
+            chunk.Bytes = model.GetValue (iter, dataColIndex) as byte[];
+            if (linePrefixTextColIndex >= 0)
+            {
+                string s = model.GetValue (iter, linePrefixTextColIndex) as string;
+                if (s != null && s != String.Empty)
+                    chunk.LinePrefix = s;
+            }
+            if (linePrefixColorColIndex >= 0)
+            {
+                string s = model.GetValue (iter, linePrefixColorColIndex) as string;
+                if (s != null && s != String.Empty)
+                    chunk.LinePrefixColor = s;
+            }
+            chunk.UnFreeze ();
+
+            chunkVBox.PackStart (chunk, false, true, 0);
         }
 
         #region Model change handlers
