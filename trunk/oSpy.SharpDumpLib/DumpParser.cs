@@ -38,12 +38,8 @@ namespace oSpy.SharpDumpLib
 
     //
     // DumpParser takes care of the low-level details of a dump, recognizing
-    // related recv()/send() (for example) and grouping them into DataExchange
+    // related recv()/send() (for example) and grouping them into DataTransfer
     // objects attached to a Resource, representing the OS handle.
-    //
-    // TransactionBuilder will be written later, and will take care of parsing
-    // the DataExchange objects and building Transaction objects from them by
-    // recognizing the protocols.
     //
     public class DumpParser : AsyncWorker
     {
@@ -181,6 +177,7 @@ namespace oSpy.SharpDumpLib
             return new List<Process>(processes.Values);
         }
 
+        // TODO: quick 'n dirty naive implementation, lots of room for optimizations
         private void ProcessDumpEvents(Dump dump, AsyncOperation asyncOp, SortedDictionary<uint, Process> processes)
         {
             SortedDictionary<uint, Event> pendingEvents = new SortedDictionary<uint, Event>(dump.Events);
