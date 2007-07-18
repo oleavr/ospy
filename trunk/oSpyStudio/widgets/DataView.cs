@@ -365,7 +365,8 @@ namespace oSpyStudio.Widgets
 
             w.ModifyText (Gtk.StateType.Normal, fg);
 
-            w.ModifyFont (Pango.FontDescription.FromString ("Lucida Console 10"));
+            //w.ModifyFont (Pango.FontDescription.FromString ("Lucida Console 10"));
+			w.ModifyFont (Pango.FontDescription.FromString ("Monospace 10"));
         }
     }
 }

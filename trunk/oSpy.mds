@@ -19,6 +19,5 @@
   <Entries>
     <Entry filename="./oSpy.SharpDumpLib/oSpy.SharpDumpLib.mdp" />
     <Entry filename="./oSpyStudio/oSpyStudio.mdp" />
-    <Entry filename="./oSpyStudio/Dock/Dock.mdp" />
   </Entries>
 </Combine>

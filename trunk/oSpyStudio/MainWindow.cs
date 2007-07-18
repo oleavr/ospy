@@ -61,15 +61,20 @@ namespace oSpyStudio
 
         public MainWindow ()
         {
-            Glade.XML xml = new Glade.XML (new System.IO.MemoryStream (oSpyStudio.Properties.Resources.ui), "mainWindow", null);
+            //Glade.XML xml = new Glade.XML (new System.IO.MemoryStream (oSpyStudio.Properties.Resources.ui), "mainWindow", null);
+			Glade.XML xml = new Glade.XML ("ui.glade", "mainWindow");
             xml.Autoconnect (this);
 
             System.Reflection.Assembly asm = System.Reflection.Assembly.GetExecutingAssembly ();
 
-            incomingPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.incoming));
-            outgoingPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.outgoing));
-            socketPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.socket));
-            securePixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.secure));
+            //incomingPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.incoming));
+            //outgoingPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.outgoing));
+            //socketPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.socket));
+            //securePixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.secure));
+            incomingPixbuf = new Gdk.Pixbuf (asm, "incoming.png");
+            outgoingPixbuf = new Gdk.Pixbuf (asm, "outgoing.png");
+            socketPixbuf = new Gdk.Pixbuf (asm, "socket.png");
+            securePixbuf = new Gdk.Pixbuf (asm, "secure.png");
 
             processView.AppendColumn ("Process", new Gtk.CellRendererText (), new Gtk.TreeCellDataFunc (processView_CellDataFunc));
             processView.Model = processModel;
