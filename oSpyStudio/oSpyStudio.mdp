@@ -14,23 +14,17 @@
     </Configuration>
   </Configurations>
   <Contents>
-    <File name="./gtk-gui/gui.stetic" subtype="Code" buildaction="Exclude" />
-    <File name="./gtk-gui/generated.cs" subtype="Code" buildaction="Compile" />
+    <File name="./GLibSynchronizationContext.cs" subtype="Code" buildaction="Compile" />
     <File name="./MainWindow.cs" subtype="Code" buildaction="Compile" />
     <File name="./Main.cs" subtype="Code" buildaction="Compile" />
     <File name="./Properties/AssemblyInfo.cs" subtype="Code" buildaction="Compile" />
-    <File name="./Widgets" subtype="Directory" buildaction="Compile" />
-    <File name="./Widgets/DataView.cs" subtype="Code" buildaction="Compile" />
-    <File name="./gtk-gui/objects.xml" subtype="Code" buildaction="EmbedAsResource" />
-    <File name="./GLibSynchronizationContext.cs" subtype="Code" buildaction="Compile" />
-    <File name="./Widgets/ProgressDialog.cs" subtype="Code" buildaction="Compile" />
-    <File name="./gtk-gui/MainWindow.cs" subtype="Code" buildaction="Compile" />
-    <File name="./gtk-gui/oSpyStudio.Widgets.DataView.cs" subtype="Code" buildaction="Compile" />
-    <File name="./gtk-gui/oSpyStudio.Widgets.ProgressDialog.cs" subtype="Code" buildaction="Compile" />
-    <File name="./Images/incoming.png" subtype="Code" buildaction="EmbedAsResource" />
-    <File name="./Images/outgoing.png" subtype="Code" buildaction="EmbedAsResource" />
-    <File name="./Images/secure.png" subtype="Code" buildaction="EmbedAsResource" />
-    <File name="./Images/socket.png" subtype="Code" buildaction="EmbedAsResource" />
+    <File name="./widgets" subtype="Directory" buildaction="Compile" />
+    <File name="./widgets/DataView.cs" subtype="Code" buildaction="Compile" />
+    <File name="./data/images/incoming.png" subtype="Code" buildaction="EmbedAsResource" />
+    <File name="./data/images/outgoing.png" subtype="Code" buildaction="EmbedAsResource" />
+    <File name="./data/images/secure.png" subtype="Code" buildaction="EmbedAsResource" />
+    <File name="./data/images/socket.png" subtype="Code" buildaction="EmbedAsResource" />
+    <File name="./data/glade/ui.glade" subtype="Code" buildaction="EmbedAsResource" />
   </Contents>
   <References>
     <ProjectReference type="Gac" localcopy="True" refto="gtk-sharp, Version=2.8.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
@@ -43,7 +37,6 @@
     <ProjectReference type="Project" localcopy="True" refto="oSpy.SharpDumpLib" />
     <ProjectReference type="Gac" localcopy="True" refto="Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756" />
     <ProjectReference type="Gac" localcopy="True" refto="System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-    <ProjectReference type="Project" localcopy="True" refto="Gdl" />
   </References>
   <GtkDesignInfo partialTypes="True">
     <ExportedWidgets>
