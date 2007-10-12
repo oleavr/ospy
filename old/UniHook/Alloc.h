@@ -1,15 +1,17 @@
-// ########################################################
-// Custom allocator sample code for vector
-// ========================================================
-// The following code example is taken from
-// http://www.josuttis.com/libbook/memory/myalloc.hpp.html
-// http://www.josuttis.com/libbook/memory/myalloc1.cpp.html
-// The code has been written by Nicolai M. Josuttis
-// --------------------------------------------------------
-// File myalloc.h
-// Cosmetic changes have been done by Alex Vinokur
-// Adapted to oSpy by Ole André Vadla Ravnås
-// ########################################################
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #pragma once
 
