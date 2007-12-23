@@ -68,7 +68,10 @@ namespace oSpy.Capture
         private void UpdateUsbDeviceList ()
         {
             usbDevView.Items.Clear ();
+            
             usbImagesSmall.Images.Clear ();
+            usbImagesSmall.ImageSize = new Size (16, 16);
+
             usbImagesLarge.Images.Clear ();
 
             int imageIndex = 0;
