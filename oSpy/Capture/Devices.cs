@@ -86,8 +86,6 @@ namespace oSpy.Capture
         public const int SPDRP_FRIENDLYNAME = 0x0000000C;
         public const int SPDRP_PHYSICAL_DEVICE_OBJECT_NAME = 0x0000000E;
 
-        public const int SM_CXSMICON = 49;
-
         public const int INVALID_HANDLE_VALUE = -1;
 
         public static string[] MarshalPtrToMultiStringUni (IntPtr ptr)
@@ -290,7 +288,7 @@ namespace oSpy.Capture
                 // Are we on Vista or newer?
                 if (osInfo.Platform == PlatformID.Win32NT && osVer >= new Version (6, 0))
                 {
-                    if (!WinApi.SetupDiLoadDeviceIcon (devInfo, ref devInfoData, WinApi.SM_CXSMICON, WinApi.SM_CXSMICON, 0, out smallIconHandle))
+                    if (!WinApi.SetupDiLoadDeviceIcon (devInfo, ref devInfoData, 16, 16, 0, out smallIconHandle))
                         return false;
                 }
                 else
