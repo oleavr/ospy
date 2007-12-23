@@ -118,19 +118,19 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="incoming" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>../data/images/incoming.png;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="IncomingPng" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\data\images\incoming.png;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="outgoing" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>../data/images/outgoing.png;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="OutgoingPng" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\data\images\outgoing.png;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="secure" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>../data/images/secure.png;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="SecurePng" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\data\images\secure.png;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="socket" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>../data/images/socket.png;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="SocketPng" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\data\images\socket.png;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="ui" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>../data/glade/ui.glade;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="UiXml" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\data\glade\ui.glade;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
 </root>

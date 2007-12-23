@@ -321,7 +321,10 @@ namespace oSpy.SharpDumpLib
                 }
 
                 if (processedEvents.Count == 0)
-                    throw new InvalidDataException(String.Format("{0} pending events could not be processed", pendingEvents.Count));
+                {
+                    //throw new InvalidDataException (String.Format ("{0} pending events could not be processed", pendingEvents.Count));
+                    break;
+                }
 
                 foreach (Event ev in processedEvents)
                 {
@@ -457,9 +460,11 @@ namespace oSpy.SharpDumpLib
             node = eventRoot.SelectSingleNode(retValQuery);
             if (node == null)
                 throw new InvalidDataException("ReturnValue element not found");
-            UInt32 retVal = ParseUInt32Number(node.Value);
+            Int32 retVal = Int32.Parse (node.Value);
 
-            if (retVal == buf.Length)
+            if (retVal <= 0)
+                return null;
+            else if (retVal == buf.Length)
                 return buf;
             else
             {
@@ -499,10 +504,10 @@ namespace oSpy.SharpDumpLib
 
         private UInt32 ParseUInt32Number(string s)
         {
-            if (s.StartsWith("0x"))
-                return UInt32.Parse(s.Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier);
+            if (s.StartsWith ("0x"))
+                return UInt32.Parse (s.Substring (2), System.Globalization.NumberStyles.AllowHexSpecifier);
             else
-                return UInt32.Parse(s);
+                return UInt32.Parse (s);
         }
 
         #endregion // Core implementation

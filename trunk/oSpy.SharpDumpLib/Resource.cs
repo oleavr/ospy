@@ -52,15 +52,15 @@ namespace oSpy.SharpDumpLib
             }
         }
 
-        public virtual DataTransfer AppendData(byte[] data, DataDirection direction, uint eventId, string functionName)
+        public virtual DataTransfer AppendData (byte[] data, DataDirection direction, uint eventId, string functionName)
         {
             DataTransfer transfer = null;
 
             if (storage == null)
-                storage = new BulkStorage();
+                storage = new BulkStorage ();
 
-            transfer = new DataTransfer(this, storage.AppendData(data), direction, eventId, functionName);
-            dataTransfers.Add(transfer);
+            transfer = new CompactDataTransfer (direction, eventId, functionName, storage.AppendData (data));
+            dataTransfers.Add (transfer);
 
             return transfer;
         }

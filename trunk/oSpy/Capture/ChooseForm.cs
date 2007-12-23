@@ -33,18 +33,19 @@ namespace oSpy.Capture
     {
         private int checkCount = 0;
 
-        public ChooseForm()
+        public ChooseForm ()
         {
-            InitializeComponent();
+            InitializeComponent ();
         }
 
-        private void InjectForm_Shown(object sender, EventArgs e)
+        private void InjectForm_Shown (object sender, EventArgs e)
         {
-            UpdateProcessList();
-            UpdateButtons();
+            UpdateProcessList ();
+            UpdateUsbDeviceList ();
+            UpdateButtons ();
         }
 
-        private void UpdateProcessList()
+        private void UpdateProcessList ()
         {
             List<ProcessItem> items = new List<ProcessItem>();
 
@@ -62,6 +63,36 @@ namespace oSpy.Capture
 
             processList.Items.Clear();
             processList.Items.AddRange(items.ToArray());
+        }
+
+        private void UpdateUsbDeviceList ()
+        {
+            usbDevView.Items.Clear ();
+            usbImagesSmall.Images.Clear ();
+            usbImagesLarge.Images.Clear ();
+
+            int imageIndex = 0;
+
+            DeviceList devList = new DeviceList (DeviceEnumerator.USB);
+            foreach (Device device in devList.Devices)
+            {
+                ListViewItem item = new ListViewItem (device.Name);
+
+                if (device.Present)
+                    item.ForeColor = Color.Green;
+
+                Icon smallIcon = device.SmallIcon;
+                Icon largeIcon = device.LargeIcon;
+                if (smallIcon != null && largeIcon != null)
+                {
+                    usbImagesSmall.Images.Add (smallIcon);
+                    usbImagesLarge.Images.Add (largeIcon);
+
+                    item.ImageIndex = imageIndex++;
+                }
+
+                usbDevView.Items.Add (item);
+            }
         }
 
         private void UpdateButtons()

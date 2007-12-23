@@ -19,9 +19,124 @@ using System.IO;
 using System.ComponentModel;
 using oSpy.SharpDumpLib;
 using ICSharpCode.SharpZipLib.BZip2;
+using Cairo;
 
 namespace oSpyStudio
 {
+    class TestWidget : Gtk.Widget
+    {
+        private Color frameColor;
+        private Color headerBackColor;
+
+        public TestWidget (int colorScheme)
+        {
+            SetFlag (Gtk.WidgetFlags.NoWindow);
+            SetSizeRequest (300, 150);
+
+            if (colorScheme == 0)
+            {
+                frameColor = new Color (0.243, 0.282, 0.984);
+                headerBackColor = new Color (0.941, 0.941, 1.0);
+            }
+            else
+            {
+                frameColor = new Color (0.980, 0.741, 0.137);
+                headerBackColor = new Color (0.988, 0.980, 0.890);
+            }
+        }
+
+        protected override bool OnExposeEvent (Gdk.EventExpose e)
+        {
+            Context cr = Gdk.CairoHelper.Create (e.Window);
+            int x, y, w, h;
+
+            x = Allocation.X;
+            y = Allocation.Y;
+            w = Allocation.Width;
+            h = Allocation.Height;
+
+            double y0 = y;
+            double y1 = y0 + h;
+
+            double radius = w / 16;
+
+            MakeRoundedRectangularPath (cr, x, y0, w, y1 - y0, radius);
+            cr.Color = frameColor;
+            cr.LineWidth = 1.8;
+            cr.Stroke ();
+
+            y0 += 1;
+            y1 = y0 + (h / 4);
+            MakeRoundedRectangularPath (cr, x + 1, y0, w - 2, y1 - y0 - 2, radius);
+            cr.Color = headerBackColor;
+            cr.FillPreserve ();
+
+            y0 = y1 + 5;
+            y1 = y + h - 2;
+            MakeRoundedRectangularPath (cr, x + 1, y0, w - 2, y1 - y0, radius);
+            cr.Color = headerBackColor;
+            cr.FillPreserve ();
+
+            return true;
+        }
+
+        private void MakeRoundedRectangularPath (Cairo.Context cr, double x0, double y0, double rectWidth, double rectHeight, double radius)
+        {
+            if (rectWidth == 0 || rectHeight == 0)
+                return;
+
+            double x1, y1;
+            x1 = x0 + rectWidth;
+            y1 = y0 + rectHeight;
+
+            if (rectWidth / 2 < radius)
+            {
+                if (rectHeight / 2 < radius)
+                {
+                    cr.MoveTo (x0, (y0 + y1) / 2);
+                    cr.CurveTo (x0, y0, x0, y0, (x0 + x1) / 2, y0);
+                    cr.CurveTo (x1, y0, x1, y0, x1, (y0 + y1) / 2);
+                    cr.CurveTo (x1, y1, x1, y1, (x1 + x0) / 2, y1);
+                    cr.CurveTo (x0, y1, x0, y1, x0, (y0 + y1) / 2);
+                }
+                else
+                {
+                    cr.MoveTo (x0, y0 + radius);
+                    cr.CurveTo (x0, y0, x0, y0, (x0 + x1) / 2, y0);
+                    cr.CurveTo (x1, y0, x1, y0, x1, y0 + radius);
+                    cr.LineTo (x1, y1 - radius);
+                    cr.CurveTo (x1, y1, x1, y1, (x1 + x0) / 2, y1);
+                    cr.CurveTo (x0, y1, x0, y1, x0, y1 - radius);
+                }
+            }
+            else
+            {
+                if (rectHeight / 2 < radius)
+                {
+                    cr.MoveTo (x0, (y0 + y1) / 2);
+                    cr.CurveTo (x0, y0, x0, y0, x0 + radius, y0);
+                    cr.LineTo (x1 - radius, y0);
+                    cr.CurveTo (x1, y0, x1, y0, x1, (y0 + y1) / 2);
+                    cr.CurveTo (x1, y1, x1, y1, x1 - radius, y1);
+                    cr.LineTo (x0 + radius, y1);
+                    cr.CurveTo (x0, y1, x0, y1, x0, (y0 + y1) / 2);
+                }
+                else
+                {
+                    cr.MoveTo (x0, y0 + radius);
+                    cr.CurveTo (x0, y0, x0, y0, x0 + radius, y0);
+                    cr.LineTo (x1 - radius, y0);
+                    cr.CurveTo (x1, y0, x1, y0, x1, y0 + radius);
+                    cr.LineTo (x1, y1 - radius);
+                    cr.CurveTo (x1, y1, x1, y1, x1 - radius, y1);
+                    cr.LineTo (x0 + radius, y1);
+                    cr.CurveTo (x0, y1, x0, y1, x0, y1 - radius);
+                }
+            }
+            cr.ClosePath ();
+        }
+    }
+
     public class MainWindow
     {
         #region Fields - UI
@@ -44,6 +159,9 @@ namespace oSpyStudio
         [Glade.Widget]
         private Gtk.VPaned mainVPaned = null;
 
+        [Glade.Widget]
+        private Gtk.Notebook notebook = null;
+
         private Widgets.DataView chunkView = new Widgets.DataView ();
         private Gtk.ListStore chunkModel = new Gtk.ListStore (typeof (byte []), typeof (string), typeof (string));
 
@@ -58,7 +176,7 @@ namespace oSpyStudio
         private Gtk.Button cancelButton = new Gtk.Button ();
         private Gtk.ProgressBar progressbar = new Gtk.ProgressBar ();
 
-        #endregion // Fields - Glade
+        #endregion // Fields - UI
 
         #region Fields - task-related
 
@@ -76,20 +194,26 @@ namespace oSpyStudio
 
         public MainWindow ()
         {
-            //Glade.XML xml = new Glade.XML (new System.IO.MemoryStream (oSpyStudio.Properties.Resources.ui), "mainWindow", null);
-			Glade.XML xml = new Glade.XML ("ui.glade", "mainWindow");
+#if MSVS
+            Glade.XML xml = new Glade.XML (new System.IO.MemoryStream (oSpyStudio.Properties.Resources.UiXml), "mainWindow", null);
+#else
+            Glade.XML xml = new Glade.XML ("ui", "mainWindow");
+#endif
             xml.Autoconnect (this);
 
+#if MSVS
+            incomingPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.IncomingPng));
+            outgoingPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.OutgoingPng));
+            socketPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.SocketPng));
+            securePixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.SecurePng));
+#else
             System.Reflection.Assembly asm = System.Reflection.Assembly.GetExecutingAssembly ();
 
-            //incomingPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.incoming));
-            //outgoingPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.outgoing));
-            //socketPixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.socket));
-            //securePixbuf = new Gdk.Pixbuf (new System.IO.MemoryStream (Properties.Resources.secure));
-            incomingPixbuf = new Gdk.Pixbuf (asm, "incoming.png");
-            outgoingPixbuf = new Gdk.Pixbuf (asm, "outgoing.png");
-            socketPixbuf = new Gdk.Pixbuf (asm, "socket.png");
-            securePixbuf = new Gdk.Pixbuf (asm, "secure.png");
+            incomingPixbuf = new Gdk.Pixbuf (asm, "incoming");
+            outgoingPixbuf = new Gdk.Pixbuf (asm, "outgoing");
+            socketPixbuf = new Gdk.Pixbuf (asm, "socket");
+            securePixbuf = new Gdk.Pixbuf (asm, "secure");
+#endif
 
             processView.AppendColumn ("Process", new Gtk.CellRendererText (), new Gtk.TreeCellDataFunc (processView_CellDataFunc));
             processView.Model = processModel;
@@ -140,6 +264,21 @@ namespace oSpyStudio
 
             dumpLoader.LoadCompleted += new LoadCompletedEventHandler (dumpLoader_LoadCompleted);
             dumpParser.ParseCompleted += new ParseCompletedEventHandler (dumpParser_ParseCompleted);
+
+            //
+            Gtk.Fixed container = new Gtk.Fixed ();
+            TestWidget w1 = new TestWidget (0);
+            TestWidget w2 = new TestWidget (1);
+            container.Put (w1, 10, 10);
+            container.Put (w2, 10, 10 + w1.HeightRequest + 10);
+            container.ShowAll ();
+            int pageIndex = notebook.AppendPage (container, null);
+            window.ModifyBg (Gtk.StateType.Normal, new Gdk.Color (255, 255, 255));
+
+            //w1.ModifyBg (Gtk.StateType.Normal, new Gdk.Color (255, 0, 0));
+            //w1.ModifyBase (Gtk.StateType.Normal, new Gdk.Color (255, 0, 0));
+
+            notebook.Page = 1;
         }
 
         #endregion // Construction

@@ -20,91 +20,94 @@ using System.Collections.Generic;
 
 namespace oSpy.SharpDumpLib
 {
-    public class DataTransfer : IMetadata
+    public enum DataDirection
     {
-        private Resource resource = null;
-        public Resource Resource
-        {
-            get { return resource; }
-        }
+        Unknown,
+        Incoming,
+        Outgoing,
+    }
 
-        private BulkSlot slot = null;
-        public byte[] Data
-        {
-            get { return slot.Data; }
-        }
-        
-        public int Size
-        {
-            get { return slot.Size; }
-        }
+    [Serializable]
+    public abstract class DataTransfer : IMetadata
+    {
+        public abstract byte[] Data { get; }
+        public abstract int Size { get; }
 
         private DataDirection direction;
         public DataDirection Direction
         {
             get { return direction; }
+            set { direction = value; }
         }
 
-        private uint eventId = 0;
+        private uint eventId;
         public uint EventId
         {
             get { return eventId; }
+            set { eventId = value; }
         }
-        
-        private string functionName = null;
+
+        private string functionName;
         public string FunctionName
         {
             get { return functionName; }
+            set { functionName = value; }
         }
 
-        private Dictionary<string, object> metadata = new Dictionary<string, object>();
+        private Dictionary<string, object> metadata = new Dictionary<string, object> ();
 
-        public DataTransfer(Resource resource, BulkSlot slot, DataDirection direction, uint eventId, string functionName)
+        public DataTransfer (DataDirection direction, uint eventId, string functionName)
         {
-            this.resource = resource;
-            this.slot = slot;
-            this.direction = direction;            this.eventId = eventId;
+            this.direction = direction;
+            this.eventId = eventId;
             this.functionName = functionName;
         }
 
-        public override string ToString()
+        public DataTransfer (DataTransfer transfer)
         {
-        	if (metadata.Count == 1)
-        	{
-        	    string firstKey = null;
-        	    foreach (string key in metadata.Keys)
-        	        firstKey = key;
+            this.direction = transfer.direction;
+            this.eventId = transfer.eventId;
+            this.functionName = transfer.functionName;
+        }
 
-        	    return String.Format("DataExchange [{0} = {1}]", firstKey, metadata[firstKey]);  
-        	}
-        	else if (metadata.Count == 0)
-        	{
-        	    return "DataExchange [no metadata]";
-        	}
-        	else
-        	{
-        	    return String.Format("DataExchange [{0} metadata keys]", metadata.Count);
-        	}
+        public override string ToString ()
+        {
+            if (metadata.Count == 1)
+            {
+                string firstKey = null;
+                foreach (string key in metadata.Keys)
+                    firstKey = key;
+
+                return String.Format ("DataTransfer [{0} = {1}]", firstKey, metadata[firstKey]);
+            }
+            else if (metadata.Count == 0)
+            {
+                return "DataTransfer [no metadata]";
+            }
+            else
+            {
+                return String.Format ("DataTransfer [{0} metadata keys]", metadata.Count);
+            }
         }
 
         #region IMetadata implementation
 
-        public List<string> GetMetaKeys()
+        public List<string> GetMetaKeys ()
         {
-            return new List<string>(metadata.Keys);
+            return new List<string> (metadata.Keys);
         }
 
-        public bool HasMetaKey(string name)
+        public bool HasMetaKey (string name)
         {
-            return metadata.ContainsKey(name);
+            return metadata.ContainsKey (name);
         }
 
-        public object GetMetaValue(string name)
+        public object GetMetaValue (string name)
         {
             return metadata[name];
         }
 
-        public void SetMetaValue(string name, object value)
+        public void SetMetaValue (string name, object value)
         {
             metadata[name] = value;
         }
@@ -112,10 +115,57 @@ namespace oSpy.SharpDumpLib
         #endregion // IMetadata implementation
     }
 
-    public enum DataDirection
+    public class CompactDataTransfer : DataTransfer
     {
-        Unknown,
-        Incoming,
-        Outgoing,
+        private BulkSlot slot = null;
+
+        public override byte[] Data
+        {
+            get { return slot.Data; }
+        }
+
+        public override int Size
+        {
+            get { return slot.Size; }
+        }
+
+        public CompactDataTransfer (DataDirection direction, uint eventId, string functionName, BulkSlot slot)
+            : base (direction, eventId, functionName)
+        {
+            this.slot = slot;
+        }
+    }
+
+    [Serializable]
+    public class MemoryDataTransfer : DataTransfer
+    {
+        public byte[] data;
+        public override byte[] Data
+        {
+            get { return data; }
+        }
+
+        public override int Size
+        {
+            get { return data.Length; }
+        }
+
+        public MemoryDataTransfer ()
+            : base (DataDirection.Unknown, 0, String.Empty)
+        {
+            this.data = new byte [0];
+        }
+
+        public MemoryDataTransfer (DataDirection direction, uint eventId, string functionName, byte[] data)
+            : base (direction, eventId, functionName)
+        {
+            this.data = data;
+        }
+
+        public MemoryDataTransfer (DataTransfer transfer)
+            : base (transfer)
+        {
+            this.data = transfer.Data;
+        }
     }
 }
