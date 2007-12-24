@@ -18,97 +18,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Runtime.InteropServices;
 using System.Drawing;
+using System.Runtime.InteropServices;
 
 namespace oSpy.Capture
 {
-    public class WinApi
-    {
-        [DllImport ("setupapi.dll", CharSet = CharSet.Auto)]
-        public static extern IntPtr SetupDiGetClassDevs (IntPtr classGuid,
-            [MarshalAs (UnmanagedType.LPTStr)] string enumerator,
-            IntPtr hwndParent,
-            UInt32 flags);
-
-        [DllImport ("setupapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern bool SetupDiEnumDeviceInfo (IntPtr deviceInfoSet, uint memberIndex, ref SP_DEVINFO_DATA deviceInfoData);
-
-        [DllImport ("setupapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern bool SetupDiDestroyDeviceInfoList (IntPtr deviceInfoSet);
-
-        [DllImport ("setupapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern bool SetupDiGetDeviceRegistryProperty (IntPtr deviceInfoSet, ref SP_DEVINFO_DATA deviceInfoData, uint property, IntPtr propertyRegDataType, IntPtr propertyBuffer, uint propertyBufferSize, out UInt32 requiredSize);
-
-        [DllImport ("setupapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern bool SetupDiLoadClassIcon(ref Guid classGuid, out IntPtr largeIcon, out int miniIconIndex);
-
-        [DllImport ("setupapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern bool SetupDiLoadDeviceIcon (IntPtr  deviceInfoSet, ref SP_DEVINFO_DATA deviceInfoData, uint cxIcon, uint cyIcon, uint flags, out IntPtr hIcon);
-
-        [DllImport ("setupapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern bool SetupDiGetClassImageList (ref SP_CLASSIMAGELIST_DATA classImageListData);
-
-        [DllImport ("setupapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern bool SetupDiGetClassImageIndex (ref SP_CLASSIMAGELIST_DATA classImageListData, ref Guid classGuid, out int imageIndex);
-
-        [DllImport ("setupapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern bool SetupDiDestroyClassImageList (ref SP_CLASSIMAGELIST_DATA classImageListData);
-
-        [DllImport ("user32.dll", CharSet = CharSet.Auto)]
-        public static extern bool DestroyIcon (IntPtr handle);
-
-        [DllImport ("comctl32.dll", SetLastError = true)]
-        public static extern IntPtr ImageList_GetIcon (IntPtr himl, int i, int flags);
-
-        [StructLayout (LayoutKind.Sequential)]
-        public struct SP_DEVINFO_DATA
-        {
-            public UInt32 cbSize;
-            public Guid ClassGuid;
-            public UInt32 DevInst;
-            public IntPtr Reserved;
-        }
-
-        [StructLayout (LayoutKind.Sequential)]
-        public struct SP_CLASSIMAGELIST_DATA
-        {
-            public UInt32 cbSize;
-            public IntPtr ImageList;
-            public UInt32 Reserved;
-        }
-
-        public const int DIGCF_PRESENT = 0x00000002;
-        public const int DIGCF_ALLCLASSES = 0x00000004;
-
-        public const int SPDRP_DEVICEDESC = 0x00000000;
-        public const int SPDRP_HARDWAREID = 0x00000001;
-        public const int SPDRP_FRIENDLYNAME = 0x0000000C;
-        public const int SPDRP_PHYSICAL_DEVICE_OBJECT_NAME = 0x0000000E;
-
-        public const int INVALID_HANDLE_VALUE = -1;
-
-        public static string[] MarshalPtrToMultiStringUni (IntPtr ptr)
-        {
-            List<string> result = new List<string> ();
-
-            string str = Marshal.PtrToStringUni (ptr);
-            result.Add (str);
-
-            while (true)
-            {
-                ptr = new IntPtr (ptr.ToInt64 () + ((str.Length + 1) * 2));
-                if (Marshal.ReadInt16 (ptr) == 0)
-                    break;
-
-                str = Marshal.PtrToStringUni (ptr);
-                result.Add (str);
-            }
-
-            return result.ToArray ();
-        }
-    }
-
     public class DeviceEnumerator
     {
         private string id;
@@ -252,6 +166,11 @@ namespace oSpy.Capture
             }
         }
 
+        public string[] LowerFilters
+        {
+            get { return GetRegistryPropertyMultiString (WinApi.SPDRP_LOWERFILTERS); }
+        }
+
         private Device (IntPtr devInfo, WinApi.SP_DEVINFO_DATA devInfoData, string name, string hardwareId)
         {
             this.devInfo = devInfo;
@@ -334,6 +253,41 @@ namespace oSpy.Capture
             return true;
         }
 
+        private string[] GetRegistryPropertyMultiString (uint property)
+        {
+            string[] value = new string [0];
+
+            byte[] buf = new byte[1024];
+            uint reqBufSize;
+            if (WinApi.SetupDiGetDeviceRegistryProperty (devInfo, ref devInfoData, property, IntPtr.Zero, buf, (uint) buf.Length, out reqBufSize))
+                value = WinApi.MarshalMultiStringToStringArray (buf);
+
+            return value;
+        }
+
+        private void SetRegistryPropertyMultiString (uint property, string[] value)
+        {
+            byte[] buf = WinApi.MarshalStringArrayToMultiString (value);
+            if (!WinApi.SetupDiSetDeviceRegistryProperty (devInfo, ref devInfoData, property, buf, (uint)buf.Length))
+                throw new Exception (String.Format ("SetupDiSetDeviceRegistryProperty failed with error 0x{0:x8}", Marshal.GetLastWin32Error ()));
+        }
+
+        public bool HasLowerFilter (string name)
+        {
+            return Array.IndexOf<string> (LowerFilters, name) >= 0;
+        }
+
+        public void AddLowerFilter (string name)
+        {
+            List<string> filters = new List<string> (LowerFilters);
+            if (filters.Contains (name))
+                return;
+
+            filters.Add (name);
+
+            SetRegistryPropertyMultiString (WinApi.SPDRP_LOWERFILTERS, filters.ToArray ());
+        }
+
         public int CompareTo (Device other)
         {
             if (other == this)
@@ -351,36 +305,26 @@ namespace oSpy.Capture
             string name = null;
             string hardwareId = null;
 
-            IntPtr buf = IntPtr.Zero;
+            byte[] buf = new byte[1024];
             uint reqBufSize;
-            const int bufSize = 1024;
 
-            try
+            if (WinApi.SetupDiGetDeviceRegistryProperty (devInfo, ref devInfoData, WinApi.SPDRP_FRIENDLYNAME, IntPtr.Zero, buf, (uint) buf.Length, out reqBufSize))
             {
-                buf = Marshal.AllocHGlobal (bufSize);
+                name = WinApi.ByteArrayToString (buf);
+            }
 
-                if (WinApi.SetupDiGetDeviceRegistryProperty (devInfo, ref devInfoData, WinApi.SPDRP_FRIENDLYNAME, IntPtr.Zero, buf, bufSize, out reqBufSize))
+            if (name == null)
+            {
+                if (WinApi.SetupDiGetDeviceRegistryProperty (devInfo, ref devInfoData, WinApi.SPDRP_DEVICEDESC, IntPtr.Zero, buf, (uint)buf.Length, out reqBufSize))
                 {
-                    name = Marshal.PtrToStringAuto (buf);
-                }
-
-                if (name == null)
-                {
-                    if (WinApi.SetupDiGetDeviceRegistryProperty (devInfo, ref devInfoData, WinApi.SPDRP_DEVICEDESC, IntPtr.Zero, buf, bufSize, out reqBufSize))
-                    {
-                        name = Marshal.PtrToStringAuto (buf);
-                    }
-                }
-
-                if (WinApi.SetupDiGetDeviceRegistryProperty (devInfo, ref devInfoData, WinApi.SPDRP_HARDWAREID, IntPtr.Zero, buf, bufSize, out reqBufSize))
-                {
-                    hardwareId = String.Join (",", WinApi.MarshalPtrToMultiStringUni (buf));
+                    name = WinApi.ByteArrayToString (buf);
                 }
             }
-            finally
+
+            if (WinApi.SetupDiGetDeviceRegistryProperty (devInfo, ref devInfoData, WinApi.SPDRP_HARDWAREID, IntPtr.Zero, buf, (uint)buf.Length, out reqBufSize))
             {
-                if (buf != IntPtr.Zero)
-                    Marshal.FreeHGlobal (buf);
+                string[] tokens = WinApi.MarshalMultiStringToStringArray (buf);
+                hardwareId = String.Join (";", tokens);
             }
 
             if (name != null && hardwareId != null)

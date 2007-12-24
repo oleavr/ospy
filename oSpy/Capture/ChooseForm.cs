@@ -94,16 +94,20 @@ namespace oSpy.Capture
                     item.ImageIndex = imageIndex++;
                 }
 
+                item.Tag = device;
+
+                item.Checked = device.HasLowerFilter (Constants.UsbAgentName);
+
                 usbDevView.Items.Add (item);
             }
         }
 
-        private void UpdateButtons()
+        private void UpdateButtons ()
         {
             startBtn.Enabled = (checkCount > 0);
         }
 
-        private void processList_ItemCheck(object sender, ItemCheckEventArgs e)
+        private void processList_ItemCheck (object sender, ItemCheckEventArgs e)
         {
             if (e.NewValue == CheckState.Checked)
                 checkCount++;
@@ -113,14 +117,25 @@ namespace oSpy.Capture
             UpdateButtons();
         }
 
-        private void startBtn_Click(object sender, EventArgs e)
+        private void usbDevView_ItemCheck (object sender, ItemCheckEventArgs e)
+        {
+            if (e.NewValue == CheckState.Checked)
+                checkCount++;
+            else
+                checkCount--;
+
+            UpdateButtons ();
+        }
+
+        private void startBtn_Click (object sender, EventArgs e)
         {
             DialogResult = DialogResult.OK;
         }
 
-        public Process[] GetSelectedProcesses()
+        public bool GetSelection (out Process[] processes, out Device[] devices)
         {
-            List<Process> result = new List<Process>();
+            List<Process> procList = new List<Process> ();
+            List<Device> devList = new List<Device> ();
 
             if (ShowDialog() == DialogResult.OK)
             {
@@ -128,12 +143,21 @@ namespace oSpy.Capture
                 {
                     if (processList.GetItemChecked(i))
                     {
-                        result.Add((processList.Items[i] as ProcessItem).Process);
+                        procList.Add((processList.Items[i] as ProcessItem).Process);
                     }
+                }
+
+                foreach (ListViewItem item in usbDevView.Items)
+                {
+                    if (item.Checked)
+                        devList.Add (item.Tag as Device);
                 }
             }
 
-            return result.ToArray();
+            processes = procList.ToArray ();
+            devices = devList.ToArray ();
+
+            return (processes.Length > 0 || devices.Length > 0);
         }
     }
 

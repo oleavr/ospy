@@ -149,6 +149,7 @@ namespace oSpy.Capture
             this.usbDevView.TabIndex = 1;
             this.usbDevView.UseCompatibleStateImageBehavior = false;
             this.usbDevView.View = System.Windows.Forms.View.List;
+            this.usbDevView.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler (this.usbDevView_ItemCheck);
             // 
             // usbImagesLarge
             // 
