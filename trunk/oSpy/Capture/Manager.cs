@@ -28,8 +28,13 @@ namespace oSpy.Capture
 {
     public class Error : Exception
     {
-        public Error(string msg)
-            : base(msg)
+        public Error (string msg)
+            : base (msg)
+        {
+        }
+
+        public Error (string msg, params object[] args)
+            : base (String.Format (msg, args))
         {
         }
     }
@@ -134,6 +139,8 @@ namespace oSpy.Capture
 
         private Process[] processes = null;
         private Softwall.Rule[] softwallRules = null;
+        private Device[] devices = null;
+
         private IntPtr[] handles = null;
         private IProgressFeedback progress = null;
 
@@ -162,10 +169,11 @@ namespace oSpy.Capture
         {
         }
 
-        public void StartCapture(Process[] processes, Softwall.Rule[] softwallRules, IProgressFeedback progress)
+        public void StartCapture(Process[] processes, Softwall.Rule[] softwallRules, Device[] devices, IProgressFeedback progress)
         {
             this.processes = processes;
             this.softwallRules = softwallRules;
+            this.devices = devices;
             this.progress = progress;
 
             Thread th = new Thread(StartCaptureThread);
@@ -195,13 +203,21 @@ namespace oSpy.Capture
         {
             try
             {
-                PrepareCapture(processes, softwallRules);
+                if (devices.Length > 0)
+                    EnsureUsbAgentService ();
 
-                DoInjection();
+                foreach (Device device in devices)
+                    device.AddLowerFilter (Constants.UsbAgentName);
+
+                PrepareCapture (processes, softwallRules);
+
+                DoInjection ();
             }
             catch (Error e)
             {
-                progress.OperationFailed(e.Message);
+                // TODO: roll back
+
+                progress.OperationFailed (e.Message);
                 return;
             }
 
@@ -218,6 +234,8 @@ namespace oSpy.Capture
 
                 UnmapViewOfFile(cfgPtr);
                 CloseHandle(fileMapping);
+
+                StopUsbAgentService ();
             }
             catch (Error e)
             {
@@ -226,6 +244,61 @@ namespace oSpy.Capture
             }
 
             progress.OperationComplete();
+        }
+
+        private void EnsureUsbAgentService ()
+        {
+            IntPtr manager = WinApi.OpenSCManager (null, null, WinApi.SC_MANAGER_ALL_ACCESS);
+            if (manager == IntPtr.Zero)
+                throw new Error ("OpenSCManager failed");
+
+            IntPtr service = IntPtr.Zero;
+
+            try
+            {
+                service = WinApi.OpenService (manager, Constants.UsbAgentName, WinApi.SERVICE_ALL_ACCESS);
+                if (service == IntPtr.Zero && Marshal.GetLastWin32Error () == WinApi.ERROR_SERVICE_DOES_NOT_EXIST)
+                {
+                    service = WinApi.CreateService (manager, Constants.UsbAgentName, Constants.UsbAgentDescription, WinApi.SERVICE_ALL_ACCESS, WinApi.SERVICE_KERNEL_DRIVER, WinApi.SERVICE_DEMAND_START, WinApi.SERVICE_ERROR_NORMAL, Constants.UsbAgentPath, null, 0, null, null, null);
+                    if (service == IntPtr.Zero)
+                        throw new Error ("CreateService failed");
+                }
+
+                if (!WinApi.StartService (service, 0, null) && Marshal.GetLastWin32Error () != WinApi.ERROR_SERVICE_ALREADY_RUNNING)
+                    throw new Error ("Failed to start service: 0x{0:x8}", Marshal.GetLastWin32Error ());
+            }
+            finally
+            {
+                if (service != IntPtr.Zero)
+                    WinApi.CloseServiceHandle (service);
+
+                WinApi.CloseServiceHandle (manager);
+            }
+        }
+
+        private void StopUsbAgentService ()
+        {
+            IntPtr manager = WinApi.OpenSCManager (null, null, WinApi.SC_MANAGER_ALL_ACCESS);
+            if (manager == IntPtr.Zero)
+                throw new Error ("OpenSCManager failed");
+
+            IntPtr service = IntPtr.Zero;
+
+            try
+            {
+                service = WinApi.OpenService (manager, Constants.UsbAgentName, WinApi.SERVICE_ALL_ACCESS);
+                if (service == IntPtr.Zero)
+                    throw new Error ("OpenService failed");
+
+                WinApi.SERVICE_STATUS status = new WinApi.SERVICE_STATUS ();
+                if (!WinApi.ControlService (service, WinApi.SERVICE_CONTROL_STOP, ref status))
+                    throw new Error ("Failed to stop service: 0x{0:x8}", Marshal.GetLastWin32Error ());
+            }
+            finally
+            {
+                if (service != IntPtr.Zero)
+                    WinApi.CloseServiceHandle (service);
+            }
         }
 
         private void PrepareCapture(Process[] processes, Softwall.Rule[] softwallRules)

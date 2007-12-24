@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="C:\WinDDK\6000\inc\api;C:\WinDDK\6000\inc\ddk"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;DRIVER;_X86_"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;DRIVER;_X86_;DBG"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="3"
@@ -98,6 +98,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy /b /y $(TargetPath) c:\windows\system32\drivers\"
 			/>
 		</Configuration>
 		<Configuration
@@ -126,7 +127,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="C:\WinDDK\6000\inc\api;C:\WinDDK\6000\inc\ddk"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;DRIVER;_X86_"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;DRIVER;_X86_;DBG"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -184,6 +185,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy /b /y $(TargetPath) c:\windows\system32\drivers\"
 			/>
 		</Configuration>
 	</Configurations>

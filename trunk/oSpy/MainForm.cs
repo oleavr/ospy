@@ -75,12 +75,13 @@ namespace oSpy
         {
             Capture.ChooseForm frm = new Capture.ChooseForm();
 
-            System.Diagnostics.Process[] processes = frm.GetSelectedProcesses();
-            if (processes.Length == 0)
+            System.Diagnostics.Process[] processes;
+            oSpy.Capture.Device[] devices;
+            if (!frm.GetSelection (out processes, out devices))
                 return;
 
             NewOperation("Starting capture");
-            captureMgr.StartCapture(processes, swForm.GetRules(), curProgress);
+            captureMgr.StartCapture(processes, swForm.GetRules(), devices, curProgress);
 
             if (curProgress.ShowDialog(this) != DialogResult.OK)
             {

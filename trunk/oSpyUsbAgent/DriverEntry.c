@@ -3,6 +3,6 @@
 NTSTATUS
 DriverEntry (DRIVER_OBJECT * driver_object, WCHAR * registry_path)
 {
-  KdPrint (("Woot"));
-  return STATUS_UNSUCCESSFUL;
+  DbgPrint ("Woot baby\n");
+  return STATUS_SUCCESS;
 }
