@@ -44,9 +44,11 @@
 				AdditionalIncludeDirectories="C:\WinDDK\6000\inc\api;C:\WinDDK\6000\inc\ddk"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;DRIVER;_X86_;DBG"
 				MinimalRebuild="true"
+				ExceptionHandling="0"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="3"
 				BufferSecurityCheck="false"
+				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
@@ -132,9 +134,11 @@
 				AdditionalOptions="/Gs999999"
 				AdditionalIncludeDirectories="C:\WinDDK\6000\inc\api;C:\WinDDK\6000\inc\ddk"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;DRIVER;_X86_;DBG"
+				ExceptionHandling="0"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
+				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
@@ -210,20 +214,6 @@
 			<File
 				RelativePath=".\Logger.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
