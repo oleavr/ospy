@@ -2,11 +2,66 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 
 namespace oSpy.Capture
 {
     public class WinApi
     {
+        [DllImport ("Kernel32.dll", EntryPoint = "CreateFileMapping",
+            SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern IntPtr CreateFileMapping (uint hFile,
+          IntPtr lpAttributes, enumProtect flProtect,
+          uint dwMaximumSizeHigh, uint dwMaximumSizeLow, string lpName);
+
+        [DllImport ("Kernel32.dll", EntryPoint = "MapViewOfFile",
+            SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern IntPtr MapViewOfFile (IntPtr hFileMappingObject,
+          enumFileMap dwDesiredAccess, uint dwFileOffsetHigh,
+          uint dwFileOffsetLow, uint dwNumberOfBytesToMap);
+
+        [DllImport ("Kernel32.dll", EntryPoint = "UnmapViewOfFile",
+            SetLastError = true, CharSet = CharSet.Unicode)]
+        [return: MarshalAs (UnmanagedType.VariantBool)]
+        public static extern bool UnmapViewOfFile (IntPtr lpBaseAddress);
+
+        [DllImport ("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr LoadLibrary (string lpFileName);
+
+        [DllImport ("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        public static extern bool FreeLibrary (IntPtr hModule);
+
+        [DllImport ("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true, ExactSpelling = true)]
+        public static extern IntPtr GetProcAddress (IntPtr hModule, string procName);
+
+        [DllImport ("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        public static extern IntPtr OpenProcess (uint dwDesiredAccess, bool bInheritHandle,
+           uint dwProcessId);
+
+        [DllImport ("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        [return: MarshalAs (UnmanagedType.Bool)]
+        public static extern bool CloseHandle (IntPtr hObject);
+
+        [DllImport ("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        public static extern IntPtr VirtualAllocEx (IntPtr hProcess, IntPtr lpAddress,
+            uint dwSize, uint flAllocationType, uint flProtect);
+
+        [DllImport ("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        public static extern bool WriteProcessMemory (IntPtr hProcess, IntPtr lpBaseAddress,
+           byte[] lpBuffer, uint nSize, out IntPtr lpNumberOfBytesWritten);
+
+        [DllImport ("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        public static extern IntPtr CreateRemoteThread (IntPtr hProcess,
+            IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress,
+            IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);
+
+        [DllImport ("kernel32.dll", SetLastError = true)]
+        public static extern SafeWaitHandle CreateEvent (IntPtr lpEventAttributes, bool bManualReset,
+                                                         bool bInitialState, string lpName);
+
+        [DllImport ("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        public static extern bool GetExitCodeThread (IntPtr hThread, out uint lpExitCode);
+
         [DllImport ("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern IntPtr OpenSCManager (string lpMachineName, string lpSCDB, int scParameter);
 
@@ -24,6 +79,9 @@ namespace oSpy.Capture
 
         [DllImport ("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern IntPtr OpenService (IntPtr SCHANDLE, string lpSvcName, int dwNumServiceArgs);
+
+        [DllImport ("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern bool QueryServiceStatus (IntPtr hService, ref SERVICE_STATUS lpServiceStatus);
 
         [DllImport ("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern int DeleteService (IntPtr SVHANDLE);
@@ -96,6 +154,8 @@ namespace oSpy.Capture
             public UInt32 Reserved;
         }
 
+        public const int MAX_PATH = 260;
+
         public const int SC_MANAGER_ALL_ACCESS = 0xF003F;
         public const int SERVICE_ALL_ACCESS = 0xF01FF;
 
@@ -107,7 +167,12 @@ namespace oSpy.Capture
 
         public const int SERVICE_CONTROL_STOP = 0x00000001;
 
+        public const int SERVICE_STOPPED = 0x00000001;
+
+        public const int ERROR_ALREADY_EXISTS = 183;
+
         public const int ERROR_SERVICE_ALREADY_RUNNING = 1056;
+        public const int ERROR_SERVICE_DISABLED = 1058;
         public const int ERROR_SERVICE_DOES_NOT_EXIST = 1060;
 
         public const int DIGCF_PRESENT = 0x00000002;
@@ -119,7 +184,34 @@ namespace oSpy.Capture
         public const int SPDRP_LOWERFILTERS = 0x00000012;
         public const int SPDRP_PHYSICAL_DEVICE_OBJECT_NAME = 0x0000000E;
 
+        public const int PROCESS_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF);
+        public const int STANDARD_RIGHTS_REQUIRED = 0xF0000;
+        public const int SYNCHRONIZE = 0x100000;
+
+        public const int MEM_COMMIT = 0x1000;
+        public const int PAGE_READWRITE = 0x4;
+
+        public const int STILL_ACTIVE = STATUS_PENDING;
+        public const int STATUS_PENDING = 0x103;
+
         public const int INVALID_HANDLE_VALUE = -1;
+
+        public enum enumProtect : uint
+        {
+            PAGE_NOACCESS = 0x1,
+            PAGE_READONLY = 0x2,
+            PAGE_READWRITE = 0x4,
+            PAGE_WRITECOPY = 0x8,
+            PAGE_EXECUTE = 0x10
+        };
+
+        public enum enumFileMap : uint
+        {
+            FILE_MAP_READ = 0x4,
+            FILE_MAP_WRITE = 0x2,
+            FILE_MAP_COPY = 0x1,
+            FILE_MAP_ALL_ACCESS = 0x1 + 0x2 + 0x4 + 0x8 + 0x10 + 0xF0000
+        };
 
         public static string ByteArrayToString (byte[] bytes)
         {

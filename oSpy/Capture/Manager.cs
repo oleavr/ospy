@@ -22,7 +22,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 using System.Threading;
 using System.Diagnostics;
-using Microsoft.Win32.SafeHandles;
+using System.Reflection;
 
 namespace oSpy.Capture
 {
@@ -41,93 +41,12 @@ namespace oSpy.Capture
 
     public class Manager
     {
-        protected const int MAX_PATH = 260;
-        protected const int ERROR_ALREADY_EXISTS = 183;
-
-        protected const int PROCESS_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF);
-        protected const int STANDARD_RIGHTS_REQUIRED = 0xF0000;
-        protected const int SYNCHRONIZE = 0x100000;
-
-        protected const int MEM_COMMIT = 0x1000;
-        protected const int PAGE_READWRITE = 0x4;
-
-        protected const int STILL_ACTIVE = STATUS_PENDING;
-        protected const int STATUS_PENDING = 0x103;
-
-        protected enum enumProtect : uint
-        {
-            PAGE_NOACCESS = 0x1,
-            PAGE_READONLY = 0x2,
-            PAGE_READWRITE = 0x4,
-            PAGE_WRITECOPY = 0x8,
-            PAGE_EXECUTE = 0x10
-        };
-        protected enum enumFileMap : uint
-        {
-            FILE_MAP_READ = 0x4,
-            FILE_MAP_WRITE = 0x2,
-            FILE_MAP_COPY = 0x1,
-            FILE_MAP_ALL_ACCESS = 0x1 + 0x2 + 0x4 + 0x8 + 0x10 + 0xF0000
-        };
-
-        [DllImport("Kernel32.dll", EntryPoint = "CreateFileMapping",
-            SetLastError = true, CharSet = CharSet.Unicode)]
-        protected static extern IntPtr CreateFileMapping(uint hFile,
-          IntPtr lpAttributes, enumProtect flProtect,
-          uint dwMaximumSizeHigh, uint dwMaximumSizeLow, string lpName);
-        [DllImport("Kernel32.dll", EntryPoint = "MapViewOfFile",
-            SetLastError = true, CharSet = CharSet.Unicode)]
-        protected static extern IntPtr MapViewOfFile(IntPtr hFileMappingObject,
-          enumFileMap dwDesiredAccess, uint dwFileOffsetHigh,
-          uint dwFileOffsetLow, uint dwNumberOfBytesToMap);
-        [DllImport("Kernel32.dll", EntryPoint = "UnmapViewOfFile",
-            SetLastError = true, CharSet = CharSet.Unicode)]
-        [return: MarshalAs(UnmanagedType.VariantBool)]
-        protected static extern bool UnmapViewOfFile(IntPtr lpBaseAddress);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        protected static extern IntPtr LoadLibrary(string lpFileName);
-
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        protected static extern bool FreeLibrary(IntPtr hModule);
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true, ExactSpelling = true)]
-        protected static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
-
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        protected static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle,
-           uint dwProcessId);
-
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        protected static extern bool CloseHandle(IntPtr hObject);
-
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        protected static extern IntPtr VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress,
-            uint dwSize, uint flAllocationType, uint flProtect);
-
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        protected static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress,
-           byte[] lpBuffer, uint nSize, out IntPtr lpNumberOfBytesWritten);
-
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        protected static extern IntPtr CreateRemoteThread(IntPtr hProcess,
-            IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress,
-            IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern SafeWaitHandle CreateEvent(IntPtr lpEventAttributes, bool bManualReset,
-                                                 bool bInitialState, string lpName);
-
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        protected static extern bool GetExitCodeThread(IntPtr hThread, out uint lpExitCode);
-
         public const int MAX_SOFTWALL_RULES = 128;
 
         [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
         public struct Capture
         {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_PATH)]
+            [MarshalAs (UnmanagedType.ByValTStr, SizeConst = WinApi.MAX_PATH)]
             public string LogPath;
             public volatile UInt32 LogIndex;
             public volatile UInt32 LogSize;
@@ -232,10 +151,11 @@ namespace oSpy.Capture
 
                 UpdateCaptureStatistics();
 
-                UnmapViewOfFile(cfgPtr);
-                CloseHandle(fileMapping);
+                WinApi.UnmapViewOfFile(cfgPtr);
+                WinApi.CloseHandle (fileMapping);
 
-                StopUsbAgentService ();
+                if (devices.Length > 0)
+                    WaitForUsbAgentServiceToStop ();
             }
             catch (Error e)
             {
@@ -248,6 +168,19 @@ namespace oSpy.Capture
 
         private void EnsureUsbAgentService ()
         {
+            string binDir = Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location);
+            string srcFile = Path.Combine (binDir, Constants.UsbAgentFilename);
+            string dstFile = Path.Combine (Path.GetDirectoryName (Environment.GetFolderPath (Environment.SpecialFolder.System)), Constants.UsbAgentPath);
+
+            try
+            {
+                File.Copy (srcFile, dstFile, true);
+            }
+            catch (Exception e)
+            {
+                throw new Error ("Failed to install USB agent driver: {0}", e.Message);
+            }
+
             IntPtr manager = WinApi.OpenSCManager (null, null, WinApi.SC_MANAGER_ALL_ACCESS);
             if (manager == IntPtr.Zero)
                 throw new Error ("OpenSCManager failed");
@@ -264,8 +197,12 @@ namespace oSpy.Capture
                         throw new Error ("CreateService failed");
                 }
 
-                if (!WinApi.StartService (service, 0, null) && Marshal.GetLastWin32Error () != WinApi.ERROR_SERVICE_ALREADY_RUNNING)
-                    throw new Error ("Failed to start service: 0x{0:x8}", Marshal.GetLastWin32Error ());
+                if (!WinApi.StartService (service, 0, null))
+                {
+                    int lastError = Marshal.GetLastWin32Error ();
+                    if (lastError != WinApi.ERROR_SERVICE_ALREADY_RUNNING && lastError != WinApi.ERROR_SERVICE_DISABLED)
+                        throw new Error ("Failed to start service: 0x{0:x8}", lastError);
+                }
             }
             finally
             {
@@ -276,7 +213,7 @@ namespace oSpy.Capture
             }
         }
 
-        private void StopUsbAgentService ()
+        private void WaitForUsbAgentServiceToStop ()
         {
             IntPtr manager = WinApi.OpenSCManager (null, null, WinApi.SC_MANAGER_ALL_ACCESS);
             if (manager == IntPtr.Zero)
@@ -291,13 +228,27 @@ namespace oSpy.Capture
                     throw new Error ("OpenService failed");
 
                 WinApi.SERVICE_STATUS status = new WinApi.SERVICE_STATUS ();
-                if (!WinApi.ControlService (service, WinApi.SERVICE_CONTROL_STOP, ref status))
-                    throw new Error ("Failed to stop service: 0x{0:x8}", Marshal.GetLastWin32Error ());
+
+                progress.ProgressUpdate ("Unplug any USB device being monitored now", 100);
+
+                bool stopped = false;
+
+                while (!stopped)
+                {
+                    if (!WinApi.QueryServiceStatus (service, ref status))
+                        throw new Error ("Failed to query for service status: 0x{0:x8}", Marshal.GetLastWin32Error ());
+
+                    stopped = status.dwCurrentState == WinApi.SERVICE_STOPPED;
+                    if (!stopped)
+                        Thread.Sleep (250);
+                }
             }
             finally
             {
                 if (service != IntPtr.Zero)
                     WinApi.CloseServiceHandle (service);
+
+                WinApi.CloseServiceHandle (manager);
             }
         }
 
@@ -305,14 +256,14 @@ namespace oSpy.Capture
         {
             progress.ProgressUpdate("Preparing capture", 100);
 
-            fileMapping = CreateFileMapping(0xFFFFFFFFu, IntPtr.Zero,
-                                            enumProtect.PAGE_READWRITE,
-                                            0, (uint)Marshal.SizeOf(typeof(Capture)),
-                                            "oSpyCapture");
-            if (Marshal.GetLastWin32Error() == ERROR_ALREADY_EXISTS)
+            fileMapping = WinApi.CreateFileMapping (0xFFFFFFFFu, IntPtr.Zero,
+                WinApi.enumProtect.PAGE_READWRITE,
+                0, (uint)Marshal.SizeOf(typeof(Capture)),
+                "oSpyCapture");
+            if (Marshal.GetLastWin32Error () == WinApi.ERROR_ALREADY_EXISTS)
                 throw new Error("Is another instance of oSpy or one or more processes previously monitored still alive?");
 
-            cfgPtr = MapViewOfFile(fileMapping, enumFileMap.FILE_MAP_WRITE, 0, 0, (uint)Marshal.SizeOf(typeof(Capture)));
+            cfgPtr = WinApi.MapViewOfFile (fileMapping, WinApi.enumFileMap.FILE_MAP_WRITE, 0, 0, (uint)Marshal.SizeOf (typeof (Capture)));
 
             // Create a temporary directory for the capture
             do
@@ -428,10 +379,10 @@ namespace oSpy.Capture
                 {
                     uint exitCode;
 
-                    if (!GetExitCodeThread(pendingHandles[i], out exitCode))
+                    if (!WinApi.GetExitCodeThread (pendingHandles[i], out exitCode))
                         throw new Error("GetExitCodeThread failed");
 
-                    if (exitCode != STILL_ACTIVE)
+                    if (exitCode != WinApi.STILL_ACTIVE)
                     {
                         exitCodes[pendingHandles[i]] = (IntPtr)exitCode;
                         completedHandles.Add(pendingHandles[i]);
@@ -474,36 +425,36 @@ namespace oSpy.Capture
             dllStr[dllStr.Length - 1] = 0;
 
             // Get offset of LoadLibraryW in kernel32
-            IntPtr kernelMod = LoadLibrary("kernel32.dll");
+            IntPtr kernelMod = WinApi.LoadLibrary ("kernel32.dll");
             if (kernelMod == IntPtr.Zero)
                 throw new Error("LoadLibrary of kernel32.dll failed");
 
             try
             {
-                IntPtr loadLibraryAddr = GetProcAddress(kernelMod, "LoadLibraryW");
+                IntPtr loadLibraryAddr = WinApi.GetProcAddress (kernelMod, "LoadLibraryW");
                 if (loadLibraryAddr == IntPtr.Zero)
                     throw new Error("GetProcAddress of LoadLibraryW failed");
 
                 // Open the target process
-                IntPtr proc = OpenProcess(PROCESS_ALL_ACCESS, true, (uint) processId);
+                IntPtr proc = WinApi.OpenProcess (WinApi.PROCESS_ALL_ACCESS, true, (uint)processId);
                 if (proc == IntPtr.Zero)
                     throw new Error("OpenProcess failed");
 
                 try
                 {
                     // Allocate memory for the string in the target process
-                    IntPtr remoteDllStr = VirtualAllocEx(proc, IntPtr.Zero,
-                        (uint) dllStr.Length, MEM_COMMIT, PAGE_READWRITE);
+                    IntPtr remoteDllStr = WinApi.VirtualAllocEx (proc, IntPtr.Zero,
+                        (uint)dllStr.Length, WinApi.MEM_COMMIT, WinApi.PAGE_READWRITE);
                     if (remoteDllStr == IntPtr.Zero)
                         throw new Error("VirtualAllocEx failed");
 
                     // Write the string to the allocated buffer
                     IntPtr bytesWritten;
-                    if (!WriteProcessMemory(proc, remoteDllStr, dllStr, (uint)dllStr.Length, out bytesWritten))
+                    if (!WinApi.WriteProcessMemory (proc, remoteDllStr, dllStr, (uint)dllStr.Length, out bytesWritten))
                         throw new Error("WriteProcessMemory failed");
 
                     // Launch the thread, being LoadLibraryW
-                    IntPtr remoteThreadHandle = CreateRemoteThread(proc, IntPtr.Zero, 0, loadLibraryAddr, remoteDllStr, 0, IntPtr.Zero);
+                    IntPtr remoteThreadHandle = WinApi.CreateRemoteThread (proc, IntPtr.Zero, 0, loadLibraryAddr, remoteDllStr, 0, IntPtr.Zero);
                     if (remoteThreadHandle == IntPtr.Zero)
                         throw new Error("CreateRemoteThread failed");
 
@@ -511,37 +462,37 @@ namespace oSpy.Capture
                 }
                 finally
                 {
-                    CloseHandle(proc);
+                    WinApi.CloseHandle (proc);
                 }
             }
             finally
             {
-                FreeLibrary(kernelMod);
+                WinApi.FreeLibrary (kernelMod);
             }
         }
 
         private IntPtr UnInjectDll(int processId, IntPtr handle)
         {
             // Get offset of FreeLibrary in kernel32
-            IntPtr kernelMod = LoadLibrary("kernel32.dll");
+            IntPtr kernelMod = WinApi.LoadLibrary ("kernel32.dll");
             if (kernelMod == IntPtr.Zero)
                 throw new Error("LoadLibrary of kernel32.dll failed");
 
             try
             {
-                IntPtr freeLibraryAddr = GetProcAddress(kernelMod, "FreeLibrary");
+                IntPtr freeLibraryAddr = WinApi.GetProcAddress (kernelMod, "FreeLibrary");
                 if (freeLibraryAddr == IntPtr.Zero)
                     throw new Error("GetProcAddress of FreeLibrary failed");
 
                 // Open the target process
-                IntPtr proc = OpenProcess(PROCESS_ALL_ACCESS, true, (uint)processId);
+                IntPtr proc = WinApi.OpenProcess (WinApi.PROCESS_ALL_ACCESS, true, (uint)processId);
                 if (proc == IntPtr.Zero)
                     throw new Error("OpenProcess failed");
 
                 try
                 {
                     // Launch the thread, being FreeLibrary
-                    IntPtr remoteThreadHandle = CreateRemoteThread(proc, IntPtr.Zero, 0, freeLibraryAddr, handle, 0, IntPtr.Zero);
+                    IntPtr remoteThreadHandle = WinApi.CreateRemoteThread (proc, IntPtr.Zero, 0, freeLibraryAddr, handle, 0, IntPtr.Zero);
                     if (remoteThreadHandle == IntPtr.Zero)
                         throw new Error("CreateRemoteThread failed");
 
@@ -549,12 +500,12 @@ namespace oSpy.Capture
                 }
                 finally
                 {
-                    CloseHandle(proc);
+                    WinApi.CloseHandle (proc);
                 }
             }
             finally
             {
-                FreeLibrary(kernelMod);
+                WinApi.FreeLibrary (kernelMod);
             }
         }
     }

@@ -23,6 +23,7 @@ namespace oSpy
     {
         public const string UsbAgentName = "oSpyUsbAgent";
         public const string UsbAgentDescription = "oSpy USB Agent";
+        public const string UsbAgentFilename = "oSpyUsbAgent.sys";
         public const string UsbAgentPath = @"System32\Drivers\oSpyUsbAgent.sys";
     }
 }
