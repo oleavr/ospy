@@ -1,9 +1,26 @@
+//
+// Copyright (c) 2007 Ole André Vadla Ravnås <oleavr@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+
 #include "Logger.h"
 
 #include <ntstrsafe.h>
 
-Logger::Logger ()
-  : m_handle (NULL)
+NTSTATUS
+Logger::Initialize ()
 {
   NTSTATUS status;
 
@@ -18,42 +35,45 @@ Logger::Logger ()
   status = RtlUnicodeStringPrintf (&logfilePath,
     L"\\SystemRoot\\oSpyUsbAgent-%I64d.log", curTime.QuadPart);
   if (!NT_SUCCESS (status))
-    return;
+    return status;
 
   OBJECT_ATTRIBUTES attrs;
   InitializeObjectAttributes (&attrs, &logfilePath, 0, NULL, NULL);
 
   IO_STATUS_BLOCK ioStatus;
-  status = ZwCreateFile (&m_handle, GENERIC_WRITE, &attrs, &ioStatus,
+  status = ZwCreateFile (&m_fileHandle, GENERIC_WRITE, &attrs, &ioStatus,
     NULL, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_OVERWRITE_IF,
     FILE_SYNCHRONOUS_IO_NONALERT, NULL, 0);
+  /*
   if (NT_SUCCESS (status))
   {
     unsigned char bom[2] = { 0xff, 0xfe };
     WriteRaw (bom, sizeof (bom));
   }
+  */
 
-  KdPrint (("ZwCreateFile returned 0x%08x", status));
+  return status;
 }
 
-Logger::~Logger ()
+void
+Logger::Shutdown ()
 {
-  if (m_handle != NULL)
+  if (m_fileHandle != NULL)
   {
-    ZwClose (m_handle);
-    m_handle = NULL;
+    ZwClose (m_fileHandle);
+    m_fileHandle = NULL;
   }
 }
 
 void
 Logger::WriteRaw (void * data, size_t dataSize)
 {
-  if (m_handle == NULL)
+  if (m_fileHandle == NULL)
     return;
 
   NTSTATUS status;
   IO_STATUS_BLOCK io_status;
-  status = ZwWriteFile (m_handle, NULL, NULL, NULL, &io_status, data,
+  status = ZwWriteFile (m_fileHandle, NULL, NULL, NULL, &io_status, data,
     static_cast <ULONG> (dataSize), 0, NULL);
 
   KdPrint (("ZwWriteFile returned 0x%08x", status));

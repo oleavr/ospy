@@ -6,14 +6,14 @@
 class Logger
 {
 public:
-  Logger ();
-  ~Logger ();
+  NTSTATUS Initialize ();
+  void Shutdown ();
 
   void WriteRaw (void * data, size_t dataSize);
   void WriteLine (const WCHAR * format, ...);
 
 private:
-  HANDLE m_handle;
+  HANDLE m_fileHandle;
 };
 
 #endif // LOGGER_H

@@ -13,6 +13,8 @@ typedef struct {
   DEVICE_OBJECT * filterDeviceObject;
 
   IO_REMOVE_LOCK removeLock;
+
+  Logger logger;
 } AgentDeviceData;
 
 static void
@@ -42,6 +44,9 @@ AgentAddDevice (DRIVER_OBJECT * driverObject,
     static_cast <AgentDeviceData *> (filterDeviceObject->DeviceExtension);
 
   IoInitializeRemoveLock (&priv->removeLock, 0, 1, 100);
+
+  //priv->logger.Initialize ();
+  //IoGetDeviceProperty (physicalDeviceObject, DevicePropertyHardwareID, 
 
   DEVICE_OBJECT * funcDeviceObject =
     IoAttachDeviceToDeviceStack (filterDeviceObject, physicalDeviceObject);
@@ -263,10 +268,6 @@ DriverEntry (DRIVER_OBJECT * driverObject,
              UNICODE_STRING * registryPath)
 {
   KdPrint (("oSpyUsbAgent snapshot (" __DATE__ " " __TIME__ ") initializing\n"));
-
-  Logger logger;
-  logger.WriteLine (L"Hey baby");
-  logger.WriteLine (L"registryPath = '%s'", registryPath->Buffer);
 
   driverObject->DriverUnload = AgentDriverUnload;
   driverObject->DriverExtension->AddDevice = AgentAddDevice;
