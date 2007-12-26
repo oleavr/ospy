@@ -28,8 +28,8 @@ BinaryLogger::BinaryLogger(Agent *agent, const OWString &filename)
     : m_agent(agent)
 {
     m_handle = CreateFileW(filename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (m_handle == INVALID_HANDLE_VALUE)
-		throw runtime_error("CreateFile failed");
+    if (m_handle == INVALID_HANDLE_VALUE)
+        throw runtime_error("CreateFile failed");
 
     m_destroyEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
@@ -42,7 +42,7 @@ BinaryLogger::~BinaryLogger()
 {
     SetEvent(m_destroyEvent);
     FlushPending();
-	CloseHandle(m_handle);
+    CloseHandle(m_handle);
 }
 
 Logging::Event *
@@ -85,12 +85,12 @@ BinaryLogger::FlushPending()
 
             const OString &buf = serializer.GetData();
 
-	        DWORD bytesWritten;
-	        if (!WriteFile(m_handle, buf.data(), static_cast<DWORD>(buf.size()), &bytesWritten, NULL))
-		        throw Error("WriteFile failed");
+            DWORD bytesWritten;
+            if (!WriteFile(m_handle, buf.data(), static_cast<DWORD>(buf.size()), &bytesWritten, NULL))
+                throw Error("WriteFile failed");
 
-	        if (bytesWritten != buf.size())
-		        throw Error("short write");
+            if (bytesWritten != buf.size())
+                throw Error("short write");
 
             m_agent->AddBytesLogged(static_cast<LONG>(buf.size()));
 
@@ -120,47 +120,47 @@ BinaryLogger::LoggingThreadFunc()
 void
 BinarySerializer::AppendNode(Logging::Node *node)
 {
-	// Name
-	AppendString(node->GetName());
+    // Name
+    AppendString(node->GetName());
 
-	// Fields
-	{
-		AppendDWord(node->GetFieldCount());
-		Logging::Node::FieldListConstIter iter, endIter = node->FieldsIterEnd();
+    // Fields
+    {
+        AppendDWord(node->GetFieldCount());
+        Logging::Node::FieldListConstIter iter, endIter = node->FieldsIterEnd();
 
-		for (iter = node->FieldsIterBegin(); iter != endIter; iter++)
-		{
-			AppendString(iter->first);
-			AppendString(iter->second);
-		}
-	}
+        for (iter = node->FieldsIterBegin(); iter != endIter; iter++)
+        {
+            AppendString(iter->first);
+            AppendString(iter->second);
+        }
+    }
 
     // Content
     AppendDWord(node->GetContentIsRaw());
     AppendString(node->GetContent());
 
-	// Children
-	{
-		AppendDWord(node->GetChildCount());
-		Logging::Node::ChildListConstIter iter, endIter = node->ChildrenIterEnd();
+    // Children
+    {
+        AppendDWord(node->GetChildCount());
+        Logging::Node::ChildListConstIter iter, endIter = node->ChildrenIterEnd();
 
-		for (iter = node->ChildrenIterBegin(); iter != endIter; iter++)
-		{
-			AppendNode(*iter);
-		}
-	}
+        for (iter = node->ChildrenIterBegin(); iter != endIter; iter++)
+        {
+            AppendNode(*iter);
+        }
+    }
 }
 
 void
 BinarySerializer::AppendString(const OString &s)
 {
-	AppendDWord(static_cast<DWORD>(s.size()));
+    AppendDWord(static_cast<DWORD>(s.size()));
     if (s.size() > 0)
-	    m_buf.append(s.data(), s.size());
+        m_buf.append(s.data(), s.size());
 }
 
 void
 BinarySerializer::AppendDWord(DWORD dw)
 {
-	m_buf.append(reinterpret_cast<const char *>(&dw), sizeof(dw));
+    m_buf.append(reinterpret_cast<const char *>(&dw), sizeof(dw));
 }
