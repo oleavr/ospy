@@ -288,6 +288,17 @@ namespace oSpy.Capture
             SetRegistryPropertyMultiString (WinApi.SPDRP_LOWERFILTERS, filters.ToArray ());
         }
 
+        public void RemoveLowerFilter (string name)
+        {
+            List<string> filters = new List<string> (LowerFilters);
+            if (!filters.Contains (name))
+                return;
+
+            while (filters.Remove (name));
+
+            SetRegistryPropertyMultiString (WinApi.SPDRP_LOWERFILTERS, filters.ToArray ());
+        }
+
         public int CompareTo (Device other)
         {
             if (other == this)

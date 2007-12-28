@@ -84,6 +84,11 @@ namespace oSpy.Capture
             get { return captureSize; }
         }
 
+        public string UsbAgentServiceInstallPath
+        {
+            get { return Path.Combine (Path.GetDirectoryName (Environment.GetFolderPath (Environment.SpecialFolder.System)), Constants.UsbAgentPath); }
+        }
+
         public Manager()
         {
         }
@@ -123,7 +128,7 @@ namespace oSpy.Capture
             try
             {
                 if (devices.Length > 0)
-                    EnsureUsbAgentService ();
+                    InstallUsbAgentService ();
 
                 foreach (Device device in devices)
                     device.AddLowerFilter (Constants.UsbAgentName);
@@ -143,19 +148,26 @@ namespace oSpy.Capture
             progress.OperationComplete();
         }
 
-        private void StopCaptureThread()
+        private void StopCaptureThread ()
         {
             try
             {
-                DoUnInjection();
+                DoUnInjection ();
 
-                UpdateCaptureStatistics();
+                UpdateCaptureStatistics ();
 
-                WinApi.UnmapViewOfFile(cfgPtr);
+                WinApi.UnmapViewOfFile (cfgPtr);
                 WinApi.CloseHandle (fileMapping);
 
                 if (devices.Length > 0)
+                {
                     WaitForUsbAgentServiceToStop ();
+
+                    foreach (Device device in devices)
+                        device.RemoveLowerFilter (Constants.UsbAgentName);
+
+                    RemoveUsbAgentService ();
+                }
             }
             catch (Error e)
             {
@@ -166,15 +178,14 @@ namespace oSpy.Capture
             progress.OperationComplete();
         }
 
-        private void EnsureUsbAgentService ()
+        private void InstallUsbAgentService ()
         {
             string binDir = Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location);
             string srcFile = Path.Combine (binDir, Constants.UsbAgentFilename);
-            string dstFile = Path.Combine (Path.GetDirectoryName (Environment.GetFolderPath (Environment.SpecialFolder.System)), Constants.UsbAgentPath);
 
             try
             {
-                File.Copy (srcFile, dstFile, true);
+                File.Copy (srcFile, UsbAgentServiceInstallPath, true);
             }
             catch (Exception e)
             {
@@ -211,6 +222,40 @@ namespace oSpy.Capture
 
                 WinApi.CloseServiceHandle (manager);
             }
+        }
+
+        private void RemoveUsbAgentService ()
+        {
+            IntPtr manager = WinApi.OpenSCManager (null, null, WinApi.SC_MANAGER_ALL_ACCESS);
+            if (manager == IntPtr.Zero)
+                throw new Error ("OpenSCManager failed");
+
+            IntPtr service = IntPtr.Zero;
+
+            try
+            {
+                service = WinApi.OpenService (manager, Constants.UsbAgentName, WinApi.SERVICE_ALL_ACCESS);
+                if (service != IntPtr.Zero)
+                {
+                    if (!WinApi.DeleteService (service))
+                        throw new Error ("DeleteService failed");
+                }
+                else
+                {
+                    if (Marshal.GetLastWin32Error () != WinApi.ERROR_SERVICE_DOES_NOT_EXIST)
+                        throw new Error ("OpenService failed");
+                }
+            }
+            finally
+            {
+                if (service != IntPtr.Zero)
+                    WinApi.CloseServiceHandle (service);
+
+                WinApi.CloseServiceHandle (manager);
+            }
+
+            if (File.Exists (UsbAgentServiceInstallPath))
+                File.Delete (UsbAgentServiceInstallPath);
         }
 
         private void WaitForUsbAgentServiceToStop ()
