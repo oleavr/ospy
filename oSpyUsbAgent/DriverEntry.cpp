@@ -23,14 +23,45 @@ AgentDriverUnload (DRIVER_OBJECT * driverObject)
   KdPrint (("AgentDriverUnload called with driverObject=%p", driverObject));
 }
 
+static void
+CanonicalizeString (WCHAR * s)
+{
+  WCHAR * p = s;
+
+  while (*p != '\0')
+  {
+    WCHAR c = *p;
+
+    if (!((c >= 65 && c <= 90) ||
+          (c >= 97 && c <= 122) ||
+          (c >= 48 && c <= 57) ||
+          c == '&'))
+    {
+      *p = '_';
+    }
+
+    p++;
+  }
+}
+
 static NTSTATUS
 AgentAddDevice (DRIVER_OBJECT * driverObject,
                 DEVICE_OBJECT * physicalDeviceObject)
 {
+  NTSTATUS status;
+
   KdPrint (("AddDevice called with driverObject=%p, physicalDeviceObject=%p",
     driverObject, physicalDeviceObject));
 
-  NTSTATUS status;
+  WCHAR hwId[256];
+  ULONG hwIdLen;
+  status = IoGetDeviceProperty (physicalDeviceObject, DevicePropertyHardwareID,
+    sizeof (hwId), hwId, &hwIdLen);
+  if (!NT_SUCCESS (status))
+    return status;
+
+  KdPrint (("DevicePropertyHardwareID = '%S'", hwId));
+
   DEVICE_OBJECT * filterDeviceObject;
   status = IoCreateDevice (driverObject, sizeof (AgentDeviceData), NULL,
     FILE_DEVICE_UNKNOWN, 0, FALSE, &filterDeviceObject);
@@ -45,8 +76,8 @@ AgentAddDevice (DRIVER_OBJECT * driverObject,
 
   IoInitializeRemoveLock (&priv->removeLock, 0, 1, 100);
 
-  //priv->logger.Initialize ();
-  //IoGetDeviceProperty (physicalDeviceObject, DevicePropertyHardwareID, 
+  CanonicalizeString (hwId);
+  priv->logger.Initialize (&priv->removeLock, hwId);
 
   DEVICE_OBJECT * funcDeviceObject =
     IoAttachDeviceToDeviceStack (filterDeviceObject, physicalDeviceObject);
@@ -82,7 +113,7 @@ AgentDispatchAny (DEVICE_OBJECT * filterDeviceObject,
   AgentDeviceData * priv
     = static_cast <AgentDeviceData *> (filterDeviceObject->DeviceExtension);
   IO_STACK_LOCATION * stackLocation = IoGetCurrentIrpStackLocation (irp);
-  
+
   KdPrint (("AgentDispatchAny: MajorFunction=%d", stackLocation->MajorFunction));
 
   NTSTATUS status = IoAcquireRemoveLock (&priv->removeLock, irp);
@@ -179,6 +210,8 @@ AgentDispatchPnp (DEVICE_OBJECT * filterDeviceObject,
 
   if (stackLocation->MinorFunction == IRP_MN_REMOVE_DEVICE)
   {
+    priv->logger.Shutdown ();
+
     KdPrint (("AgentDispatchPnp: waiting to remove device"));
 
     IoReleaseRemoveLockAndWait (&priv->removeLock, irp);
@@ -242,9 +275,13 @@ AgentDispatchInternalIoctl (DEVICE_OBJECT * filterDeviceObject,
     URB * urb = static_cast <URB *>
       (stackLocation->Parameters.Others.Argument1);
 
+#if 0
     KdPrint ((
       "AgentDispatchInternalIoctl: IOCTL_INTERNAL_USB_SUBMIT_URB, urb=%p",
       urb));
+#endif
+
+    priv->logger.LogUrb (urb);
 
     IoCopyCurrentIrpStackLocationToNext (irp);
     IoSetCompletionRoutine (irp, AgentInternalIoctlCompletion, NULL, TRUE,
