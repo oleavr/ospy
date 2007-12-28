@@ -24,7 +24,7 @@ AgentDriverUnload (DRIVER_OBJECT * driverObject)
 }
 
 static void
-CanonicalizeString (WCHAR * s)
+CanonicalizeFilename (WCHAR * s)
 {
   WCHAR * p = s;
 
@@ -76,7 +76,7 @@ AgentAddDevice (DRIVER_OBJECT * driverObject,
 
   IoInitializeRemoveLock (&priv->removeLock, 0, 1, 100);
 
-  CanonicalizeString (hwId);
+  CanonicalizeFilename (hwId);
   priv->logger.Initialize (&priv->removeLock, hwId);
 
   DEVICE_OBJECT * funcDeviceObject =
@@ -243,11 +243,8 @@ AgentInternalIoctlCompletion (DEVICE_OBJECT * filterDeviceObject,
   AgentDeviceData * priv =
     static_cast <AgentDeviceData *> (filterDeviceObject->DeviceExtension);
 
-  KdPrint (("AgentInternalIoctlCompletion: irp=%p", irp));
-
   if (irp->PendingReturned)
   {
-    KdPrint (("irp->PendingReturned"));
     IoMarkIrpPending (irp);
   }
 
@@ -264,7 +261,6 @@ AgentDispatchInternalIoctl (DEVICE_OBJECT * filterDeviceObject,
   IO_STACK_LOCATION * stackLocation = IoGetCurrentIrpStackLocation (irp);
   
   ULONG controlCode = stackLocation->Parameters.DeviceIoControl.IoControlCode;
-  KdPrint (("AgentDispatchInternalIoctl: irp=%p, IoControlCode=%d", irp, controlCode));
 
   NTSTATUS status = IoAcquireRemoveLock (&priv->removeLock, irp);
   if (!NT_SUCCESS (status))

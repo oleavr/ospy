@@ -84,7 +84,7 @@ namespace oSpy.Capture
         public static extern bool QueryServiceStatus (IntPtr hService, ref SERVICE_STATUS lpServiceStatus);
 
         [DllImport ("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern int DeleteService (IntPtr SVHANDLE);
+        public static extern bool DeleteService (IntPtr SVHANDLE);
 
         [DllImport ("setupapi.dll", CharSet = CharSet.Auto)]
         public static extern IntPtr SetupDiGetClassDevs (IntPtr classGuid,
