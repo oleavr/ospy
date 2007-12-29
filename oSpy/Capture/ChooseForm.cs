@@ -26,6 +26,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Runtime.InteropServices;
+using System.Management;
 
 namespace oSpy.Capture
 {
@@ -33,16 +34,79 @@ namespace oSpy.Capture
     {
         private int checkCount = 0;
 
+        private delegate void AsyncMethodCaller ();
+        private List<AsyncMethodCaller> pendingOperations = new List<AsyncMethodCaller> ();
+
+        private DeviceList usbDevList = null;
+
+        private ManagementEventWatcher processStartWatcher = null;
+        private ManagementEventWatcher processStopWatcher = null;
+
         public ChooseForm ()
         {
             InitializeComponent ();
+
+            WqlEventQuery startQuery = new WqlEventQuery ();
+            startQuery.EventClassName = "Win32_ProcessStartTrace";
+
+            WqlEventQuery stopQuery = new WqlEventQuery ();
+            stopQuery.EventClassName = "Win32_ProcessStopTrace";
+
+            ManagementEventWatcher w = new ManagementEventWatcher (startQuery);
+            w.EventArrived += new EventArrivedEventHandler (ProcessEventArrived);
+            w.Start();
+            processStartWatcher = w;
+
+            w = new ManagementEventWatcher (stopQuery);
+            w.EventArrived += new EventArrivedEventHandler (ProcessEventArrived);
+            w.Start ();
+            processStopWatcher = w;
+        }
+
+        private void ProcessEventArrived (object o, EventArrivedEventArgs e)
+        {
+            if (processList.InvokeRequired)
+            {
+                Invoke (new EventArrivedEventHandler (ProcessEventArrived), o, e);
+                return;
+            }
+
+            UpdateProcessList ();
         }
 
         private void InjectForm_Shown (object sender, EventArgs e)
         {
             UpdateProcessList ();
-            UpdateUsbDeviceList ();
+            BeginUpdatingUsbDeviceList ();
             UpdateButtons ();
+        }
+
+        private void ChooseForm_FormClosing (object sender, FormClosingEventArgs e)
+        {
+            processStartWatcher.Stop ();
+            processStopWatcher.Stop ();
+
+            WaitForPendingOperations ();
+        }
+
+        private void WaitForPendingOperations ()
+        {
+            while (pendingOperations.Count > 0)
+            {
+                Thread.Sleep (10);
+                Application.DoEvents ();
+            }
+        }
+
+        protected override void WndProc (ref Message m)
+        {
+            base.WndProc (ref m);
+
+            if (m.Msg == WinApi.WM_DEVICECHANGE)
+            {
+                updateHwListTimer.Enabled = false;
+                updateHwListTimer.Enabled = true;
+            }
         }
 
         private void UpdateProcessList ()
@@ -65,7 +129,40 @@ namespace oSpy.Capture
             processList.Items.AddRange(items.ToArray());
         }
 
-        private void UpdateUsbDeviceList ()
+        private void updateHwListTimer_Tick (object sender, EventArgs e)
+        {
+            updateHwListTimer.Enabled = false;
+
+            WaitForPendingOperations ();
+            BeginUpdatingUsbDeviceList ();
+        }
+
+        private void BeginUpdatingUsbDeviceList ()
+        {
+            AsyncMethodCaller caller = new AsyncMethodCaller (CreateUsbDeviceList);
+            caller.BeginInvoke (new AsyncCallback (UsbDeviceListCreated), caller);
+            pendingOperations.Add (caller);
+        }
+
+        private void CreateUsbDeviceList ()
+        {
+            usbDevList = new DeviceList (DeviceEnumerator.USB);
+        }
+
+        private void UsbDeviceListCreated (IAsyncResult ar)
+        {
+            AsyncMethodCaller caller = (AsyncMethodCaller)ar.AsyncState;
+            caller.EndInvoke (ar);
+
+            if (usbDevView.InvokeRequired)
+                Invoke (new AsyncMethodCaller (ApplyUsbDeviceList));
+            else
+                ApplyUsbDeviceList ();
+
+            pendingOperations.Remove (caller);
+        }
+
+        private void ApplyUsbDeviceList ()
         {
             usbDevView.Items.Clear ();
             
@@ -76,8 +173,7 @@ namespace oSpy.Capture
 
             int imageIndex = 0;
 
-            DeviceList devList = new DeviceList (DeviceEnumerator.USB);
-            foreach (Device device in devList.Devices)
+            foreach (Device device in usbDevList.Devices)
             {
                 ListViewItem item = new ListViewItem (device.Name);
 
@@ -107,17 +203,7 @@ namespace oSpy.Capture
             startBtn.Enabled = (checkCount > 0);
         }
 
-        private void processList_ItemCheck (object sender, ItemCheckEventArgs e)
-        {
-            if (e.NewValue == CheckState.Checked)
-                checkCount++;
-            else
-                checkCount--;
-
-            UpdateButtons();
-        }
-
-        private void usbDevView_ItemCheck (object sender, ItemCheckEventArgs e)
+        private void anyView_ItemCheck (object sender, ItemCheckEventArgs e)
         {
             if (e.NewValue == CheckState.Checked)
                 checkCount++;
