@@ -12,13 +12,14 @@
 
 typedef struct {
     WCHAR LogPath[MAX_PATH];
-    volatile LONG LogIndex;
-    volatile LONG LogSize;
+    volatile ULONG LogIndexUserspace;
+    volatile ULONG LogCount;
+    volatile ULONG LogSize;
 } Capture;
 
 typedef struct {
   SLIST_ENTRY entry;
-  LARGE_INTEGER id;
+  ULONG id;
   LARGE_INTEGER timestamp;
   URB urb;
 } UrbLogEntry;
@@ -47,8 +48,7 @@ private:
 
   static HANDLE m_captureSection;
   static Capture * m_capture;
-  static LARGE_INTEGER m_index;
-  static KSPIN_LOCK m_indexLock;
+  static volatile ULONG m_index;
 
   IO_REMOVE_LOCK * m_removeLock;
 

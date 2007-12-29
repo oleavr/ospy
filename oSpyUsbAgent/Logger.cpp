@@ -21,8 +21,7 @@
 
 HANDLE Logger::m_captureSection = NULL;
 Capture * Logger::m_capture = NULL;
-LARGE_INTEGER Logger::m_index = { 0, };
-KSPIN_LOCK Logger::m_indexLock = { 0, };
+volatile ULONG Logger::m_index = 0;
 
 void
 Logger::Initialize ()
@@ -56,8 +55,7 @@ Logger::Initialize ()
     KdPrint (("ZwOpenSection failed: 0x%08x", status));
   }
 
-  m_index.QuadPart = 0;
-  KeInitializeSpinLock (&m_indexLock);
+  m_index = 0;
 }
 
 void
@@ -197,8 +195,8 @@ Logger::LogThreadFunc ()
 
       if (m_capture != NULL)
       {
-        InterlockedIncrement (&m_capture->LogIndex);
-        InterlockedExchangeAdd (&m_capture->LogSize, sizeof (URB));
+        InterlockedIncrement (reinterpret_cast<volatile LONG *> (&m_capture->LogCount));
+        InterlockedExchangeAdd (reinterpret_cast<volatile LONG *> (&m_capture->LogSize), sizeof (URB));
       }
 
       WriteUrbEntry (entry);
@@ -233,12 +231,8 @@ Logger::LogUrb (const URB * urb)
     return;
   }
 
-  LARGE_INTEGER one;
-  one.QuadPart = 1;
-  logEntry->id = ExInterlockedAddLargeInteger (&m_index, one, &m_indexLock);
-
+  logEntry->id = InterlockedIncrement (reinterpret_cast<volatile LONG *> (&m_index));
   KeQuerySystemTime (&logEntry->timestamp);
-
   logEntry->urb = *urb;
 
   ExInterlockedPushEntrySList (&m_items, &logEntry->entry, &m_itemsLock);
@@ -254,7 +248,7 @@ Logger::WriteUrbEntry (const UrbLogEntry * entry)
   Write (6);
   
   Write ("id");
-  Write ("%lld", entry->id.QuadPart);
+  Write ("%lu", entry->id);
 
   Write ("type");
   Write ("IOCTL_INTERNAL_USB_SUBMIT_URB");

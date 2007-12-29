@@ -379,18 +379,20 @@ Agent::UnInitialize()
     }
 }
 
-LONG
-Agent::GetNextLogIndex()
+ULONG
+Agent::GetNextLogIndex ()
 {
-    return InterlockedIncrement(&m_capture->LogIndex);
+  ULONG index = InterlockedIncrement (reinterpret_cast<volatile LONG *> (&m_capture->LogIndexUserspace));
+  InterlockedIncrement (reinterpret_cast<volatile LONG *> (&m_capture->LogCount));
+  return index;
 }
 
-LONG
-Agent::AddBytesLogged(LONG n)
+ULONG
+Agent::AddBytesLogged (ULONG n)
 {
-    LONG prevSize = InterlockedExchangeAdd(&m_capture->LogSize, n);
+  ULONG prevSize = InterlockedExchangeAdd (reinterpret_cast<volatile LONG *> (&m_capture->LogSize), n);
 
-    return prevSize + n;
+  return prevSize + n;
 }
 
 BOOL APIENTRY
