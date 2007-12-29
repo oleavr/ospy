@@ -154,6 +154,8 @@ namespace oSpy.Capture
             public UInt32 Reserved;
         }
 
+        public const int WM_DEVICECHANGE = 0x0219;
+
         public const int MAX_PATH = 260;
 
         public const int SC_MANAGER_ALL_ACCESS = 0xF003F;

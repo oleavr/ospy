@@ -54,6 +54,7 @@ namespace oSpy.Capture
             this.usbDevView = new System.Windows.Forms.ListView ();
             this.usbImagesLarge = new System.Windows.Forms.ImageList (this.components);
             this.usbImagesSmall = new System.Windows.Forms.ImageList (this.components);
+            this.updateHwListTimer = new System.Windows.Forms.Timer (this.components);
             this.tabControl1.SuspendLayout ();
             this.processesTabPage.SuspendLayout ();
             this.usbDevicesTabPage.SuspendLayout ();
@@ -77,7 +78,7 @@ namespace oSpy.Capture
             this.processList.Name = "processList";
             this.processList.Size = new System.Drawing.Size (374, 184);
             this.processList.TabIndex = 6;
-            this.processList.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler (this.processList_ItemCheck);
+            this.processList.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler (this.anyView_ItemCheck);
             // 
             // startBtn
             // 
@@ -149,7 +150,7 @@ namespace oSpy.Capture
             this.usbDevView.TabIndex = 1;
             this.usbDevView.UseCompatibleStateImageBehavior = false;
             this.usbDevView.View = System.Windows.Forms.View.List;
-            this.usbDevView.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler (this.usbDevView_ItemCheck);
+            this.usbDevView.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler (this.anyView_ItemCheck);
             // 
             // usbImagesLarge
             // 
@@ -162,6 +163,11 @@ namespace oSpy.Capture
             this.usbImagesSmall.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit;
             this.usbImagesSmall.ImageSize = new System.Drawing.Size (16, 16);
             this.usbImagesSmall.TransparentColor = System.Drawing.Color.Transparent;
+            // 
+            // updateHwListTimer
+            // 
+            this.updateHwListTimer.Interval = 1000;
+            this.updateHwListTimer.Tick += new System.EventHandler (this.updateHwListTimer_Tick);
             // 
             // ChooseForm
             // 
@@ -180,6 +186,7 @@ namespace oSpy.Capture
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Capture";
             this.Shown += new System.EventHandler (this.InjectForm_Shown);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler (this.ChooseForm_FormClosing);
             this.tabControl1.ResumeLayout (false);
             this.processesTabPage.ResumeLayout (false);
             this.usbDevicesTabPage.ResumeLayout (false);
@@ -200,6 +207,7 @@ namespace oSpy.Capture
         private System.Windows.Forms.ListView usbDevView;
         private System.Windows.Forms.ImageList usbImagesSmall;
         private System.Windows.Forms.ImageList usbImagesLarge;
+        private System.Windows.Forms.Timer updateHwListTimer;
 
     }
 }
