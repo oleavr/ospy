@@ -36,7 +36,7 @@ Agent::Initialize()
 {
     InterceptPP::Initialize();
 
-    m_map = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, "oSpyCapture");
+    m_map = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, "Global\\oSpyCapture");
     m_capture = static_cast<Capture *>(MapViewOfFile(m_map, FILE_MAP_WRITE, 0, 0, sizeof(Capture)));
     if (m_capture == NULL)
         throw Error("MapViewOfFile failed");

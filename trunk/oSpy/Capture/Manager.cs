@@ -127,13 +127,15 @@ namespace oSpy.Capture
         {
             try
             {
+                PrepareCapture (processes, softwallRules);
+
                 if (devices.Length > 0)
+                {
                     InstallUsbAgentService ();
 
-                foreach (Device device in devices)
-                    device.AddLowerFilter (Constants.UsbAgentName);
-
-                PrepareCapture (processes, softwallRules);
+                    foreach (Device device in devices)
+                        device.AddLowerFilter (Constants.UsbAgentName);
+                }
 
                 DoInjection ();
             }
@@ -304,7 +306,7 @@ namespace oSpy.Capture
             fileMapping = WinApi.CreateFileMapping (0xFFFFFFFFu, IntPtr.Zero,
                 WinApi.enumProtect.PAGE_READWRITE,
                 0, (uint)Marshal.SizeOf(typeof(Capture)),
-                "oSpyCapture");
+                "Global\\oSpyCapture");
             if (Marshal.GetLastWin32Error () == WinApi.ERROR_ALREADY_EXISTS)
                 throw new Error("Is another instance of oSpy or one or more processes previously monitored still alive?");
 

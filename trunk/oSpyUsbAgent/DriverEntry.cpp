@@ -18,12 +18,6 @@ typedef struct {
 } AgentDeviceData;
 
 static void
-AgentDriverUnload (DRIVER_OBJECT * driverObject)
-{
-  KdPrint (("AgentDriverUnload called with driverObject=%p", driverObject));
-}
-
-static void
 CanonicalizeFilename (WCHAR * s)
 {
   WCHAR * p = s;
@@ -77,7 +71,12 @@ AgentAddDevice (DRIVER_OBJECT * driverObject,
   IoInitializeRemoveLock (&priv->removeLock, 0, 1, 100);
 
   CanonicalizeFilename (hwId);
-  priv->logger.Initialize (&priv->removeLock, hwId);
+  status = priv->logger.Start (&priv->removeLock, hwId);
+  if (!NT_SUCCESS (status))
+  {
+    IoDeleteDevice (filterDeviceObject);
+    return status;
+  }
 
   DEVICE_OBJECT * funcDeviceObject =
     IoAttachDeviceToDeviceStack (filterDeviceObject, physicalDeviceObject);
@@ -210,7 +209,7 @@ AgentDispatchPnp (DEVICE_OBJECT * filterDeviceObject,
 
   if (stackLocation->MinorFunction == IRP_MN_REMOVE_DEVICE)
   {
-    priv->logger.Shutdown ();
+    priv->logger.Stop ();
 
     KdPrint (("AgentDispatchPnp: waiting to remove device"));
 
@@ -296,6 +295,8 @@ AgentDispatchInternalIoctl (DEVICE_OBJECT * filterDeviceObject,
   return status;
 }
 
+static void AgentDriverUnload (DRIVER_OBJECT * driverObject);
+
 extern "C" NTSTATUS
 DriverEntry (DRIVER_OBJECT * driverObject,
              UNICODE_STRING * registryPath)
@@ -316,5 +317,15 @@ DriverEntry (DRIVER_OBJECT * driverObject,
   driverObject->MajorFunction[IRP_MJ_PNP] = AgentDispatchPnp;
   driverObject->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL] = AgentDispatchInternalIoctl;
 
+  Logger::Initialize ();
+
   return STATUS_SUCCESS;
+}
+
+static void
+AgentDriverUnload (DRIVER_OBJECT * driverObject)
+{
+  KdPrint (("AgentDriverUnload called with driverObject=%p", driverObject));
+
+  Logger::Shutdown ();
 }
