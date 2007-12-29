@@ -19,8 +19,69 @@
 
 #include <ntstrsafe.h>
 
+HANDLE Logger::m_captureSection = NULL;
+Capture * Logger::m_capture = NULL;
+LARGE_INTEGER Logger::m_index = { 0, };
+KSPIN_LOCK Logger::m_indexLock = { 0, };
+
+void
+Logger::Initialize ()
+{
+  m_captureSection = NULL;
+  m_capture = NULL;
+
+  UNICODE_STRING objName;
+  RtlInitUnicodeString (&objName, L"\\BaseNamedObjects\\oSpyCapture");
+
+  OBJECT_ATTRIBUTES attrs;
+  InitializeObjectAttributes (&attrs, &objName, 0, NULL, NULL);
+
+  NTSTATUS status;
+  status = ZwOpenSection (&m_captureSection, SECTION_ALL_ACCESS, &attrs);
+  if (NT_SUCCESS (status))
+  {
+    SIZE_T size = sizeof (Capture);
+
+    status = ZwMapViewOfSection (m_captureSection, NtCurrentProcess (),
+      reinterpret_cast <void **> (&m_capture), 0L, sizeof (Capture),
+      NULL, &size, ViewUnmap, 0, PAGE_READWRITE | PAGE_NOCACHE);
+
+    if (!NT_SUCCESS (status))
+    {
+      KdPrint (("ZwMapViewOfSection failed: 0x%08x", status));
+    }
+  }
+  else
+  {
+    KdPrint (("ZwOpenSection failed: 0x%08x", status));
+  }
+
+  m_index.QuadPart = 0;
+  KeInitializeSpinLock (&m_indexLock);
+}
+
+void
+Logger::Shutdown ()
+{
+  NTSTATUS status;
+
+  if (m_capture != NULL)
+  {
+    status = ZwUnmapViewOfSection (NtCurrentProcess (), m_capture);
+    if (!NT_SUCCESS (status))
+      KdPrint (("ZwUnmapViewOfSection failed: 0x%08x", status));
+  }
+
+  if (m_captureSection != NULL)
+  {
+    status = ZwClose (m_captureSection);
+    if (!NT_SUCCESS (status))
+      KdPrint (("ZwClose failed: 0x%08x", status));
+  }
+}
+
 NTSTATUS
-Logger::Initialize (IO_REMOVE_LOCK * removeLock, const WCHAR * fnSuffix)
+Logger::Start (IO_REMOVE_LOCK * removeLock, const WCHAR * fnSuffix)
 {
   NTSTATUS status = STATUS_SUCCESS;
 
@@ -33,23 +94,32 @@ Logger::Initialize (IO_REMOVE_LOCK * removeLock, const WCHAR * fnSuffix)
   WCHAR buffer[256];
   RtlInitEmptyUnicodeString (&logfilePath, buffer, sizeof (buffer));
 
-  status = RtlUnicodeStringPrintf (&logfilePath,
-    L"\\SystemRoot\\oSpyUsbAgent-%s.log", fnSuffix);
-  if (!NT_SUCCESS (status)) return status;
-
-  m_fileHandle = NULL;
-
-  KeInitializeEvent (&m_stopEvent, NotificationEvent, FALSE);
-  m_logThread = NULL;
-
-  m_index.QuadPart = 0;
-  KeInitializeSpinLock (&m_indexLock);
-
-  ExInitializeSListHead (&m_items);
-  KeInitializeSpinLock (&m_itemsLock);
-
   __try
   {
+    if (m_capture != NULL)
+      status = RtlUnicodeStringPrintf (&logfilePath,
+        L"\\DosDevices\\%s\\oSpyUsbAgent-%s.log", m_capture->LogPath,
+        fnSuffix);
+    else
+      status = RtlUnicodeStringPrintf (&logfilePath,
+        L"\\SystemRoot\\oSpyUsbAgent-%s.log", fnSuffix);
+
+    if (!NT_SUCCESS (status))
+    {
+      KdPrint (("RtlUnicodeStringPrintf failed: 0x%08x", status));
+      return status;
+    }
+
+    KdPrint (("Logging to %S", buffer));
+
+    m_fileHandle = NULL;
+
+    KeInitializeEvent (&m_stopEvent, NotificationEvent, FALSE);
+    m_logThread = NULL;
+
+    ExInitializeSListHead (&m_items);
+    KeInitializeSpinLock (&m_itemsLock);
+
     OBJECT_ATTRIBUTES attrs;
     InitializeObjectAttributes (&attrs, &logfilePath, 0, NULL, NULL);
 
@@ -57,11 +127,19 @@ Logger::Initialize (IO_REMOVE_LOCK * removeLock, const WCHAR * fnSuffix)
     status = ZwCreateFile (&m_fileHandle, GENERIC_WRITE, &attrs, &ioStatus,
       NULL, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_OVERWRITE_IF,
       FILE_SYNCHRONOUS_IO_NONALERT, NULL, 0);
-    if (!NT_SUCCESS (status)) return status;
+    if (!NT_SUCCESS (status))
+    {
+      KdPrint (("ZwCreateFile failed: 0x%08x", status));
+      return status;
+    }
 
     status = PsCreateSystemThread (&m_logThread, THREAD_ALL_ACCESS, NULL,
       NULL, NULL, LogThreadFuncWrapper, this);
-    if (!NT_SUCCESS (status)) return status;
+    if (!NT_SUCCESS (status))
+    {
+      KdPrint (("PsCreateSystemThread failed: 0x%08x", status));
+      return status;
+    }
   }
   __finally
   {
@@ -73,7 +151,8 @@ Logger::Initialize (IO_REMOVE_LOCK * removeLock, const WCHAR * fnSuffix)
         m_fileHandle = NULL;
       }
 
-      IoReleaseRemoveLock (removeLock, this);
+      IoReleaseRemoveLock (m_removeLock, this);
+      m_removeLock = NULL;
     }
   }
 
@@ -81,7 +160,7 @@ Logger::Initialize (IO_REMOVE_LOCK * removeLock, const WCHAR * fnSuffix)
 }
 
 void
-Logger::Shutdown ()
+Logger::Stop ()
 {
   KeSetEvent (&m_stopEvent, IO_NO_INCREMENT, FALSE);
 
@@ -109,14 +188,23 @@ Logger::LogThreadFunc ()
     if (status == STATUS_SUCCESS)
       break;
 
-    UrbLogEntry * entry = reinterpret_cast <UrbLogEntry *> (
-      ExInterlockedPopEntrySList (&m_items, &m_itemsLock));
-    if (entry == NULL)
-      continue;
+    SLIST_ENTRY * listEntry;
 
-    WriteUrbEntry (entry);
+    while ((listEntry =
+      ExInterlockedPopEntrySList (&m_items, &m_itemsLock)) != NULL)
+    {
+      UrbLogEntry * entry = reinterpret_cast <UrbLogEntry *> (listEntry);
 
-    ExFreePool (entry);
+      if (m_capture != NULL)
+      {
+        InterlockedIncrement (&m_capture->LogIndex);
+        InterlockedExchangeAdd (&m_capture->LogSize, sizeof (URB));
+      }
+
+      WriteUrbEntry (entry);
+
+      ExFreePool (entry);
+    }
   }
   while (true);
 

@@ -99,7 +99,8 @@ namespace oSpy.SharpDumpLib
         Info,
         Warning,
         Error,
-        FunctionCall
+        FunctionCall,
+        IOCTL_INTERNAL_USB_SUBMIT_URB,
     }
 
     public class Event
