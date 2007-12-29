@@ -48,7 +48,8 @@ namespace oSpy.Capture
         {
             [MarshalAs (UnmanagedType.ByValTStr, SizeConst = WinApi.MAX_PATH)]
             public string LogPath;
-            public volatile UInt32 LogIndex;
+            public volatile UInt32 LogIndexUserspace;
+            public volatile UInt32 LogCount;
             public volatile UInt32 LogSize;
 
             public UInt32 NumSoftwallRules;
@@ -64,7 +65,7 @@ namespace oSpy.Capture
         private IProgressFeedback progress = null;
 
         private IntPtr fileMapping, cfgPtr;
-        private IntPtr logIndexPtr, logSizePtr;
+        private IntPtr logIndexUserspacePtr, logCountPtr, logSizePtr;
 
         private string capturePath;
         public string CapturePath
@@ -119,7 +120,7 @@ namespace oSpy.Capture
 
         public void UpdateCaptureStatistics()
         {
-            eventCount = Marshal.ReadInt32(logIndexPtr);
+            eventCount = Marshal.ReadInt32(logCountPtr);
             captureSize = Marshal.ReadInt32(logSizePtr);
         }
 
@@ -330,11 +331,13 @@ namespace oSpy.Capture
             Marshal.WriteInt16(ptr, tmpDirChars.Length * Marshal.SizeOf(typeof(UInt16)), 0);
 
             // Initialize LogIndex and LogSize
-            logIndexPtr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(Capture), "LogIndex").ToInt64());
-            logSizePtr = (IntPtr)(cfgPtr.ToInt64() + Marshal.OffsetOf(typeof(Capture), "LogSize").ToInt64());
+            logIndexUserspacePtr = (IntPtr)(cfgPtr.ToInt64 () + Marshal.OffsetOf (typeof (Capture), "LogIndexUserspace").ToInt64 ());
+            logCountPtr = (IntPtr)(cfgPtr.ToInt64 () + Marshal.OffsetOf (typeof (Capture), "LogCount").ToInt64 ());
+            logSizePtr = (IntPtr)(cfgPtr.ToInt64 () + Marshal.OffsetOf (typeof (Capture), "LogSize").ToInt64 ());
 
-            Marshal.WriteInt32(logIndexPtr, 0);
-            Marshal.WriteInt32(logSizePtr, 0);
+            Marshal.WriteInt32 (logIndexUserspacePtr, 0);
+            Marshal.WriteInt32 (logCountPtr, 0);
+            Marshal.WriteInt32 (logSizePtr, 0);
 
             // Initialize softwall rules
             Marshal.WriteInt32(cfgPtr, Marshal.OffsetOf(typeof(Capture), "NumSoftwallRules").ToInt32(), softwallRules.Length);

@@ -53,8 +53,9 @@ typedef struct {
 
 typedef struct {
     WCHAR LogPath[MAX_PATH];
-    volatile LONG LogIndex;
-    volatile LONG LogSize;
+    volatile ULONG LogIndexUserspace;
+    volatile ULONG LogCount;
+    volatile ULONG LogSize;
 
     DWORD NumSoftwallRules;
     SoftwallRule rules[MAX_SOFTWALL_RULES];
@@ -63,13 +64,13 @@ typedef struct {
 class Agent : public BaseObject
 {
 public:
-    Agent();
+    Agent ();
 
-    void Initialize();
-    void UnInitialize();
+    void Initialize ();
+    void UnInitialize ();
 
-    LONG GetNextLogIndex();
-    LONG AddBytesLogged(LONG n);
+    ULONG GetNextLogIndex ();
+    ULONG AddBytesLogged (ULONG n);
 
 protected:
     HANDLE m_map;
