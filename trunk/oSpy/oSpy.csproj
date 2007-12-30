@@ -57,7 +57,6 @@
     </Compile>
     <Compile Include="Capture\Manager.cs" />
     <Compile Include="Capture\Devices.cs" />
-    <Compile Include="Capture\WinApi.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="ProgressForm.cs">
       <SubType>Form</SubType>
@@ -85,6 +84,7 @@
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
+    <Compile Include="WinApi.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="AboutBoxForm.resx">
       <SubType>Designer</SubType>
