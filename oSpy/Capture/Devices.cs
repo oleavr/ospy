@@ -299,6 +299,23 @@ namespace oSpy.Capture
             SetRegistryPropertyMultiString (WinApi.SPDRP_LOWERFILTERS, filters.ToArray ());
         }
 
+        public void Restart ()
+        {
+            WinApi.SP_PROPCHANGE_PARAMS p = new WinApi.SP_PROPCHANGE_PARAMS ();
+            p.ClassInstallHeader.cbSize = (uint) Marshal.SizeOf (p.ClassInstallHeader);
+            p.ClassInstallHeader.InstallFunction = WinApi.DIF_PROPERTYCHANGE;
+
+            p.StateChange = WinApi.DICS_PROPCHANGE;
+            p.Scope = WinApi.DICS_FLAG_CONFIGSPECIFIC;
+            p.HwProfile = 0;
+
+            if (!WinApi.SetupDiSetClassInstallParams (devInfo, ref devInfoData, ref p, Marshal.SizeOf (p)))
+                throw new Error ("SetupDiSetClassInstallParams failed");
+
+            if (!WinApi.SetupDiCallClassInstaller (WinApi.DIF_PROPERTYCHANGE, devInfo, ref devInfoData))
+                throw new Error ("SetupDiCallClassInstaller failed");
+        }
+
         public int CompareTo (Device other)
         {
             if (other == this)
