@@ -38,6 +38,7 @@ namespace oSpy.Capture
         private List<AsyncMethodCaller> pendingOperations = new List<AsyncMethodCaller> ();
 
         private DeviceList usbDevList = null;
+        private int usbViewImageIndex = 0;
 
         private ManagementEventWatcher processStartWatcher = null;
         private ManagementEventWatcher processStopWatcher = null;
@@ -45,6 +46,8 @@ namespace oSpy.Capture
         public ChooseForm ()
         {
             InitializeComponent ();
+
+            usbDevView.ListViewItemSorter = new DeviceViewItemComparer ();
 
             WqlEventQuery startQuery = new WqlEventQuery ();
             startQuery.EventClassName = "Win32_ProcessStartTrace";
@@ -164,37 +167,79 @@ namespace oSpy.Capture
 
         private void ApplyUsbDeviceList ()
         {
-            usbDevView.Items.Clear ();
-            
-            usbImagesSmall.Images.Clear ();
-            usbImagesSmall.ImageSize = new Size (16, 16);
+            bool sortNeeded = false;
 
-            usbImagesLarge.Images.Clear ();
+            if (usbDevView.Items.Count == 0)
+                usbImagesSmall.ImageSize = new Size (16, 16);
 
-            int imageIndex = 0;
+            Dictionary<string, ListViewItem> oldItems = new Dictionary<string, ListViewItem> ();
+            foreach (ListViewItem item in usbDevView.Items)
+            {
+                Device device = item.Tag as Device;
+                oldItems[device.HardwareId] = item;
+            }
 
             foreach (Device device in usbDevList.Devices)
             {
-                ListViewItem item = new ListViewItem (device.Name);
+                if (oldItems.ContainsKey (device.HardwareId))
+                {
+                    ListViewItem item = oldItems[device.HardwareId];
 
-                if (device.Present)
-                    item.ForeColor = Color.Green;
+                    Device oldDevice = item.Tag as Device;
+                    if (device.Name != oldDevice.Name ||
+                        device.Present != oldDevice.Present)
+                    {
+                        sortNeeded = true;
+                    }
 
+                    UpdateListViewItemWithDevice (item, device);
+
+                    oldItems.Remove (device.HardwareId);
+                }
+                else
+                {
+                    ListViewItem item = new ListViewItem (device.Name);
+                    UpdateListViewItemWithDevice (item, device);
+                    usbDevView.Items.Add (item);
+
+                    sortNeeded = true;
+                }
+            }
+
+            foreach (ListViewItem item in oldItems.Values)
+                usbDevView.Items.Remove (item);
+
+            if (sortNeeded)
+                usbDevView.Sort ();
+        }
+
+        private void UpdateListViewItemWithDevice (ListViewItem item, Device device)
+        {
+            item.Name = device.Name;
+            item.Tag = device;
+
+            item.ForeColor = (device.Present) ? Color.Green : Color.Black;
+
+            if (device.HasLowerFilter (Constants.UsbAgentName))
+                item.Checked = true;
+
+            if (item.ImageIndex >= 0)
+            {
+                usbImagesSmall.Images[item.ImageIndex] = device.SmallIcon.ToBitmap ();
+                usbImagesLarge.Images[item.ImageIndex] = device.LargeIcon.ToBitmap ();
+            }
+            else
+            {
                 Icon smallIcon = device.SmallIcon;
                 Icon largeIcon = device.LargeIcon;
+
                 if (smallIcon != null && largeIcon != null)
                 {
                     usbImagesSmall.Images.Add (smallIcon);
                     usbImagesLarge.Images.Add (largeIcon);
 
-                    item.ImageIndex = imageIndex++;
+                    item.ImageIndex = usbViewImageIndex++;
                 }
-
-                item.Tag = device;
-
-                item.Checked = device.HasLowerFilter (Constants.UsbAgentName);
-
-                usbDevView.Items.Add (item);
             }
         }
 
@@ -270,6 +315,22 @@ namespace oSpy.Capture
             ProcessItem otherItem = obj as ProcessItem;
 
             return process.ProcessName.CompareTo(otherItem.process.ProcessName);
+        }
+    }
+
+    public class DeviceViewItemComparer : System.Collections.IComparer
+    {
+        public int Compare (object itemA, object itemB)
+        {
+            Device a = (itemA as ListViewItem).Tag as Device;
+            Device b = (itemB as ListViewItem).Tag as Device;
+
+            if (a == b)
+                return 0;
+            else if (b.Present != a.Present)
+                return b.Present.CompareTo (a.Present);
+            else
+                return a.Name.CompareTo (b.Name);
         }
     }
 }

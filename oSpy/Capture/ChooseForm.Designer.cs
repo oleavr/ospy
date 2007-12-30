@@ -166,7 +166,7 @@ namespace oSpy.Capture
             // 
             // updateHwListTimer
             // 
-            this.updateHwListTimer.Interval = 1000;
+            this.updateHwListTimer.Interval = 250;
             this.updateHwListTimer.Tick += new System.EventHandler (this.updateHwListTimer_Tick);
             // 
             // ChooseForm

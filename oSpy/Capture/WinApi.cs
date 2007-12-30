@@ -201,12 +201,26 @@ namespace oSpy.Capture
 
         public const int DIGCF_PRESENT = 0x00000002;
         public const int DIGCF_ALLCLASSES = 0x00000004;
+        public const int DIGCF_PROFILE = 0x00000008;
 
         public const int SPDRP_DEVICEDESC = 0x00000000;
         public const int SPDRP_HARDWAREID = 0x00000001;
+        public const int SPDRP_DRIVER = 0x00000009;
         public const int SPDRP_FRIENDLYNAME = 0x0000000C;
-        public const int SPDRP_LOWERFILTERS = 0x00000012;
         public const int SPDRP_PHYSICAL_DEVICE_OBJECT_NAME = 0x0000000E;
+        public const int SPDRP_CAPABILITIES = 0x0000000F;
+        public const int SPDRP_LOWERFILTERS = 0x00000012;
+
+        public const int CM_DEVCAP_LOCKSUPPORTED = 0x00000001;
+        public const int CM_DEVCAP_EJECTSUPPORTED = 0x00000002;
+        public const int CM_DEVCAP_REMOVABLE = 0x00000004;
+        public const int CM_DEVCAP_DOCKDEVICE = 0x00000008;
+        public const int CM_DEVCAP_UNIQUEID = 0x00000010;
+        public const int CM_DEVCAP_SILENTINSTALL = 0x00000020;
+        public const int CM_DEVCAP_RAWDEVICEOK = 0x00000040;
+        public const int CM_DEVCAP_SURPRISEREMOVALOK = 0x00000080;
+        public const int CM_DEVCAP_HARDWAREDISABLED = 0x00000100;
+        public const int CM_DEVCAP_NONDYNAMIC = 0x00000200;
 
         public const int DIF_PROPERTYCHANGE = 0x00000012;
 
