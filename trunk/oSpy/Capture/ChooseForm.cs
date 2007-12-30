@@ -149,6 +149,8 @@ namespace oSpy.Capture
 
         private void CreateUsbDeviceList ()
         {
+            if (usbDevList != null)
+                usbDevList.Dispose ();
             usbDevList = new DeviceList (DeviceEnumerator.USB);
         }
 

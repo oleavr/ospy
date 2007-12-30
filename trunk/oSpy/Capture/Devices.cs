@@ -39,9 +39,9 @@ namespace oSpy.Capture
         public static DeviceEnumerator USB = new DeviceEnumerator ("USB");
     }
 
-    public class DeviceList
+    public class DeviceList : IDisposable
     {
-        private IntPtr devInfo;
+        private IntPtr devInfo = IntPtr.Zero;
 
         private List<Device> devices = new List<Device> ();
         public List<Device> Devices
@@ -56,7 +56,28 @@ namespace oSpy.Capture
                 devices = EnumerateDevices (devInfo);
         }
 
-        // TODO: destroy devInfo when disposing
+        public void Dispose ()
+        {
+            Dispose (true);
+            GC.SuppressFinalize (this);
+        }
+
+        protected virtual void Dispose (bool disposing)
+        {
+            if (disposing)
+                devices.Clear ();
+
+            if (devInfo != IntPtr.Zero)
+            {
+                WinApi.SetupDiDestroyDeviceInfoList (devInfo);
+                devInfo = IntPtr.Zero;
+            }
+        }
+
+        ~DeviceList ()
+        {
+            Dispose (false);
+        }
 
         private static List<Device> EnumerateDevices (IntPtr devInfo)
         {
@@ -126,25 +147,7 @@ namespace oSpy.Capture
             get { return physicalDeviceObjectName != null; }
         }
 
-        private static bool imageListDataLoaded = false;
-        private static WinApi.SP_CLASSIMAGELIST_DATA imageListData;
-        private static WinApi.SP_CLASSIMAGELIST_DATA ImageListData
-        {
-            get
-            {
-                if (!imageListDataLoaded)
-                {
-                    imageListDataLoaded = true;
-                    imageListData = new WinApi.SP_CLASSIMAGELIST_DATA ();
-                    imageListData.cbSize = (uint)Marshal.SizeOf (imageListData);
-                    WinApi.SetupDiGetClassImageList (ref imageListData);
-                }
-
-                return imageListData;
-            }
-        }
-
-        // TODO: WinApi.SetupDiDestroyClassImageList (ref imgListData);
+        private static DeviceClassImageList classImageList = new DeviceClassImageList ();
 
         private Icon smallIcon = null;
         public Icon SmallIcon
@@ -216,11 +219,12 @@ namespace oSpy.Capture
                 {
                     // Get the small icon's index
                     int smallIconIndex;
-                    WinApi.SP_CLASSIMAGELIST_DATA clsImageListData = ImageListData;
+                    WinApi.SP_CLASSIMAGELIST_DATA clsImageListData = classImageList.Data;
+
                     WinApi.SetupDiGetClassImageIndex (ref clsImageListData, ref devInfoData.ClassGuid, out smallIconIndex);
 
                     // Retrieve the small icon
-                    smallIconHandle = WinApi.ImageList_GetIcon (ImageListData.ImageList, smallIconIndex, 1);
+                    smallIconHandle = WinApi.ImageList_GetIcon (clsImageListData.ImageList, smallIconIndex, 1);
                     if (smallIconHandle == IntPtr.Zero)
                         return false;
                 }
@@ -365,6 +369,49 @@ namespace oSpy.Capture
             }
 
             return device;
+        }
+    }
+
+    public class DeviceClassImageList
+    {
+        private bool dataLoaded = false;
+        private WinApi.SP_CLASSIMAGELIST_DATA data;
+        public WinApi.SP_CLASSIMAGELIST_DATA Data
+        {
+            get
+            {
+                if (!dataLoaded)
+                {
+                    dataLoaded = true;
+                    data = new WinApi.SP_CLASSIMAGELIST_DATA ();
+                    data.cbSize = (uint)Marshal.SizeOf (data);
+                    WinApi.SetupDiGetClassImageList (ref data);
+                }
+
+                return data;
+            }
+        }
+
+        public void Dispose ()
+        {
+            Dispose (true);
+            GC.SuppressFinalize (this);
+        }
+
+        private bool isDisposed = false;
+
+        protected virtual void Dispose (bool disposing)
+        {
+            if (dataLoaded)
+            {
+                dataLoaded = false;
+                WinApi.SetupDiDestroyClassImageList (ref data);
+            }
+        }
+
+        ~DeviceClassImageList ()
+        {
+            Dispose (false);
         }
     }
 }
