@@ -72,7 +72,7 @@ namespace oSpy.Capture
             // startBtn
             // 
             this.startBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.startBtn.Location = new System.Drawing.Point (247, 252);
+            this.startBtn.Location = new System.Drawing.Point (403, 291);
             this.startBtn.Name = "startBtn";
             this.startBtn.Size = new System.Drawing.Size (75, 23);
             this.startBtn.TabIndex = 7;
@@ -84,7 +84,7 @@ namespace oSpy.Capture
             // 
             this.cancelBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelBtn.Location = new System.Drawing.Point (328, 252);
+            this.cancelBtn.Location = new System.Drawing.Point (484, 291);
             this.cancelBtn.Name = "cancelBtn";
             this.cancelBtn.Size = new System.Drawing.Size (75, 23);
             this.cancelBtn.TabIndex = 8;
@@ -101,7 +101,7 @@ namespace oSpy.Capture
             this.tabControl1.Location = new System.Drawing.Point (15, 25);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size (388, 221);
+            this.tabControl1.Size = new System.Drawing.Size (544, 260);
             this.tabControl1.TabIndex = 9;
             // 
             // processesTabPage
@@ -110,7 +110,7 @@ namespace oSpy.Capture
             this.processesTabPage.Location = new System.Drawing.Point (4, 22);
             this.processesTabPage.Name = "processesTabPage";
             this.processesTabPage.Padding = new System.Windows.Forms.Padding (3);
-            this.processesTabPage.Size = new System.Drawing.Size (380, 195);
+            this.processesTabPage.Size = new System.Drawing.Size (536, 234);
             this.processesTabPage.TabIndex = 0;
             this.processesTabPage.Text = "Processes";
             this.processesTabPage.UseVisualStyleBackColor = true;
@@ -122,7 +122,7 @@ namespace oSpy.Capture
             this.processView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.processView.Location = new System.Drawing.Point (3, 3);
             this.processView.Name = "processView";
-            this.processView.Size = new System.Drawing.Size (374, 189);
+            this.processView.Size = new System.Drawing.Size (530, 228);
             this.processView.SmallImageList = this.processImagesSmall;
             this.processView.TabIndex = 2;
             this.processView.UseCompatibleStateImageBehavior = false;
@@ -179,7 +179,7 @@ namespace oSpy.Capture
             this.AutoScaleDimensions = new System.Drawing.SizeF (6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.cancelBtn;
-            this.ClientSize = new System.Drawing.Size (415, 287);
+            this.ClientSize = new System.Drawing.Size (571, 326);
             this.Controls.Add (this.tabControl1);
             this.Controls.Add (this.cancelBtn);
             this.Controls.Add (this.startBtn);
