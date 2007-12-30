@@ -51,32 +51,9 @@ namespace oSpy.Capture
 
         public DeviceList (DeviceEnumerator enumerator)
         {
-            List<string> presentIds = new List<string> ();
-
-            devInfo = WinApi.SetupDiGetClassDevs (IntPtr.Zero, enumerator.Id, IntPtr.Zero, WinApi.DIGCF_ALLCLASSES | WinApi.DIGCF_PRESENT);
+            devInfo = WinApi.SetupDiGetClassDevs (IntPtr.Zero, enumerator.Id, IntPtr.Zero, WinApi.DIGCF_ALLCLASSES | WinApi.DIGCF_PROFILE);
             if (devInfo.ToInt32 () != WinApi.INVALID_HANDLE_VALUE)
-            {
-                try
-                {
-                    foreach (Device device in EnumerateDevices (devInfo))
-                        presentIds.Add (device.HardwareId);
-                }
-                finally
-                {
-                    WinApi.SetupDiDestroyDeviceInfoList (devInfo);
-                }
-            }
-
-            devInfo = WinApi.SetupDiGetClassDevs (IntPtr.Zero, enumerator.Id, IntPtr.Zero, WinApi.DIGCF_ALLCLASSES);
-            if (devInfo.ToInt32 () != WinApi.INVALID_HANDLE_VALUE)
-            {
                 devices = EnumerateDevices (devInfo);
-
-                foreach (Device device in devices)
-                    device.Present = presentIds.Contains (device.HardwareId);
-            }
-
-            devices.Sort ();
         }
 
         // TODO: destroy devInfo when disposing
@@ -84,6 +61,7 @@ namespace oSpy.Capture
         private static List<Device> EnumerateDevices (IntPtr devInfo)
         {
             List<Device> devices = new List<Device> ();
+            Dictionary<string, Device> devicesByHwId = new Dictionary<string, Device> ();
 
             for (uint i = 0; ; i++)
             {
@@ -95,14 +73,26 @@ namespace oSpy.Capture
 
                 Device device = Device.FromDevInfo (devInfo, devInfoData);
                 if (device != null)
-                    devices.Add (device);
+                {
+                    if (!devicesByHwId.ContainsKey (device.HardwareId))
+                    {
+                        devicesByHwId[device.HardwareId] = device;
+
+                        devices.Add (device);
+                    }
+                    else
+                    {
+                        // TODO: should solve this differently, the hardware
+                        //       IDs aren't unique...
+                    }
+                }
             }
 
             return devices;
         }
     }
 
-    public class Device : IComparable<Device>
+    public class Device
     {
         private IntPtr devInfo;
         private WinApi.SP_DEVINFO_DATA devInfoData;
@@ -119,11 +109,21 @@ namespace oSpy.Capture
             get { return hardwareId; }
         }
 
-        private bool present = false;
+        private string physicalDeviceObjectName;
+        public string PhysicalDeviceObjectName
+        {
+            get { return physicalDeviceObjectName; }
+        }
+
+        private UInt32 capabilities;
+        public UInt32 Capabilities
+        {
+            get { return capabilities; }
+        }
+
         public bool Present
         {
-            get { return present; }
-            set { present = value; }
+            get { return physicalDeviceObjectName != null; }
         }
 
         private static bool imageListDataLoaded = false;
@@ -171,12 +171,14 @@ namespace oSpy.Capture
             get { return GetRegistryPropertyMultiString (WinApi.SPDRP_LOWERFILTERS); }
         }
 
-        private Device (IntPtr devInfo, WinApi.SP_DEVINFO_DATA devInfoData, string name, string hardwareId)
+        private Device (IntPtr devInfo, WinApi.SP_DEVINFO_DATA devInfoData, string name, string hardwareId, string physicalDeviceObjectName, UInt32 capabilities)
         {
             this.devInfo = devInfo;
             this.devInfoData = devInfoData;
             this.name = name;
             this.hardwareId = hardwareId;
+            this.physicalDeviceObjectName = physicalDeviceObjectName;
+            this.capabilities = capabilities;
         }
 
         private bool iconsLoaded = false;
@@ -316,22 +318,14 @@ namespace oSpy.Capture
                 throw new Error ("SetupDiCallClassInstaller failed");
         }
 
-        public int CompareTo (Device other)
-        {
-            if (other == this)
-                return 0;
-            else if (other.present != this.present)
-                return other.present.CompareTo (this.present);
-            else
-                return this.name.CompareTo (other.name);
-        }
-
         public static Device FromDevInfo (IntPtr devInfo, WinApi.SP_DEVINFO_DATA devInfoData)
         {
             Device device = null;
 
             string name = null;
             string hardwareId = null;
+            string physicalDeviceObjectName = null;
+            UInt32 capabilities = 0;
 
             byte[] buf = new byte[1024];
             uint reqBufSize;
@@ -355,9 +349,19 @@ namespace oSpy.Capture
                 hardwareId = String.Join (";", tokens);
             }
 
+            if (WinApi.SetupDiGetDeviceRegistryProperty (devInfo, ref devInfoData, WinApi.SPDRP_PHYSICAL_DEVICE_OBJECT_NAME, IntPtr.Zero, buf, (uint)buf.Length, out reqBufSize))
+            {
+                physicalDeviceObjectName = WinApi.ByteArrayToString (buf);
+            }
+
+            if (WinApi.SetupDiGetDeviceRegistryProperty (devInfo, ref devInfoData, WinApi.SPDRP_CAPABILITIES, IntPtr.Zero, buf, (uint)buf.Length, out reqBufSize))
+            {
+                capabilities = BitConverter.ToUInt32 (buf, 0);
+            }
+
             if (name != null && hardwareId != null)
             {
-                device = new Device (devInfo, devInfoData, name, hardwareId);
+                device = new Device (devInfo, devInfoData, name, hardwareId, physicalDeviceObjectName, capabilities);
             }
 
             return device;
