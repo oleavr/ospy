@@ -80,6 +80,13 @@ namespace oSpy
             if (!frm.GetSelection (out processes, out devices))
                 return;
 
+            if (processes.Length > 0 && devices.Length > 0)
+            {
+                MessageBox.Show ("Capturing from both processes and devices simultaneously is not yet supported.",
+                                 "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             NewOperation("Starting capture");
             captureMgr.StartCapture(processes, swForm.GetRules(), devices, curProgress);
 
