@@ -8,6 +8,23 @@ namespace oSpy
 {
     public class WinApi
     {
+        public static IntPtr GetClassLongPtr (IntPtr hWnd, int nIndex)
+        {
+            if (IntPtr.Size > 4)
+                return GetClassLongPtr64 (hWnd, nIndex);
+            else
+                return new IntPtr (GetClassLongPtr32 (hWnd, nIndex));
+        }
+
+        [DllImport ("user32.dll", EntryPoint = "GetClassLong")]
+        public static extern uint GetClassLongPtr32 (IntPtr hWnd, int nIndex);
+
+        [DllImport ("user32.dll", EntryPoint = "GetClassLongPtr")]
+        public static extern IntPtr GetClassLongPtr64 (IntPtr hWnd, int nIndex);
+
+        [DllImport ("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
+        public static extern IntPtr SendMessage (IntPtr hWnd, int Msg, int wParam, int lParam);
+
         [DllImport ("Kernel32.dll", EntryPoint = "CreateFileMapping",
             SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern IntPtr CreateFileMapping (uint hFile,
@@ -176,6 +193,14 @@ namespace oSpy
             public UInt32 HwProfile;
         }
 
+        public const int GCL_HICONSM = -34;
+        public const int GCL_HICON = -14;
+
+        public const int ICON_SMALL = 0;
+        public const int ICON_BIG = 1;
+        public const int ICON_SMALL2 = 2;
+
+        public const int WM_GETICON = 0x7F;
         public const int WM_DEVICECHANGE = 0x0219;
 
         public const int MAX_PATH = 260;

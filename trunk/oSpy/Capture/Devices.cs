@@ -398,8 +398,6 @@ namespace oSpy.Capture
             GC.SuppressFinalize (this);
         }
 
-        private bool isDisposed = false;
-
         protected virtual void Dispose (bool disposing)
         {
             if (dataLoaded)

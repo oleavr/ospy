@@ -45,16 +45,16 @@ namespace oSpy.Capture
         {
             this.components = new System.ComponentModel.Container ();
             this.label1 = new System.Windows.Forms.Label ();
-            this.processList = new System.Windows.Forms.CheckedListBox ();
             this.startBtn = new System.Windows.Forms.Button ();
             this.cancelBtn = new System.Windows.Forms.Button ();
             this.tabControl1 = new System.Windows.Forms.TabControl ();
             this.processesTabPage = new System.Windows.Forms.TabPage ();
+            this.processView = new System.Windows.Forms.ListView ();
+            this.processImagesSmall = new System.Windows.Forms.ImageList (this.components);
             this.usbDevicesTabPage = new System.Windows.Forms.TabPage ();
             this.usbDevView = new System.Windows.Forms.ListView ();
             this.usbImagesLarge = new System.Windows.Forms.ImageList (this.components);
             this.usbImagesSmall = new System.Windows.Forms.ImageList (this.components);
-            this.updateHwListTimer = new System.Windows.Forms.Timer (this.components);
             this.tabControl1.SuspendLayout ();
             this.processesTabPage.SuspendLayout ();
             this.usbDevicesTabPage.SuspendLayout ();
@@ -68,17 +68,6 @@ namespace oSpy.Capture
             this.label1.Size = new System.Drawing.Size (121, 13);
             this.label1.TabIndex = 5;
             this.label1.Text = "Choose what to monitor:";
-            // 
-            // processList
-            // 
-            this.processList.CheckOnClick = true;
-            this.processList.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.processList.FormattingEnabled = true;
-            this.processList.Location = new System.Drawing.Point (3, 3);
-            this.processList.Name = "processList";
-            this.processList.Size = new System.Drawing.Size (374, 184);
-            this.processList.TabIndex = 6;
-            this.processList.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler (this.anyView_ItemCheck);
             // 
             // startBtn
             // 
@@ -117,7 +106,7 @@ namespace oSpy.Capture
             // 
             // processesTabPage
             // 
-            this.processesTabPage.Controls.Add (this.processList);
+            this.processesTabPage.Controls.Add (this.processView);
             this.processesTabPage.Location = new System.Drawing.Point (4, 22);
             this.processesTabPage.Name = "processesTabPage";
             this.processesTabPage.Padding = new System.Windows.Forms.Padding (3);
@@ -125,6 +114,26 @@ namespace oSpy.Capture
             this.processesTabPage.TabIndex = 0;
             this.processesTabPage.Text = "Processes";
             this.processesTabPage.UseVisualStyleBackColor = true;
+            // 
+            // processView
+            // 
+            this.processView.Activation = System.Windows.Forms.ItemActivation.OneClick;
+            this.processView.CheckBoxes = true;
+            this.processView.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.processView.Location = new System.Drawing.Point (3, 3);
+            this.processView.Name = "processView";
+            this.processView.Size = new System.Drawing.Size (374, 189);
+            this.processView.SmallImageList = this.processImagesSmall;
+            this.processView.TabIndex = 2;
+            this.processView.UseCompatibleStateImageBehavior = false;
+            this.processView.View = System.Windows.Forms.View.List;
+            this.processView.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler (this.anyView_ItemCheck);
+            // 
+            // processImagesSmall
+            // 
+            this.processImagesSmall.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit;
+            this.processImagesSmall.ImageSize = new System.Drawing.Size (16, 16);
+            this.processImagesSmall.TransparentColor = System.Drawing.Color.Transparent;
             // 
             // usbDevicesTabPage
             // 
@@ -164,11 +173,6 @@ namespace oSpy.Capture
             this.usbImagesSmall.ImageSize = new System.Drawing.Size (16, 16);
             this.usbImagesSmall.TransparentColor = System.Drawing.Color.Transparent;
             // 
-            // updateHwListTimer
-            // 
-            this.updateHwListTimer.Interval = 250;
-            this.updateHwListTimer.Tick += new System.EventHandler (this.updateHwListTimer_Tick);
-            // 
             // ChooseForm
             // 
             this.AcceptButton = this.startBtn;
@@ -198,7 +202,6 @@ namespace oSpy.Capture
         #endregion
 
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.CheckedListBox processList;
         private System.Windows.Forms.Button startBtn;
         private System.Windows.Forms.Button cancelBtn;
         private System.Windows.Forms.TabControl tabControl1;
@@ -207,7 +210,8 @@ namespace oSpy.Capture
         private System.Windows.Forms.ListView usbDevView;
         private System.Windows.Forms.ImageList usbImagesSmall;
         private System.Windows.Forms.ImageList usbImagesLarge;
-        private System.Windows.Forms.Timer updateHwListTimer;
+        private System.Windows.Forms.ListView processView;
+        private System.Windows.Forms.ImageList processImagesSmall;
 
     }
 }

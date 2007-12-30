@@ -37,6 +37,10 @@ namespace oSpy.Capture
         private delegate void AsyncMethodCaller ();
         private List<AsyncMethodCaller> pendingOperations = new List<AsyncMethodCaller> ();
 
+        private Process[] processList = null;
+        private Dictionary<Process, Icon> processIcons = new Dictionary<Process, Icon> ();
+        private int processViewImageIndex = 0;
+
         private DeviceList usbDevList = null;
         private int usbViewImageIndex = 0;
 
@@ -47,6 +51,7 @@ namespace oSpy.Capture
         {
             InitializeComponent ();
 
+            processView.ListViewItemSorter = new ProcessViewItemComparer ();
             usbDevView.ListViewItemSorter = new DeviceViewItemComparer ();
 
             WqlEventQuery startQuery = new WqlEventQuery ();
@@ -68,18 +73,13 @@ namespace oSpy.Capture
 
         private void ProcessEventArrived (object o, EventArrivedEventArgs e)
         {
-            if (processList.InvokeRequired)
-            {
-                Invoke (new EventArrivedEventHandler (ProcessEventArrived), o, e);
-                return;
-            }
-
-            UpdateProcessList ();
+            WaitForPendingOperations ();
+            BeginUpdatingProcessList ();
         }
 
         private void InjectForm_Shown (object sender, EventArgs e)
         {
-            UpdateProcessList ();
+            BeginUpdatingProcessList ();
             BeginUpdatingUsbDeviceList ();
             UpdateButtons ();
         }
@@ -107,37 +107,128 @@ namespace oSpy.Capture
 
             if (m.Msg == WinApi.WM_DEVICECHANGE)
             {
-                updateHwListTimer.Enabled = false;
-                updateHwListTimer.Enabled = true;
+                WaitForPendingOperations ();
+                BeginUpdatingUsbDeviceList ();
             }
         }
 
-        private void UpdateProcessList ()
+        private Icon GetProcessIcon (Process proc)
         {
-            List<ProcessItem> items = new List<ProcessItem>();
+            IntPtr hwnd = proc.MainWindowHandle;
 
+            IntPtr iconHandle = WinApi.SendMessage (hwnd, WinApi.WM_GETICON, WinApi.ICON_SMALL2, 0);
+            if (iconHandle == IntPtr.Zero)
+                iconHandle = WinApi.SendMessage (hwnd, WinApi.WM_GETICON, WinApi.ICON_SMALL, 0);
+            if (iconHandle == IntPtr.Zero)
+                iconHandle = WinApi.SendMessage (hwnd, WinApi.WM_GETICON, WinApi.ICON_BIG, 0);
+            if (iconHandle == IntPtr.Zero)
+                iconHandle = WinApi.GetClassLongPtr (hwnd, WinApi.GCL_HICON);
+            if (iconHandle == IntPtr.Zero)
+                iconHandle = WinApi.GetClassLongPtr (hwnd, WinApi.GCL_HICONSM);
+
+            Icon icon = null;
+
+            if (iconHandle != IntPtr.Zero)
+            {
+                try { icon = Icon.FromHandle (iconHandle); }
+                catch (Exception) {}
+            }
+
+            if (icon == null)
+            {
+                try { icon = Icon.ExtractAssociatedIcon (proc.MainModule.FileName); }
+                catch (Exception) {}
+            }
+
+            return icon;
+        }
+
+        private void BeginUpdatingProcessList ()
+        {
+            AsyncMethodCaller caller = new AsyncMethodCaller (CreateProcessList);
+            caller.BeginInvoke (new AsyncCallback (ProcessListCreated), caller);
+            pendingOperations.Add (caller);
+        }
+
+        private void CreateProcessList ()
+        {
             int ourSessionId = Process.GetCurrentProcess().SessionId;
 
-            foreach (Process proc in Process.GetProcesses())
+            List<Process> result = new List<Process> ();
+            foreach (Process process in Process.GetProcesses ())
             {
-                if (proc.SessionId == ourSessionId)
+                if (process.SessionId == ourSessionId)
                 {
-                    items.Add(new ProcessItem(proc));
+                    result.Add (process);
+                    processIcons[process] = GetProcessIcon (process);
                 }
             }
 
-            items.Sort();
-
-            processList.Items.Clear();
-            processList.Items.AddRange(items.ToArray());
+            processList = result.ToArray ();
         }
 
-        private void updateHwListTimer_Tick (object sender, EventArgs e)
+        private void ProcessListCreated (IAsyncResult ar)
         {
-            updateHwListTimer.Enabled = false;
+            AsyncMethodCaller caller = (AsyncMethodCaller)ar.AsyncState;
+            caller.EndInvoke (ar);
 
-            WaitForPendingOperations ();
-            BeginUpdatingUsbDeviceList ();
+            if (usbDevView.InvokeRequired)
+                Invoke (new AsyncMethodCaller (ApplyProcessList));
+            else
+                ApplyProcessList ();
+
+            pendingOperations.Remove (caller);
+        }
+
+        private void ApplyProcessList ()
+        {
+            Dictionary<int, ListViewItem> oldItems = new Dictionary<int, ListViewItem> ();
+            foreach (ListViewItem item in processView.Items)
+                oldItems[(item.Tag as Process).Id] = item;
+
+            foreach (Process process in processList)
+            {
+                if (oldItems.ContainsKey (process.Id))
+                {
+                    ListViewItem item = oldItems[process.Id];
+                    UpdateListViewItemWithProcess (item, process);
+                    oldItems.Remove (process.Id);
+                }
+                else
+                {
+                    ListViewItem item = new ListViewItem ();
+                    UpdateListViewItemWithProcess (item, process);
+                    processView.Items.Add (item);
+                }
+            }
+
+            foreach (ListViewItem item in oldItems.Values)
+                processView.Items.Remove (item);
+
+            processView.Sort ();
+        }
+
+        private void UpdateListViewItemWithProcess (ListViewItem item, Process process)
+        {
+            item.Name = String.Format ("{0} ({1})", process.ProcessName, process.Id);
+            item.Text = item.Name;
+            item.Tag = process;
+
+            Icon icon = processIcons[process];
+            if (item.ImageIndex >= 0)
+            {
+                if (icon != null)
+                    processImagesSmall.Images[item.ImageIndex] = icon.ToBitmap ();
+            }
+            else
+            {
+                if (icon != null)
+                {
+                    processImagesSmall.Images.Add (icon);
+
+                    item.ImageIndex = processViewImageIndex++;
+                }
+            }
         }
 
         private void BeginUpdatingUsbDeviceList ()
@@ -169,8 +260,6 @@ namespace oSpy.Capture
 
         private void ApplyUsbDeviceList ()
         {
-            bool sortNeeded = false;
-
             if (usbDevView.Items.Count == 0)
                 usbImagesSmall.ImageSize = new Size (16, 16);
 
@@ -186,16 +275,7 @@ namespace oSpy.Capture
                 if (oldItems.ContainsKey (device.HardwareId))
                 {
                     ListViewItem item = oldItems[device.HardwareId];
-
-                    Device oldDevice = item.Tag as Device;
-                    if (device.Name != oldDevice.Name ||
-                        device.Present != oldDevice.Present)
-                    {
-                        sortNeeded = true;
-                    }
-
                     UpdateListViewItemWithDevice (item, device);
-
                     oldItems.Remove (device.HardwareId);
                 }
                 else
@@ -203,16 +283,13 @@ namespace oSpy.Capture
                     ListViewItem item = new ListViewItem (device.Name);
                     UpdateListViewItemWithDevice (item, device);
                     usbDevView.Items.Add (item);
-
-                    sortNeeded = true;
                 }
             }
 
             foreach (ListViewItem item in oldItems.Values)
                 usbDevView.Items.Remove (item);
 
-            if (sortNeeded)
-                usbDevView.Sort ();
+            usbDevView.Sort ();
         }
 
         private void UpdateListViewItemWithDevice (ListViewItem item, Device device)
@@ -272,12 +349,10 @@ namespace oSpy.Capture
 
             if (ShowDialog() == DialogResult.OK)
             {
-                for (int i = 0; i < processList.Items.Count; i++)
+                foreach (ListViewItem item in processView.Items)
                 {
-                    if (processList.GetItemChecked(i))
-                    {
-                        procList.Add((processList.Items[i] as ProcessItem).Process);
-                    }
+                    if (item.Checked)
+                        procList.Add (item.Tag as Process);
                 }
 
                 foreach (ListViewItem item in usbDevView.Items)
@@ -294,29 +369,17 @@ namespace oSpy.Capture
         }
     }
 
-    public class ProcessItem : IComparable
+    public class ProcessViewItemComparer : System.Collections.IComparer
     {
-        protected Process process;
-        public Process Process
+        public int Compare (object itemA, object itemB)
         {
-            get { return process; }
-        }
+            Process a = (itemA as ListViewItem).Tag as Process;
+            Process b = (itemB as ListViewItem).Tag as Process;
 
-        public ProcessItem(Process process)
-        {
-            this.process = process;
-        }
-
-        public override string ToString()
-        {
-            return String.Format("{0} ({1})", process.ProcessName, process.Id);
-        }
-
-        public int CompareTo(Object obj)
-        {
-            ProcessItem otherItem = obj as ProcessItem;
-
-            return process.ProcessName.CompareTo(otherItem.process.ProcessName);
+            if (a == b)
+                return 0;
+            else
+                return a.ProcessName.CompareTo (b.ProcessName);
         }
     }
 
