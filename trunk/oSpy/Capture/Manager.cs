@@ -135,7 +135,11 @@ namespace oSpy.Capture
                     InstallUsbAgentService ();
 
                     foreach (Device device in devices)
+                    {
                         device.AddLowerFilter (Constants.UsbAgentName);
+                        //if (device.Present)
+                            device.Restart ();
+                    }
                 }
 
                 DoInjection ();
@@ -164,10 +168,13 @@ namespace oSpy.Capture
 
                 if (devices.Length > 0)
                 {
-                    WaitForUsbAgentServiceToStop ();
-
                     foreach (Device device in devices)
+                    {
                         device.RemoveLowerFilter (Constants.UsbAgentName);
+                        device.Restart ();
+                    }
+
+                    WaitForUsbAgentServiceToStop ();
 
                     RemoveUsbAgentService ();
                 }
@@ -241,7 +248,7 @@ namespace oSpy.Capture
                 if (service != IntPtr.Zero)
                 {
                     if (!WinApi.DeleteService (service))
-                        throw new Error ("DeleteService failed");
+                        throw new Error ("DeleteService failed: 0x{0:x8}", Marshal.GetLastWin32Error ());
                 }
                 else
                 {

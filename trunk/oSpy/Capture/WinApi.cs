@@ -119,6 +119,12 @@ namespace oSpy.Capture
         [DllImport ("setupapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern bool SetupDiDestroyClassImageList (ref SP_CLASSIMAGELIST_DATA classImageListData);
 
+        [DllImport ("setupapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern bool SetupDiSetClassInstallParams (IntPtr deviceInfoSet, ref SP_DEVINFO_DATA deviceInfoData, ref SP_PROPCHANGE_PARAMS classInstallParams, int classInstallParamsSize);
+
+        [DllImport ("setupapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern bool SetupDiCallClassInstaller (uint installFunction, IntPtr deviceInfoSet, ref SP_DEVINFO_DATA deviceInfoData);
+
         [DllImport ("user32.dll", CharSet = CharSet.Auto)]
         public static extern bool DestroyIcon (IntPtr handle);
 
@@ -154,6 +160,22 @@ namespace oSpy.Capture
             public UInt32 Reserved;
         }
 
+        [StructLayout (LayoutKind.Sequential)]
+        public struct SP_CLASSINSTALL_HEADER
+        {
+            public UInt32 cbSize;
+            public uint InstallFunction;
+        }
+
+        [StructLayout (LayoutKind.Sequential)]
+        public struct SP_PROPCHANGE_PARAMS
+        {
+            public SP_CLASSINSTALL_HEADER ClassInstallHeader;
+            public UInt32 StateChange;
+            public UInt32 Scope;
+            public UInt32 HwProfile;
+        }
+
         public const int WM_DEVICECHANGE = 0x0219;
 
         public const int MAX_PATH = 260;
@@ -185,6 +207,12 @@ namespace oSpy.Capture
         public const int SPDRP_FRIENDLYNAME = 0x0000000C;
         public const int SPDRP_LOWERFILTERS = 0x00000012;
         public const int SPDRP_PHYSICAL_DEVICE_OBJECT_NAME = 0x0000000E;
+
+        public const int DIF_PROPERTYCHANGE = 0x00000012;
+
+        public const int DICS_PROPCHANGE = 0x00000003;
+
+        public const int DICS_FLAG_CONFIGSPECIFIC = 0x00000002;
 
         public const int PROCESS_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF);
         public const int STANDARD_RIGHTS_REQUIRED = 0xF0000;
