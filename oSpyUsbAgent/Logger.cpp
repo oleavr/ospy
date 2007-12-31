@@ -191,15 +191,15 @@ Logger::LogThreadFunc ()
     while ((listEntry =
       ExInterlockedPopEntrySList (&m_items, &m_itemsLock)) != NULL)
     {
-      UrbLogEntry * entry = reinterpret_cast <UrbLogEntry *> (listEntry);
+      LogEntry * entry = reinterpret_cast <LogEntry *> (listEntry);
 
       if (m_capture != NULL)
       {
         InterlockedIncrement (reinterpret_cast<volatile LONG *> (&m_capture->LogCount));
-        InterlockedExchangeAdd (reinterpret_cast<volatile LONG *> (&m_capture->LogSize), sizeof (URB));
+        InterlockedExchangeAdd (reinterpret_cast<volatile LONG *> (&m_capture->LogSize), sizeof (LogEntry));
       }
 
-      WriteUrbEntry (entry);
+      WriteNode (&entry->event);
 
       ExFreePool (entry);
     }
@@ -222,8 +222,8 @@ Logger::LogThreadFunc ()
 void
 Logger::LogUrb (const URB * urb)
 {
-  UrbLogEntry * logEntry = static_cast <UrbLogEntry *> (
-    ExAllocatePool (NonPagedPool, sizeof (UrbLogEntry)));
+  LogEntry * logEntry = static_cast <LogEntry *> (
+    ExAllocatePool (NonPagedPool, sizeof (LogEntry)));
 
   if (logEntry == NULL)
   {
@@ -231,53 +231,48 @@ Logger::LogUrb (const URB * urb)
     return;
   }
 
-  logEntry->id = InterlockedIncrement (reinterpret_cast<volatile LONG *> (&m_index));
-  KeQuerySystemTime (&logEntry->timestamp);
-  logEntry->urb = *urb;
+  ULONG id = InterlockedIncrement (reinterpret_cast<volatile LONG *> (&m_index));
+  LARGE_INTEGER timestamp;
+  KeQuerySystemTime (&timestamp);
+
+  Event * ev = &logEntry->event;
+  ev->Initialize (id, timestamp, "IOCTL_INTERNAL_USB_SUBMIT_URB", 1);
+
+  Node * node = ev->CreateTextNode ("type", "%d", urb->UrbHeader.Function);
+  ev->AppendChild (node);
 
   ExInterlockedPushEntrySList (&m_items, &logEntry->entry, &m_itemsLock);
 }
 
 void
-Logger::WriteUrbEntry (const UrbLogEntry * entry)
+Logger::WriteNode (const Node * node)
 {
-  // Name
-  Write ("Event");
+  Write (node->m_name);
 
-  // Fields
-  Write (6);
-  
-  Write ("id");
-  Write ("%lu", entry->id);
+  int fieldCount = node->GetFieldCount ();
+  Write (fieldCount);
+  for (int i = 0; i < fieldCount; i++)
+  {
+    Write (node->m_fieldKeys[i]);
+    Write (node->m_fieldValues[i]);
+  }
 
-  Write ("type");
-  Write ("IOCTL_INTERNAL_USB_SUBMIT_URB");
+  Write (node->m_contentIsRaw);
+  Write (node->m_contentSize);
+  WriteRaw (node->m_content, node->m_contentSize);
 
-  Write ("timestamp");
-  Write ("%lld", entry->timestamp.QuadPart);
-
-  Write ("processName");
-  Write ("ntoskrnl.dll");
-
-  Write ("processId");
-  Write ("0");
-
-  Write ("threadId");
-  Write ("0");
-
-  // Content
-  Write (1); // is raw
-  Write (sizeof (URB));
-  WriteRaw (&entry->urb, sizeof (URB));
-
-  // Children
-  Write (static_cast <ULONG> (0));
+  int childCount = node->GetChildCount ();
+  Write (childCount);
+  for (int i = 0; i < childCount; i++)
+  {
+    WriteNode (node->m_children[i]);
+  }
 }
 
 void
 Logger::WriteRaw (const void * data, size_t dataSize)
 {
-  if (m_fileHandle == NULL)
+  if (m_fileHandle == NULL || data == NULL || dataSize == 0)
     return;
 
   NTSTATUS status;
@@ -295,21 +290,15 @@ Logger::Write (ULONG dw)
 }
 
 void
-Logger::Write (const char * format, ...)
+Logger::Write (const char * str)
 {
-  NTSTATUS status;
+  if (str == NULL)
+  {
+    Write (static_cast <ULONG> (0));
+    return;
+  }
 
-  va_list argList;
-  va_start (argList, format);
-
-  char buf[1024];
-  status = RtlStringCbVPrintfA (buf, sizeof (buf), format, argList);
-  if (!NT_SUCCESS (status)) return;
-
-  size_t length;
-  status = RtlStringCbLengthA (buf, sizeof (buf), &length);
-  if (!NT_SUCCESS (status)) return;
-
+  size_t length = strlen (str);
   Write (static_cast <ULONG> (length));
-  WriteRaw (buf, length);
+  WriteRaw (str, length);
 }

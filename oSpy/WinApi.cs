@@ -13,11 +13,11 @@ namespace oSpy
             if (IntPtr.Size > 4)
                 return GetClassLongPtr64 (hWnd, nIndex);
             else
-                return new IntPtr (GetClassLongPtr32 (hWnd, nIndex));
+                return GetClassLongPtr32 (hWnd, nIndex);
         }
 
         [DllImport ("user32.dll", EntryPoint = "GetClassLong")]
-        public static extern uint GetClassLongPtr32 (IntPtr hWnd, int nIndex);
+        public static extern IntPtr GetClassLongPtr32 (IntPtr hWnd, int nIndex);
 
         [DllImport ("user32.dll", EntryPoint = "GetClassLongPtr")]
         public static extern IntPtr GetClassLongPtr64 (IntPtr hWnd, int nIndex);
