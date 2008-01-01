@@ -222,6 +222,8 @@ Logger::ProcessItems ()
 
     WriteNode (&entry->event);
 
+    entry->event.Destroy ();
+
     ExFreePool (entry);
   }
 }
