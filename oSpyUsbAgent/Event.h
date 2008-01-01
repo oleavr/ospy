@@ -45,10 +45,13 @@ public:
   Node ** m_children;
 };
 
+#define EVENT_NUM_BULK_SLOTS 2
+
 class Event : public Node
 {
 public:
   void Initialize (ULONG id, LARGE_INTEGER timestamp, const char * eventType, int childCapacity);
+  void Destroy ();
 
   void AddFieldToNode (Node * node, const char * key, const char * value);
   void AddFieldToNodePrintf (Node * node, const char * key, const char * value, ...);
@@ -66,6 +69,7 @@ private:
 
   int m_offset;
   UCHAR m_storage[4000]; // PAGE_SIZE minus some headroom
+  void * m_bulkStorage[EVENT_NUM_BULK_SLOTS];
 };
 
 #endif // EVENT_H

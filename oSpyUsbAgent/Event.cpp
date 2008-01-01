@@ -91,6 +91,9 @@ Event::Initialize (ULONG id,
 
   m_offset = 0;
 
+  for (int i = 0; i < EVENT_NUM_BULK_SLOTS; i++)
+    m_bulkStorage[i] = NULL;
+
   m_name = CreateString ("Event");
 
   CreateFieldStorage (this, 6);
@@ -102,6 +105,19 @@ Event::Initialize (ULONG id,
   AddFieldToNode (this, "threadId", "0");
 
   CreateChildStorage (this, childCapacity);
+}
+
+void
+Event::Destroy ()
+{
+  for (int i = 0; i < EVENT_NUM_BULK_SLOTS; i++)
+  {
+    if (m_bulkStorage[i] != NULL)
+    {
+      ExFreePool (m_bulkStorage[i]);
+      m_bulkStorage[i] = NULL;
+    }
+  }
 }
 
 Node *
@@ -161,7 +177,18 @@ Event::ReserveStorage (int size)
 {
   if (static_cast <int> (sizeof (m_storage)) - m_offset < size)
   {
-    KdPrint (("ReserveStorageRaw failed, should never happen"));
+    KdPrint (("ReserveStorage: not enough space, allocating bulk slot"));
+
+    for (int i = 0; i < EVENT_NUM_BULK_SLOTS; i++)
+    {
+      if (m_bulkStorage[i] != NULL)
+      {
+        m_bulkStorage[i] = ExAllocatePool (NonPagedPool, size);
+        return m_bulkStorage[i];
+      }
+    }
+
+    KdPrint (("ReserveStorage: no bulk-slots left, should never happen"));
     return ExAllocatePool (NonPagedPool, size);
   }
 
