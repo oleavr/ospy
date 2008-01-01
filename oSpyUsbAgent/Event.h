@@ -33,7 +33,7 @@ public:
 public:
   char * m_name;
 
-  int m_numFieldsMax;
+  int m_fieldCapacity;
   char ** m_fieldKeys;
   char ** m_fieldValues;
 
@@ -41,26 +41,28 @@ public:
   int m_contentSize;
   UCHAR * m_content;
 
-  int m_numChildrenMax;
+  int m_childCapacity;
   Node ** m_children;
 };
 
 class Event : public Node
 {
 public:
-  void Initialize (ULONG id, LARGE_INTEGER timestamp, const char * eventType, int numChildrenMax);
+  void Initialize (ULONG id, LARGE_INTEGER timestamp, const char * eventType, int childCapacity);
 
-  Node * CreateTextNode (const char * name, const char * content, ...);
+  void AddFieldToNode (Node * node, const char * key, const char * value);
+  void AddFieldToNodePrintf (Node * node, const char * key, const char * value, ...);
+
+  Node * CreateTextNode (const char * name, int fieldCapacity, const char * content, ...);
+  Node * CreateDataNode (const char * name, int fieldCapacity, const void * data, int dataSize);
 
 private:
   void * ReserveStorage (int size);
   char * CreateString (const char * str);
 
-  void CreateFieldStorage (Node * node, int numFieldsMax);
-  void AppendField (Node * node, const char * key, const char * value);
-  void AppendFieldPrintf (Node * node, const char * key, const char * value, ...);
+  void CreateFieldStorage (Node * node, int fieldCapacity);
 
-  void CreateChildStorage (Node * node, int numChildrenMax);
+  void CreateChildStorage (Node * node, int childCapacity);
 
   int m_offset;
   UCHAR m_storage[4000]; // PAGE_SIZE minus some headroom

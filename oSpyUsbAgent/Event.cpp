@@ -24,7 +24,7 @@ Node::Initialize ()
 {
   m_name = NULL;
 
-  m_numFieldsMax = 0;
+  m_fieldCapacity = 0;
   m_fieldKeys = NULL;
   m_fieldValues = NULL;
 
@@ -32,7 +32,7 @@ Node::Initialize ()
   m_contentSize = 0;
   m_content = NULL;
 
-  m_numChildrenMax = 0;
+  m_childCapacity = 0;
   m_children = NULL;
 }
 
@@ -41,7 +41,7 @@ Node::GetFieldCount () const
 {
   int count = 0;
 
-  for (int i = 0; i < m_numFieldsMax; i++)
+  for (int i = 0; i < m_fieldCapacity; i++)
   {
     if (m_fieldKeys[i] != NULL)
       count ++;
@@ -57,7 +57,7 @@ Node::GetChildCount () const
 {
   int count = 0;
 
-  for (int i = 0; i < m_numChildrenMax; i++)
+  for (int i = 0; i < m_childCapacity; i++)
   {
     if (m_children[i] != NULL)
       count ++;
@@ -72,7 +72,7 @@ void
 Node::AppendChild (Node * node)
 {
   int slotIndex = GetChildCount ();
-  if (slotIndex == m_numChildrenMax)
+  if (slotIndex == m_childCapacity)
   {
     KdPrint (("Not enough elements reserved for AppendChild"));
     return;
@@ -85,7 +85,7 @@ void
 Event::Initialize (ULONG id,
                    LARGE_INTEGER timestamp,
                    const char * eventType,
-                   int numChildrenMax)
+                   int childCapacity)
 {
   Node::Initialize ();
 
@@ -94,23 +94,27 @@ Event::Initialize (ULONG id,
   m_name = CreateString ("Event");
 
   CreateFieldStorage (this, 6);
-  AppendFieldPrintf (this, "id", "%lu", id);
-  AppendFieldPrintf (this, "timestamp", "%lld", timestamp.QuadPart);
-  AppendField (this, "type", eventType);
-  AppendField (this, "processName", "oSpyUsbAgent.sys");
-  AppendField (this, "processId", "0");
-  AppendField (this, "threadId", "0");
+  AddFieldToNodePrintf (this, "id", "%lu", id);
+  AddFieldToNodePrintf (this, "timestamp", "%lld", timestamp.QuadPart);
+  AddFieldToNode (this, "type", eventType);
+  AddFieldToNode (this, "processName", "oSpyUsbAgent.sys");
+  AddFieldToNode (this, "processId", "0");
+  AddFieldToNode (this, "threadId", "0");
 
-  CreateChildStorage (this, numChildrenMax);
+  CreateChildStorage (this, childCapacity);
 }
 
 Node *
-Event::CreateTextNode (const char * name, const char * content, ...)
+Event::CreateTextNode (const char * name,
+                       int fieldCapacity,
+                       const char * content, ...)
 {
   Node * node = static_cast <Node *> (ReserveStorage (sizeof (Node)));
   node->Initialize ();
 
   node->m_name = CreateString (name);
+
+  CreateFieldStorage (node, fieldCapacity);
 
   va_list argList;
   va_start (argList, content);
@@ -127,6 +131,27 @@ Event::CreateTextNode (const char * name, const char * content, ...)
   {
     KdPrint (("RtlStringCbVPrintfA failed"));
   }
+
+  return node;
+}
+
+Node *
+Event::CreateDataNode (const char * name,
+                       int fieldCapacity,
+                       const void * data,
+                       int dataSize)
+{
+  Node * node = static_cast <Node *> (ReserveStorage (sizeof (Node)));
+  node->Initialize ();
+
+  node->m_name = CreateString (name);
+
+  CreateFieldStorage (node, fieldCapacity);
+
+  node->m_contentIsRaw = true;
+  node->m_content = static_cast <UCHAR *> (ReserveStorage (dataSize));
+  memcpy (node->m_content, data, dataSize);
+  node->m_contentSize = dataSize;
 
   return node;
 }
@@ -156,28 +181,35 @@ Event::CreateString (const char * str)
 }
 
 void
-Event::CreateFieldStorage (Node * node, int numFieldsMax)
+Event::CreateFieldStorage (Node * node, int fieldCapacity)
 {
-  node->m_numFieldsMax = numFieldsMax;
+  node->m_fieldCapacity = fieldCapacity;
 
-  int size = sizeof (char *) * numFieldsMax;
+  int size = sizeof (char *) * fieldCapacity;
+  if (size > 0)
+  {
+    node->m_fieldKeys = static_cast <char **> (
+      ReserveStorage (size));
+    memset (node->m_fieldKeys, 0, size);
 
-  node->m_fieldKeys = static_cast <char **> (
-    ReserveStorage (size));
-  memset (node->m_fieldKeys, 0, size);
-
-  node->m_fieldValues = static_cast <char **> (
-    ReserveStorage (size));
-  memset (node->m_fieldValues, 0, size);
+    node->m_fieldValues = static_cast <char **> (
+      ReserveStorage (size));
+    memset (node->m_fieldValues, 0, size);
+  }
+  else
+  {
+    node->m_fieldKeys = NULL;
+    node->m_fieldValues = NULL;
+  }
 }
 
 void
-Event::AppendField (Node * node,
-                    const char * key,
-                    const char * value)
+Event::AddFieldToNode (Node * node,
+                       const char * key,
+                       const char * value)
 {
   int slotIndex = node->GetFieldCount ();
-  if (slotIndex == node->m_numFieldsMax)
+  if (slotIndex == node->m_fieldCapacity)
   {
     KdPrint (("Not enough fields reserved for AppendFieldRaw"));
     return;
@@ -188,9 +220,9 @@ Event::AppendField (Node * node,
 }
 
 void
-Event::AppendFieldPrintf (Node * node,
-                          const char * key,
-                          const char * valueFormat, ...)
+Event::AddFieldToNodePrintf (Node * node,
+                             const char * key,
+                             const char * valueFormat, ...)
 {
   va_list argList;
   va_start (argList, valueFormat);
@@ -200,15 +232,15 @@ Event::AppendFieldPrintf (Node * node,
   status = RtlStringCbVPrintfA (buf, sizeof (buf), valueFormat, argList);
   if (!NT_SUCCESS (status)) return;
 
-  AppendField (node, key, buf);
+  AddFieldToNode (node, key, buf);
 }
 
 void
-Event::CreateChildStorage (Node * node, int numChildrenMax)
+Event::CreateChildStorage (Node * node, int childCapacity)
 {
-  node->m_numChildrenMax = numChildrenMax;
+  node->m_childCapacity = childCapacity;
 
-  int size = sizeof (Node *) * numChildrenMax;
+  int size = sizeof (Node *) * childCapacity;
 
   node->m_children = static_cast <Node **> (ReserveStorage (size));
   memset (node->m_children, 0, size);

@@ -258,24 +258,92 @@ AgentInternalIoctlCompletion (DEVICE_OBJECT * filterDeviceObject,
 {
   AgentDeviceData * priv =
     static_cast <AgentDeviceData *> (filterDeviceObject->DeviceExtension);
+  Event * ev = static_cast <Event *> (context);
+  IO_STACK_LOCATION * stackLocation = IoGetCurrentIrpStackLocation (irp);
+  URB * urb = static_cast <URB *> (stackLocation->Parameters.Others.Argument1);
 
   if (irp->PendingReturned)
   {
     IoMarkIrpPending (irp);
   }
 
+  Node * node = ev->CreateTextNode ("pendingReturned", 0, (irp->PendingReturned) ? "true" : "false");
+  ev->AppendChild (node);
+
+  priv->logger.SubmitEvent (ev);
+
   IoReleaseRemoveLock (&priv->removeLock, irp);
 
   return STATUS_SUCCESS;
 }
 
+static const char * urbFunctions [] =
+{
+  "URB_FUNCTION_SELECT_CONFIGURATION",
+  "URB_FUNCTION_SELECT_INTERFACE",
+  "URB_FUNCTION_ABORT_PIPE",
+  "URB_FUNCTION_TAKE_FRAME_LENGTH_CONTROL",
+  "URB_FUNCTION_RELEASE_FRAME_LENGTH_CONTROL",
+  "URB_FUNCTION_GET_FRAME_LENGTH",
+  "URB_FUNCTION_SET_FRAME_LENGTH",
+  "URB_FUNCTION_GET_CURRENT_FRAME_NUMBER",
+  "URB_FUNCTION_CONTROL_TRANSFER",
+  "URB_FUNCTION_BULK_OR_INTERRUPT_TRANSFER",
+  "URB_FUNCTION_ISOCH_TRANSFER",
+  "URB_FUNCTION_GET_DESCRIPTOR_FROM_DEVICE",
+  "URB_FUNCTION_SET_DESCRIPTOR_TO_DEVICE",
+  "URB_FUNCTION_SET_FEATURE_TO_DEVICE",
+  "URB_FUNCTION_SET_FEATURE_TO_INTERFACE",
+  "URB_FUNCTION_SET_FEATURE_TO_ENDPOINT",
+  "URB_FUNCTION_CLEAR_FEATURE_TO_DEVICE",
+  "URB_FUNCTION_CLEAR_FEATURE_TO_INTERFACE",
+  "URB_FUNCTION_CLEAR_FEATURE_TO_ENDPOINT",
+  "URB_FUNCTION_GET_STATUS_FROM_DEVICE",
+  "URB_FUNCTION_GET_STATUS_FROM_INTERFACE",
+  "URB_FUNCTION_GET_STATUS_FROM_ENDPOINT",
+  "URB_FUNCTION_RESERVED_0X0016",
+  "URB_FUNCTION_VENDOR_DEVICE",
+  "URB_FUNCTION_VENDOR_INTERFACE",
+  "URB_FUNCTION_VENDOR_ENDPOINT",
+  "URB_FUNCTION_CLASS_DEVICE",
+  "URB_FUNCTION_CLASS_INTERFACE",
+  "URB_FUNCTION_CLASS_ENDPOINT",
+  "URB_FUNCTION_RESERVE_0X001D",
+  "URB_FUNCTION_SYNC_RESET_PIPE_AND_CLEAR_STALL",
+  "URB_FUNCTION_CLASS_OTHER",
+  "URB_FUNCTION_VENDOR_OTHER",
+  "URB_FUNCTION_GET_STATUS_FROM_OTHER",
+  "URB_FUNCTION_CLEAR_FEATURE_TO_OTHER",
+  "URB_FUNCTION_SET_FEATURE_TO_OTHER",
+  "URB_FUNCTION_GET_DESCRIPTOR_FROM_ENDPOINT",
+  "URB_FUNCTION_SET_DESCRIPTOR_TO_ENDPOINT",
+  "URB_FUNCTION_GET_CONFIGURATION",
+  "URB_FUNCTION_GET_INTERFACE",
+  "URB_FUNCTION_GET_DESCRIPTOR_FROM_INTERFACE",
+  "URB_FUNCTION_SET_DESCRIPTOR_TO_INTERFACE",
+  "URB_FUNCTION_GET_MS_FEATURE_DESCRIPTOR",
+  "URB_FUNCTION_RESERVE_0X002B",
+  "URB_FUNCTION_RESERVE_0X002C",
+  "URB_FUNCTION_RESERVE_0X002D",
+  "URB_FUNCTION_RESERVE_0X002E",
+  "URB_FUNCTION_RESERVE_0X002F",
+  "URB_FUNCTION_SYNC_RESET_PIPE",
+  "URB_FUNCTION_SYNC_CLEAR_STALL",
+  "URB_FUNCTION_CONTROL_TRANSFER_EX",
+  "URB_FUNCTION_SET_PIPE_IO_POLICY",
+  "URB_FUNCTION_GET_PIPE_IO_POLICY", // 0x34
+};
+
+#define URB_FUNCTION_MAX 0x34
+
 static NTSTATUS
 AgentDispatchInternalIoctl (DEVICE_OBJECT * filterDeviceObject,
                             IRP * irp)
 {
-  AgentDeviceData * priv = static_cast <AgentDeviceData *> (filterDeviceObject->DeviceExtension);
+  AgentDeviceData * priv = static_cast <AgentDeviceData *>
+    (filterDeviceObject->DeviceExtension);
   IO_STACK_LOCATION * stackLocation = IoGetCurrentIrpStackLocation (irp);
-  
+
   ULONG controlCode = stackLocation->Parameters.DeviceIoControl.IoControlCode;
 
   NTSTATUS status = IoAcquireRemoveLock (&priv->removeLock, irp);
@@ -293,10 +361,53 @@ AgentDispatchInternalIoctl (DEVICE_OBJECT * filterDeviceObject,
       urb));
 #endif
 
-    priv->logger.LogUrb (urb);
+    Event * ev = priv->logger.NewEvent ("IOCTL_INTERNAL_USB_SUBMIT_URB", 5);
+
+    Node * node = NULL;
+    if (urb->UrbHeader.Function <= URB_FUNCTION_MAX)
+      node = ev->CreateTextNode ("type", 0, "%s", urbFunctions[urb->UrbHeader.Function]);
+    else
+      node = ev->CreateTextNode ("type", 0, "%d", urb->UrbHeader.Function);
+    ev->AppendChild (node);
+
+    if (urb->UrbHeader.Function == URB_FUNCTION_CLASS_INTERFACE)
+    {
+      const struct _URB_CONTROL_VENDOR_OR_CLASS_REQUEST * req =
+        reinterpret_cast <const struct _URB_CONTROL_VENDOR_OR_CLASS_REQUEST *> (urb);
+
+      node = ev->CreateTextNode ("direction", 0,
+        (req->TransferFlags & USBD_TRANSFER_DIRECTION_IN) ? "in" : "out");
+      ev->AppendChild (node);
+
+      node = ev->CreateTextNode ("shortTransferOk", 0,
+        (req->TransferFlags & USBD_SHORT_TRANSFER_OK) ? "true" : "false");
+      ev->AppendChild (node);
+
+      if (req->TransferBuffer != NULL)
+      {
+        node = ev->CreateDataNode ("transferBuffer", 1, req->TransferBuffer,
+          req->TransferBufferLength);
+      }
+      else if (req->TransferBufferMDL != NULL)
+      {
+        node = ev->CreateDataNode ("transferBufferMDL", 1,
+          MmGetSystemAddressForMdlSafe (req->TransferBufferMDL, HighPagePriority),
+          req->TransferBufferLength);
+      }
+      else
+      {
+        node = NULL;
+      }
+
+      if (node != NULL)
+      {
+        ev->AddFieldToNodePrintf (node, "size", "%ld", req->TransferBufferLength);
+        ev->AppendChild (node);
+      }
+    }
 
     IoCopyCurrentIrpStackLocationToNext (irp);
-    IoSetCompletionRoutine (irp, AgentInternalIoctlCompletion, NULL, TRUE,
+    IoSetCompletionRoutine (irp, AgentInternalIoctlCompletion, ev, TRUE,
       TRUE, TRUE);
   }
   else
