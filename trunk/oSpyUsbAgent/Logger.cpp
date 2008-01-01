@@ -179,32 +179,17 @@ Logger::LogThreadFunc ()
 
   timeout.QuadPart = -1000000; // 100 ms
 
+  bool done = false;
+
   do
   {
     status = KeWaitForSingleObject (&m_stopEvent, Executive, KernelMode,
       FALSE, &timeout);
-    if (status == STATUS_SUCCESS)
-      break;
+    done = (status == STATUS_SUCCESS);
 
-    SLIST_ENTRY * listEntry;
-
-    while ((listEntry =
-      ExInterlockedPopEntrySList (&m_items, &m_itemsLock)) != NULL)
-    {
-      LogEntry * entry = reinterpret_cast <LogEntry *> (listEntry);
-
-      if (m_capture != NULL)
-      {
-        InterlockedIncrement (reinterpret_cast<volatile LONG *> (&m_capture->LogCount));
-        InterlockedExchangeAdd (reinterpret_cast<volatile LONG *> (&m_capture->LogSize), sizeof (LogEntry));
-      }
-
-      WriteNode (&entry->event);
-
-      ExFreePool (entry);
-    }
+    ProcessItems ();
   }
-  while (true);
+  while (!done);
 
   if (m_fileHandle != NULL)
   {
@@ -220,15 +205,37 @@ Logger::LogThreadFunc ()
 }
 
 void
-Logger::LogUrb (const URB * urb)
+Logger::ProcessItems ()
+{
+  SLIST_ENTRY * listEntry;
+
+  while ((listEntry =
+    ExInterlockedPopEntrySList (&m_items, &m_itemsLock)) != NULL)
+  {
+    LogEntry * entry = reinterpret_cast <LogEntry *> (listEntry);
+
+    if (m_capture != NULL)
+    {
+      InterlockedIncrement (reinterpret_cast<volatile LONG *> (&m_capture->LogCount));
+      InterlockedExchangeAdd (reinterpret_cast<volatile LONG *> (&m_capture->LogSize), sizeof (LogEntry));
+    }
+
+    WriteNode (&entry->event);
+
+    ExFreePool (entry);
+  }
+}
+
+Event *
+Logger::NewEvent (const char * eventType,
+                  int childCapacity)
 {
   LogEntry * logEntry = static_cast <LogEntry *> (
     ExAllocatePool (NonPagedPool, sizeof (LogEntry)));
-
   if (logEntry == NULL)
   {
     KdPrint (("ExAllocatePool failed"));
-    return;
+    return NULL;
   }
 
   ULONG id = InterlockedIncrement (reinterpret_cast<volatile LONG *> (&m_index));
@@ -236,10 +243,16 @@ Logger::LogUrb (const URB * urb)
   KeQuerySystemTime (&timestamp);
 
   Event * ev = &logEntry->event;
-  ev->Initialize (id, timestamp, "IOCTL_INTERNAL_USB_SUBMIT_URB", 1);
+  ev->Initialize (id, timestamp, eventType, childCapacity);
 
-  Node * node = ev->CreateTextNode ("type", "%d", urb->UrbHeader.Function);
-  ev->AppendChild (node);
+  return ev;
+}
+
+void
+Logger::SubmitEvent (Event * ev)
+{
+  LogEntry * logEntry = reinterpret_cast <LogEntry *> (
+    reinterpret_cast <UCHAR *> (ev) - sizeof (SLIST_ENTRY));
 
   ExInterlockedPushEntrySList (&m_items, &logEntry->entry, &m_itemsLock);
 }

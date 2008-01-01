@@ -50,11 +50,13 @@ public:
   NTSTATUS Start (IO_REMOVE_LOCK * removeLock, const WCHAR * fnSuffix);
   void Stop ();
 
-  void LogUrb (const URB * urb);
+  Event * NewEvent (const char * eventType, int childCapacity);
+  void SubmitEvent (Event * ev);
 
 private:
   static void LogThreadFuncWrapper (void * parameter) { static_cast <Logger *> (parameter)->LogThreadFunc (); }
   void LogThreadFunc ();
+  void ProcessItems ();
 
   void WriteNode (const Node * node);
 
