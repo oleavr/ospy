@@ -130,7 +130,7 @@ AgentDispatchAny (DEVICE_OBJECT * filterDeviceObject,
     = static_cast <AgentDeviceData *> (filterDeviceObject->DeviceExtension);
   IO_STACK_LOCATION * stackLocation = IoGetCurrentIrpStackLocation (irp);
 
-  KdPrint (("AgentDispatchAny: MajorFunction=%d", stackLocation->MajorFunction));
+  KdPrint (("AgentDispatchAny"));
 
   NTSTATUS status = IoAcquireRemoveLock (&priv->removeLock, irp);
   if (!NT_SUCCESS (status))
@@ -217,12 +217,16 @@ AgentDispatchPnp (DEVICE_OBJECT * filterDeviceObject,
     static_cast <AgentDeviceData *> (filterDeviceObject->DeviceExtension);
   IO_STACK_LOCATION * stackLocation = IoGetCurrentIrpStackLocation (irp);
 
+  KdPrint (("AgentDispatchPnp"));
+
   NTSTATUS status = IoAcquireRemoveLock (&priv->removeLock, irp);
   if (!NT_SUCCESS (status))
     return AgentCompleteRequest (irp, status);
 
   if (stackLocation->MinorFunction == IRP_MN_REMOVE_DEVICE)
   {
+    KdPrint (("AgentDispatchPnp: waiting to remove device"));
+
     priv->logger.Stop ();
 
     IoReleaseRemoveLockAndWait (&priv->removeLock, irp);

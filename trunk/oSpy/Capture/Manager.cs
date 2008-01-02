@@ -138,7 +138,7 @@ namespace oSpy.Capture
                     {
                         device.AddLowerFilter (Constants.UsbAgentName);
                         //if (device.Present)
-                            device.Restart ();
+                        //    device.Restart ();
                     }
                 }
 
@@ -171,7 +171,7 @@ namespace oSpy.Capture
                     foreach (Device device in devices)
                     {
                         device.RemoveLowerFilter (Constants.UsbAgentName);
-                        device.Restart ();
+                        //device.Restart ();
                     }
 
                     WaitForUsbAgentServiceToStop ();
