@@ -50,7 +50,7 @@ public:
   NTSTATUS Start (IO_REMOVE_LOCK * removeLock, const WCHAR * fnSuffix);
   void Stop ();
 
-  Event * NewEvent (const char * eventType, int childCapacity);
+  Event * NewEvent (const char * eventType, int childCapacity, void * userData=NULL);
   void SubmitEvent (Event * ev);
 
 private:

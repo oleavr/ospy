@@ -56,8 +56,11 @@ public:
   void AddFieldToNode (Node * node, const char * key, const char * value);
   void AddFieldToNodePrintf (Node * node, const char * key, const char * value, ...);
 
+  Node * CreateElement (const char * name, int fieldCapacity, int childCapacity);
   Node * CreateTextNode (const char * name, int fieldCapacity, const char * content, ...);
   Node * CreateDataNode (const char * name, int fieldCapacity, const void * data, int dataSize);
+
+  void * m_userData;
 
 private:
   void * ReserveStorage (int size);

@@ -89,6 +89,8 @@ Event::Initialize (ULONG id,
 {
   Node::Initialize ();
 
+  m_userData = NULL;
+
   m_offset = 0;
 
   for (int i = 0; i < EVENT_NUM_BULK_SLOTS; i++)
@@ -118,6 +120,21 @@ Event::Destroy ()
       m_bulkStorage[i] = NULL;
     }
   }
+}
+
+Node *
+Event::CreateElement (const char * name,
+                      int fieldCapacity,
+                      int childCapacity)
+{
+  Node * node = static_cast <Node *> (ReserveStorage (sizeof (Node)));
+
+  node->Initialize ();
+  node->m_name = CreateString (name);
+  CreateFieldStorage (node, fieldCapacity);
+  CreateChildStorage (node, childCapacity);
+
+  return node;
 }
 
 Node *

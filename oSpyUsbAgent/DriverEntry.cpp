@@ -217,9 +217,6 @@ AgentDispatchPnp (DEVICE_OBJECT * filterDeviceObject,
     static_cast <AgentDeviceData *> (filterDeviceObject->DeviceExtension);
   IO_STACK_LOCATION * stackLocation = IoGetCurrentIrpStackLocation (irp);
 
-  KdPrint (("AgentDispatchPnp %s: irp=%p",
-    PnpMinorFunctionToString (stackLocation->MinorFunction), irp));
-
   NTSTATUS status = IoAcquireRemoveLock (&priv->removeLock, irp);
   if (!NT_SUCCESS (status))
     return AgentCompleteRequest (irp, status);
@@ -249,32 +246,6 @@ AgentDispatchPnp (DEVICE_OBJECT * filterDeviceObject,
   }
 
   return status;
-}
-
-static NTSTATUS
-AgentInternalIoctlCompletion (DEVICE_OBJECT * filterDeviceObject,
-                              IRP * irp,
-                              void * context)
-{
-  AgentDeviceData * priv =
-    static_cast <AgentDeviceData *> (filterDeviceObject->DeviceExtension);
-  Event * ev = static_cast <Event *> (context);
-  IO_STACK_LOCATION * stackLocation = IoGetCurrentIrpStackLocation (irp);
-  URB * urb = static_cast <URB *> (stackLocation->Parameters.Others.Argument1);
-
-  if (irp->PendingReturned)
-  {
-    IoMarkIrpPending (irp);
-  }
-
-  Node * node = ev->CreateTextNode ("pendingReturned", 0, (irp->PendingReturned) ? "true" : "false");
-  ev->AppendChild (node);
-
-  priv->logger.SubmitEvent (ev);
-
-  IoReleaseRemoveLock (&priv->removeLock, irp);
-
-  return STATUS_SUCCESS;
 }
 
 static const char * urbFunctions [] =
@@ -336,6 +307,113 @@ static const char * urbFunctions [] =
 
 #define URB_FUNCTION_MAX 0x34
 
+static void
+AppendTransferBufferToNode (Event * ev,
+                            Node * parentNode,
+                            const void * transferBuffer,
+                            int transferBufferLength,
+                            MDL * transferBufferMDL)
+{
+  Node * node = NULL;
+
+  if (transferBuffer != NULL)
+  {
+    node = ev->CreateDataNode ("transferBuffer", 1, transferBuffer,
+      transferBufferLength);
+  }
+  else if (transferBufferMDL != NULL)
+  {
+    node = ev->CreateDataNode ("transferBufferMDL", 1,
+      MmGetSystemAddressForMdlSafe (transferBufferMDL, HighPagePriority),
+      transferBufferLength);
+  }
+
+  if (node != NULL)
+  {
+    ev->AddFieldToNodePrintf (node, "size", "%ld", transferBufferLength);
+    parentNode->AppendChild (node);
+  }
+}
+
+static void
+AppendUrbToNode (Event * ev,
+                 Node * parentNode,
+                 const URB * urb,
+                 bool onEntry)
+{
+  Node * urbNode = ev->CreateElement ("urb", 1, 6);
+  ev->AddFieldToNode (urbNode, "direction", (onEntry) ? "in" : "out");
+  parentNode->AppendChild (urbNode);
+
+  Node * node;
+  if (urb->UrbHeader.Function <= URB_FUNCTION_MAX)
+    node = ev->CreateTextNode ("type", 0, "%s", urbFunctions[urb->UrbHeader.Function]);
+  else
+    node = ev->CreateTextNode ("type", 0, "%d", urb->UrbHeader.Function);
+  urbNode->AppendChild (node);
+
+  if (urb->UrbHeader.Function == URB_FUNCTION_CONTROL_TRANSFER)
+  {
+    const struct _URB_CONTROL_TRANSFER * xfer =
+      reinterpret_cast <const struct _URB_CONTROL_TRANSFER *> (urb);
+
+    node = ev->CreateTextNode ("direction", 0,
+      (xfer->TransferFlags & USBD_TRANSFER_DIRECTION_IN) ? "in" : "out");
+    urbNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("shortTransferOk", 0,
+      (xfer->TransferFlags & USBD_SHORT_TRANSFER_OK) ? "true" : "false");
+    urbNode->AppendChild (node);
+
+    AppendTransferBufferToNode (ev, urbNode, xfer->TransferBuffer,
+      xfer->TransferBufferLength, xfer->TransferBufferMDL);
+  }
+  else if (urb->UrbHeader.Function == URB_FUNCTION_CLASS_INTERFACE)
+  {
+    const struct _URB_CONTROL_VENDOR_OR_CLASS_REQUEST * req =
+      reinterpret_cast <const struct _URB_CONTROL_VENDOR_OR_CLASS_REQUEST *> (urb);
+
+    node = ev->CreateTextNode ("direction", 0,
+      (req->TransferFlags & USBD_TRANSFER_DIRECTION_IN) ? "in" : "out");
+    urbNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("shortTransferOk", 0,
+      (req->TransferFlags & USBD_SHORT_TRANSFER_OK) ? "true" : "false");
+    urbNode->AppendChild (node);
+
+    AppendTransferBufferToNode (ev, urbNode, req->TransferBuffer,
+      req->TransferBufferLength, req->TransferBufferMDL);
+  }
+}
+
+static NTSTATUS
+AgentInternalIoctlCompletion (DEVICE_OBJECT * filterDeviceObject,
+                              IRP * irp,
+                              void * context)
+{
+  AgentDeviceData * priv =
+    static_cast <AgentDeviceData *> (filterDeviceObject->DeviceExtension);
+  Event * ev = static_cast <Event *> (context);
+  URB * urb = static_cast <URB *> (ev->m_userData);
+
+  if (irp->PendingReturned)
+  {
+    IoMarkIrpPending (irp);
+  }
+
+  Node * node = ev->CreateTextNode ("pendingReturned", 0,
+    (irp->PendingReturned) ? "true" : "false");
+  ev->AppendChild (node);
+
+  AppendUrbToNode (ev, ev, urb, false);
+
+  priv->logger.SubmitEvent (ev);
+
+  IoReleaseRemoveLock (&priv->removeLock, irp);
+
+  return STATUS_CONTINUE_COMPLETION;
+}
+
 static NTSTATUS
 AgentDispatchInternalIoctl (DEVICE_OBJECT * filterDeviceObject,
                             IRP * irp)
@@ -355,56 +433,9 @@ AgentDispatchInternalIoctl (DEVICE_OBJECT * filterDeviceObject,
     URB * urb = static_cast <URB *>
       (stackLocation->Parameters.Others.Argument1);
 
-#if 0
-    KdPrint ((
-      "AgentDispatchInternalIoctl: IOCTL_INTERNAL_USB_SUBMIT_URB, urb=%p",
-      urb));
-#endif
+    Event * ev = priv->logger.NewEvent ("IOCTL_INTERNAL_USB_SUBMIT_URB", 6, urb);
 
-    Event * ev = priv->logger.NewEvent ("IOCTL_INTERNAL_USB_SUBMIT_URB", 5);
-
-    Node * node = NULL;
-    if (urb->UrbHeader.Function <= URB_FUNCTION_MAX)
-      node = ev->CreateTextNode ("type", 0, "%s", urbFunctions[urb->UrbHeader.Function]);
-    else
-      node = ev->CreateTextNode ("type", 0, "%d", urb->UrbHeader.Function);
-    ev->AppendChild (node);
-
-    if (urb->UrbHeader.Function == URB_FUNCTION_CLASS_INTERFACE)
-    {
-      const struct _URB_CONTROL_VENDOR_OR_CLASS_REQUEST * req =
-        reinterpret_cast <const struct _URB_CONTROL_VENDOR_OR_CLASS_REQUEST *> (urb);
-
-      node = ev->CreateTextNode ("direction", 0,
-        (req->TransferFlags & USBD_TRANSFER_DIRECTION_IN) ? "in" : "out");
-      ev->AppendChild (node);
-
-      node = ev->CreateTextNode ("shortTransferOk", 0,
-        (req->TransferFlags & USBD_SHORT_TRANSFER_OK) ? "true" : "false");
-      ev->AppendChild (node);
-
-      if (req->TransferBuffer != NULL)
-      {
-        node = ev->CreateDataNode ("transferBuffer", 1, req->TransferBuffer,
-          req->TransferBufferLength);
-      }
-      else if (req->TransferBufferMDL != NULL)
-      {
-        node = ev->CreateDataNode ("transferBufferMDL", 1,
-          MmGetSystemAddressForMdlSafe (req->TransferBufferMDL, HighPagePriority),
-          req->TransferBufferLength);
-      }
-      else
-      {
-        node = NULL;
-      }
-
-      if (node != NULL)
-      {
-        ev->AddFieldToNodePrintf (node, "size", "%ld", req->TransferBufferLength);
-        ev->AppendChild (node);
-      }
-    }
+    AppendUrbToNode (ev, ev, urb, true);
 
     IoCopyCurrentIrpStackLocationToNext (irp);
     IoSetCompletionRoutine (irp, AgentInternalIoctlCompletion, ev, TRUE,
