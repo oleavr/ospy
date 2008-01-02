@@ -47,7 +47,7 @@ public:
   static void Initialize ();
   static void Shutdown ();
 
-  NTSTATUS Start (IO_REMOVE_LOCK * removeLock, const WCHAR * fnSuffix);
+  NTSTATUS Start (const WCHAR * fnSuffix);
   void Stop ();
 
   Event * NewEvent (const char * eventType, int childCapacity, void * userData=NULL);
@@ -68,12 +68,10 @@ private:
   static Capture * m_capture;
   static volatile ULONG m_index;
 
-  IO_REMOVE_LOCK * m_removeLock;
-
   HANDLE m_fileHandle;
 
   KEVENT m_stopEvent;
-  HANDLE m_logThread;
+  void * m_logThreadObject;
 
   SLIST_HEADER m_items;
   KSPIN_LOCK m_itemsLock;

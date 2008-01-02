@@ -88,7 +88,7 @@ AgentAddDevice (DRIVER_OBJECT * driverObject,
   IoInitializeRemoveLock (&priv->removeLock, 0, 1, 100);
 
   CanonicalizeFilename (hwId);
-  status = priv->logger.Start (&priv->removeLock, hwId);
+  status = priv->logger.Start (hwId);
   if (!NT_SUCCESS (status))
   {
     IoDeleteDevice (filterDeviceObject);
@@ -225,8 +225,6 @@ AgentDispatchPnp (DEVICE_OBJECT * filterDeviceObject,
   {
     priv->logger.Stop ();
 
-    KdPrint (("AgentDispatchPnp: waiting to remove device"));
-
     IoReleaseRemoveLockAndWait (&priv->removeLock, irp);
 
     KdPrint (("AgentDispatchPnp: removing device"));
@@ -341,7 +339,7 @@ AppendUrbToNode (Event * ev,
                  const URB * urb,
                  bool onEntry)
 {
-  Node * urbNode = ev->CreateElement ("urb", 1, 6);
+  Node * urbNode = ev->CreateElement ("urb", 1, 4);
   ev->AddFieldToNode (urbNode, "direction", (onEntry) ? "in" : "out");
   parentNode->AppendChild (urbNode);
 
@@ -401,11 +399,11 @@ AgentInternalIoctlCompletion (DEVICE_OBJECT * filterDeviceObject,
     IoMarkIrpPending (irp);
   }
 
+  AppendUrbToNode (ev, ev, urb, false);
+
   Node * node = ev->CreateTextNode ("pendingReturned", 0,
     (irp->PendingReturned) ? "true" : "false");
   ev->AppendChild (node);
-
-  AppendUrbToNode (ev, ev, urb, false);
 
   priv->logger.SubmitEvent (ev);
 
@@ -433,13 +431,13 @@ AgentDispatchInternalIoctl (DEVICE_OBJECT * filterDeviceObject,
     URB * urb = static_cast <URB *>
       (stackLocation->Parameters.Others.Argument1);
 
-    Event * ev = priv->logger.NewEvent ("IOCTL_INTERNAL_USB_SUBMIT_URB", 6, urb);
+    Event * ev = priv->logger.NewEvent ("IOCTL_INTERNAL_USB_SUBMIT_URB", 3, urb);
 
     AppendUrbToNode (ev, ev, urb, true);
 
     IoCopyCurrentIrpStackLocationToNext (irp);
-    IoSetCompletionRoutine (irp, AgentInternalIoctlCompletion, ev, TRUE,
-      TRUE, TRUE);
+    IoSetCompletionRoutineEx (priv->filterDeviceObject, irp,
+      AgentInternalIoctlCompletion, ev, TRUE, TRUE, TRUE);
   }
   else
   {

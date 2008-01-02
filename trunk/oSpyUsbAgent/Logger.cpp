@@ -79,14 +79,9 @@ Logger::Shutdown ()
 }
 
 NTSTATUS
-Logger::Start (IO_REMOVE_LOCK * removeLock, const WCHAR * fnSuffix)
+Logger::Start (const WCHAR * fnSuffix)
 {
   NTSTATUS status = STATUS_SUCCESS;
-
-  status = IoAcquireRemoveLock (removeLock, this);
-  if (!NT_SUCCESS (status))
-    return status;
-  m_removeLock = removeLock;
 
   UNICODE_STRING logfilePath;
   WCHAR buffer[256];
@@ -113,7 +108,7 @@ Logger::Start (IO_REMOVE_LOCK * removeLock, const WCHAR * fnSuffix)
     m_fileHandle = NULL;
 
     KeInitializeEvent (&m_stopEvent, NotificationEvent, FALSE);
-    m_logThread = NULL;
+    m_logThreadObject = NULL;
 
     ExInitializeSListHead (&m_items);
     KeInitializeSpinLock (&m_itemsLock);
@@ -131,11 +126,23 @@ Logger::Start (IO_REMOVE_LOCK * removeLock, const WCHAR * fnSuffix)
       return status;
     }
 
-    status = PsCreateSystemThread (&m_logThread, THREAD_ALL_ACCESS, NULL,
-      NULL, NULL, LogThreadFuncWrapper, this);
+    HANDLE threadHandle;
+    status = PsCreateSystemThread (&threadHandle, 0, NULL,
+      0, NULL, LogThreadFuncWrapper, this);
     if (!NT_SUCCESS (status))
     {
       KdPrint (("PsCreateSystemThread failed: 0x%08x", status));
+      return status;
+    }
+
+    status = ObReferenceObjectByHandle (threadHandle, THREAD_ALL_ACCESS, NULL,
+      KernelMode, &m_logThreadObject, NULL);
+
+    ZwClose (threadHandle);
+
+    if (!NT_SUCCESS (status))
+    {
+      KdPrint (("ObReferenceObjectByHandle failed: 0x%08x", status));
       return status;
     }
   }
@@ -148,9 +155,6 @@ Logger::Start (IO_REMOVE_LOCK * removeLock, const WCHAR * fnSuffix)
         ZwClose (m_fileHandle);
         m_fileHandle = NULL;
       }
-
-      IoReleaseRemoveLock (m_removeLock, this);
-      m_removeLock = NULL;
     }
   }
 
@@ -161,19 +165,14 @@ void
 Logger::Stop ()
 {
   KeSetEvent (&m_stopEvent, IO_NO_INCREMENT, FALSE);
-
-  if (m_logThread != NULL)
-  {
-    ZwClose (m_logThread);
-    m_logThread = NULL;
-  }
+  KeWaitForSingleObject (m_logThreadObject, Executive, KernelMode, FALSE,
+    NULL);
+  ObDereferenceObject (m_logThreadObject);
 }
 
 void
 Logger::LogThreadFunc ()
 {
-  KdPrint (("Logger thread speaking"));
-
   NTSTATUS status;
   LARGE_INTEGER timeout;
 
@@ -196,10 +195,6 @@ Logger::LogThreadFunc ()
     ZwClose (m_fileHandle);
     m_fileHandle = NULL;
   }
-
-  IoReleaseRemoveLock (m_removeLock, this);
-
-  KdPrint (("Logger thread terminating"));
 
   PsTerminateSystemThread (STATUS_SUCCESS);
 }
