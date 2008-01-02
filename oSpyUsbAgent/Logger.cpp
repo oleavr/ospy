@@ -175,6 +175,8 @@ Logger::LogThreadFunc ()
 {
   NTSTATUS status;
   LARGE_INTEGER timeout;
+  
+  KdPrint (("Logger thread speaking"));
 
   timeout.QuadPart = -1000000; // 100 ms
 
@@ -196,6 +198,8 @@ Logger::LogThreadFunc ()
     m_fileHandle = NULL;
   }
 
+  KdPrint (("Logger thread leaving"));
+
   PsTerminateSystemThread (STATUS_SUCCESS);
 }
 
@@ -211,8 +215,10 @@ Logger::ProcessItems ()
 
     if (m_capture != NULL)
     {
-      InterlockedIncrement (reinterpret_cast<volatile LONG *> (&m_capture->LogCount));
-      InterlockedExchangeAdd (reinterpret_cast<volatile LONG *> (&m_capture->LogSize), sizeof (LogEntry));
+      InterlockedIncrement (reinterpret_cast<volatile LONG *>
+        (&m_capture->LogCount));
+      InterlockedExchangeAdd (reinterpret_cast<volatile LONG *>
+        (&m_capture->LogSize), sizeof (LogEntry));
     }
 
     WriteNode (&entry->event);
