@@ -230,7 +230,8 @@ Logger::ProcessItems ()
 
 Event *
 Logger::NewEvent (const char * eventType,
-                  int childCapacity)
+                  int childCapacity,
+                  void * userData)
 {
   LogEntry * logEntry = static_cast <LogEntry *> (
     ExAllocatePool (NonPagedPool, sizeof (LogEntry)));
@@ -246,6 +247,7 @@ Logger::NewEvent (const char * eventType,
 
   Event * ev = &logEntry->event;
   ev->Initialize (id, timestamp, eventType, childCapacity);
+  ev->m_userData = userData;
 
   return ev;
 }
