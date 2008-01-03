@@ -86,7 +86,7 @@ Urb::AppendToNode (const URB * urb,
                    Node * parentNode,
                    bool onEntry)
 {
-  Node * urbNode = ev->CreateElement ("urb", 1, 4);
+  Node * urbNode = ev->CreateElement ("urb", 1, 6);
   ev->AddFieldToNode (urbNode, "direction", (onEntry) ? "in" : "out");
   parentNode->AppendChild (urbNode);
 
@@ -102,6 +102,22 @@ Urb::AppendToNode (const URB * urb,
     const struct _URB_CONTROL_DESCRIPTOR_REQUEST * req =
       reinterpret_cast <const struct _URB_CONTROL_DESCRIPTOR_REQUEST *>
       (urb);
+
+    node = ev->CreateTextNode ("index", 0, "%d", req->Index);
+    urbNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("descriptorType", 0,
+      DescriptorTypeToString (req->DescriptorType));
+    urbNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("languageId", 0, "0x%x", req->LanguageId);
+    urbNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("urbLink", 0, "%p", req->UrbLink);
+    urbNode->AppendChild (node);
+
+    AppendTransferBufferToNode (req->TransferBuffer,
+      req->TransferBufferLength, req->TransferBufferMDL, ev, urbNode);
   }
   else if (urb->UrbHeader.Function == URB_FUNCTION_CONTROL_TRANSFER)
   {
@@ -163,6 +179,26 @@ Urb::AppendTransferBufferToNode (const void * transferBuffer,
     ev->AddFieldToNodePrintf (node, "size", "%ld", transferBufferLength);
     parentNode->AppendChild (node);
   }
+}
+
+const char *
+Urb::DescriptorTypeToString (UCHAR descriptorType)
+{
+  const char * descriptorTypes[] = {
+    "USB_DEVICE_DESCRIPTOR_TYPE", // 0x01
+    "USB_CONFIGURATION_DESCRIPTOR_TYPE",
+    "USB_STRING_DESCRIPTOR_TYPE",
+    "USB_INTERFACE_DESCRIPTOR_TYPE",
+    "USB_ENDPOINT_DESCRIPTOR_TYPE",
+    "USB_RESERVED_DESCRIPTOR_TYPE",
+    "USB_CONFIG_POWER_DESCRIPTOR_TYPE",
+    "USB_INTERFACE_POWER_DESCRIPTOR_TYPE",  // 0x08
+  };
+
+  if (descriptorType >= 1 && descriptorType <= 8)
+    return descriptorTypes[descriptorType];
+  else
+    return "INVALID_DESCRIPTOR_TYPE";
 }
 
 } // namespace oSpy

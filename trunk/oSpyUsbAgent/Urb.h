@@ -37,6 +37,8 @@ public:
 
 private:
   static void AppendTransferBufferToNode (const void * transferBuffer, int transferBufferLength, MDL * transferBufferMDL, Event * ev, Node * parentNode);
+
+  static const char * DescriptorTypeToString (UCHAR descriptorType);
 };
 
 } // namespace oSpy
