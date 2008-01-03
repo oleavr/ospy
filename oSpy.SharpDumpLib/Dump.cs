@@ -77,6 +77,8 @@ namespace oSpy.SharpDumpLib
             cacheWriter.Write(eventStr);
             cacheWriter.Flush();
 
+            if (events.ContainsKey (id))
+                throw new InvalidDataException (String.Format ("id {0} is already in the dump", id));
             events[id] = new Event(this, id, type, timestamp, processName, processId, threadId,
                                    startOffset, eventStr.Length);
         }
