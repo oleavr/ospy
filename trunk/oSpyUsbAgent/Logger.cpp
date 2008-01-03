@@ -19,6 +19,8 @@
 
 #include <ntstrsafe.h>
 
+namespace oSpy {
+
 HANDLE Logger::m_captureSection = NULL;
 Capture * Logger::m_capture = NULL;
 volatile ULONG Logger::m_index = 0;
@@ -320,3 +322,5 @@ Logger::Write (const char * str)
   Write (static_cast <ULONG> (length));
   WriteRaw (str, length);
 }
+
+} // namespace oSpy

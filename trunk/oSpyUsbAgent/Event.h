@@ -20,6 +20,8 @@
 
 #include <wdm.h>
 
+namespace oSpy {
+
 class Node
 {
 public:
@@ -74,5 +76,7 @@ private:
   UCHAR m_storage[4000]; // PAGE_SIZE minus some headroom
   void * m_bulkStorage[EVENT_NUM_BULK_SLOTS];
 };
+
+} // namespace oSpy
 
 #endif // EVENT_H

@@ -19,6 +19,8 @@
 
 #include <ntstrsafe.h>
 
+namespace oSpy {
+
 void
 Node::Initialize ()
 {
@@ -289,3 +291,5 @@ Event::CreateChildStorage (Node * node, int childCapacity)
   node->m_children = static_cast <Node **> (ReserveStorage (size));
   memset (node->m_children, 0, size);
 }
+
+} // namespace oSpy
