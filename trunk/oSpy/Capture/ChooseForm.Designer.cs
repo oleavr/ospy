@@ -55,6 +55,7 @@ namespace oSpy.Capture
             this.usbDevView = new System.Windows.Forms.ListView ();
             this.usbImagesLarge = new System.Windows.Forms.ImageList (this.components);
             this.usbImagesSmall = new System.Windows.Forms.ImageList (this.components);
+            this.restartDevicesCheckBox = new System.Windows.Forms.CheckBox ();
             this.tabControl1.SuspendLayout ();
             this.processesTabPage.SuspendLayout ();
             this.usbDevicesTabPage.SuspendLayout ();
@@ -137,11 +138,12 @@ namespace oSpy.Capture
             // 
             // usbDevicesTabPage
             // 
+            this.usbDevicesTabPage.Controls.Add (this.restartDevicesCheckBox);
             this.usbDevicesTabPage.Controls.Add (this.usbDevView);
             this.usbDevicesTabPage.Location = new System.Drawing.Point (4, 22);
             this.usbDevicesTabPage.Name = "usbDevicesTabPage";
             this.usbDevicesTabPage.Padding = new System.Windows.Forms.Padding (3);
-            this.usbDevicesTabPage.Size = new System.Drawing.Size (380, 195);
+            this.usbDevicesTabPage.Size = new System.Drawing.Size (536, 234);
             this.usbDevicesTabPage.TabIndex = 1;
             this.usbDevicesTabPage.Text = "USB devices";
             this.usbDevicesTabPage.UseVisualStyleBackColor = true;
@@ -149,12 +151,14 @@ namespace oSpy.Capture
             // usbDevView
             // 
             this.usbDevView.Activation = System.Windows.Forms.ItemActivation.OneClick;
+            this.usbDevView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
             this.usbDevView.CheckBoxes = true;
-            this.usbDevView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.usbDevView.LargeImageList = this.usbImagesLarge;
-            this.usbDevView.Location = new System.Drawing.Point (3, 3);
+            this.usbDevView.Location = new System.Drawing.Point (-4, 0);
             this.usbDevView.Name = "usbDevView";
-            this.usbDevView.Size = new System.Drawing.Size (374, 189);
+            this.usbDevView.Size = new System.Drawing.Size (540, 208);
             this.usbDevView.SmallImageList = this.usbImagesSmall;
             this.usbDevView.TabIndex = 1;
             this.usbDevView.UseCompatibleStateImageBehavior = false;
@@ -172,6 +176,17 @@ namespace oSpy.Capture
             this.usbImagesSmall.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit;
             this.usbImagesSmall.ImageSize = new System.Drawing.Size (16, 16);
             this.usbImagesSmall.TransparentColor = System.Drawing.Color.Transparent;
+            // 
+            // restartDevicesCheckBox
+            // 
+            this.restartDevicesCheckBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.restartDevicesCheckBox.AutoSize = true;
+            this.restartDevicesCheckBox.Location = new System.Drawing.Point (3, 214);
+            this.restartDevicesCheckBox.Name = "restartDevicesCheckBox";
+            this.restartDevicesCheckBox.Size = new System.Drawing.Size (322, 17);
+            this.restartDevicesCheckBox.TabIndex = 2;
+            this.restartDevicesCheckBox.Text = "Restart devices to avoid manual replugging (EXPERIMENTAL)";
+            this.restartDevicesCheckBox.UseVisualStyleBackColor = true;
             // 
             // ChooseForm
             // 
@@ -194,6 +209,7 @@ namespace oSpy.Capture
             this.tabControl1.ResumeLayout (false);
             this.processesTabPage.ResumeLayout (false);
             this.usbDevicesTabPage.ResumeLayout (false);
+            this.usbDevicesTabPage.PerformLayout ();
             this.ResumeLayout (false);
             this.PerformLayout ();
 
@@ -212,6 +228,7 @@ namespace oSpy.Capture
         private System.Windows.Forms.ImageList usbImagesLarge;
         private System.Windows.Forms.ListView processView;
         private System.Windows.Forms.ImageList processImagesSmall;
+        private System.Windows.Forms.CheckBox restartDevicesCheckBox;
 
     }
 }

@@ -342,7 +342,7 @@ namespace oSpy.Capture
             DialogResult = DialogResult.OK;
         }
 
-        public bool GetSelection (out Process[] processes, out Device[] devices)
+        public bool GetSelection (out Process[] processes, out Device[] devices, out bool restartDevices)
         {
             List<Process> procList = new List<Process> ();
             List<Device> devList = new List<Device> ();
@@ -364,6 +364,7 @@ namespace oSpy.Capture
 
             processes = procList.ToArray ();
             devices = devList.ToArray ();
+            restartDevices = restartDevicesCheckBox.Checked;
 
             return (processes.Length > 0 || devices.Length > 0);
         }
