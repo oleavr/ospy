@@ -67,6 +67,13 @@ namespace oSpy.Capture
         private IntPtr fileMapping, cfgPtr;
         private IntPtr logIndexUserspacePtr, logCountPtr, logSizePtr;
 
+        private bool restartDevices;
+        public bool RestartDevices
+        {
+            get { return restartDevices; }
+            set { restartDevices = value; }
+        }
+
         private string capturePath;
         public string CapturePath
         {
@@ -135,10 +142,12 @@ namespace oSpy.Capture
                     InstallUsbAgentService ();
 
                     foreach (Device device in devices)
-                    {
                         device.AddLowerFilter (Constants.UsbAgentName);
-                        //if (device.Present)
-                        //    device.Restart ();
+
+                    if (restartDevices)
+                    {
+                        foreach (Device device in devices)
+                            device.Restart ();
                     }
                 }
 
@@ -169,9 +178,12 @@ namespace oSpy.Capture
                 if (devices.Length > 0)
                 {
                     foreach (Device device in devices)
-                    {
                         device.RemoveLowerFilter (Constants.UsbAgentName);
-                        //device.Restart ();
+
+                    if (restartDevices)
+                    {
+                        foreach (Device device in devices)
+                            device.Restart ();
                     }
 
                     WaitForUsbAgentServiceToStop ();

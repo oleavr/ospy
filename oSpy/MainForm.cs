@@ -77,8 +77,11 @@ namespace oSpy
 
             System.Diagnostics.Process[] processes;
             oSpy.Capture.Device[] devices;
-            if (!frm.GetSelection (out processes, out devices))
+            bool restartDevices;
+            if (!frm.GetSelection (out processes, out devices, out restartDevices))
                 return;
+
+            captureMgr.RestartDevices = restartDevices;
 
             if (processes.Length > 0 && devices.Length > 0)
             {
