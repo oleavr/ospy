@@ -15,12 +15,30 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "Agent.h"
+#ifndef URB_H
+#define URB_H
 
-extern "C" NTSTATUS
-DriverEntry (DRIVER_OBJECT * driverObject,
-             UNICODE_STRING * registryPath)
+#include <wdm.h>
+
+#pragma warning(push)
+#pragma warning(disable:4200)
+#include <usbdi.h>
+#pragma warning(pop)
+
+namespace oSpy {
+
+class Event;
+class Node;
+
+class Urb
 {
-  oSpy::Agent::Initialize (driverObject);
-  return STATUS_SUCCESS;
-}
+public:
+  static void AppendToNode (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+
+private:
+  static void AppendTransferBufferToNode (const void * transferBuffer, int transferBufferLength, MDL * transferBufferMDL, Event * ev, Node * parentNode);
+};
+
+} // namespace oSpy
+
+#endif // URB_H

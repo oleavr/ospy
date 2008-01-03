@@ -29,6 +29,8 @@
 
 #define MAX_PATH 260
 
+namespace oSpy {
+
 typedef struct {
   WCHAR LogPath[MAX_PATH];
   volatile ULONG LogIndexUserspace;
@@ -76,5 +78,7 @@ private:
   SLIST_HEADER m_items;
   KSPIN_LOCK m_itemsLock;
 };
+
+} // namespace oSpy
 
 #endif // LOGGER_H

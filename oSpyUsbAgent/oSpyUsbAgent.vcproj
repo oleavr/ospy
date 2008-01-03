@@ -208,6 +208,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\Agent.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\DriverEntry.cpp"
 				>
 			</File>
@@ -219,6 +223,10 @@
 				RelativePath=".\Logger.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\Urb.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -226,11 +234,19 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\Agent.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Event.h"
 				>
 			</File>
 			<File
 				RelativePath=".\Logger.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Urb.h"
 				>
 			</File>
 		</Filter>
