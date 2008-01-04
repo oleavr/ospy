@@ -30,14 +30,30 @@ namespace oSpy {
 class Event;
 class Node;
 
+typedef void (*UrbFunctionParser) (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+
 class Urb
 {
 public:
   static void AppendToNode (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
 
 private:
+  static const UrbFunctionParser functionParsers[];
+
+  static void ParseSelectConfiguration (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+  static void ParseGetCurrentFrameNumber (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+  static void ParseControlTransfer (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+  static void ParseBulkOrInterruptTransfer (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+  static void ParseIsochTransfer (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+  static void ParseGetDescriptorFromDevice (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+  static void ParseClassInterface (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+  static void ParseSyncResetPipeAndClearStall (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+
+  static void AppendConfigDescriptorToNode (USB_CONFIGURATION_DESCRIPTOR * desc, Event * ev, Node * parentNode);
+  static void AppendTransferFlagsToNode (ULONG flags, Event * ev, Node * parentNode);
   static void AppendTransferBufferToNode (const void * transferBuffer, int transferBufferLength, MDL * transferBufferMDL, Event * ev, Node * parentNode);
 
+  static const char * FunctionToString (USHORT function);
   static const char * DescriptorTypeToString (UCHAR descriptorType);
 };
 
