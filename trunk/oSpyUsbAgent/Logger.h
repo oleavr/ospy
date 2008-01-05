@@ -75,6 +75,7 @@ private:
 
   HANDLE m_fileHandle;
 
+  KEVENT m_workEvent;
   KEVENT m_stopEvent;
   void * m_logThreadObject;
 

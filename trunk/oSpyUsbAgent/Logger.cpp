@@ -109,6 +109,7 @@ Logger::Start (const WCHAR * fnSuffix)
 
     m_fileHandle = NULL;
 
+    KeInitializeEvent (&m_workEvent, NotificationEvent, FALSE);
     KeInitializeEvent (&m_stopEvent, NotificationEvent, FALSE);
     m_logThreadObject = NULL;
 
@@ -176,23 +177,23 @@ void
 Logger::LogThreadFunc ()
 {
   NTSTATUS status;
-  LARGE_INTEGER timeout;
   
   KdPrint (("Logger thread speaking"));
 
-  timeout.QuadPart = -1000000; // 100 ms
-
   bool done = false;
+
+  void * waitObjects[2] = { &m_workEvent, &m_stopEvent };
 
   do
   {
-    status = KeWaitForSingleObject (&m_stopEvent, Executive, KernelMode,
-      FALSE, &timeout);
-    done = (status == STATUS_SUCCESS);
+    status = KeWaitForMultipleObjects (2, waitObjects, WaitAny, Executive,
+      KernelMode, FALSE, NULL, NULL);
+    if (status == STATUS_WAIT_0)
+      KeClearEvent (&m_workEvent);
 
     ProcessItems ();
   }
-  while (!done);
+  while (status != STATUS_WAIT_1);
 
   if (m_fileHandle != NULL)
   {
@@ -258,21 +259,27 @@ Logger::NewEvent (const char * eventType,
   ev->Initialize (id, timestamp, eventType, childCapacity);
   ev->m_userData = userData;
 
+  //KdPrint (("Logger::NewEvent: ev=%p, id=%d\n", ev, id));
   return ev;
 }
 
 void
 Logger::SubmitEvent (Event * ev)
 {
+  //KdPrint (("Logger::SubmitEvent: ev=%p, id=%s\n", ev, ev->m_fieldValues[0]));
+
   LogEntry * logEntry = reinterpret_cast <LogEntry *> (
     reinterpret_cast <UCHAR *> (ev) - sizeof (SLIST_ENTRY));
 
   ExInterlockedPushEntrySList (&m_items, &logEntry->entry, &m_itemsLock);
+  KeSetEvent (&m_workEvent, IO_NO_INCREMENT, FALSE);
 }
 
 void
 Logger::CancelEvent (Event * ev)
 {
+  //KdPrint (("Logger::CancelEvent: ev=%p, id=%s\n", ev, ev->m_fieldValues[0]));
+
   LogEntry * logEntry = reinterpret_cast <LogEntry *> (
     reinterpret_cast <UCHAR *> (ev) - sizeof (SLIST_ENTRY));
 
