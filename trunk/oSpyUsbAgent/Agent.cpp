@@ -311,7 +311,7 @@ Agent::OnUrbIoctlCompletion (DEVICE_OBJECT * filterDeviceObject,
 
   Urb::AppendToNode (urb, ev, ev, false);
 
-  Node * node = ev->CreateTextNode ("pendingReturned", 0,
+  Node * node = ev->CreateTextNode ("PendingReturned", 0,
     (irp->PendingReturned) ? "true" : "false");
   ev->AppendChild (node);
 

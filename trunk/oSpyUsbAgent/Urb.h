@@ -48,7 +48,8 @@ private:
   static void ParseBulkOrInterruptTransfer (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
   static void ParseIsochTransfer (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
   static void ParseGetDescriptorFromDevice (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
-  static void ParseClassInterface (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+  static void ParseSetFeatureToDevice (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+  static void ParseVendorOrClassDevice (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
   static void ParseSyncResetPipeAndClearStall (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
 
   static void AppendConfigDescriptorToNode (const USB_CONFIGURATION_DESCRIPTOR * desc, Event * ev, Node * parentNode);

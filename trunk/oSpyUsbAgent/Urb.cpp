@@ -36,7 +36,7 @@ const UrbFunctionParser Urb::functionParsers[] =
   ParseIsochTransfer,               // URB_FUNCTION_ISOCH_TRANSFER
   ParseGetDescriptorFromDevice,     // URB_FUNCTION_GET_DESCRIPTOR_FROM_DEVICE
   NULL,                             // URB_FUNCTION_SET_DESCRIPTOR_TO_DEVICE
-  NULL,                             // URB_FUNCTION_SET_FEATURE_TO_DEVICE
+  ParseSetFeatureToDevice,          // URB_FUNCTION_SET_FEATURE_TO_DEVICE
   NULL,                             // URB_FUNCTION_SET_FEATURE_TO_INTERFACE
   NULL,                             // URB_FUNCTION_SET_FEATURE_TO_ENDPOINT
   NULL,                             // URB_FUNCTION_CLEAR_FEATURE_TO_DEVICE
@@ -46,16 +46,16 @@ const UrbFunctionParser Urb::functionParsers[] =
   NULL,                             // URB_FUNCTION_GET_STATUS_FROM_INTERFACE
   NULL,                             // URB_FUNCTION_GET_STATUS_FROM_ENDPOINT
   NULL,                             // URB_FUNCTION_RESERVED_0X0016
-  NULL,                             // URB_FUNCTION_VENDOR_DEVICE
-  NULL,                             // URB_FUNCTION_VENDOR_INTERFACE
-  NULL,                             // URB_FUNCTION_VENDOR_ENDPOINT
-  NULL,                             // URB_FUNCTION_CLASS_DEVICE
-  ParseClassInterface,              // URB_FUNCTION_CLASS_INTERFACE
-  NULL,                             // URB_FUNCTION_CLASS_ENDPOINT
+  ParseVendorOrClassDevice,         // URB_FUNCTION_VENDOR_DEVICE
+  ParseVendorOrClassDevice,         // URB_FUNCTION_VENDOR_INTERFACE
+  ParseVendorOrClassDevice,         // URB_FUNCTION_VENDOR_ENDPOINT
+  ParseVendorOrClassDevice,         // URB_FUNCTION_CLASS_DEVICE
+  ParseVendorOrClassDevice,         // URB_FUNCTION_CLASS_INTERFACE
+  ParseVendorOrClassDevice,         // URB_FUNCTION_CLASS_ENDPOINT
   NULL,                             // URB_FUNCTION_RESERVE_0X001D
   ParseSyncResetPipeAndClearStall,  // URB_FUNCTION_SYNC_RESET_PIPE_AND_CLEAR_STALL
-  NULL,                             // URB_FUNCTION_CLASS_OTHER
-  NULL,                             // URB_FUNCTION_VENDOR_OTHER
+  ParseVendorOrClassDevice,         // URB_FUNCTION_CLASS_OTHER
+  ParseVendorOrClassDevice,         // URB_FUNCTION_VENDOR_OTHER
   NULL,                             // URB_FUNCTION_GET_STATUS_FROM_OTHER
   NULL,                             // URB_FUNCTION_CLEAR_FEATURE_TO_OTHER
   NULL,                             // URB_FUNCTION_SET_FEATURE_TO_OTHER
@@ -86,14 +86,14 @@ Urb::AppendToNode (const URB * urb,
                    Node * parentNode,
                    bool onEntry)
 {
-  Node * urbNode = ev->CreateElement ("urb", 1, 10);
+  Node * urbNode = ev->CreateElement ("URB", 1, 10);
   ev->AddFieldToNode (urbNode, "direction", (onEntry) ? "in" : "out");
   parentNode->AppendChild (urbNode);
 
   Node * node;
 
   const char * funcStr = FunctionToString (urb->UrbHeader.Function);
-  node = ev->CreateTextNode ("type", 0, "%s", funcStr);
+  node = ev->CreateTextNode ("Function", 0, "%s", funcStr);
   urbNode->AppendChild (node);
 
   USHORT function = urb->UrbHeader.Function;
@@ -110,7 +110,7 @@ Urb::AppendToNode (const URB * urb,
 
   if (!onEntry)
   {
-    node = ev->CreateTextNode ("status", 1, "%s", StatusToString (
+    node = ev->CreateTextNode ("Status", 1, "%s", StatusToString (
       urb->UrbHeader.Status));
     ev->AddFieldToNodePrintf (node, "code", "0x%08x", urb->UrbHeader.Status);
     urbNode->AppendChild (node);
@@ -128,7 +128,7 @@ Urb::ParseSelectConfiguration (const URB * urb,
 
   AppendConfigDescriptorToNode (sel->ConfigurationDescriptor, ev, parentNode);
 
-  Node * node = ev->CreateTextNode ("configurationHandle", 0, "0x%p",
+  Node * node = ev->CreateTextNode ("ConfigurationHandle", 0, "0x%p",
     sel->ConfigurationHandle);
   parentNode->AppendChild (node);
 }
@@ -142,7 +142,7 @@ Urb::ParseSelectInterface (const URB * urb,
   const struct _URB_SELECT_INTERFACE * sel =
     reinterpret_cast <const struct _URB_SELECT_INTERFACE *> (urb);
 
-  Node * node = ev->CreateTextNode ("configurationHandle", 0, "0x%p",
+  Node * node = ev->CreateTextNode ("ConfigurationHandle", 0, "0x%p",
     sel->ConfigurationHandle);
   parentNode->AppendChild (node);
 
@@ -158,7 +158,7 @@ Urb::ParseAbortPipe (const URB * urb,
   const struct _URB_PIPE_REQUEST * req =
     reinterpret_cast <const struct _URB_PIPE_REQUEST *> (urb);
 
-  Node * node = ev->CreateTextNode ("pipeHandle", 0, "0x%p",
+  Node * node = ev->CreateTextNode ("PipeHandle", 0, "0x%p",
     req->PipeHandle);
   parentNode->AppendChild (node);
 }
@@ -172,7 +172,7 @@ Urb::ParseGetCurrentFrameNumber (const URB * urb,
   const struct _URB_GET_CURRENT_FRAME_NUMBER * get =
     reinterpret_cast <const struct _URB_GET_CURRENT_FRAME_NUMBER *> (urb);
 
-  Node * node = ev->CreateTextNode ("frameNumber", 0, "%d", get->FrameNumber);
+  Node * node = ev->CreateTextNode ("FrameNumber", 0, "%d", get->FrameNumber);
   parentNode->AppendChild (node);
 }
 
@@ -185,15 +185,15 @@ Urb::ParseControlTransfer (const URB * urb,
   const struct _URB_CONTROL_TRANSFER * xfer =
     reinterpret_cast <const struct _URB_CONTROL_TRANSFER *> (urb);
 
-  Node * node = ev->CreateTextNode ("pipeHandle", 0, "0x%p", xfer->PipeHandle);
+  Node * node = ev->CreateTextNode ("PipeHandle", 0, "0x%p", xfer->PipeHandle);
   parentNode->AppendChild (node);
 
   AppendTransferFlagsToNode (xfer->TransferFlags, ev, parentNode);
 
-  node = ev->CreateTextNode ("urbLink", 0, "%p", xfer->UrbLink);
+  node = ev->CreateTextNode ("UrbLink", 0, "%p", xfer->UrbLink);
   parentNode->AppendChild (node);
 
-  node = ev->CreateDataNode ("setupPacket", 1, xfer->SetupPacket,
+  node = ev->CreateDataNode ("SetupPacket", 1, xfer->SetupPacket,
     sizeof (xfer->SetupPacket));
   ev->AddFieldToNodePrintf (node, "size", "%ld", sizeof (xfer->SetupPacket));
   parentNode->AppendChild (node);
@@ -211,7 +211,7 @@ Urb::ParseBulkOrInterruptTransfer (const URB * urb,
   const struct _URB_BULK_OR_INTERRUPT_TRANSFER * xfer =
     reinterpret_cast <const struct _URB_BULK_OR_INTERRUPT_TRANSFER *> (urb);
 
-  Node * node = ev->CreateTextNode ("pipeHandle", 0, "0x%p", xfer->PipeHandle);
+  Node * node = ev->CreateTextNode ("PipeHandle", 0, "0x%p", xfer->PipeHandle);
   parentNode->AppendChild (node);
 
   AppendTransferFlagsToNode (xfer->TransferFlags, ev, parentNode);
@@ -219,7 +219,7 @@ Urb::ParseBulkOrInterruptTransfer (const URB * urb,
   AppendTransferBufferToNode (xfer->TransferBuffer, xfer->TransferBufferLength,
     xfer->TransferBufferMDL, ev, parentNode);
 
-  node = ev->CreateTextNode ("urbLink", 0, "0x%p", xfer->UrbLink);
+  node = ev->CreateTextNode ("UrbLink", 0, "0x%p", xfer->UrbLink);
   parentNode->AppendChild (node);
 }
 
@@ -232,7 +232,7 @@ Urb::ParseIsochTransfer (const URB * urb,
   const struct _URB_ISOCH_TRANSFER * xfer =
     reinterpret_cast <const struct _URB_ISOCH_TRANSFER *> (urb);
 
-  Node * node = ev->CreateTextNode ("pipeHandle", 0, "0x%p", xfer->PipeHandle);
+  Node * node = ev->CreateTextNode ("PipeHandle", 0, "0x%p", xfer->PipeHandle);
   parentNode->AppendChild (node);
 
   AppendTransferFlagsToNode (xfer->TransferFlags, ev, parentNode);
@@ -241,10 +241,10 @@ Urb::ParseIsochTransfer (const URB * urb,
     (xfer->TransferFlags & USBD_TRANSFER_DIRECTION_IN && !onEntry) ||
     (xfer->TransferFlags & USBD_TRANSFER_DIRECTION_OUT && onEntry);
 
-  node = ev->CreateTextNode ("startFrame", 0, "%d", xfer->StartFrame);
+  node = ev->CreateTextNode ("StartFrame", 0, "%d", xfer->StartFrame);
   parentNode->AppendChild (node);
 
-  node = ev->CreateTextNode ("errorCount", 0, "%d", xfer->ErrorCount);
+  node = ev->CreateTextNode ("ErrorCount", 0, "%d", xfer->ErrorCount);
   parentNode->AppendChild (node);
 
   int pktCount = xfer->NumberOfPackets;
@@ -261,7 +261,7 @@ Urb::ParseIsochTransfer (const URB * urb,
     }
   }
 
-  Node * packetsNode = ev->CreateElement ("isoPackets", 1, pktCount);
+  Node * packetsNode = ev->CreateElement ("IsoPackets", 1, pktCount);
   ev->AddFieldToNodePrintf (packetsNode, "count", "%d", xfer->NumberOfPackets);
   parentNode->AppendChild (packetsNode);
 
@@ -281,9 +281,9 @@ Urb::ParseIsochTransfer (const URB * urb,
       if (onEntry || (pkt->Status == USBD_STATUS_SUCCESS && pkt->Length > 0))
       {
         if (dumpData)
-          node = ev->CreateDataNode ("packet", 3, xferBuffer + pkt->Offset, pkt->Length);
+          node = ev->CreateDataNode ("Packet", 3, xferBuffer + pkt->Offset, pkt->Length);
         else
-          node = ev->CreateElement ("packet", 3);
+          node = ev->CreateElement ("Packet", 3);
 
         ev->AddFieldToNodePrintf (node, "index", "%d", i);
         ev->AddFieldToNodePrintf (node, "offset", "%d", pkt->Offset);
@@ -305,17 +305,17 @@ Urb::ParseGetDescriptorFromDevice (const URB * urb,
     reinterpret_cast <const struct _URB_CONTROL_DESCRIPTOR_REQUEST *>
     (urb);
 
-  Node * node = ev->CreateTextNode ("index", 0, "%d", req->Index);
+  Node * node = ev->CreateTextNode ("Index", 0, "%d", req->Index);
   parentNode->AppendChild (node);
 
-  node = ev->CreateTextNode ("descriptorType", 0,
+  node = ev->CreateTextNode ("DescriptorType", 0,
     DescriptorTypeToString (req->DescriptorType));
   parentNode->AppendChild (node);
 
-  node = ev->CreateTextNode ("languageId", 0, "0x%x", req->LanguageId);
+  node = ev->CreateTextNode ("LanguageId", 0, "0x%x", req->LanguageId);
   parentNode->AppendChild (node);
 
-  node = ev->CreateTextNode ("urbLink", 0, "0x%p", req->UrbLink);
+  node = ev->CreateTextNode ("UrbLink", 0, "0x%p", req->UrbLink);
   parentNode->AppendChild (node);
 
   AppendTransferBufferToNode (req->TransferBuffer,
@@ -323,30 +323,58 @@ Urb::ParseGetDescriptorFromDevice (const URB * urb,
 }
 
 void
-Urb::ParseClassInterface (const URB * urb,
-                          Event * ev,
-                          Node * parentNode,
-                          bool onEntry)
+Urb::ParseSetFeatureToDevice (const URB * urb,
+                              Event * ev,
+                              Node * parentNode,
+                              bool onEntry)
+{
+  const struct _URB_CONTROL_FEATURE_REQUEST * req =
+    reinterpret_cast <const struct _URB_CONTROL_FEATURE_REQUEST *>
+    (urb);
+  Node * node;
+
+  node = ev->CreateTextNode ("UrbLink", 0, "0x%p", req->UrbLink);
+  parentNode->AppendChild (node);
+
+  node = ev->CreateTextNode ("FeatureSelector", 0, "0x%04x",
+    req->FeatureSelector);
+  parentNode->AppendChild (node);
+
+  node = ev->CreateTextNode ("Index", 0, "0x%04x", req->Index);
+  parentNode->AppendChild (node);
+}
+
+void
+Urb::ParseVendorOrClassDevice (const URB * urb,
+                               Event * ev,
+                               Node * parentNode,
+                               bool onEntry)
 {
   const struct _URB_CONTROL_VENDOR_OR_CLASS_REQUEST * req =
     reinterpret_cast <const struct _URB_CONTROL_VENDOR_OR_CLASS_REQUEST *> (urb);
 
+  if (req->Hdr.Length < sizeof (struct _URB_CONTROL_VENDOR_OR_CLASS_REQUEST))
+  {
+    KdPrint (("Urb::ParseVendorOrClassDevice: invalid URB, ignoring\n"));
+    return;
+  }
+
   AppendTransferFlagsToNode (req->TransferFlags, ev, parentNode);
 
-  Node * node = ev->CreateTextNode ("urbLink", 0, "0x%p", req->UrbLink);
+  Node * node = ev->CreateTextNode ("UrbLink", 0, "0x%p", req->UrbLink);
   parentNode->AppendChild (node);
 
-  node = ev->CreateTextNode ("requestTypeReservedBits", 0, "%d",
+  node = ev->CreateTextNode ("RequestTypeReservedBits", 0, "%d",
     req->RequestTypeReservedBits);
   parentNode->AppendChild (node);
 
-  node = ev->CreateTextNode ("request", 0, "0x%02x", req->Request);
+  node = ev->CreateTextNode ("Request", 0, "0x%02x", req->Request);
   parentNode->AppendChild (node);
 
-  node = ev->CreateTextNode ("value", 0, "0x%04x", req->Value);
+  node = ev->CreateTextNode ("Value", 0, "0x%04x", req->Value);
   parentNode->AppendChild (node);
 
-  node = ev->CreateTextNode ("index", 0, "0x%04x", req->Index);
+  node = ev->CreateTextNode ("Index", 0, "0x%04x", req->Index);
   parentNode->AppendChild (node);
 
   AppendTransferBufferToNode (req->TransferBuffer,
@@ -362,7 +390,7 @@ Urb::ParseSyncResetPipeAndClearStall (const URB * urb,
   const struct _URB_PIPE_REQUEST * req =
     reinterpret_cast <const struct _URB_PIPE_REQUEST *> (urb);
 
-  Node * node = ev->CreateTextNode ("pipeHandle", 0, "0x%p", req->PipeHandle);
+  Node * node = ev->CreateTextNode ("PipeHandle", 0, "0x%p", req->PipeHandle);
   parentNode->AppendChild (node);
 }
 
@@ -371,7 +399,7 @@ Urb::AppendConfigDescriptorToNode (const USB_CONFIGURATION_DESCRIPTOR * desc,
                                    Event * ev,
                                    Node * parentNode)
 {
-  Node * descNode = ev->CreateElement ("configurationDescriptor", 1, 8);
+  Node * descNode = ev->CreateElement ("ConfigurationDescriptor", 1, 8);
   ev->AddFieldToNodePrintf (descNode, "value", "0x%p", desc);
   parentNode->AppendChild (descNode);
 
@@ -407,19 +435,19 @@ Urb::AppendConfigDescriptorToNode (const USB_CONFIGURATION_DESCRIPTOR * desc,
 
     if (desc->bmAttributes & 32)
     {
-      node = ev->CreateElement ("remoteWakup");
+      node = ev->CreateElement ("RemoteWakup");
       attrsNode->AppendChild (node);
     }
 
     if (desc->bmAttributes & 64)
     {
-      node = ev->CreateElement ("selfPowered");
+      node = ev->CreateElement ("SelfPowered");
       attrsNode->AppendChild (node);
     }
 
     if (desc->bmAttributes & 128)
     {
-      node = ev->CreateElement ("busPowered");
+      node = ev->CreateElement ("BusPowered");
       attrsNode->AppendChild (node);
     }
 
@@ -436,7 +464,7 @@ Urb::AppendInterfaceInfoToNode (const USBD_INTERFACE_INFORMATION * info,
                                 Event * ev,
                                 Node * parentNode)
 {
-  Node * infoNode = ev->CreateElement ("interfaceInformation", 1, 8);
+  Node * infoNode = ev->CreateElement ("InterfaceInformation", 1, 8);
   ev->AddFieldToNodePrintf (infoNode, "value", "0x%p", info);
   parentNode->AppendChild (infoNode);
 
@@ -552,11 +580,11 @@ Urb::AppendTransferFlagsToNode (ULONG flags,
                                 Event * ev,
                                 Node * parentNode)
 {
-  Node * node = ev->CreateTextNode ("direction", 0,
+  Node * node = ev->CreateTextNode ("Direction", 0,
     (flags & USBD_TRANSFER_DIRECTION_IN) ? "in" : "out");
   parentNode->AppendChild (node);
 
-  node = ev->CreateTextNode ("shortTransferOk", 0,
+  node = ev->CreateTextNode ("ShortTransferOk", 0,
     (flags & USBD_SHORT_TRANSFER_OK) ? "true" : "false");
   parentNode->AppendChild (node);
 }
@@ -572,12 +600,12 @@ Urb::AppendTransferBufferToNode (const void * transferBuffer,
 
   if (transferBuffer != NULL)
   {
-    node = ev->CreateDataNode ("transferBuffer", 1, transferBuffer,
+    node = ev->CreateDataNode ("TransferBuffer", 1, transferBuffer,
       transferBufferLength);
   }
   else if (transferBufferMDL != NULL)
   {
-    node = ev->CreateDataNode ("transferBufferMDL", 1,
+    node = ev->CreateDataNode ("TransferBufferMDL", 1,
       MmGetSystemAddressForMdlSafe (transferBufferMDL, HighPagePriority),
       transferBufferLength);
   }
