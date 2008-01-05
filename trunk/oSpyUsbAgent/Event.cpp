@@ -76,7 +76,7 @@ Node::AppendChild (Node * node)
   int slotIndex = GetChildCount ();
   if (slotIndex == m_childCapacity)
   {
-    KdPrint (("Not enough elements reserved for AppendChild"));
+    KdPrint (("Not enough elements reserved for AppendChild\n"));
     return;
   }
 
@@ -95,8 +95,7 @@ Event::Initialize (ULONG id,
 
   m_offset = 0;
 
-  for (int i = 0; i < EVENT_NUM_BULK_SLOTS; i++)
-    m_bulkStorage[i] = NULL;
+  memset (&m_dynamicSlots, 0, sizeof (m_dynamicSlots));
 
   m_name = CreateString ("Event");
 
@@ -114,12 +113,19 @@ Event::Initialize (ULONG id,
 void
 Event::Destroy ()
 {
-  for (int i = 0; i < EVENT_NUM_BULK_SLOTS; i++)
+  for (int i = 0; i < EVENT_NUM_DYNAMIC_SLOTS; i++)
   {
-    if (m_bulkStorage[i] != NULL)
+    StorageSlot * slot = &m_dynamicSlots[i];
+
+    if (slot->storage != NULL)
     {
-      ExFreePool (m_bulkStorage[i]);
-      m_bulkStorage[i] = NULL;
+      ExFreePoolWithTag (slot->storage, 'DpSo');
+      slot->storage = NULL;
+    }
+    else
+    {
+      // Slots are filled contiguously...
+      break;
     }
   }
 }
@@ -164,7 +170,7 @@ Event::CreateTextNode (const char * name,
   }
   else
   {
-    KdPrint (("RtlStringCbVPrintfA failed"));
+    KdPrint (("RtlStringCbVPrintfA failed\n"));
   }
 
   return node;
@@ -196,19 +202,56 @@ Event::ReserveStorage (int size)
 {
   if (static_cast <int> (sizeof (m_storage)) - m_offset < size)
   {
-    KdPrint (("ReserveStorage: not enough space, allocating bulk slot"));
-
-    for (int i = 0; i < EVENT_NUM_BULK_SLOTS; i++)
+    // We're out of static storage, look for a suitable dynamic slot...
+    StorageSlot * suitableSlot = NULL;
+    for (int i = 0; i < EVENT_NUM_DYNAMIC_SLOTS && suitableSlot == NULL; i++)
     {
-      if (m_bulkStorage[i] != NULL)
+      StorageSlot * slot = &m_dynamicSlots[i];
+
+      if (slot->storage != NULL)
       {
-        m_bulkStorage[i] = ExAllocatePool (NonPagedPool, size);
-        return m_bulkStorage[i];
+        int available = slot->size - slot->offset;
+        if (available >= size)
+          suitableSlot = slot;
+      }
+      else
+      {
+        // None available, let's create one!
+        slot->size = size;
+
+        // 200 kB for the first, 400 kB for the second and last slot.
+        int minimumSize = 50 * PAGE_SIZE * (i + 1);
+        if (slot->size < minimumSize)
+          slot->size = minimumSize;
+
+        slot->storage = static_cast <UCHAR *> (
+          ExAllocatePoolWithTag (NonPagedPool, slot->size, 'DpSo'));
+        if (slot->storage == NULL)
+        {
+          KdPrint (("ReserveStorage: ExAllocatePoolWithTag failed! Leaking memory...\n"));
+          return ExAllocatePoolWithTag (NonPagedPool, size, '1pSo');
+        }
+
+        suitableSlot = slot;
       }
     }
 
-    KdPrint (("ReserveStorage: no bulk-slots left, should never happen"));
-    return ExAllocatePool (NonPagedPool, size);
+    if (suitableSlot == NULL)
+    {
+      KdPrint (("ReserveStorage: All slots occupied! Leaking memory...\n"));
+      for (int i = 0; i < EVENT_NUM_DYNAMIC_SLOTS && suitableSlot == NULL; i++)
+      {
+        StorageSlot * slot = &m_dynamicSlots[i];
+        KdPrint (("slot[%d]: offset=%d, size=%d, free=%d", i, slot->offset,
+          slot->size, slot->size - slot->offset));
+      }
+
+      return ExAllocatePoolWithTag (NonPagedPool, size, '2pSo');
+    }
+
+    void * result = suitableSlot->storage + suitableSlot->offset;
+    suitableSlot->offset += size;
+    return result;
   }
 
   void * result = m_storage + m_offset;
@@ -257,7 +300,7 @@ Event::AddFieldToNode (Node * node,
   int slotIndex = node->GetFieldCount ();
   if (slotIndex == node->m_fieldCapacity)
   {
-    KdPrint (("Not enough fields reserved for AppendFieldRaw"));
+    KdPrint (("Not enough fields reserved for AppendFieldRaw\n"));
     return;
   }
 

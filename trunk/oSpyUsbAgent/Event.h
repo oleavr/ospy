@@ -47,7 +47,14 @@ public:
   Node ** m_children;
 };
 
-#define EVENT_NUM_BULK_SLOTS 2
+typedef struct
+{
+  int offset;
+  int size;
+  UCHAR * storage;
+} StorageSlot;
+
+#define EVENT_NUM_DYNAMIC_SLOTS 2
 
 class Event : public Node
 {
@@ -73,8 +80,9 @@ private:
   void CreateChildStorage (Node * node, int childCapacity);
 
   int m_offset;
-  UCHAR m_storage[4000]; // PAGE_SIZE minus some headroom
-  void * m_bulkStorage[EVENT_NUM_BULK_SLOTS];
+  UCHAR m_storage[3996]; // PAGE_SIZE minus some headroom for base class and m_dynamicSlots
+
+  StorageSlot m_dynamicSlots[EVENT_NUM_DYNAMIC_SLOTS];
 };
 
 } // namespace oSpy

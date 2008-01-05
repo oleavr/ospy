@@ -227,7 +227,7 @@ Logger::ProcessItems ()
 
     entry->event.Destroy ();
 
-    ExFreePool (entry);
+    ExFreePoolWithTag (entry, 'SpSo');
   }
 }
 
@@ -237,10 +237,10 @@ Logger::NewEvent (const char * eventType,
                   void * userData)
 {
   LogEntry * logEntry = static_cast <LogEntry *> (
-    ExAllocatePool (NonPagedPool, sizeof (LogEntry)));
+    ExAllocatePoolWithTag (NonPagedPool, sizeof (LogEntry), 'SpSo'));
   if (logEntry == NULL)
   {
-    KdPrint (("ExAllocatePool failed"));
+    KdPrint (("ExAllocatePoolWithTag failed\n"));
     return NULL;
   }
 
