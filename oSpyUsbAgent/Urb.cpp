@@ -24,8 +24,8 @@ namespace oSpy {
 const UrbFunctionParser Urb::functionParsers[] =
 {
   ParseSelectConfiguration,         // URB_FUNCTION_SELECT_CONFIGURATION
-  NULL,                             // URB_FUNCTION_SELECT_INTERFACE
-  NULL,                             // URB_FUNCTION_ABORT_PIPE
+  ParseSelectInterface,             // URB_FUNCTION_SELECT_INTERFACE
+  ParseAbortPipe,                   // URB_FUNCTION_ABORT_PIPE
   NULL,                             // URB_FUNCTION_TAKE_FRAME_LENGTH_CONTROL
   NULL,                             // URB_FUNCTION_RELEASE_FRAME_LENGTH_CONTROL
   NULL,                             // URB_FUNCTION_GET_FRAME_LENGTH
@@ -130,6 +130,36 @@ Urb::ParseSelectConfiguration (const URB * urb,
 
   Node * node = ev->CreateTextNode ("configurationHandle", 0, "0x%p",
     sel->ConfigurationHandle);
+  parentNode->AppendChild (node);
+}
+
+void
+Urb::ParseSelectInterface (const URB * urb,
+                           Event * ev,
+                           Node * parentNode,
+                           bool onEntry)
+{
+  const struct _URB_SELECT_INTERFACE * sel =
+    reinterpret_cast <const struct _URB_SELECT_INTERFACE *> (urb);
+
+  Node * node = ev->CreateTextNode ("configurationHandle", 0, "0x%p",
+    sel->ConfigurationHandle);
+  parentNode->AppendChild (node);
+
+  AppendInterfaceInfoToNode (&sel->Interface, ev, parentNode);
+}
+
+void
+Urb::ParseAbortPipe (const URB * urb,
+                     Event * ev,
+                     Node * parentNode,
+                     bool onEntry)
+{
+  const struct _URB_PIPE_REQUEST * req =
+    reinterpret_cast <const struct _URB_PIPE_REQUEST *> (urb);
+
+  Node * node = ev->CreateTextNode ("pipeHandle", 0, "0x%p",
+    req->PipeHandle);
   parentNode->AppendChild (node);
 }
 
@@ -332,7 +362,7 @@ Urb::ParseSyncResetPipeAndClearStall (const URB * urb,
 }
 
 void
-Urb::AppendConfigDescriptorToNode (USB_CONFIGURATION_DESCRIPTOR * desc,
+Urb::AppendConfigDescriptorToNode (const USB_CONFIGURATION_DESCRIPTOR * desc,
                                    Event * ev,
                                    Node * parentNode)
 {
@@ -397,6 +427,122 @@ Urb::AppendConfigDescriptorToNode (USB_CONFIGURATION_DESCRIPTOR * desc,
 }
 
 void
+Urb::AppendInterfaceInfoToNode (const USBD_INTERFACE_INFORMATION * info,
+                                Event * ev,
+                                Node * parentNode)
+{
+  Node * infoNode = ev->CreateElement ("interfaceInformation", 1, 8);
+  ev->AddFieldToNodePrintf (infoNode, "value", "0x%p", info);
+  parentNode->AppendChild (infoNode);
+
+  if (info != NULL)
+  {
+    Node * node;
+
+    node = ev->CreateTextNode ("Length", 0, "%d", info->Length);
+    infoNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("InterfaceNumber", 0, "%d",
+      info->InterfaceNumber);
+    infoNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("AlternateSetting", 0, "%d",
+      info->AlternateSetting);
+    infoNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("Class", 0, "0x%02x", info->Class);
+    infoNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("SubClass", 0, "0x%02x", info->SubClass);
+    infoNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("Protocol", 0, "0x%02x", info->Protocol);
+    infoNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("InterfaceHandle", 0, "0x%p",
+      info->InterfaceHandle);
+    infoNode->AppendChild (node);
+
+    Node * pipesNode = ev->CreateElement ("Pipes", 1, info->NumberOfPipes);
+    ev->AddFieldToNodePrintf (pipesNode, "count", "%d", info->NumberOfPipes);
+    infoNode->AppendChild (pipesNode);
+
+    for (ULONG i = 0; i < info->NumberOfPipes; i++)
+    {
+      AppendPipeInfoToNode (&info->Pipes[i], ev, pipesNode);
+    }
+  }
+}
+
+void
+Urb::AppendPipeInfoToNode (const USBD_PIPE_INFORMATION * info,
+                           Event * ev,
+                           Node * parentNode)
+{
+  Node * pipeNode = ev->CreateElement ("Pipe", 1, 8);
+  ev->AddFieldToNodePrintf (pipeNode, "value", "0x%p", info);
+  parentNode->AppendChild (pipeNode);
+
+  if (info != NULL)
+  {
+    Node * node;
+
+    node = ev->CreateTextNode ("MaximumPacketSize", 0, "%d",
+      info->MaximumPacketSize);
+    pipeNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("EndpointAddress", 0, "0x%02x",
+      info->EndpointAddress);
+    pipeNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("Interval", 0, "%d", info->Interval);
+    pipeNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("Interval", 0, "%d", info->Interval);
+    pipeNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("PipeType", 0,
+      PipeTypeToString (info->PipeType));
+    pipeNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("PipeHandle", 0, "0x%p", info->PipeHandle);
+    pipeNode->AppendChild (node);
+
+    node = ev->CreateTextNode ("MaximumTransferSize", 0, "%d",
+      info->MaximumTransferSize);
+    pipeNode->AppendChild (node);
+
+    Node * flagsNode = ev->CreateElement ("PipeFlags", 1, 4);
+    ev->AddFieldToNodePrintf (flagsNode, "value", "0x%08x", info->PipeFlags);
+    pipeNode->AppendChild (flagsNode);
+
+    if (info->PipeFlags & USBD_PF_CHANGE_MAX_PACKET)
+    {
+      node = ev->CreateElement ("USBD_PF_CHANGE_MAX_PACKET");
+      flagsNode->AppendChild (node);
+    }
+
+    if (info->PipeFlags & USBD_PF_SHORT_PACKET_OPT)
+    {
+      node = ev->CreateElement ("USBD_PF_SHORT_PACKET_OPT");
+      flagsNode->AppendChild (node);
+    }
+
+    if (info->PipeFlags & USBD_PF_ENABLE_RT_THREAD_ACCESS)
+    {
+      node = ev->CreateElement ("USBD_PF_ENABLE_RT_THREAD_ACCESS");
+      flagsNode->AppendChild (node);
+    }
+
+    if (info->PipeFlags & USBD_PF_MAP_ADD_TRANSFERS)
+    {
+      node = ev->CreateElement ("USBD_PF_MAP_ADD_TRANSFERS");
+      flagsNode->AppendChild (node);
+    }     
+  }
+}
+
+void
 Urb::AppendTransferFlagsToNode (ULONG flags,
                                 Event * ev,
                                 Node * parentNode)
@@ -438,66 +584,66 @@ Urb::AppendTransferBufferToNode (const void * transferBuffer,
   }
 }
 
+static const char * functions [] =
+{
+  "URB_FUNCTION_SELECT_CONFIGURATION",
+  "URB_FUNCTION_SELECT_INTERFACE",
+  "URB_FUNCTION_ABORT_PIPE",
+  "URB_FUNCTION_TAKE_FRAME_LENGTH_CONTROL",
+  "URB_FUNCTION_RELEASE_FRAME_LENGTH_CONTROL",
+  "URB_FUNCTION_GET_FRAME_LENGTH",
+  "URB_FUNCTION_SET_FRAME_LENGTH",
+  "URB_FUNCTION_GET_CURRENT_FRAME_NUMBER",
+  "URB_FUNCTION_CONTROL_TRANSFER",
+  "URB_FUNCTION_BULK_OR_INTERRUPT_TRANSFER",
+  "URB_FUNCTION_ISOCH_TRANSFER",
+  "URB_FUNCTION_GET_DESCRIPTOR_FROM_DEVICE",
+  "URB_FUNCTION_SET_DESCRIPTOR_TO_DEVICE",
+  "URB_FUNCTION_SET_FEATURE_TO_DEVICE",
+  "URB_FUNCTION_SET_FEATURE_TO_INTERFACE",
+  "URB_FUNCTION_SET_FEATURE_TO_ENDPOINT",
+  "URB_FUNCTION_CLEAR_FEATURE_TO_DEVICE",
+  "URB_FUNCTION_CLEAR_FEATURE_TO_INTERFACE",
+  "URB_FUNCTION_CLEAR_FEATURE_TO_ENDPOINT",
+  "URB_FUNCTION_GET_STATUS_FROM_DEVICE",
+  "URB_FUNCTION_GET_STATUS_FROM_INTERFACE",
+  "URB_FUNCTION_GET_STATUS_FROM_ENDPOINT",
+  "URB_FUNCTION_RESERVED_0X0016",
+  "URB_FUNCTION_VENDOR_DEVICE",
+  "URB_FUNCTION_VENDOR_INTERFACE",
+  "URB_FUNCTION_VENDOR_ENDPOINT",
+  "URB_FUNCTION_CLASS_DEVICE",
+  "URB_FUNCTION_CLASS_INTERFACE",
+  "URB_FUNCTION_CLASS_ENDPOINT",
+  "URB_FUNCTION_RESERVE_0X001D",
+  "URB_FUNCTION_SYNC_RESET_PIPE_AND_CLEAR_STALL",
+  "URB_FUNCTION_CLASS_OTHER",
+  "URB_FUNCTION_VENDOR_OTHER",
+  "URB_FUNCTION_GET_STATUS_FROM_OTHER",
+  "URB_FUNCTION_CLEAR_FEATURE_TO_OTHER",
+  "URB_FUNCTION_SET_FEATURE_TO_OTHER",
+  "URB_FUNCTION_GET_DESCRIPTOR_FROM_ENDPOINT",
+  "URB_FUNCTION_SET_DESCRIPTOR_TO_ENDPOINT",
+  "URB_FUNCTION_GET_CONFIGURATION",
+  "URB_FUNCTION_GET_INTERFACE",
+  "URB_FUNCTION_GET_DESCRIPTOR_FROM_INTERFACE",
+  "URB_FUNCTION_SET_DESCRIPTOR_TO_INTERFACE",
+  "URB_FUNCTION_GET_MS_FEATURE_DESCRIPTOR",
+  "URB_FUNCTION_RESERVE_0X002B",
+  "URB_FUNCTION_RESERVE_0X002C",
+  "URB_FUNCTION_RESERVE_0X002D",
+  "URB_FUNCTION_RESERVE_0X002E",
+  "URB_FUNCTION_RESERVE_0X002F",
+  "URB_FUNCTION_SYNC_RESET_PIPE",
+  "URB_FUNCTION_SYNC_CLEAR_STALL",
+  "URB_FUNCTION_CONTROL_TRANSFER_EX",
+  "URB_FUNCTION_SET_PIPE_IO_POLICY",
+  "URB_FUNCTION_GET_PIPE_IO_POLICY", // 0x34
+};
+
 const char *
 Urb::FunctionToString (USHORT function)
 {
-  static const char * functions [] =
-  {
-    "URB_FUNCTION_SELECT_CONFIGURATION",
-    "URB_FUNCTION_SELECT_INTERFACE",
-    "URB_FUNCTION_ABORT_PIPE",
-    "URB_FUNCTION_TAKE_FRAME_LENGTH_CONTROL",
-    "URB_FUNCTION_RELEASE_FRAME_LENGTH_CONTROL",
-    "URB_FUNCTION_GET_FRAME_LENGTH",
-    "URB_FUNCTION_SET_FRAME_LENGTH",
-    "URB_FUNCTION_GET_CURRENT_FRAME_NUMBER",
-    "URB_FUNCTION_CONTROL_TRANSFER",
-    "URB_FUNCTION_BULK_OR_INTERRUPT_TRANSFER",
-    "URB_FUNCTION_ISOCH_TRANSFER",
-    "URB_FUNCTION_GET_DESCRIPTOR_FROM_DEVICE",
-    "URB_FUNCTION_SET_DESCRIPTOR_TO_DEVICE",
-    "URB_FUNCTION_SET_FEATURE_TO_DEVICE",
-    "URB_FUNCTION_SET_FEATURE_TO_INTERFACE",
-    "URB_FUNCTION_SET_FEATURE_TO_ENDPOINT",
-    "URB_FUNCTION_CLEAR_FEATURE_TO_DEVICE",
-    "URB_FUNCTION_CLEAR_FEATURE_TO_INTERFACE",
-    "URB_FUNCTION_CLEAR_FEATURE_TO_ENDPOINT",
-    "URB_FUNCTION_GET_STATUS_FROM_DEVICE",
-    "URB_FUNCTION_GET_STATUS_FROM_INTERFACE",
-    "URB_FUNCTION_GET_STATUS_FROM_ENDPOINT",
-    "URB_FUNCTION_RESERVED_0X0016",
-    "URB_FUNCTION_VENDOR_DEVICE",
-    "URB_FUNCTION_VENDOR_INTERFACE",
-    "URB_FUNCTION_VENDOR_ENDPOINT",
-    "URB_FUNCTION_CLASS_DEVICE",
-    "URB_FUNCTION_CLASS_INTERFACE",
-    "URB_FUNCTION_CLASS_ENDPOINT",
-    "URB_FUNCTION_RESERVE_0X001D",
-    "URB_FUNCTION_SYNC_RESET_PIPE_AND_CLEAR_STALL",
-    "URB_FUNCTION_CLASS_OTHER",
-    "URB_FUNCTION_VENDOR_OTHER",
-    "URB_FUNCTION_GET_STATUS_FROM_OTHER",
-    "URB_FUNCTION_CLEAR_FEATURE_TO_OTHER",
-    "URB_FUNCTION_SET_FEATURE_TO_OTHER",
-    "URB_FUNCTION_GET_DESCRIPTOR_FROM_ENDPOINT",
-    "URB_FUNCTION_SET_DESCRIPTOR_TO_ENDPOINT",
-    "URB_FUNCTION_GET_CONFIGURATION",
-    "URB_FUNCTION_GET_INTERFACE",
-    "URB_FUNCTION_GET_DESCRIPTOR_FROM_INTERFACE",
-    "URB_FUNCTION_SET_DESCRIPTOR_TO_INTERFACE",
-    "URB_FUNCTION_GET_MS_FEATURE_DESCRIPTOR",
-    "URB_FUNCTION_RESERVE_0X002B",
-    "URB_FUNCTION_RESERVE_0X002C",
-    "URB_FUNCTION_RESERVE_0X002D",
-    "URB_FUNCTION_RESERVE_0X002E",
-    "URB_FUNCTION_RESERVE_0X002F",
-    "URB_FUNCTION_SYNC_RESET_PIPE",
-    "URB_FUNCTION_SYNC_CLEAR_STALL",
-    "URB_FUNCTION_CONTROL_TRANSFER_EX",
-    "URB_FUNCTION_SET_PIPE_IO_POLICY",
-    "URB_FUNCTION_GET_PIPE_IO_POLICY", // 0x34
-  };
-
   if (function <= URB_FUNCTION_MAX)
     return functions[function];
   else
@@ -571,24 +717,37 @@ Urb::StatusToString (ULONG status)
   }
 }
 
+static const char * descriptorTypes[] = {
+  "USB_DEVICE_DESCRIPTOR_TYPE", // 0x01
+  "USB_CONFIGURATION_DESCRIPTOR_TYPE",
+  "USB_STRING_DESCRIPTOR_TYPE",
+  "USB_INTERFACE_DESCRIPTOR_TYPE",
+  "USB_ENDPOINT_DESCRIPTOR_TYPE",
+  "USB_RESERVED_DESCRIPTOR_TYPE",
+  "USB_CONFIG_POWER_DESCRIPTOR_TYPE",
+  "USB_INTERFACE_POWER_DESCRIPTOR_TYPE",  // 0x08
+};
+
 const char *
 Urb::DescriptorTypeToString (UCHAR descriptorType)
 {
-  static const char * descriptorTypes[] = {
-    "USB_DEVICE_DESCRIPTOR_TYPE", // 0x01
-    "USB_CONFIGURATION_DESCRIPTOR_TYPE",
-    "USB_STRING_DESCRIPTOR_TYPE",
-    "USB_INTERFACE_DESCRIPTOR_TYPE",
-    "USB_ENDPOINT_DESCRIPTOR_TYPE",
-    "USB_RESERVED_DESCRIPTOR_TYPE",
-    "USB_CONFIG_POWER_DESCRIPTOR_TYPE",
-    "USB_INTERFACE_POWER_DESCRIPTOR_TYPE",  // 0x08
-  };
-
   if (descriptorType >= 1 && descriptorType <= 8)
     return descriptorTypes[descriptorType - 1];
   else
     return "INVALID_DESCRIPTOR_TYPE";
+}
+
+const char *
+Urb::PipeTypeToString (USBD_PIPE_TYPE type)
+{
+  switch (type)
+  {
+    case UsbdPipeTypeControl:     return "UsbdPipeTypeControl";
+    case UsbdPipeTypeIsochronous: return "UsbdPipeTypeIsochronous";
+    case UsbdPipeTypeBulk:        return "UsbdPipeTypeBulk";
+    case UsbdPipeTypeInterrupt:   return "UsbdPipeTypeInterrupt";
+    default:                      return "UsbdPipeTypeUnknown";
+  }
 }
 
 } // namespace oSpy

@@ -41,6 +41,8 @@ private:
   static const UrbFunctionParser functionParsers[];
 
   static void ParseSelectConfiguration (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+  static void ParseSelectInterface (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+  static void ParseAbortPipe (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
   static void ParseGetCurrentFrameNumber (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
   static void ParseControlTransfer (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
   static void ParseBulkOrInterruptTransfer (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
@@ -49,13 +51,16 @@ private:
   static void ParseClassInterface (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
   static void ParseSyncResetPipeAndClearStall (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
 
-  static void AppendConfigDescriptorToNode (USB_CONFIGURATION_DESCRIPTOR * desc, Event * ev, Node * parentNode);
+  static void AppendConfigDescriptorToNode (const USB_CONFIGURATION_DESCRIPTOR * desc, Event * ev, Node * parentNode);
+  static void AppendInterfaceInfoToNode (const USBD_INTERFACE_INFORMATION * info, Event * ev, Node * parentNode);
+  static void AppendPipeInfoToNode (const USBD_PIPE_INFORMATION * info, Event * ev, Node * parentNode);
   static void AppendTransferFlagsToNode (ULONG flags, Event * ev, Node * parentNode);
   static void AppendTransferBufferToNode (const void * transferBuffer, int transferBufferLength, MDL * transferBufferMDL, Event * ev, Node * parentNode);
 
   static const char * FunctionToString (USHORT function);
   static const char * StatusToString (ULONG status);
   static const char * DescriptorTypeToString (UCHAR descriptorType);
+  static const char * PipeTypeToString (USBD_PIPE_TYPE type);
 };
 
 } // namespace oSpy
