@@ -247,13 +247,18 @@ Urb::ParseIsochTransfer (const URB * urb,
   node = ev->CreateTextNode ("errorCount", 0, "%d", xfer->ErrorCount);
   parentNode->AppendChild (node);
 
-  int pktCount = 0;
-  for (ULONG i = 0; i < xfer->NumberOfPackets; i++)
+  int pktCount = xfer->NumberOfPackets;
+  if (!onEntry)
   {
-    const USBD_ISO_PACKET_DESCRIPTOR * pkt = &xfer->IsoPacket[i];
+    pktCount = 0;
 
-    if (pkt->Status == USBD_STATUS_SUCCESS && pkt->Length > 0)
-      pktCount++;
+    for (ULONG i = 0; i < xfer->NumberOfPackets; i++)
+    {
+      const USBD_ISO_PACKET_DESCRIPTOR * pkt = &xfer->IsoPacket[i];
+
+      if (pkt->Status == USBD_STATUS_SUCCESS && pkt->Length > 0)
+        pktCount++;
+    }
   }
 
   Node * packetsNode = ev->CreateElement ("isoPackets", 1, pktCount);
@@ -273,7 +278,7 @@ Urb::ParseIsochTransfer (const URB * urb,
     {
       const USBD_ISO_PACKET_DESCRIPTOR * pkt = &xfer->IsoPacket[i];
 
-      if (pkt->Status == USBD_STATUS_SUCCESS && pkt->Length > 0)
+      if (onEntry || (pkt->Status == USBD_STATUS_SUCCESS && pkt->Length > 0))
       {
         if (dumpData)
           node = ev->CreateDataNode ("packet", 3, xferBuffer + pkt->Offset, pkt->Length);
