@@ -54,6 +54,7 @@ private:
   static void AppendTransferBufferToNode (const void * transferBuffer, int transferBufferLength, MDL * transferBufferMDL, Event * ev, Node * parentNode);
 
   static const char * FunctionToString (USHORT function);
+  static const char * StatusToString (ULONG status);
   static const char * DescriptorTypeToString (UCHAR descriptorType);
 };
 
