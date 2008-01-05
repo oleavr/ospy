@@ -52,10 +52,10 @@ namespace oSpy.Capture
             this.processView = new System.Windows.Forms.ListView ();
             this.processImagesSmall = new System.Windows.Forms.ImageList (this.components);
             this.usbDevicesTabPage = new System.Windows.Forms.TabPage ();
+            this.restartDevicesCheckBox = new System.Windows.Forms.CheckBox ();
             this.usbDevView = new System.Windows.Forms.ListView ();
             this.usbImagesLarge = new System.Windows.Forms.ImageList (this.components);
             this.usbImagesSmall = new System.Windows.Forms.ImageList (this.components);
-            this.restartDevicesCheckBox = new System.Windows.Forms.CheckBox ();
             this.tabControl1.SuspendLayout ();
             this.processesTabPage.SuspendLayout ();
             this.usbDevicesTabPage.SuspendLayout ();
@@ -148,6 +148,17 @@ namespace oSpy.Capture
             this.usbDevicesTabPage.Text = "USB devices";
             this.usbDevicesTabPage.UseVisualStyleBackColor = true;
             // 
+            // restartDevicesCheckBox
+            // 
+            this.restartDevicesCheckBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.restartDevicesCheckBox.AutoSize = true;
+            this.restartDevicesCheckBox.Location = new System.Drawing.Point (3, 214);
+            this.restartDevicesCheckBox.Name = "restartDevicesCheckBox";
+            this.restartDevicesCheckBox.Size = new System.Drawing.Size (322, 17);
+            this.restartDevicesCheckBox.TabIndex = 2;
+            this.restartDevicesCheckBox.Text = "Restart devices to avoid manual replugging (EXPERIMENTAL)";
+            this.restartDevicesCheckBox.UseVisualStyleBackColor = true;
+            // 
             // usbDevView
             // 
             this.usbDevView.Activation = System.Windows.Forms.ItemActivation.OneClick;
@@ -156,9 +167,9 @@ namespace oSpy.Capture
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.usbDevView.CheckBoxes = true;
             this.usbDevView.LargeImageList = this.usbImagesLarge;
-            this.usbDevView.Location = new System.Drawing.Point (-4, 0);
+            this.usbDevView.Location = new System.Drawing.Point (3, 3);
             this.usbDevView.Name = "usbDevView";
-            this.usbDevView.Size = new System.Drawing.Size (540, 208);
+            this.usbDevView.Size = new System.Drawing.Size (530, 205);
             this.usbDevView.SmallImageList = this.usbImagesSmall;
             this.usbDevView.TabIndex = 1;
             this.usbDevView.UseCompatibleStateImageBehavior = false;
@@ -176,17 +187,6 @@ namespace oSpy.Capture
             this.usbImagesSmall.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit;
             this.usbImagesSmall.ImageSize = new System.Drawing.Size (16, 16);
             this.usbImagesSmall.TransparentColor = System.Drawing.Color.Transparent;
-            // 
-            // restartDevicesCheckBox
-            // 
-            this.restartDevicesCheckBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.restartDevicesCheckBox.AutoSize = true;
-            this.restartDevicesCheckBox.Location = new System.Drawing.Point (3, 214);
-            this.restartDevicesCheckBox.Name = "restartDevicesCheckBox";
-            this.restartDevicesCheckBox.Size = new System.Drawing.Size (322, 17);
-            this.restartDevicesCheckBox.TabIndex = 2;
-            this.restartDevicesCheckBox.Text = "Restart devices to avoid manual replugging (EXPERIMENTAL)";
-            this.restartDevicesCheckBox.UseVisualStyleBackColor = true;
             // 
             // ChooseForm
             // 
