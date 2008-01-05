@@ -272,8 +272,14 @@ Agent::OnInternalIoctlIrp (DEVICE_OBJECT * filterDeviceObject,
     Urb::AppendToNode (urb, ev, ev, true);
 
     IoCopyCurrentIrpStackLocationToNext (irp);
-    IoSetCompletionRoutineEx (priv->filterDeviceObject, irp,
+    status = IoSetCompletionRoutineEx (priv->filterDeviceObject, irp,
       OnUrbIoctlCompletion, ev, TRUE, TRUE, TRUE);
+    if (!NT_SUCCESS (status))
+    {
+      KdPrint (("Agent::OnInternalIoctlIrp: IoSetCompletionRoutineEx "
+        "failed\n"));
+      priv->logger.CancelEvent (ev);
+    }
   }
   else
   {
