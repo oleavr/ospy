@@ -91,8 +91,9 @@ Urb::AppendToNode (const URB * urb,
   parentNode->AppendChild (urbNode);
 
   Node * node;
-  node = ev->CreateTextNode ("type", 0, "%s", FunctionToString (
-    urb->UrbHeader.Function));
+
+  const char * funcStr = FunctionToString (urb->UrbHeader.Function);
+  node = ev->CreateTextNode ("type", 0, "%s", funcStr);
   urbNode->AppendChild (node);
 
   USHORT function = urb->UrbHeader.Function;
@@ -102,6 +103,7 @@ Urb::AppendToNode (const URB * urb,
   }
   else
   {
+    KdPrint (("%s needs to be handled\n", funcStr));
     node = ev->CreateTextNode ("FIXME", 0, "This URB is not yet handled.");
     urbNode->AppendChild (node);
   }

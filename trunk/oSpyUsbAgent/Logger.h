@@ -54,11 +54,14 @@ public:
 
   Event * NewEvent (const char * eventType, int childCapacity, void * userData=NULL);
   void SubmitEvent (Event * ev);
+  void CancelEvent (Event * ev);
 
 private:
   static void LogThreadFuncWrapper (void * parameter) { static_cast <Logger *> (parameter)->LogThreadFunc (); }
   void LogThreadFunc ();
   void ProcessItems ();
+
+  void DestroyEntry (LogEntry * entry);
 
   void WriteNode (const Node * node);
 

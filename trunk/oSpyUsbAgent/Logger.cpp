@@ -225,10 +225,16 @@ Logger::ProcessItems ()
 
     WriteNode (&entry->event);
 
-    entry->event.Destroy ();
-
-    ExFreePoolWithTag (entry, 'SpSo');
+    DestroyEntry (entry);
   }
+}
+
+void
+Logger::DestroyEntry (LogEntry * entry)
+{
+  entry->event.Destroy ();
+
+  ExFreePoolWithTag (entry, 'SpSo');
 }
 
 Event *
@@ -262,6 +268,15 @@ Logger::SubmitEvent (Event * ev)
     reinterpret_cast <UCHAR *> (ev) - sizeof (SLIST_ENTRY));
 
   ExInterlockedPushEntrySList (&m_items, &logEntry->entry, &m_itemsLock);
+}
+
+void
+Logger::CancelEvent (Event * ev)
+{
+  LogEntry * logEntry = reinterpret_cast <LogEntry *> (
+    reinterpret_cast <UCHAR *> (ev) - sizeof (SLIST_ENTRY));
+
+  DestroyEntry (logEntry);
 }
 
 void
