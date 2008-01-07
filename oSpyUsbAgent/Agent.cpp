@@ -283,6 +283,7 @@ Agent::OnInternalIoctlIrp (DEVICE_OBJECT * filterDeviceObject,
   }
   else
   {
+    KdPrint (("Agent::OnInternalIoctlIrp: controlCode=0x%08x\n", controlCode));
     IoSkipCurrentIrpStackLocation (irp);
   }
 

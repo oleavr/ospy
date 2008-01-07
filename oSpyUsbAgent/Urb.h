@@ -47,8 +47,8 @@ private:
   static void ParseControlTransfer (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
   static void ParseBulkOrInterruptTransfer (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
   static void ParseIsochTransfer (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
-  static void ParseGetDescriptorFromDevice (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
-  static void ParseSetFeatureToDevice (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+  static void ParseGetOrSetDescriptor (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
+  static void ParseClearOrSetFeature (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
   static void ParseVendorOrClassDevice (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
   static void ParseSyncResetPipeAndClearStall (const URB * urb, Event * ev, Node * parentNode, bool onEntry);
 

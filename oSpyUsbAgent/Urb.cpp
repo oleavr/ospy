@@ -34,14 +34,14 @@ const UrbFunctionParser Urb::functionParsers[] =
   ParseControlTransfer,             // URB_FUNCTION_CONTROL_TRANSFER
   ParseBulkOrInterruptTransfer,     // URB_FUNCTION_BULK_OR_INTERRUPT_TRANSFER
   ParseIsochTransfer,               // URB_FUNCTION_ISOCH_TRANSFER
-  ParseGetDescriptorFromDevice,     // URB_FUNCTION_GET_DESCRIPTOR_FROM_DEVICE
-  NULL,                             // URB_FUNCTION_SET_DESCRIPTOR_TO_DEVICE
-  ParseSetFeatureToDevice,          // URB_FUNCTION_SET_FEATURE_TO_DEVICE
-  NULL,                             // URB_FUNCTION_SET_FEATURE_TO_INTERFACE
-  NULL,                             // URB_FUNCTION_SET_FEATURE_TO_ENDPOINT
-  NULL,                             // URB_FUNCTION_CLEAR_FEATURE_TO_DEVICE
-  NULL,                             // URB_FUNCTION_CLEAR_FEATURE_TO_INTERFACE
-  NULL,                             // URB_FUNCTION_CLEAR_FEATURE_TO_ENDPOINT
+  ParseGetOrSetDescriptor,          // URB_FUNCTION_GET_DESCRIPTOR_FROM_DEVICE
+  ParseGetOrSetDescriptor,          // URB_FUNCTION_SET_DESCRIPTOR_TO_DEVICE
+  ParseClearOrSetFeature,           // URB_FUNCTION_SET_FEATURE_TO_DEVICE
+  ParseClearOrSetFeature,           // URB_FUNCTION_SET_FEATURE_TO_INTERFACE
+  ParseClearOrSetFeature,           // URB_FUNCTION_SET_FEATURE_TO_ENDPOINT
+  ParseClearOrSetFeature,           // URB_FUNCTION_CLEAR_FEATURE_TO_DEVICE
+  ParseClearOrSetFeature,           // URB_FUNCTION_CLEAR_FEATURE_TO_INTERFACE
+  ParseClearOrSetFeature,           // URB_FUNCTION_CLEAR_FEATURE_TO_ENDPOINT
   NULL,                             // URB_FUNCTION_GET_STATUS_FROM_DEVICE
   NULL,                             // URB_FUNCTION_GET_STATUS_FROM_INTERFACE
   NULL,                             // URB_FUNCTION_GET_STATUS_FROM_ENDPOINT
@@ -57,14 +57,14 @@ const UrbFunctionParser Urb::functionParsers[] =
   ParseVendorOrClassDevice,         // URB_FUNCTION_CLASS_OTHER
   ParseVendorOrClassDevice,         // URB_FUNCTION_VENDOR_OTHER
   NULL,                             // URB_FUNCTION_GET_STATUS_FROM_OTHER
-  NULL,                             // URB_FUNCTION_CLEAR_FEATURE_TO_OTHER
-  NULL,                             // URB_FUNCTION_SET_FEATURE_TO_OTHER
-  NULL,                             // URB_FUNCTION_GET_DESCRIPTOR_FROM_ENDPOINT
-  NULL,                             // URB_FUNCTION_SET_DESCRIPTOR_TO_ENDPOINT
+  ParseClearOrSetFeature,           // URB_FUNCTION_CLEAR_FEATURE_TO_OTHER
+  ParseClearOrSetFeature,           // URB_FUNCTION_SET_FEATURE_TO_OTHER
+  ParseGetOrSetDescriptor,          // URB_FUNCTION_GET_DESCRIPTOR_FROM_ENDPOINT
+  ParseGetOrSetDescriptor,          // URB_FUNCTION_SET_DESCRIPTOR_TO_ENDPOINT
   NULL,                             // URB_FUNCTION_GET_CONFIGURATION
   NULL,                             // URB_FUNCTION_GET_INTERFACE
-  NULL,                             // URB_FUNCTION_GET_DESCRIPTOR_FROM_INTERFACE
-  NULL,                             // URB_FUNCTION_SET_DESCRIPTOR_TO_INTERFACE
+  ParseGetOrSetDescriptor,          // URB_FUNCTION_GET_DESCRIPTOR_FROM_INTERFACE
+  ParseGetOrSetDescriptor,          // URB_FUNCTION_SET_DESCRIPTOR_TO_INTERFACE
   NULL,                             // URB_FUNCTION_GET_MS_FEATURE_DESCRIPTOR
   NULL,                             // URB_FUNCTION_RESERVE_0X002B
   NULL,                             // URB_FUNCTION_RESERVE_0X002C
@@ -296,10 +296,10 @@ Urb::ParseIsochTransfer (const URB * urb,
 }
 
 void
-Urb::ParseGetDescriptorFromDevice (const URB * urb,
-                                   Event * ev,
-                                   Node * parentNode,
-                                   bool onEntry)
+Urb::ParseGetOrSetDescriptor (const URB * urb,
+                              Event * ev,
+                              Node * parentNode,
+                              bool onEntry)
 {
   const struct _URB_CONTROL_DESCRIPTOR_REQUEST * req =
     reinterpret_cast <const struct _URB_CONTROL_DESCRIPTOR_REQUEST *>
@@ -323,10 +323,10 @@ Urb::ParseGetDescriptorFromDevice (const URB * urb,
 }
 
 void
-Urb::ParseSetFeatureToDevice (const URB * urb,
-                              Event * ev,
-                              Node * parentNode,
-                              bool onEntry)
+Urb::ParseClearOrSetFeature (const URB * urb,
+                             Event * ev,
+                             Node * parentNode,
+                             bool onEntry)
 {
   const struct _URB_CONTROL_FEATURE_REQUEST * req =
     reinterpret_cast <const struct _URB_CONTROL_FEATURE_REQUEST *>
