@@ -35,7 +35,7 @@ typedef struct {
 void
 Agent::Initialize (DRIVER_OBJECT * driverObject)
 {
-  KdPrint (("oSpyUsbAgent snapshot (" __DATE__ " " __TIME__ ") initializing\n"));
+  KdPrint (("oSpyDriverAgent snapshot (" __DATE__ " " __TIME__ ") initializing\n"));
 
   driverObject->DriverUnload = Agent::OnDriverUnload;
   driverObject->DriverExtension->AddDevice = Agent::OnAddDevice;

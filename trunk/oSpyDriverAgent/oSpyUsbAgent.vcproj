@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="oSpyUsbAgent"
+	Name="oSpyDriverAgent"
 	ProjectGUID="{81392571-AE62-4F31-B859-3BBD953BDFE7}"
 	RootNamespace="oSpyUsbAgent"
 	Keyword="Win32Proj"

@@ -93,11 +93,11 @@ Logger::Start (const WCHAR * fnSuffix)
   {
     if (m_capture != NULL)
       status = RtlUnicodeStringPrintf (&logfilePath,
-        L"\\DosDevices\\%s\\oSpyUsbAgent-%s.log", m_capture->LogPath,
+        L"\\DosDevices\\%s\\oSpyDriverAgent-%s.log", m_capture->LogPath,
         fnSuffix);
     else
       status = RtlUnicodeStringPrintf (&logfilePath,
-        L"\\SystemRoot\\oSpyUsbAgent-%s.log", fnSuffix);
+        L"\\SystemRoot\\oSpyDriverAgent-%s.log", fnSuffix);
 
     if (!NT_SUCCESS (status))
     {

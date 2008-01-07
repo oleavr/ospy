@@ -21,9 +21,9 @@ namespace oSpy
 {
     public class Constants
     {
-        public const string UsbAgentName = "oSpyUsbAgent";
-        public const string UsbAgentDescription = "oSpy USB Agent";
-        public const string UsbAgentFilename = "oSpyUsbAgent.sys";
-        public const string UsbAgentPath = @"System32\Drivers\oSpyUsbAgent.sys";
+        public const string UsbAgentName = "oSpyDriverAgent";
+        public const string UsbAgentDescription = "oSpy Driver Agent";
+        public const string UsbAgentFilename = "oSpyDriverAgent.sys";
+        public const string UsbAgentPath = @"System32\Drivers\oSpyDriverAgent.sys";
     }
 }
