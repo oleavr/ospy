@@ -103,7 +103,7 @@ Event::Initialize (ULONG id,
   AddFieldToNodePrintf (this, "id", "%lu", id);
   AddFieldToNodePrintf (this, "timestamp", "%lld", timestamp.QuadPart);
   AddFieldToNode (this, "type", eventType);
-  AddFieldToNode (this, "processName", "oSpyUsbAgent.sys");
+  AddFieldToNode (this, "processName", "oSpyDriverAgent.sys");
   AddFieldToNode (this, "processId", "0");
   AddFieldToNode (this, "threadId", "0");
 
