@@ -43,19 +43,15 @@ namespace oSpy.Capture
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container ();
             this.label1 = new System.Windows.Forms.Label ();
             this.startBtn = new System.Windows.Forms.Button ();
             this.cancelBtn = new System.Windows.Forms.Button ();
             this.tabControl1 = new System.Windows.Forms.TabControl ();
             this.processesTabPage = new System.Windows.Forms.TabPage ();
             this.processView = new System.Windows.Forms.ListView ();
-            this.processImagesSmall = new System.Windows.Forms.ImageList (this.components);
             this.usbDevicesTabPage = new System.Windows.Forms.TabPage ();
             this.restartDevicesCheckBox = new System.Windows.Forms.CheckBox ();
             this.usbDevView = new System.Windows.Forms.ListView ();
-            this.usbImagesLarge = new System.Windows.Forms.ImageList (this.components);
-            this.usbImagesSmall = new System.Windows.Forms.ImageList (this.components);
             this.tabControl1.SuspendLayout ();
             this.processesTabPage.SuspendLayout ();
             this.usbDevicesTabPage.SuspendLayout ();
@@ -124,17 +120,10 @@ namespace oSpy.Capture
             this.processView.Location = new System.Drawing.Point (3, 3);
             this.processView.Name = "processView";
             this.processView.Size = new System.Drawing.Size (530, 228);
-            this.processView.SmallImageList = this.processImagesSmall;
             this.processView.TabIndex = 2;
             this.processView.UseCompatibleStateImageBehavior = false;
             this.processView.View = System.Windows.Forms.View.List;
             this.processView.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler (this.anyView_ItemCheck);
-            // 
-            // processImagesSmall
-            // 
-            this.processImagesSmall.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit;
-            this.processImagesSmall.ImageSize = new System.Drawing.Size (16, 16);
-            this.processImagesSmall.TransparentColor = System.Drawing.Color.Transparent;
             // 
             // usbDevicesTabPage
             // 
@@ -166,27 +155,13 @@ namespace oSpy.Capture
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.usbDevView.CheckBoxes = true;
-            this.usbDevView.LargeImageList = this.usbImagesLarge;
             this.usbDevView.Location = new System.Drawing.Point (3, 3);
             this.usbDevView.Name = "usbDevView";
             this.usbDevView.Size = new System.Drawing.Size (530, 205);
-            this.usbDevView.SmallImageList = this.usbImagesSmall;
             this.usbDevView.TabIndex = 1;
             this.usbDevView.UseCompatibleStateImageBehavior = false;
             this.usbDevView.View = System.Windows.Forms.View.List;
             this.usbDevView.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler (this.anyView_ItemCheck);
-            // 
-            // usbImagesLarge
-            // 
-            this.usbImagesLarge.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit;
-            this.usbImagesLarge.ImageSize = new System.Drawing.Size (16, 16);
-            this.usbImagesLarge.TransparentColor = System.Drawing.Color.Transparent;
-            // 
-            // usbImagesSmall
-            // 
-            this.usbImagesSmall.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit;
-            this.usbImagesSmall.ImageSize = new System.Drawing.Size (16, 16);
-            this.usbImagesSmall.TransparentColor = System.Drawing.Color.Transparent;
             // 
             // ChooseForm
             // 
@@ -224,10 +199,7 @@ namespace oSpy.Capture
         private System.Windows.Forms.TabPage processesTabPage;
         private System.Windows.Forms.TabPage usbDevicesTabPage;
         private System.Windows.Forms.ListView usbDevView;
-        private System.Windows.Forms.ImageList usbImagesSmall;
-        private System.Windows.Forms.ImageList usbImagesLarge;
         private System.Windows.Forms.ListView processView;
-        private System.Windows.Forms.ImageList processImagesSmall;
         private System.Windows.Forms.CheckBox restartDevicesCheckBox;
 
     }
