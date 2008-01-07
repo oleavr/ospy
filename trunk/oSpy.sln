@@ -23,7 +23,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "oSpyStudio", "oSpyStudio\oS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "oSpy.SharpDumpLib.Tests", "oSpy.SharpDumpLib\Tests\oSpy.SharpDumpLib.Tests.csproj", "{A604A8C5-559A-416E-9030-6AE0C0DCBAF6}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oSpyUsbAgent", "oSpyUsbAgent\oSpyUsbAgent.vcproj", "{81392571-AE62-4F31-B859-3BBD953BDFE7}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oSpyDriverAgent", "oSpyDriverAgent\oSpyDriverAgent.vcproj", "{81392571-AE62-4F31-B859-3BBD953BDFE7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
