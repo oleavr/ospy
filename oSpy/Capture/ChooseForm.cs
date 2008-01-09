@@ -278,35 +278,44 @@ namespace oSpy.Capture
 
         private void ApplyItems (object[] items)
         {
-            System.Collections.Hashtable oldItems = new System.Collections.Hashtable (items.Length);
-            foreach (ListViewItem viewItem in view.Items)
+            view.BeginUpdate ();
+
+            try
             {
-                object key = GetKeyFromItem (viewItem.Tag);
-                oldItems[key] = viewItem;
-            }
+                System.Collections.Hashtable oldItems = new System.Collections.Hashtable (items.Length);
+                foreach (ListViewItem viewItem in view.Items)
+                {
+                    object key = GetKeyFromItem (viewItem.Tag);
+                    oldItems[key] = viewItem;
+                }
 
-            foreach (object item in items)
+                foreach (object item in items)
+                {
+                    object key = GetKeyFromItem (item);
+
+                    if (oldItems.ContainsKey (key))
+                    {
+                        ListViewItem viewItem = oldItems[key] as ListViewItem;
+                        UpdateListViewItem (viewItem, item);
+                        oldItems.Remove (key);
+                    }
+                    else
+                    {
+                        ListViewItem viewItem = new ListViewItem ();
+                        UpdateListViewItem (viewItem, item);
+                        view.Items.Add (viewItem);
+                    }
+                }
+
+                foreach (ListViewItem item in oldItems.Values)
+                    view.Items.Remove (item);
+
+                view.Sort ();
+            }
+            finally
             {
-                object key = GetKeyFromItem (item);
-
-                if (oldItems.ContainsKey (key))
-                {
-                    ListViewItem viewItem = oldItems[key] as ListViewItem;
-                    UpdateListViewItem (viewItem, item);
-                    oldItems.Remove (key);
-                }
-                else
-                {
-                    ListViewItem viewItem = new ListViewItem ();
-                    UpdateListViewItem (viewItem, item);
-                    view.Items.Add (viewItem);
-                }
+                view.EndUpdate ();
             }
-
-            foreach (ListViewItem item in oldItems.Values)
-                view.Items.Remove (item);
-
-            view.Sort ();
         }
     }
 
