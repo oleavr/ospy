@@ -1,5 +1,10 @@
 <hookManager>
     <types>
+        <!-- Kernel -->
+        <enumeration name="IoControlCode">
+            <member name="IOCTL_KS_PROPERTY" value="3080195"/>
+        </enumeration>
+
         <!-- Winsock -->
         <enumeration name="SockAddrFamily">
             <member name="AF_APPLETALK" value="16"/>
@@ -156,6 +161,20 @@
     <specs>
         <functions>
             <!-- kernel32 -->
+            <function name="DeviceIoControl" callingConvention="stdcall">
+                <returnValue type="MSBool"/>
+                <arguments>
+                    <argument name="hDevice" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwIoControlCode" direction="in" type="IoControlCode"/>
+                    <argument name="lpInBuffer" direction="in" type="ByteArrayPtr" size="arg.nInBufferSize"/>
+                    <argument name="nInBufferSize" direction="in" type="UInt32"/>
+                    <argument name="lpOutBuffer" direction="out" type="ByteArrayPtr" size="arg.lpBytesReturned"/>
+                    <argument name="nOutBufferSize" direction="in" type="UInt32"/>
+                    <argument name="lpBytesReturned" direction="out" type="UInt32Ptr"/>
+                    <argument name="lpOverlapped" direction="in" type="UInt32" hex="true"/>
+                </arguments>
+            </function>
+
             <function name="WaitForSingleObject" callingConvention="stdcall">
                 <returnValue type="UInt32" hex="true"/>
                 <arguments>
@@ -475,14 +494,18 @@
     <hooks>
         <!-- DLLs -->
 
-        <!--
         <dllModule name="kernel32.dll">
+            <function specId="DeviceIoControl"/>
+
+            <!--
             <function specId="WaitForSingleObject"/>
             <function specId="WaitForSingleObjectEx"/>
             <function specId="WaitForMultipleObjects"/>
             <function specId="WaitForMultipleObjectsEx"/>
+            -->
         </dllModule>
 
+        <!--
         <dllModule name="user32.dll">
             <function specId="SetTimer"/>
         </dllModule>

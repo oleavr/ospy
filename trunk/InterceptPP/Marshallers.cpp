@@ -395,6 +395,26 @@ Pointer::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyO
 }
 
 bool
+Pointer::ToInt(void *start, int &result) const
+{
+    int **ptr = static_cast<int **>(start);
+    if (*ptr == NULL)
+      return false;
+
+    return m_type->ToInt(*ptr, result);
+}
+
+bool
+Pointer::ToUInt(void *start, unsigned int &result) const
+{
+    int **ptr = static_cast<int **>(start);
+    if (**ptr == NULL)
+      return false;
+
+    return m_type->ToUInt(*ptr, result);
+}
+
+bool
 Pointer::ToPointer(void *start, void *&result) const
 {
     void **ptr = static_cast<void **>(start);
@@ -726,7 +746,8 @@ ByteArray::ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyO
         {
             if (HasPropertyBinding("size"))
             {
-                propProv->QueryForProperty(GetPropertyBinding("size"), size);
+                if (!propProv->QueryForProperty(GetPropertyBinding("size"), size))
+                    propProv->QueryForProperty(GetPropertyBinding("size"), reinterpret_cast<unsigned int &> (size));
             }
         }
     }
