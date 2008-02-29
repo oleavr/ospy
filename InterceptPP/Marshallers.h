@@ -136,6 +136,8 @@ public:
     virtual unsigned int GetSize() const { return sizeof(void *); }
     virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
 	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+    virtual bool ToInt(void *start, int &result) const;
+    virtual bool ToUInt(void *start, unsigned int &result) const;
     virtual bool ToPointer(void *start, void *&result) const;
 
 protected:
