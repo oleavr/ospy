@@ -25,7 +25,7 @@ if __name__ == "__main__":
     if filename != None:
         f = open(filename, "rb")
         i = 0
-        Batch(1)
+        #Batch(1)
         while True:
             line = f.readline()
             if len(line) == 0:
@@ -46,5 +46,5 @@ if __name__ == "__main__":
                         print "Renaming 0x%x to %s" % (begin, func_name)
                         MakeName(begin, func_name)
             i += 1
-        Batch(0)
+        #Batch(0)
 

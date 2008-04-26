@@ -49,14 +49,28 @@ def scan_insn_for_debug_ref(ea):
         op_type = GetOpType(ea, j)
         if op_type <= 0:
             break
+
+        addr = None
         if op_type == 5: # immediate
-            op_value = GetOperandValue(ea, j)
-            if isData(GetFlags(op_value)):
-                s = _parse_string(op_value)
-                if s != None:
-                    s = s.split(" ", 1)[0]
-                    if s.find("::") != -1:
-                        return _scrub_func_name(s)
+            addr = GetOperandValue(ea, j)
+        elif op_type == 2: # memory reference
+            inslen = idaapi.ua_code(ea)
+            assert inslen != 0
+            insn = idaapi.get_current_instruction()
+            assert insn
+            op = idaapi.get_instruction_operand(insn, j)
+            assert op
+
+            addr = Dword(op.addr)
+        else:
+            addr = None
+
+        if addr is not None and isData(GetFlags(addr)):
+            s = _parse_string(addr)
+            if s != None:
+                s = s.split(" ", 1)[0]
+                if s.find("::") != -1:
+                    return _scrub_func_name(s)
 
     return None
 
