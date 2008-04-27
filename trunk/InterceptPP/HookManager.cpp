@@ -1225,22 +1225,32 @@ HookManager::ParseVTableNode(const OString &processName, MSXML2::IXMLDOMNodePtr 
             }
         }
 
+        OICString moduleName = processName.c_str();
+
+        attr = attrs->getNamedItem("moduleName");
+        if (attr != NULL)
+        {
+            OString moduleNameStr = static_cast<bstr_t>(attr->nodeTypedValue);
+            moduleName = moduleNameStr.c_str();
+        }
+
         void *startAddr;
 
         try
         {
-            startAddr = SignatureMatcher::Instance()->FindUniqueInModule(*sig, processName.c_str());
+            startAddr = SignatureMatcher::Instance()->FindUniqueInModule(*sig, moduleName);
         }
         catch (Error &e)
         {
-            GetLogger()->LogError("constructor signature specified for vtable '%s' not found: %s", name.c_str(), e.what());
+            GetLogger()->LogError("constructor signature specified for vtable '%s' not found in %s: %s",
+              name.c_str(), moduleName.c_str(), e.what());
             return;
         }
 
         startAddr = static_cast<char *>(startAddr) + sigOffset;
         offset = *(static_cast<DWORD *>(startAddr));
 
-        if (!Util::Instance()->AddressIsWithinModule(offset, processName.c_str()))
+        if (!Util::Instance()->AddressIsWithinModule(offset, moduleName))
         {
             GetLogger()->LogError("sigOffset specified for vtable '%s' seems to be invalid, pointer offset=0x%p, vtable offset=0x%08x",
                                   name.c_str(), startAddr, offset);

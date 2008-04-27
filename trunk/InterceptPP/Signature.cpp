@@ -108,10 +108,10 @@ Signature::ParseSpec(const OString &spec)
             {
                 char c = iss.peek();
 
-                if (isspace(c) || c == '?')
+                if (isspace(c) || c == 'x' || c == 'X')
                 {
                     iss.ignore(1);
-                    if (c == '?')  ignores++;
+                    if (c == 'x' || c == 'X')  ignores++;
                 }
                 else
                 {
