@@ -82,9 +82,9 @@ const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 		{
 			NULL,
             0,
-			"6A ??"					// push ??h
-			"68 ?? ?? ?? ??"		// push offset dword_????????
-			"E8 ?? ?? ?? ??",		// call __SEH_prolog
+			"6A xx"					// push xxh
+			"68 xx xx xx xx"		// push offset dword_xxxxxxxx
+			"E8 xx xx xx xx",		// call __SEH_prolog
 		},
 
 		7,
@@ -93,9 +93,9 @@ const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 		{
 			NULL,
             0,
-			"68 ?? ?? ?? ??"		// push ???h
-			"68 ?? ?? ?? ??"		// push offset dword_????????
-			"E8 ?? ?? ?? ??",		// call __SEH_prolog
+			"68 xx xx xx xx"		// push xxxxxxxxh
+			"68 xx xx xx xx"		// push offset dword_xxxxxxxx
+			"E8 xx xx xx xx",		// call __SEH_prolog
 		},
 
 		5,
@@ -104,7 +104,7 @@ const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 		{
 			NULL,
             0,
-			"FF 25 ?? ?? ?? ??"		// jmp ds:__imp__*
+			"FF 25 xx xx xx xx"		// jmp ds:__imp__*
 		},
 
 		6,
@@ -116,7 +116,7 @@ const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 			"33 C0"		// xor eax, eax
 			"50"		// push eax
 			"50"		// push eax
-			"6A ??"		// push ??
+			"6A xx"		// push xx
 		},
 
 		6,
