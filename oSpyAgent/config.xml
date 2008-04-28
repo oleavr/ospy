@@ -3,6 +3,7 @@
         <!-- Kernel -->
         <enumeration name="IoControlCode">
             <member name="IOCTL_KS_PROPERTY" value="3080195"/>
+            <member name="IOCTL_KS_READ_STREAM" value="3096599"/>
         </enumeration>
 
         <!-- Winsock -->
@@ -161,6 +162,7 @@
     <specs>
         <functions>
             <!-- kernel32 -->
+            <!-- TODO: implement logCondition so that this one can be enabled
             <function name="DeviceIoControl" callingConvention="stdcall">
                 <returnValue type="MSBool"/>
                 <arguments>
@@ -168,12 +170,15 @@
                     <argument name="dwIoControlCode" direction="in" type="IoControlCode"/>
                     <argument name="lpInBuffer" direction="in" type="ByteArrayPtr" size="arg.nInBufferSize"/>
                     <argument name="nInBufferSize" direction="in" type="UInt32"/>
-                    <argument name="lpOutBuffer" direction="out" type="ByteArrayPtr" size="arg.lpBytesReturned"/>
+                    <argument name="lpOutBuffer" direction="out" type="ByteArrayPtr" size="arg.lpBytesReturned">
+                        <logCondition>reg.eax != 0</logCondition>
+                    </argument>
                     <argument name="nOutBufferSize" direction="in" type="UInt32"/>
                     <argument name="lpBytesReturned" direction="out" type="UInt32Ptr"/>
                     <argument name="lpOverlapped" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
+            -->
 
             <function name="WaitForSingleObject" callingConvention="stdcall">
                 <returnValue type="UInt32" hex="true"/>
@@ -277,7 +282,7 @@
                     <argument name="len" direction="in" type="Int32"/>
                     <argument name="flags" direction="in" type="Int32" hex="true"/>
                     <argument name="from" direction="out" type="Ipv4SockaddrPtr"/>
-                    <argument name="fromlen" direction="out" type="Int32Ptr"/>
+                    <argument name="fromlen" direction="in/out" type="Int32Ptr"/>
                 </arguments>
             </function>
             <function name="sendto" callingConvention="stdcall">
@@ -325,6 +330,36 @@
                     <argument name="dwBufferCount" direction="in" type="UInt32"/>
                     <argument name="lpNumberOfBytesSent" direction="out" type="UInt32Ptr"/>
                     <argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
+                    <argument name="lpOverlapped" direction="in" type="UInt32" hex="true"/>
+                    <argument name="lpCompletionRoutine" direction="in" type="UInt32" hex="true"/>
+                </arguments>
+            </function>
+            <function name="WSARecvFrom" callingConvention="stdcall">
+                <returnValue type="Int32"/>
+                <arguments>
+                    <argument name="s" direction="in" type="UInt32" hex="true"/>
+                    <argument name="lpBuffers" direction="in/out" type="ArrayPtr"
+                              elementType="WSABuf" elementCount="arg.dwBufferCount"/>
+                    <argument name="dwBufferCount" direction="in" type="UInt32"/>
+                    <argument name="lpNumberOfBytesRecvd" direction="out" type="UInt32Ptr"/>
+                    <argument name="lpFlags" direction="in/out" type="UInt32Ptr"/>
+                    <argument name="lpFrom" direction="out" type="Ipv4SockaddrPtr"/>
+                    <argument name="lpFromlen" direction="in/out" type="Int32Ptr"/>
+                    <argument name="lpOverlapped" direction="in" type="UInt32" hex="true"/>
+                    <argument name="lpCompletionRoutine" direction="in" type="UInt32" hex="true"/>
+                </arguments>
+            </function>
+            <function name="WSASendTo" callingConvention="stdcall">
+                <returnValue type="Int32"/>
+                <arguments>
+                    <argument name="s" direction="in" type="UInt32" hex="true"/>
+                    <argument name="lpBuffers" direction="in" type="ArrayPtr"
+                              elementType="WSABuf" elementCount="arg.dwBufferCount"/>
+                    <argument name="dwBufferCount" direction="in" type="UInt32"/>
+                    <argument name="lpNumberOfBytesSent" direction="out" type="UInt32Ptr"/>
+                    <argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
+                    <argument name="lpTo" direction="in" type="Ipv4SockaddrPtr"/>
+                    <argument name="iToLen" direction="in" type="Int32"/>
                     <argument name="lpOverlapped" direction="in" type="UInt32" hex="true"/>
                     <argument name="lpCompletionRoutine" direction="in" type="UInt32" hex="true"/>
                 </arguments>
@@ -458,6 +493,39 @@
                 <method index="19" name="OnDataResponse" callingConvention="thiscall" argsSize="12" logNested="true"/>
                 <method index="20" name="OnBridgeStateChange" callingConvention="thiscall" argsSize="8" logNested="true"/>
             </vtable>
+
+            <vtable id="WLMAudioEncoder" methodCount="8">
+                <method index="0" name="Init" callingConvention="thiscall">
+                    <returnValue type="UInt32" hex="true"/>
+                </method>
+                <method index="1" name="Encode" callingConvention="thiscall">
+                    <returnValue type="UInt32" hex="true"/>
+                    <arguments>
+                        <argument name="input_buf" direction="in" type="ByteArrayPtr" size="arg.input_size"/>
+                        <argument name="input_size" direction="in" type="Int32"/>
+                        <argument name="output_buf" direction="out" type="ByteArrayPtr" size="arg.output_size"/>
+                        <argument name="output_size" direction="in/out" type="Int32Ptr"/>
+                    </arguments>
+                </method>
+                <method index="2" name="GetSomeValue" callingConvention="thiscall">
+                    <returnValue type="UInt32" hex="true"/>
+                </method>
+                <method index="4" name="SetBitrate" callingConvention="thiscall">
+                    <returnValue type="UInt32" hex="true"/>
+                    <arguments>
+                        <argument name="bitrate" direction="in" type="Int32"/>
+                    </arguments>
+                </method>
+            </vtable>
+            <vtable id="WLMAudioDecoder" methodCount="6">
+                <method index="1" name="Decode" argsSize="16" callingConvention="thiscall">
+                </method>
+            </vtable>
+            <vtable id="WLMAudioHealer" methodCount="9">
+                <method index="4" name="method_4" argsSize="4" callingConvention="thiscall"/>
+                <method index="7" name="method_7" argsSize="8" callingConvention="thiscall"/>
+                <method index="8" name="method_8" argsSize="12" callingConvention="thiscall"/>
+            </vtable>
         </vtables>
     </specs>
 
@@ -489,13 +557,37 @@
             89 5E 18                       <!-- mov [esi+18h], ebx              -->
             8D 4E 24                       <!-- lea ecx, [esi+24h]              -->
         </signature>
+
+        <!-- RTMPLTFM -->
+        <signature name="RTAudio16EncCtor">
+            8B C1                          <!-- mov eax, ecx -->
+            83 60 18 00                    <!-- and dword ptr [eax+18h], 0      -->
+            83 60 1C 00                    <!-- and dword ptr [eax+1Ch], 0      -->
+            C7 40 10 80 3E 00 00           <!-- mov dword ptr [eax+10h], 16000  -->
+            C7 40 14 07 00 00 00           <!-- mov dword ptr [eax+14h], 7      -->
+            C7 00 xx xx xx xx              <!-- mov dword ptr [eax], offset CAudioEncode_MSRTAudio16KHz_vtable -->
+            C3                             <!-- retn                            -->
+        </signature>
+        <signature name="RTAudio16DecCtor">
+            74 xx                          <!-- jz short xx                     -->
+            C7 40 10 80 3E 00 00           <!-- mov dword ptr [eax+10h], 16000  -->
+            C7 40 14 07 00 00 00           <!-- mov dword ptr [eax+14h], 7      -->
+            C7 00 xx xx xx xx              <!-- mov dword ptr [eax], offset CAudioDecode_MSRTAudio16KHz_vtable -->
+            EB xx                          <!-- jmp short xx                    -->
+        </signature>
+        <signature name="RTAudioHealerCtor">
+            8B F1                          <!-- mov esi, ecx                    -->
+            89 46 0C                       <!-- mov [esi+0Ch], eax              -->
+            8B 45 10                       <!-- mov eax, [ebp+arg_8]            -->
+            C7 06 xx xx xx xx              <!-- mov dword ptr [esi], offset CMSRTAudioHealer_vtable -->
+        </signature>
     </signatures>
 
     <hooks>
         <!-- DLLs -->
 
         <dllModule name="kernel32.dll">
-            <function specId="DeviceIoControl"/>
+            <!-- <function specId="DeviceIoControl"/> -->
 
             <!--
             <function specId="WaitForSingleObject"/>
@@ -522,6 +614,8 @@
             <function specId="WSAConnect"/>
             <function specId="WSARecv"/>
             <function specId="WSASend"/>
+            <function specId="WSARecvFrom"/>
+            <function specId="WSASendTo"/>
         </dllModule>
 
         <dllModule name="wsock32.dll">
@@ -529,10 +623,12 @@
             <function specId="recvfrom"/>
         </dllModule>
 
+        <!--
         <dllModule name="secur32.dll">
             <function specId="EncryptMessage"/>
             <function specId="DecryptMessage"/>
         </dllModule>
+        -->
 
         <!--
         <dllModule name="advapi32.dll">
@@ -560,6 +656,10 @@
             <vtable specId="CP2PTransportBridge" name="CTrivialUDPTransportBridge" ctorSigId="CUDPBridgeCtor" ctorSigOffset="-122"/>
             <vtable specId="CP2PTransportBridge" name="CTurnBridge" ctorSigId="CTurnBridgeCtor" ctorSigOffset="-407"/>
             <vtable specId="CP2PTransportBridge" name="CSBBridge" ctorSigId="CSBBridgeCtor" ctorSigOffset="-10"/>
+
+            <vtable specId="WLMAudioEncoder" name="RTAudio16Encoder" ctorSigId="RTAudio16EncCtor" ctorSigOffset="26" moduleName="RTMPLTFM.dll"/>
+            <vtable specId="WLMAudioDecoder" name="RTAudio16Decoder" ctorSigId="RTAudio16DecCtor" ctorSigOffset="18" moduleName="RTMPLTFM.dll"/>
+            <vtable specId="WLMAudioHealer" name="RTAudioHealer" ctorSigId="RTAudioHealerCtor" ctorSigOffset="10" moduleName="RTMPLTFM.dll"/>
         </vtables>
     </hooks>
 </hookManager>
