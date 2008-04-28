@@ -95,7 +95,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy config.xml $(OutDir)"
+				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
@@ -176,7 +176,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy config.xml $(OutDir)"
+				CommandLine=""
 			/>
 		</Configuration>
 	</Configurations>
@@ -248,6 +248,26 @@
 		<File
 			RelativePath=".\config.xml"
 			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Generating default config.xml"
+					CommandLine="copy /B /Y $(InputPath) $(OutDir)\config.xml&#x0D;&#x0A;"
+					Outputs="$(OutDir)\config.xml"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Generating default config.xml"
+					CommandLine="copy /B /Y $(InputPath) $(OutDir)\config.xml&#x0D;&#x0A;"
+					Outputs="$(OutDir)\config.xml"
+				/>
+			</FileConfiguration>
 		</File>
 		<File
 			RelativePath=".\hookgenerator.pyw"
