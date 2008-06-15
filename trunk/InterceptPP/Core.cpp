@@ -767,7 +767,8 @@ FunctionCall::FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxE
 bool
 FunctionCall::ShouldLogArgumentDeep(const Argument *arg) const
 {
-    ArgumentDirection dir = arg->GetSpec()->GetDirection();
+	ArgumentSpec *spec = arg->GetSpec();
+    ArgumentDirection dir = spec->GetDirection();
 
     if (m_state == FUNCTION_CALL_ENTERING)
     {
@@ -775,7 +776,12 @@ FunctionCall::ShouldLogArgumentDeep(const Argument *arg) const
     }
     else
     {
-        return (dir & ARG_DIR_OUT) != 0;
+		bool shouldLog = (dir & ARG_DIR_OUT) != 0;
+		if (!shouldLog)
+			return false;
+
+		// TODO: we only check this when leaving for now -- does it make any sense to do it on entry?
+		return spec->ShouldLogEval(&m_cpuCtxLeave);
     }
 }
 
