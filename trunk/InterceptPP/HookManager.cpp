@@ -1136,11 +1136,20 @@ HookManager::ParseFunctionNode(const OString &processName, MSXML2::IXMLDOMNodePt
         }
     }
 
+    OICString moduleName = processName.c_str();
+
+    attr = attrs->getNamedItem("moduleName");
+    if (attr != NULL)
+    {
+        OString moduleNameStr = static_cast<bstr_t>(attr->nodeTypedValue);
+        moduleName = moduleNameStr.c_str();
+    }
+
     void *startAddr;
 
     try
     {
-        startAddr = SignatureMatcher::Instance()->FindUniqueInModule(*sig, processName.c_str());
+        startAddr = SignatureMatcher::Instance()->FindUniqueInModule(*sig, moduleName);
     }
     catch (Error &e)
     {

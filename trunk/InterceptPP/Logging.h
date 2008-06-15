@@ -94,7 +94,9 @@ public:
     TextNode(const OString &name, const OString &text="");
     TextNode(const OString &name, const char *text);
     TextNode(const OString &name, void *pointer);
+    TextNode(const OString &name, int value);
     TextNode(const OString &name, DWORD value);
+    TextNode(const OString &name, __int64 value);
     TextNode(const OString &name, float value);
 
     void SetText(const OString &text) { m_content = text; }

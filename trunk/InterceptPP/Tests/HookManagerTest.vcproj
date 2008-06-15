@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="HookManagerTest"
 	ProjectGUID="{BF9EC593-604C-45AA-865E-D57A0A05C1E9}"
 	RootNamespace="HookManagerTest"
@@ -18,7 +18,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)\obj\$(ProjectName)"
 			ConfigurationType="1"
 			CharacterSet="0"
 			>
@@ -96,7 +96,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)\obj\$(ProjectName)"
 			ConfigurationType="1"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
@@ -175,7 +175,7 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{B0F22416-9E7A-4265-B431-520C6ECAFFBA}"
-			RelativePathToProject="..\InterceptPP\InterceptPP.vcproj"
+			RelativePathToProject=".\InterceptPP\InterceptPP.vcproj"
 		/>
 	</References>
 	<Files>
