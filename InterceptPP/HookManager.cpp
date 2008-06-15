@@ -47,6 +47,39 @@ HookManager::Instance()
     return mgr;
 }
 
+// Utility functions
+static OString
+FilterString(const OString &str)
+{
+    OString result;
+
+    for (unsigned int i = 0; i < str.size(); i++)
+    {
+        char c = str[i];
+        if (isalnum(c) || c == ' ')
+        {
+            result += c;
+        }
+    }
+
+    return result;
+}
+
+static void
+TrimString(OString &str)
+{
+    string::size_type pos = str.find_last_not_of(' ');
+    if (pos != string::npos)
+    {
+        str.erase(pos + 1);
+        pos = str.find_first_not_of(' ');
+        if (pos != string::npos)
+            str.erase(0, pos);
+    }
+    else str.erase(str.begin(), str.end());
+}
+
+// Member functions
 void
 HookManager::LoadDefinitions(const OWString &path)
 {
@@ -722,6 +755,100 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
     return funcSpec;
 }
 
+typedef enum {
+	OPERATOR_EQUALITY,
+	OPERATOR_INEQUALITY,
+} ComparisonOperator;
+
+static const unsigned char reg_eval_template[] =
+  /* 00 */ "\x8B\x44\x24\x04"     /* mov eax,[esp+0x4] (CpuContext pointer as first argument) */
+  /* 04 */ "\x8B\x40\xFF"         /* mov eax,[eax+0xFF], regOffset goes here */
+  /* 07 */ "\x3D\xFF\xFF\xFF\xFF" /* cmp eax,0xFFFFFFFF, rhsValue goes here */
+  /* 0C */ "\xB8\x00\x00\x00\x00" /* mov eax,0x0 (prepare eax) */
+  /* 11 */ "\x0F\x94\xC0"         /* setz al, op goes here */
+  /* 14 */ "\xC2\x04\x00";        /* ret 0x4 */
+
+#define REG_EVAL_REGOFF_OFFSET  6
+#define REG_EVAL_RHSVAL_OFFSET  8
+#define REG_EVAL_OPINSN_OFFSET 18
+
+RegisterEvalFunc
+ParseLogCondition(const OString &expr)
+{
+	int regOffset; // offset into CpuContext
+	ComparisonOperator op;
+	int rhsValue;
+
+	// Has to start with 'reg.'
+	if (expr.find("reg.") != 0)
+		return NULL;
+
+	// Find the operator
+	OString::size_type opIdx;
+	if ((opIdx = expr.find("==")) != expr.npos)
+		op = OPERATOR_EQUALITY;
+	else if ((opIdx = expr.find("!=")) != expr.npos)
+		op = OPERATOR_INEQUALITY;
+	else
+		return NULL;
+
+	// Check which register
+	OString regName = expr.substr(4, opIdx - 4 - 1);
+	TrimString(regName);
+	if (regName == "eax")
+		regOffset = 28;
+	else if (regName == "ebx")
+		regOffset = 16;
+	else if (regName == "ecx")
+		regOffset = 24;
+	else if (regName == "edx")
+		regOffset = 20;
+	else if (regName == "edi")
+		regOffset = 0;
+	else if (regName == "esi")
+		regOffset = 4;
+	else if (regName == "ebp")
+		regOffset = 8;
+	else if (regName == "esp")
+		regOffset = 12;
+	else
+		return NULL;
+
+	// And the right hand side integer value
+	OString rhs = expr.substr(opIdx + 2);
+	TrimString(rhs);
+	if (rhs.length() == 0)
+		return NULL;
+    char *endPtr = NULL;
+    rhsValue = strtol(rhs.c_str(), &endPtr, 0);
+    if (endPtr == rhs.c_str())
+		return NULL;
+
+	// Good, now let's generate the machine code
+	unsigned char *code = new unsigned char[sizeof(reg_eval_template)];
+	memcpy(code, reg_eval_template, sizeof(reg_eval_template));
+	code[REG_EVAL_REGOFF_OFFSET] = regOffset;
+	*((DWORD *) (code + REG_EVAL_RHSVAL_OFFSET)) = rhsValue;
+	if (op == OPERATOR_EQUALITY)
+	  code[REG_EVAL_OPINSN_OFFSET] = 0x94;
+	else if (op == OPERATOR_INEQUALITY)
+	  code[REG_EVAL_OPINSN_OFFSET] = 0x95;
+	else
+	{
+	  // Should never get here
+	  delete[] code;
+	  return NULL;
+	}
+
+	// Make it executable
+	// FIXME: should use a pool here instead of polluting the heap, as
+	//        VirtualProtect will obviously affect the entire memory page...
+	DWORD oldProtect;
+	VirtualProtect(code, sizeof(reg_eval_template), PAGE_EXECUTE_READWRITE, &oldProtect);
+
+	return (RegisterEvalFunc) code;
+}
+
 ArgumentSpec *
 HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLDOMNodePtr &argNode, int argIndex)
 {
@@ -729,7 +856,9 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
     ArgumentDirection argDir = ARG_DIR_UNKNOWN;
     OString argType;
     PropertyList argTypeProps;
+	RegisterEvalFunc shouldLogRegEval = NULL;
 
+    // Parse attributes
     MSXML2::IXMLDOMNamedNodeMapPtr attrs = argNode->attributes;
 
     MSXML2::IXMLDOMNodePtr attrNode;
@@ -768,6 +897,43 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
 
     attrs.Release();
 
+    // Parse subnodes
+    MSXML2::IXMLDOMNodePtr subNode;
+    MSXML2::IXMLDOMNodeListPtr subNodeList;
+
+    subNodeList = argNode->childNodes;
+    for (int i = 0; i < subNodeList->length; i++)
+    {
+        subNode = subNodeList->item[i];
+
+        OString subNodeName = subNode->nodeName;
+        if (subNodeName == "logCondition")
+        {
+			OOStringStream ss;
+
+			MSXML2::IXMLDOMNodeListPtr condNodeList = subNode->childNodes;
+			for (int j = 0; j < condNodeList->length; j++)
+			{
+				MSXML2::IXMLDOMNodePtr condNode = condNodeList->item[j];
+
+				if (condNode->nodeType == NODE_TEXT)
+				{
+					OString chunk = static_cast<bstr_t>(condNode->nodeTypedValue);
+					TrimString(chunk);
+					ss << chunk;
+				}
+			}
+
+			OString condStr = ss.str();
+
+            shouldLogRegEval = ParseLogCondition(condStr);
+        }
+        else
+        {
+            GetLogger()->LogWarning("ignoring unknown argument subnode '%s'", subNodeName.c_str());
+        }
+    }
+
     if (argName.size() == 0)
     {
         OOStringStream ss;
@@ -802,7 +968,7 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
         }
     }
 
-    return new ArgumentSpec(argName, argDir, marshaller);
+    return new ArgumentSpec(argName, argDir, marshaller, shouldLogRegEval);
 }
 
 void
@@ -892,37 +1058,6 @@ HookManager::ParseVTableSpecNode(MSXML2::IXMLDOMNodePtr &vtSpecNode)
         }
     }
     nodeList.Release();
-}
-
-static OString
-FilterString(const OString &str)
-{
-    OString result;
-
-    for (unsigned int i = 0; i < str.size(); i++)
-    {
-        char c = str[i];
-        if (isalnum(c) || c == ' ')
-        {
-            result += c;
-        }
-    }
-
-    return result;
-}
-
-static void
-TrimString(OString &str)
-{
-    string::size_type pos = str.find_last_not_of(' ');
-    if (pos != string::npos)
-    {
-        str.erase(pos + 1);
-        pos = str.find_first_not_of(' ');
-        if (pos != string::npos)
-            str.erase(0, pos);
-    }
-    else str.erase(str.begin(), str.end());
 }
 
 void

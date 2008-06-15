@@ -84,14 +84,23 @@ class FunctionCall;
 
 typedef void (*FunctionCallHandler) (FunctionCall *call, void *userData, bool &shouldLog);
 
+typedef bool (__stdcall *RegisterEvalFunc) (const CpuContext *context);
+
 class ArgumentSpec : public BaseObject
 {
 public:
-	ArgumentSpec(const OString &name, ArgumentDirection direction, BaseMarshaller *marshaller)
-		: m_name(name), m_direction(direction), m_offset(0), m_marshaller(marshaller)
+	ArgumentSpec(const OString &name, ArgumentDirection direction, BaseMarshaller *marshaller, RegisterEvalFunc shouldLogRegEval)
+		: m_name(name), m_direction(direction), m_offset(0), m_marshaller(marshaller), m_shouldLogRegEval(shouldLogRegEval)
 	{
 	}
-	~ArgumentSpec() { delete m_marshaller; }
+
+	~ArgumentSpec()
+	{
+		delete m_marshaller;
+
+		if (m_shouldLogRegEval != NULL)
+			delete[] ((BYTE *)  m_shouldLogRegEval);
+	}
 
     const OString &GetName() const { return m_name; }
     ArgumentDirection GetDirection() const { return m_direction; }
@@ -102,11 +111,20 @@ public:
 
     unsigned int GetSize() const { return m_marshaller->GetSize(); }
 
+	bool ShouldLogEval(const CpuContext *ctx) const
+	{
+		if (m_shouldLogRegEval == NULL)
+			return true;
+		return m_shouldLogRegEval(ctx);
+	}
+
 protected:
 	OString m_name;
 	ArgumentDirection m_direction;
     unsigned int m_offset;
 	BaseMarshaller *m_marshaller;
+
+	RegisterEvalFunc m_shouldLogRegEval;
 };
 
 class Argument : public BaseObject
