@@ -449,6 +449,26 @@ public:
     {}
 };
 
+class AsciiFormatString : public CString
+{
+public:
+    AsciiFormatString(int length=-1)
+        : CString("AsciiFormatString", sizeof(CHAR), length)
+    {}
+
+    virtual bool SetProperty(const OString &name, const OString &value);
+
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+};
+
+class AsciiFormatStringPtr : public Pointer
+{
+public:
+    AsciiFormatStringPtr()
+        : Pointer(new AsciiFormatString())
+    {}
+};
+
 class UnicodeString : public CString
 {
 public:
@@ -476,7 +496,7 @@ public:
 
     virtual bool SetProperty(const OString &name, const OString &value);
 
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
 };
 
 class UnicodeFormatStringPtr : public Pointer

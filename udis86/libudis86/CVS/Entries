@@ -1,0 +1,20 @@
+/Makefile.in/1.9/Mon Dec 18 12:09:50 2006//
+/Makefile.standalone/1.2/Mon Dec 18 12:09:50 2006//
+/Makefile.win32/1.1/Mon Dec 18 12:44:42 2006//
+/decode.c/1.23/Tue Jul 31 11:55:50 2007//
+/extern.h/1.5/Mon Dec 18 16:17:02 2006//
+/input.c/1.8/Mon Jul  2 15:51:37 2007//
+/input.h/1.6/Tue Dec 19 06:22:20 2006//
+/mnemonics.c/1.9/Mon Dec 18 16:17:02 2006//
+/mnemonics.dat/1.8/Mon Dec 18 16:17:02 2006//
+/mnemonics.h/1.9/Mon Dec 18 16:17:02 2006//
+/mnemonics.pl/1.2/Mon Apr 24 18:48:24 2006//
+/opcmap.c/1.27/Sun Aug  5 16:49:22 2007//
+/opcmap.h/1.8/Mon Jul  2 15:51:38 2007//
+/syn-att.c/1.9/Sun Jul 16 07:15:45 2006//
+/syn-intel.c/1.10/Sun Aug  5 16:49:22 2007//
+/syn.c/1.4/Sun Apr 30 15:46:33 2006//
+/syn.h/1.4/Sat May 13 21:56:15 2006//
+/types.h/1.12/Mon Jul  2 15:51:38 2007//
+/udis86.c/1.8/Mon Dec 18 16:17:02 2006//
+D

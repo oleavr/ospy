@@ -155,7 +155,23 @@ TextNode::TextNode(const OString &name, void *pointer)
     m_content = ss.str();
 }
 
+TextNode::TextNode(const OString &name, int value)
+    : Node(name)
+{
+    OOStringStream ss;
+    ss << value;
+    m_content = ss.str();
+}
+
 TextNode::TextNode(const OString &name, DWORD value)
+    : Node(name)
+{
+    OOStringStream ss;
+    ss << value;
+    m_content = ss.str();
+}
+
+TextNode::TextNode(const OString &name, __int64 value)
     : Node(name)
 {
     OOStringStream ss;

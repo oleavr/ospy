@@ -14,6 +14,32 @@ namespace oSpy.SharpDumpLib.Tests
     public class AnalysisTests
     {
         [Test]
+        public void TestKsIoCtl ()
+        {
+            BZip2InputStream stream = new BZip2InputStream (File.OpenRead (@"..\..\lowlightboost_min_to_max.osd"));
+            DumpLoader loader = new DumpLoader ();
+            Dump dump = loader.Load (stream);
+
+            Event ev = dump.Events[2];
+
+            KsIoCtlParser parser = new KsIoCtlParser ();
+            bool handled = parser.ParseEvent (ev);
+            Assert.IsTrue (handled);
+
+            Node node = ev.Node;
+            Assert.AreEqual ("IOCTL_KS_PROPERTY", node.Name);
+
+            Node inputNode = node["Input"];
+            Assert.AreEqual ("KSPROPSETID_Topology", inputNode["Set"]); // 720D4AC0-7533-11D0-A5D6-28DB04C10000
+            Assert.AreEqual ("KSPROPERTY_TOPOLOGY_CATEGORIES", inputNode["Id"]);
+            Assert.AreEqual ("KSPROPERTY_TYPE_GET", inputNode["Flags"]);
+
+            Node outputNode = node["Output"];
+            Assert.AreEqual ("38 00 00 00 03 00 00 00 05 AD 94 69 EF 93 D0 11 A3 CC 00 A0 C9 22 31 96 3D 77 E8 65 56 8F D0 11 A3 B9 00 A0 C9 22 31 96 8A 42 6C FB 53 03 D1 11 90 5F 00 00 C0 CC 16 BA",
+                outputNode["Contents"]);
+        }
+
+        //[Test]
         public void TestFooBar ()
         {
             Console.WriteLine ("Loading");

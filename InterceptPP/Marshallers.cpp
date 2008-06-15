@@ -166,6 +166,8 @@ Factory::Factory()
     REGISTER_MARSHALLER(ByteArrayPtr);
     REGISTER_MARSHALLER(AsciiString);
     REGISTER_MARSHALLER(AsciiStringPtr);
+    REGISTER_MARSHALLER(AsciiFormatString);
+    REGISTER_MARSHALLER(AsciiFormatStringPtr);
     REGISTER_MARSHALLER(UnicodeString);
     REGISTER_MARSHALLER(UnicodeStringPtr);
     REGISTER_MARSHALLER(UnicodeFormatString);
@@ -783,6 +785,59 @@ AsciiString::ToString(void *start, bool deep, IPropertyProvider *propProv, Prope
     const char *strPtr = static_cast<const char *>(start);
 
     return strPtr;
+}
+
+bool
+AsciiFormatString::SetProperty(const OString &name, const OString &value)
+{
+    if (name == "vaList" || name == "vaStart")
+    {
+        SetPropertyBinding(name, value);
+        return true;
+    }
+
+    return false;
+}
+
+OString
+AsciiFormatString::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides) const
+{
+    OOStringStream ss;
+
+    CHAR *fmtPtr = static_cast<CHAR *>(start);
+
+    bool success = false;
+    va_list args;
+
+    if (HasPropertyBinding("vaList"))
+    {
+        success = propProv->QueryForProperty(GetPropertyBinding("vaList"), args);
+    }
+    else if (HasPropertyBinding("vaStart"))
+    {
+        CHAR **start;
+
+        if (propProv->QueryForProperty(GetPropertyBinding("vaStart"), reinterpret_cast<void *&>(start)))
+        {
+            va_start(args, *start);
+            success = true;
+        }
+    }
+
+    CHAR buf[2048], *p;
+
+    if (success)
+    {
+        vsprintf(buf, fmtPtr, args);
+        buf[2047] = '\0';
+        p = buf;
+    }
+    else
+    {
+        p = fmtPtr;
+    }
+
+    return p;
 }
 
 OString
