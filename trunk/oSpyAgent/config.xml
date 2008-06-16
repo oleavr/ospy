@@ -162,7 +162,6 @@
     <specs>
         <functions>
             <!-- kernel32 -->
-            <!-- TODO: implement logCondition so that this one can be enabled
             <function name="DeviceIoControl" callingConvention="stdcall">
                 <returnValue type="MSBool"/>
                 <arguments>
@@ -178,7 +177,6 @@
                     <argument name="lpOverlapped" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
-            -->
 
             <function name="WaitForSingleObject" callingConvention="stdcall">
                 <returnValue type="UInt32" hex="true"/>
@@ -461,6 +459,18 @@
                     <argument name="args" direction="in" type="VaList"/>
                 </arguments>
             </function>
+            <function name="RTCDebug" callingConvention="stdcall">
+                <returnValue type="Int32"/>
+                <arguments>
+                    <argument name="a" direction="in" type="Int32"/>
+                    <argument name="b" direction="in" type="Int32"/>
+                    <argument name="c" direction="in" type="Int32"/>
+                    <argument name="d" direction="in" type="Int32"/>
+                    <argument name="format" direction="in" type="AsciiFormatStringPtr"
+                              vaList="arg.args"/>
+                    <argument name="args" direction="in" type="VaList"/>
+                </arguments>
+            </function>
         </functions>
 
         <vtables>
@@ -559,6 +569,9 @@
         </signature>
 
         <!-- RTMPLTFM -->
+        <signature name="RTCDebug">
+            8B FF 55 8B EC 8B 45 08 56 57 8B F0 33 FF 83 E6 0F 39
+        </signature>
         <signature name="RTAudio16EncCtor">
             8B C1                          <!-- mov eax, ecx -->
             83 60 18 00                    <!-- and dword ptr [eax+18h], 0      -->
@@ -587,7 +600,7 @@
         <!-- DLLs -->
 
         <dllModule name="kernel32.dll">
-            <!-- <function specId="DeviceIoControl"/> -->
+            <function specId="DeviceIoControl"/>
 
             <!--
             <function specId="WaitForSingleObject"/>
@@ -644,11 +657,12 @@
         -->
 
         <!-- Internal functions -->
-        <!-- ...disabled for now due to invalid format strings sometimes being passed...
         <functions processName="msnmsgr.exe">
+            <!-- ...disabled for now due to invalid format strings sometimes being passed...
             <function specId="WLMDebug" sigId="WLMDebug" sigOffset="-11"/>
+            -->
+            <function specId="RTCDebug" sigId="RTCDebug" moduleName="RTMPLTFM.dll"/>
         </functions>
-        -->
 
         <!-- Internal vtables -->
         <vtables processName="msnmsgr.exe">
