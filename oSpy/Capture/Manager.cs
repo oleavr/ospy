@@ -61,7 +61,7 @@ namespace oSpy.Capture
         private Softwall.Rule[] softwallRules = null;
         private Device[] devices = null;
 
-        private IntPtr[] handles = null;
+        private UIntPtr[] handles = null;
         private IProgressFeedback progress = null;
 
         private IntPtr fileMapping, cfgPtr;
@@ -391,7 +391,7 @@ namespace oSpy.Capture
             // Check if any of them failed
             for (int i = 0; i < processes.Length; i++)
             {
-                if (handles[i] == IntPtr.Zero)
+                if (handles[i] == UIntPtr.Zero)
                 {
                     throw new Error(String.Format("Failed to inject logging agent into process {0} with pid={1}",
                                                   processes[i].ProcessName, processes[i].Id));
@@ -421,7 +421,7 @@ namespace oSpy.Capture
             // Check if any of them failed
             for (int i = 0; i < handles.Length; i++)
             {
-                if (handles[i] == IntPtr.Zero)
+                if (handles[i] == UIntPtr.Zero)
                 {
                     throw new Error(String.Format("Failed to uninject logging agent from process {0} with pid={1}",
                                                   processes[i].ProcessName, processes[i].Id));
@@ -429,9 +429,9 @@ namespace oSpy.Capture
             }
         }
 
-        private IntPtr[] GetThreadExitCodes(IntPtr[] handles, string progressMsg)
+        private UIntPtr[] GetThreadExitCodes(IntPtr[] handles, string progressMsg)
         {
-            Dictionary<IntPtr, IntPtr> exitCodes = new Dictionary<IntPtr, IntPtr>(handles.Length);
+            Dictionary<IntPtr, UIntPtr> exitCodes = new Dictionary<IntPtr, UIntPtr>(handles.Length);
             List<IntPtr> pendingHandles = new List<IntPtr>(handles);
             List<IntPtr> completedHandles = new List<IntPtr>(handles.Length);
 
@@ -453,7 +453,7 @@ namespace oSpy.Capture
 
                     if (exitCode != WinApi.STILL_ACTIVE)
                     {
-                        exitCodes[pendingHandles[i]] = (IntPtr)exitCode;
+                        exitCodes[pendingHandles[i]] = (UIntPtr) exitCode;
                         completedHandles.Add(pendingHandles[i]);
                     }
                 }
@@ -466,7 +466,7 @@ namespace oSpy.Capture
                 Thread.Sleep(200);
             }
 
-            IntPtr[] result = new IntPtr[handles.Length];
+            UIntPtr[] result = new UIntPtr[handles.Length];
             for (int i = 0; i < handles.Length; i++)
             {
                 result[i] = exitCodes[handles[i]];
@@ -512,9 +512,9 @@ namespace oSpy.Capture
                 try
                 {
                     // Allocate memory for the string in the target process
-                    IntPtr remoteDllStr = WinApi.VirtualAllocEx (proc, IntPtr.Zero,
+                    UIntPtr remoteDllStr = WinApi.VirtualAllocEx (proc, IntPtr.Zero,
                         (uint)dllStr.Length, WinApi.MEM_COMMIT, WinApi.PAGE_READWRITE);
-                    if (remoteDllStr == IntPtr.Zero)
+                    if (remoteDllStr == UIntPtr.Zero)
                         throw new Error("VirtualAllocEx failed");
 
                     // Write the string to the allocated buffer
@@ -540,7 +540,7 @@ namespace oSpy.Capture
             }
         }
 
-        private IntPtr UnInjectDll(int processId, IntPtr handle)
+        private IntPtr UnInjectDll(int processId, UIntPtr handle)
         {
             // Get offset of FreeLibrary in kernel32
             IntPtr kernelMod = WinApi.LoadLibrary ("kernel32.dll");
