@@ -18,12 +18,18 @@
 #include "stdafx.h"
 #include "Agent.h"
 
+#include <shlwapi.h>
+
 #ifdef _MANAGED
 #pragma managed(push, off)
 #endif
 
 static HMODULE g_mod = NULL;
-static Agent *g_agent = NULL;
+static HANDLE g_unloadEvent = NULL;
+static HANDLE g_startThread = NULL;
+static oSpy::Agent *g_agent = NULL;
+
+namespace oSpy {
 
 Agent::Agent()
     : m_map(INVALID_HANDLE_VALUE),
@@ -36,7 +42,7 @@ Agent::Initialize()
 {
     InterceptPP::Initialize();
 
-    m_map = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, "Global\\oSpyCapture");
+    m_map = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, L"Global\\oSpyCapture");
     m_capture = static_cast<Capture *>(MapViewOfFile(m_map, FILE_MAP_WRITE, 0, 0, sizeof(Capture)));
     if (m_capture == NULL)
         throw Error("MapViewOfFile failed");
@@ -75,6 +81,23 @@ Agent::Initialize()
     if (funcSpec != NULL)
 	    funcSpec->SetHandler(OnSocketConnectWrapper, this);
 
+    /*
+    try
+    {
+        LoadPlugins();
+    }
+    catch (Error &e)
+    {
+        GetLogger()->LogError("LoadPlugins failed: %s", e.what());
+		return;
+    }
+    catch (...)
+    {
+        GetLogger()->LogError("LoadPlugins failed: unknown error");
+		return;
+    }
+    */
+
 #ifdef RESEARCH_MODE
     funcSpec = mgr->GetFunctionSpecById("WaitForSingleObject");
     if (funcSpec != NULL)
@@ -109,6 +132,55 @@ Agent::Initialize()
             - (reinterpret_cast<DWORD>(stub) + sizeof(FunctionRedirectStub));
     }
 #endif
+}
+
+void
+Agent::LoadPlugins()
+{
+  OWString pluginDir = GetBinPath();
+  pluginDir.append(L"\\plugins\\");
+
+  WIN32_FIND_DATA findData;
+  OWString matchStr = pluginDir + L"*.dll";
+  HANDLE findHandle = FindFirstFile(matchStr.c_str(), &findData);
+  if (findHandle == INVALID_HANDLE_VALUE)
+    return;
+
+  do
+  {
+    OWString pluginPath = pluginDir + findData.cFileName;
+
+    HMODULE module = LoadLibrary(pluginPath.c_str());
+    if (module != NULL)
+    {
+      AgentPluginGetDescFunc pluginGetDesc =
+          (AgentPluginGetDescFunc) GetProcAddress(module, "oSpyAgentPluginGetDesc");
+
+      if (pluginGetDesc != NULL)
+      {
+      }
+      else
+      {
+        FreeLibrary(module);
+      }
+    }
+  }
+  while (FindNextFile (findHandle, &findData));
+
+  FindClose(findHandle);
+}
+
+OWString
+Agent::GetBinPath () const
+{
+  WCHAR path[MAX_PATH];
+
+  if (GetModuleFileName(::g_mod, path, MAX_PATH) == 0)
+    throw Error("GetModuleFileName failed");
+
+  PathRemoveFileSpec(path);
+
+  return path;
 }
 
 void
@@ -294,7 +366,7 @@ Agent::HaveMatchingSoftwallRule(const OString &functionName,
 
     for (unsigned int i = 0; i < m_capture->NumSoftwallRules; i++)
     {
-        SoftwallRule *rule = &m_capture->rules[i];
+        SoftwallRule *rule = &m_capture->Rules[i];
 
         if ((rule->Conditions & SOFTWALL_CONDITION_PROCESS_NAME) != 0)
         {
@@ -395,6 +467,48 @@ Agent::AddBytesLogged (ULONG n)
   return prevSize + n;
 }
 
+} // namespace oSpy
+
+extern "C" {
+
+static DWORD WINAPI
+AgentStartFunc (void * arg)
+{
+    HANDLE startEvent = CreateEvent (NULL, TRUE, FALSE, L"oSpyAgentStartEvent");
+    if (startEvent == NULL || GetLastError () != ERROR_ALREADY_EXISTS)
+    {
+        MessageBoxA (NULL, "CreateEvent failed (event doesn't exist?)", "oSpyAgent Error", MB_OK | MB_ICONERROR);
+        return NULL;
+    }
+
+    HANDLE events[2] = { g_unloadEvent, startEvent };
+    if (WaitForMultipleObjects (2, events, FALSE, INFINITE) == WAIT_OBJECT_0)
+    {
+        // Aborted
+        return NULL;
+    }
+
+    MessageBoxA (NULL, "Yay!", "oSpyAgent Starting", MB_OK | MB_ICONERROR);
+
+    g_agent = new oSpy::Agent ();
+
+    try
+    {
+        g_agent->Initialize ();
+    }
+    catch (Error &e)
+    {
+        MessageBoxA (NULL, e.what(), "oSpyAgent Error", MB_OK | MB_ICONERROR);
+    }
+    catch (...)
+    {
+        MessageBoxA (NULL, "Unknown error", "oSpyAgent Error", MB_OK | MB_ICONERROR);
+    }
+
+    CloseHandle (startEvent);
+    return NULL;
+}
+
 BOOL APIENTRY
 DllMain(HMODULE hModule,
         DWORD  ul_reason_for_call,
@@ -402,21 +516,35 @@ DllMain(HMODULE hModule,
 {
     if (ul_reason_for_call == DLL_PROCESS_ATTACH)
     {
-        //__asm int 3;
+        InterceptPP::AllocUtils::Malloc(1024); // testing, just to link against something
 
-		// Just to make sure that floating point support is dynamically loaded...
-		float dummy_float = 1.0f;
+        // Just to make sure that floating point support is dynamically loaded...
+        float dummy_float = 1.0f;
 
-		// And to make sure that the compiler doesn't optimize the previous statement out.
-		if (dummy_float > 0.0f)
-		{
-			g_mod = hModule;
-            g_agent = new Agent();
-            g_agent->Initialize();
-		}
+        // And to make sure that the compiler doesn't optimize the previous statement out.
+        if (dummy_float > 0.0f)
+        {
+            g_mod = hModule;
+            g_unloadEvent = CreateEvent (NULL, FALSE, FALSE, NULL);
+
+            g_startThread = CreateThread (NULL, 0, AgentStartFunc, NULL, 0, NULL);
+            if (g_startThread == NULL)
+            {
+                MessageBoxA (NULL, "CreateThread failed", "oSpyAgent Error", MB_OK | MB_ICONERROR);
+            }
+        }
     }
     else if (ul_reason_for_call == DLL_PROCESS_DETACH)
     {
+        SetEvent (g_unloadEvent);
+
+        WaitForSingleObject (g_startThread, INFINITE);
+        CloseHandle (g_startThread);
+        g_startThread = NULL;
+
+        CloseHandle (g_unloadEvent);
+        g_unloadEvent = NULL;
+
         if (g_agent != NULL)
         {
             g_agent->UnInitialize();
@@ -429,6 +557,8 @@ DllMain(HMODULE hModule,
 
     return TRUE;
 }
+
+} // extern "C"
 
 #ifdef _MANAGED
 #pragma managed(pop)

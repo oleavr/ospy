@@ -19,6 +19,8 @@
 #include "BinaryLogger.h"
 #include "Agent.h"
 
+namespace oSpy {
+
 typedef struct {
     SLIST_ENTRY entry;
     Logging::Event *ev;
@@ -164,3 +166,5 @@ BinarySerializer::AppendDWord(DWORD dw)
 {
     m_buf.append(reinterpret_cast<const char *>(&dw), sizeof(dw));
 }
+
+} // namespace oSpy
