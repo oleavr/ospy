@@ -17,9 +17,11 @@
 
 #pragma once
 
+#include "InterceptPP.h"
+
 namespace InterceptPP {
 
-class AllocUtils
+class INTERCEPTPP_API AllocUtils
 {
 public:
     static void *Malloc(size_t size);

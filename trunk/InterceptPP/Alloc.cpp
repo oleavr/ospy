@@ -17,7 +17,8 @@
 
 #pragma once
 
-#include "stdafx.h"
+#include "InterceptPP.h"
+#include "Alloc.h"
 
 namespace InterceptPP {
 

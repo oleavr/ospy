@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "stdafx.h"
 #include "DLL.h"
 #include "Util.h"
 #include <psapi.h>

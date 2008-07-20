@@ -17,13 +17,18 @@
 
 #pragma once
 
+#include "InterceptPP.h"
+
 namespace InterceptPP {
 
 namespace Logging {
 
-class Event;
+#pragma warning (push)
+#pragma warning (disable: 4251)
 
-class Logger : public BaseObject
+class INTERCEPTPP_API Event;
+
+class INTERCEPTPP_API Logger : public BaseObject
 {
 public:
     virtual ~Logger() {}
@@ -40,7 +45,7 @@ protected:
     void LogMessage(const char *type, const char *format, va_list args);
 };
 
-class Node : public BaseObject
+class INTERCEPTPP_API Node : public BaseObject
 {
 public:
     typedef OList<pair<OString, OString>>::Type FieldList;
@@ -78,7 +83,7 @@ protected:
     ChildList m_children;
 };
 
-class Element : public Node
+class INTERCEPTPP_API Element : public Node
 {
 public:
     Element(const OString &name)
@@ -88,7 +93,7 @@ public:
     void AppendChild(Node *node) { m_children.push_back(node); }
 };
 
-class TextNode : public Node
+class INTERCEPTPP_API TextNode : public Node
 {
 public:
     TextNode(const OString &name, const OString &text="");
@@ -102,7 +107,7 @@ public:
     void SetText(const OString &text) { m_content = text; }
 };
 
-class DataNode : public Node
+class INTERCEPTPP_API DataNode : public Node
 {
 public:
     DataNode(const OString &name);
@@ -111,7 +116,7 @@ public:
     void SetData(const void *buf, int size);
 };
 
-class Event : public Element
+class INTERCEPTPP_API Event : public Element
 {
 public:
     Event(Logger *logger, unsigned int id, const OString &eventType);
@@ -124,6 +129,8 @@ protected:
     Logger *m_logger;
     unsigned int m_id;
 };
+
+#pragma warning (pop)
 
 } // namespace Logging
 

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "InterceptPP.h"
 #include "Errors.h"
 #include "Marshallers.h"
 #include "Signature.h"
@@ -24,12 +25,13 @@
 
 namespace InterceptPP {
 
-using Logging::Logger;
+#pragma warning (push)
+#pragma warning (disable: 4251)
 
-void Initialize();
-void UnInitialize();
-Logger *GetLogger();
-void SetLogger(Logger *logger);
+INTERCEPTPP_API void Initialize();
+INTERCEPTPP_API void UnInitialize();
+INTERCEPTPP_API Logging::Logger *GetLogger();
+INTERCEPTPP_API void SetLogger(Logging::Logger *logger);
 
 typedef struct {
 	DWORD edi;
@@ -86,7 +88,7 @@ typedef void (*FunctionCallHandler) (FunctionCall *call, void *userData, bool &s
 
 typedef bool (__stdcall *RegisterEvalFunc) (const CpuContext *context);
 
-class ArgumentSpec : public BaseObject
+class INTERCEPTPP_API ArgumentSpec : public BaseObject
 {
 public:
 	ArgumentSpec(const OString &name, ArgumentDirection direction, BaseMarshaller *marshaller, RegisterEvalFunc shouldLogRegEval)
@@ -127,7 +129,7 @@ protected:
 	RegisterEvalFunc m_shouldLogRegEval;
 };
 
-class Argument : public BaseObject
+class INTERCEPTPP_API Argument : public BaseObject
 {
 public:
     Argument(ArgumentSpec *spec, void *data)
@@ -148,7 +150,7 @@ protected:
     void *m_data;
 };
 
-class ArgumentListSpec : public BaseObject
+class INTERCEPTPP_API ArgumentListSpec : public BaseObject
 {
 public:
     ArgumentListSpec();
@@ -172,7 +174,7 @@ protected:
     void Initialize(unsigned int count, va_list args);
 };
 
-class ArgumentList : public BaseObject
+class INTERCEPTPP_API ArgumentList : public BaseObject
 {
 public:
     ArgumentList(ArgumentListSpec *spec, void *data);
@@ -189,7 +191,7 @@ protected:
 	OVector<Argument>::Type m_arguments;
 };
 
-class FunctionSpec : public BaseObject
+class INTERCEPTPP_API FunctionSpec : public BaseObject
 {
 public:
 	FunctionSpec(const OString &name="",
@@ -239,7 +241,7 @@ protected:
     bool m_logNestedCalls;
 };
 
-class Function : public BaseObject
+class INTERCEPTPP_API Function : public BaseObject
 {
 public:
     Function(FunctionSpec *spec=NULL, DWORD offset=0);
@@ -281,7 +283,7 @@ private:
     void OnLeaveWrapper(CpuContext *cpuCtx, FunctionTrampoline *trampoline, FunctionCall *call, DWORD *lastError);
 };
 
-class FunctionCall : public BaseObject, IPropertyProvider
+class INTERCEPTPP_API FunctionCall : public BaseObject, IPropertyProvider
 {
 public:
 	FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxEnter);
@@ -349,5 +351,7 @@ private:
 
     bool ResolveProperty(const OString &query, const Argument *&arg, DWORD &reg, bool &isArgument, bool &wantAddressOf);
 };
+
+#pragma warning (pop)
 
 } // namespace InterceptPP
