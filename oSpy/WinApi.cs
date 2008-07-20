@@ -43,7 +43,7 @@ namespace oSpy
         public static extern bool UnmapViewOfFile (IntPtr lpBaseAddress);
 
         [DllImport ("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr LoadLibrary (string lpFileName);
+        public static extern IntPtr GetModuleHandle (string lpFileName);
 
         [DllImport ("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         public static extern bool FreeLibrary (IntPtr hModule);
@@ -75,6 +75,9 @@ namespace oSpy
         [DllImport ("kernel32.dll", SetLastError = true)]
         public static extern SafeWaitHandle CreateEvent (IntPtr lpEventAttributes, bool bManualReset,
                                                          bool bInitialState, string lpName);
+
+        [DllImport ("kernel32.dll", SetLastError = true)]
+        public static extern bool SetEvent (SafeWaitHandle hEvent);
 
         [DllImport ("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         public static extern bool GetExitCodeThread (IntPtr hThread, out uint lpExitCode);
