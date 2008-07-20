@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2007 Ole André Vadla Ravnås <oleavr@gmail.com>
+// Copyright (c) 2007-2008 Ole André Vadla Ravnås <oleavr@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ using System.IO;
 using System.Threading;
 using System.Diagnostics;
 using System.Reflection;
+using Microsoft.Win32.SafeHandles;
 
 namespace oSpy.Capture
 {
@@ -64,6 +65,7 @@ namespace oSpy.Capture
         private UIntPtr[] handles = null;
         private IProgressFeedback progress = null;
 
+        private SafeWaitHandle startEvent;
         private IntPtr fileMapping, cfgPtr;
         private IntPtr logIndexUserspacePtr, logCountPtr, logSizePtr;
 
@@ -171,6 +173,8 @@ namespace oSpy.Capture
                 DoUnInjection ();
 
                 UpdateCaptureStatistics ();
+
+                startEvent.Close ();
 
                 WinApi.UnmapViewOfFile (cfgPtr);
                 WinApi.CloseHandle (fileMapping);
@@ -323,6 +327,8 @@ namespace oSpy.Capture
         {
             progress.ProgressUpdate("Preparing capture", 100);
 
+            startEvent = WinApi.CreateEvent (IntPtr.Zero, true, false, "oSpyAgentStartEvent");
+
             fileMapping = WinApi.CreateFileMapping (0xFFFFFFFFu, IntPtr.Zero,
                 WinApi.enumProtect.PAGE_READWRITE,
                 0, (uint)Marshal.SizeOf(typeof(Capture)),
@@ -376,94 +382,201 @@ namespace oSpy.Capture
 
         private void DoInjection()
         {
-            // Inject into the desired process IDs
-            List<IntPtr> threadHandles = new List<IntPtr>(processes.Length);
-            for (int i = 0; i < processes.Length; i++)
-            {
-                int percentComplete = (int)(((float)(i + 1) / (float)processes.Length) * 100.0f);
-                progress.ProgressUpdate("Injecting logging agents", percentComplete);
-                threadHandles.Add(InjectDll(processes[i].Id));
-            }
+            handles = new UIntPtr[processes.Length];
 
-            // Wait for the threads to exit
-            handles = GetThreadExitCodes(threadHandles.ToArray(), "Waiting for agents to initialize");
-
-            // Check if any of them failed
-            for (int i = 0; i < processes.Length; i++)
+            try
             {
-                if (handles[i] == UIntPtr.Zero)
+                // Inject into the desired process IDs
+                for (int i = 0; i < processes.Length; i++)
                 {
-                    throw new Error(String.Format("Failed to inject logging agent into process {0} with pid={1}",
-                                                  processes[i].ProcessName, processes[i].Id));
+                    int percentComplete = (int)(((float)(i + 1) / (float)processes.Length) * 100.0f);
+                    progress.ProgressUpdate ("Injecting logging agents", percentComplete);
+                    handles[i] = InjectDll (processes[i].Id);
                 }
             }
+            catch
+            {
+                // Roll back if needed
+                for (int i = 0; i < handles.Length; i++)
+                {
+                    if (handles[i] != UIntPtr.Zero)
+                    {
+                        try
+                        {
+                            UnInjectDll (processes[i].Id, handles[i]);
+                        }
+                        catch
+                        {
+                        }
+                    }
+                }
+
+                throw;
+            }
+
+            WinApi.SetEvent (startEvent);
         }
 
-        private void DoUnInjection()
+        private void DoUnInjection ()
         {
             // Uninject the DLLs previously injected
-            List<IntPtr> threadHandles = new List<IntPtr>(processes.Length);
             for (int i = 0; i < processes.Length; i++)
             {
                 int percentComplete = (int)(((float)(i + 1) / (float)processes.Length) * 100.0f);
                 progress.ProgressUpdate("Uninjecting logging agents", percentComplete);
 
                 if (!processes[i].HasExited)
-                    threadHandles.Add(UnInjectDll(processes[i].Id, handles[i]));
-            }
-
-            if (threadHandles.Count == 0)
-                return;
-
-            // Wait for the threads to exit
-            handles = GetThreadExitCodes(threadHandles.ToArray(), "Waiting for agents to finish uninjecting");
-
-            // Check if any of them failed
-            for (int i = 0; i < handles.Length; i++)
-            {
-                if (handles[i] == UIntPtr.Zero)
                 {
-                    throw new Error(String.Format("Failed to uninject logging agent from process {0} with pid={1}",
-                                                  processes[i].ProcessName, processes[i].Id));
+                    if (!UnInjectDll (processes[i].Id, handles[i]))
+                    {
+                        // TODO: warning here?
+                    }
                 }
             }
         }
 
-        private UIntPtr[] GetThreadExitCodes(IntPtr[] handles, string progressMsg)
+        private UIntPtr InjectDll(int processId)
         {
-            Dictionary<IntPtr, UIntPtr> exitCodes = new Dictionary<IntPtr, UIntPtr>(handles.Length);
-            List<IntPtr> pendingHandles = new List<IntPtr>(handles);
-            List<IntPtr> completedHandles = new List<IntPtr>(handles.Length);
+            string agentDLLPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) + "\\oSpyAgent.dll";
+            if (!File.Exists(agentDLLPath))
+                throw new Error(agentDLLPath + " not found");
+
+            return InjectDll(processId, agentDLLPath);
+        }
+
+        private UIntPtr InjectDll (int processId, string dllPath)
+        {
+            IntPtr kernelMod = WinApi.GetModuleHandle ("kernel32.dll");
+            if (kernelMod == IntPtr.Zero)
+                throw new Error ("GetModuleHandle of kernel32.dll failed");
+
+            IntPtr proc = WinApi.OpenProcess (WinApi.PROCESS_ALL_ACCESS, true, (uint)processId);
+            if (proc == IntPtr.Zero)
+                throw new Error ("OpenProcess failed");
+
+            // Temporarily show errors, add the directory to the search path, and load the DLL.
+            try
+            {
+                uint oldErrorMode = CallRemoteFunction (proc, kernelMod, "SetErrorMode", 0);
+
+                try
+                {
+                    string dllDir = Path.GetDirectoryName (dllPath);
+                    CallRemoteFunction (proc, kernelMod, "SetDllDirectoryW", dllDir);
+                    return (UIntPtr) CallRemoteFunction (proc, kernelMod, "LoadLibraryW", dllPath);
+                }
+                finally
+                {
+                    CallRemoteFunction (proc, kernelMod, "SetErrorMode", oldErrorMode);
+                }
+            }
+            finally
+            {
+                WinApi.CloseHandle (proc);
+            }
+        }
+
+        private bool UnInjectDll (int processId, UIntPtr handle)
+        {
+            IntPtr kernelMod = WinApi.GetModuleHandle ("kernel32.dll");
+            if (kernelMod == IntPtr.Zero)
+                throw new Error ("GetModuleHandle of kernel32.dll failed");
+
+            IntPtr proc = WinApi.OpenProcess (WinApi.PROCESS_ALL_ACCESS, true, (uint)processId);
+            if (proc == IntPtr.Zero)
+                throw new Error ("OpenProcess failed");
+
+            try
+            {
+                return CallRemoteFunction (proc, kernelMod, "FreeLibrary", handle) != 0;
+            }
+            finally
+            {
+                WinApi.CloseHandle (proc);
+            }
+        }
+
+        private uint CallRemoteFunction (IntPtr proc, IntPtr kernelMod, string funcName, uint argument)
+        {
+            return CallRemoteFunction (proc, kernelMod, funcName, (UIntPtr) argument);
+        }
+
+        private uint CallRemoteFunction (IntPtr proc, IntPtr kernelMod, string funcName, string argument)
+        {
+            UIntPtr remoteArg = AllocateRemoteString (proc, argument);
+
+            try
+            {
+                return CallRemoteFunction (proc, kernelMod, funcName, remoteArg);
+            }
+            finally
+            {
+                // TODO: free the remote string here
+            }
+        }
+
+        private uint CallRemoteFunction (IntPtr proc, IntPtr kernelMod, string funcName, UIntPtr argument)
+        {
+            IntPtr funcAddr = WinApi.GetProcAddress (kernelMod, funcName);
+            if (funcAddr == IntPtr.Zero)
+                throw new Error (String.Format ("GetProcAddress of {0} failed", funcName));
+
+            IntPtr remoteThreadHandle = WinApi.CreateRemoteThread (proc, IntPtr.Zero, 0, funcAddr, argument, 0, IntPtr.Zero);
+            if (remoteThreadHandle == IntPtr.Zero)
+                throw new Error ("CreateRemoteThread failed");
+
+            return GetThreadExitCode (remoteThreadHandle);
+        }
+
+        private uint GetThreadExitCode (IntPtr handle)
+        {
+            while (true)
+            {
+                uint exitCode;
+                if (!WinApi.GetExitCodeThread (handle, out exitCode))
+                    throw new Error ("GetExitCodeThread failed");
+
+                if (exitCode != WinApi.STILL_ACTIVE)
+                    return exitCode;
+                else
+                    Thread.Sleep (100);
+            }
+        }
+
+        private UIntPtr[] GetThreadExitCodes (IntPtr[] handles, string progressMsg)
+        {
+            Dictionary<IntPtr, UIntPtr> exitCodes = new Dictionary<IntPtr, UIntPtr> (handles.Length);
+            List<IntPtr> pendingHandles = new List<IntPtr> (handles);
+            List<IntPtr> completedHandles = new List<IntPtr> (handles.Length);
 
             while (pendingHandles.Count > 0)
             {
                 int completionCount = processes.Length - pendingHandles.Count + 1;
                 int percentComplete = (int)(((float)completionCount / (float)processes.Length) * 100.0f);
 
-                progress.ProgressUpdate(progressMsg, percentComplete);
+                progress.ProgressUpdate (progressMsg, percentComplete);
 
-                completedHandles.Clear();
+                completedHandles.Clear ();
 
                 for (int i = 0; i < pendingHandles.Count; i++)
                 {
                     uint exitCode;
-
                     if (!WinApi.GetExitCodeThread (pendingHandles[i], out exitCode))
-                        throw new Error("GetExitCodeThread failed");
+                        throw new Error ("GetExitCodeThread failed");
 
                     if (exitCode != WinApi.STILL_ACTIVE)
                     {
-                        exitCodes[pendingHandles[i]] = (UIntPtr) exitCode;
-                        completedHandles.Add(pendingHandles[i]);
+                        exitCodes[pendingHandles[i]] = (UIntPtr)exitCode;
+                        completedHandles.Add (pendingHandles[i]);
                     }
                 }
 
                 foreach (IntPtr handle in completedHandles)
                 {
-                    pendingHandles.Remove(handle);
+                    pendingHandles.Remove (handle);
                 }
 
-                Thread.Sleep(200);
+                Thread.Sleep (200);
             }
 
             UIntPtr[] result = new UIntPtr[handles.Length];
@@ -474,108 +587,27 @@ namespace oSpy.Capture
             return result;
         }
 
-        private IntPtr InjectDll(int processId)
-        {
-            string agentDLLPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) + "\\oSpyAgent.dll";
-            if (!File.Exists(agentDLLPath))
-                throw new Error(agentDLLPath + " not found");
-
-            return InjectDll(processId, agentDLLPath);
-        }
-
-        private IntPtr InjectDll(int processId, string dllPath)
+        private UIntPtr AllocateRemoteString (IntPtr proc, string str)
         {
             // Create a unicode (UTF-16) C-string
-            UnicodeEncoding enc = new UnicodeEncoding();
-            byte[] rawdllStr = enc.GetBytes(dllPath);
-            byte[] dllStr = new byte[rawdllStr.Length + 2];
-            rawdllStr.CopyTo(dllStr, 0);
-            dllStr[dllStr.Length - 2] = 0;
-            dllStr[dllStr.Length - 1] = 0;
+            byte[] rawStr = Encoding.Unicode.GetBytes (str);
+            byte[] termStr = new byte[rawStr.Length + 2];
+            rawStr.CopyTo (termStr, 0);
+            termStr[termStr.Length - 2] = 0;
+            termStr[termStr.Length - 1] = 0;
 
-            // Get offset of LoadLibraryW in kernel32
-            IntPtr kernelMod = WinApi.LoadLibrary ("kernel32.dll");
-            if (kernelMod == IntPtr.Zero)
-                throw new Error("LoadLibrary of kernel32.dll failed");
+            // Allocate memory for the string in the target process
+            UIntPtr remoteStr = WinApi.VirtualAllocEx (proc, IntPtr.Zero,
+                (uint)termStr.Length, WinApi.MEM_COMMIT, WinApi.PAGE_READWRITE);
+            if (remoteStr == UIntPtr.Zero)
+                throw new Error ("VirtualAllocEx failed");
 
-            try
-            {
-                IntPtr loadLibraryAddr = WinApi.GetProcAddress (kernelMod, "LoadLibraryW");
-                if (loadLibraryAddr == IntPtr.Zero)
-                    throw new Error("GetProcAddress of LoadLibraryW failed");
+            // Write the string to the allocated buffer
+            IntPtr bytesWritten;
+            if (!WinApi.WriteProcessMemory (proc, remoteStr, termStr, (uint)termStr.Length, out bytesWritten))
+                throw new Error ("WriteProcessMemory failed");
 
-                // Open the target process
-                IntPtr proc = WinApi.OpenProcess (WinApi.PROCESS_ALL_ACCESS, true, (uint)processId);
-                if (proc == IntPtr.Zero)
-                    throw new Error("OpenProcess failed");
-
-                try
-                {
-                    // Allocate memory for the string in the target process
-                    UIntPtr remoteDllStr = WinApi.VirtualAllocEx (proc, IntPtr.Zero,
-                        (uint)dllStr.Length, WinApi.MEM_COMMIT, WinApi.PAGE_READWRITE);
-                    if (remoteDllStr == UIntPtr.Zero)
-                        throw new Error("VirtualAllocEx failed");
-
-                    // Write the string to the allocated buffer
-                    IntPtr bytesWritten;
-                    if (!WinApi.WriteProcessMemory (proc, remoteDllStr, dllStr, (uint)dllStr.Length, out bytesWritten))
-                        throw new Error("WriteProcessMemory failed");
-
-                    // Launch the thread, being LoadLibraryW
-                    IntPtr remoteThreadHandle = WinApi.CreateRemoteThread (proc, IntPtr.Zero, 0, loadLibraryAddr, remoteDllStr, 0, IntPtr.Zero);
-                    if (remoteThreadHandle == IntPtr.Zero)
-                        throw new Error("CreateRemoteThread failed");
-
-                    return remoteThreadHandle;
-                }
-                finally
-                {
-                    WinApi.CloseHandle (proc);
-                }
-            }
-            finally
-            {
-                WinApi.FreeLibrary (kernelMod);
-            }
-        }
-
-        private IntPtr UnInjectDll(int processId, UIntPtr handle)
-        {
-            // Get offset of FreeLibrary in kernel32
-            IntPtr kernelMod = WinApi.LoadLibrary ("kernel32.dll");
-            if (kernelMod == IntPtr.Zero)
-                throw new Error("LoadLibrary of kernel32.dll failed");
-
-            try
-            {
-                IntPtr freeLibraryAddr = WinApi.GetProcAddress (kernelMod, "FreeLibrary");
-                if (freeLibraryAddr == IntPtr.Zero)
-                    throw new Error("GetProcAddress of FreeLibrary failed");
-
-                // Open the target process
-                IntPtr proc = WinApi.OpenProcess (WinApi.PROCESS_ALL_ACCESS, true, (uint)processId);
-                if (proc == IntPtr.Zero)
-                    throw new Error("OpenProcess failed");
-
-                try
-                {
-                    // Launch the thread, being FreeLibrary
-                    IntPtr remoteThreadHandle = WinApi.CreateRemoteThread (proc, IntPtr.Zero, 0, freeLibraryAddr, handle, 0, IntPtr.Zero);
-                    if (remoteThreadHandle == IntPtr.Zero)
-                        throw new Error("CreateRemoteThread failed");
-
-                    return remoteThreadHandle;
-                }
-                finally
-                {
-                    WinApi.CloseHandle (proc);
-                }
-            }
-            finally
-            {
-                WinApi.FreeLibrary (kernelMod);
-            }
+            return remoteStr;
         }
     }
 }
