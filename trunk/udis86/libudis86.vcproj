@@ -39,6 +39,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				RuntimeLibrary="1"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -94,6 +95,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				RuntimeLibrary="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
