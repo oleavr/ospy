@@ -17,6 +17,8 @@
 
 #pragma once
 
+namespace oSpy {
+
 class Agent;
 
 class BinaryLogger : public Logging::Logger
@@ -54,3 +56,5 @@ public:
 protected:
 	OString m_buf;
 };
+
+} // namespace oSpy

@@ -17,7 +17,9 @@
 
 #pragma once
 
-#include <InterceptPP/InterceptPP.h>
+#include <InterceptPP/Core.h>
+#include <InterceptPP/Util.h>
+#include <InterceptPP/HookManager.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>

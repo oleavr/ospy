@@ -23,6 +23,24 @@
 // FIXME: move this into a separate plugin once the planned plugin architecture has been introduced
 //#define RESEARCH_MODE
 
+namespace oSpy {
+
+typedef struct _AgentPluginDesc AgentPluginDesc;
+
+typedef void (WINAPI * AgentPluginGetDescFunc) (AgentPluginDesc * desc);
+typedef void * (WINAPI * AgentPluginCreateFunc) ();
+typedef void (WINAPI * AgentPluginDestroyFunc) (void * instance);
+
+struct _AgentPluginDesc
+{
+  DWORD ApiVersion;
+  const WCHAR * Name;
+  const WCHAR * Description;
+
+  AgentPluginCreateFunc CreateFunc;
+  AgentPluginDestroyFunc DestroyFunc;
+};
+
 #define MAX_SOFTWALL_RULES   128
 
 #define SOFTWALL_CONDITION_PROCESS_NAME    1
@@ -58,10 +76,10 @@ typedef struct {
     volatile ULONG LogSize;
 
     DWORD NumSoftwallRules;
-    SoftwallRule rules[MAX_SOFTWALL_RULES];
+    SoftwallRule Rules[MAX_SOFTWALL_RULES];
 } Capture;
 
-class Agent : public BaseObject
+class Agent //: public BaseObject
 {
 public:
     Agent ();
@@ -72,20 +90,27 @@ public:
     ULONG GetNextLogIndex ();
     ULONG AddBytesLogged (ULONG n);
 
+private:
+    void LoadPlugins ();
+
+    OWString GetBinPath () const;
+
 protected:
     HANDLE m_map;
     Capture *m_capture;
     OICString m_processName;
 
-	static void OnSocketConnectWrapper(FunctionCall *call, void *userData, bool &shouldLog);
-	void OnSocketConnect(FunctionCall *call);
+    static void OnSocketConnectWrapper(FunctionCall *call, void *userData, bool &shouldLog);
+    void OnSocketConnect(FunctionCall *call);
 
 #ifdef RESEARCH_MODE
-	static void OnWaitForSingleObject(FunctionCall *call, void *userData, bool &shouldLog);
-	static void OnWaitForMultipleObjects(FunctionCall *call, void *userData, bool &shouldLog);
+    static void OnWaitForSingleObject(FunctionCall *call, void *userData, bool &shouldLog);
+    static void OnWaitForMultipleObjects(FunctionCall *call, void *userData, bool &shouldLog);
 
     static void PacketSchedulerRunAfterGetSendQueue();
 #endif
 
     bool HaveMatchingSoftwallRule(const OString &functionName, void *returnAddress, const sockaddr_in *localAddress, const sockaddr_in *peerAddress, DWORD &retval, DWORD &lastError);
 };
+
+} // namespace oSpy
