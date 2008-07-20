@@ -17,12 +17,14 @@
 
 #pragma once
 
+#include <exception>
+
 namespace InterceptPP {
 
 //
 // We can't use std::runtime_error because it uses std::string with the default allocator...
 //
-class Error : public exception
+class Error : public std::exception
 {
 public:
     Error(const OString &message)

@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "stdafx.h"
 #include "Core.h"
 #include "NullLogger.h"
 #include "HookManager.h"
@@ -25,6 +24,8 @@
 #pragma warning( disable : 4311 4312 )
 
 namespace InterceptPP {
+
+using namespace Logging;
 
 static Logger *g_logger = NULL;
 

@@ -25,9 +25,12 @@
 
 namespace InterceptPP {
 
-class StructureFieldDef;
+#pragma warning (push)
+#pragma warning (disable: 4251)
 
-class HookManager : public BaseObject {
+class INTERCEPTPP_API StructureFieldDef;
+
+class INTERCEPTPP_API HookManager : public BaseObject {
 public:
 	HookManager();
     ~HookManager();
@@ -83,7 +86,7 @@ protected:
     void ParseVTableNode(const OString &processName, MSXML2::IXMLDOMNodePtr &vtNode);
 };
 
-class TypeBuilder
+class INTERCEPTPP_API TypeBuilder
 {
 public:
     static TypeBuilder *Instance();
@@ -100,5 +103,7 @@ protected:
     static BaseMarshaller *BuildTypeWrapper(const OString &name);
     BaseMarshaller *BuildType(const OString &name);
 };
+
+#pragma warning (pop)
 
 } // namespace InterceptPP

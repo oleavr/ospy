@@ -17,9 +17,17 @@
 
 #pragma once
 
-#include "stdafx.h"
-#include "Core.h"
-#include "DLL.h"
-#include "VTable.h"
-#include "HookManager.h"
-#include "Util.h"
+#ifndef INTERCEPTPP_API
+#  ifdef INTERCEPTPP_EXPORTS
+#    define INTERCEPTPP_API __declspec(dllexport)
+#  else
+#    define INTERCEPTPP_API __declspec(dllimport)
+#  endif
+#endif
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#include "STL.h"
+#include <windows.h>

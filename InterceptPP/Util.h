@@ -23,6 +23,9 @@
 
 namespace InterceptPP {
 
+#pragma warning (push)
+#pragma warning (disable: 4251)
+
 typedef struct {
     HMODULE handle;
 	OICString name;
@@ -32,7 +35,7 @@ typedef struct {
 	DWORD endAddress;
 } OModuleInfo;
 
-class Util : public BaseObject
+class INTERCEPTPP_API Util : public BaseObject
 {
 public:
     Util();
@@ -72,5 +75,7 @@ private:
 	volatile DWORD m_lowestAddress;
 	volatile DWORD m_highestAddress;
 };
+
+#pragma warning (pop)
 
 } // namespace InterceptPP

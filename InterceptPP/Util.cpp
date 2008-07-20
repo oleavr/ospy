@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "stdafx.h"
 #include "Util.h"
 #include <psapi.h>
 #include <shlwapi.h>
@@ -53,7 +52,7 @@ Util::Initialize()
 {
 	InitializeCriticalSection(&m_cs);
 
-	char buf[_MAX_PATH];
+        char buf[_MAX_PATH] = { 0, };
 	if (GetModuleBaseNameA(GetCurrentProcess(), NULL, buf, sizeof(buf)) > 0)
 	{
 		m_processName = buf;

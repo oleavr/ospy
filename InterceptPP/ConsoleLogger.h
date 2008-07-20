@@ -17,11 +17,13 @@
 
 #pragma once
 
+#include "Logging.h"
+
 namespace InterceptPP {
 
 namespace Logging {
 
-class ConsoleLogger : public Logger
+class INTERCEPTPP_API ConsoleLogger : public Logger
 {
 public:
     ConsoleLogger()

@@ -15,7 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <InterceptPP/InterceptPP.h>
+#include <InterceptPP/Core.h>
+#include <InterceptPP/HookManager.h>
 #include <InterceptPP/ConsoleLogger.h>
 #include <iostream>
 
@@ -26,6 +27,11 @@ using namespace InterceptPP;
 
 int main(int argc, char *argv[])
 {
+    HMODULE mod = LoadLibrary ("C:\\Projects\\oSpy\\Debug\\oSpyAgent.dll");
+    cout << "mod = " << mod << endl;
+    Sleep (10000);
+    exit (0);
+
     InterceptPP::Initialize();
     InterceptPP::SetLogger(new Logging::ConsoleLogger());
 
@@ -34,7 +40,7 @@ int main(int argc, char *argv[])
     try
     {
 #endif
-        mgr->LoadDefinitions(L"D:\\Projects\\oSpy\\trunk\\oSpy\\bin\\Debug\\config.xml");
+        mgr->LoadDefinitions(L"C:\\Projects\\oSpy\\Debug\\config.xml");
 
         cout << TypeBuilder::Instance()->GetTypeCount() << " types loaded" << endl;
         cout << mgr->GetFunctionSpecCount() << " FunctionSpec objects loaded" << endl;
@@ -59,5 +65,5 @@ int main(int argc, char *argv[])
     OString str;
     cin >> str;
 
-	return 0;
+    return 0;
 }
