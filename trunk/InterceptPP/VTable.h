@@ -27,58 +27,58 @@ class VMethod;
 class VTableSpec : public BaseObject
 {
 public:
-	VTableSpec(const OString &name, int methodCount);
+    VTableSpec(const OString &name, int methodCount);
 
-	const OString &GetName() const { return m_name; }
-	unsigned int GetMethodCount() const { return static_cast<unsigned int>(m_methods.size()); }
-	VMethodSpec &GetMethodByIndex(int index) { return m_methods[index]; }
+    const OString &GetName() const { return m_name; }
+    unsigned int GetMethodCount() const { return static_cast<unsigned int>(m_methods.size()); }
+    VMethodSpec &GetMethodByIndex(int index) { return m_methods[index]; }
 
-	VMethodSpec &operator[](int index) { return m_methods[index]; }
+    VMethodSpec &operator[](int index) { return m_methods[index]; }
 
 protected:
-	OString m_name;
-	OVector<VMethodSpec>::Type m_methods;
+    OString m_name;
+    OVector<VMethodSpec>::Type m_methods;
 };
 
 class VTable : public BaseObject
 {
 public:
-	VTable(VTableSpec *spec, const OString &name, DWORD startOffset);
+    VTable(VTableSpec *spec, const OString &name, DWORD startOffset);
 
-	const OString &GetName() const { return m_name; }
-	VTableSpec *GetSpec() { return m_spec; }
-	DWORD GetStartOffset() const { return m_startOffset; }
-	VMethod &GetMethodByIndex(int index) { return m_methods[index]; }
+    const OString &GetName() const { return m_name; }
+    VTableSpec *GetSpec() { return m_spec; }
+    DWORD GetStartOffset() const { return m_startOffset; }
+    VMethod &GetMethodByIndex(int index) { return m_methods[index]; }
 
-	void Hook();
+    void Hook();
     void UnHook();
 
-	VMethod &operator[](int index) { return m_methods[index]; }
+    VMethod &operator[](int index) { return m_methods[index]; }
 
 protected:
-	VTableSpec *m_spec;
-	OString m_name;
-	DWORD m_startOffset;
-	OVector<VMethod>::Type m_methods;
+    VTableSpec *m_spec;
+    OString m_name;
+    DWORD m_startOffset;
+    OVector<VMethod>::Type m_methods;
 };
 
 class VMethodSpec : public FunctionSpec
 {
 public:
-	VMethodSpec()
-		: m_vtable(NULL), m_index(-1)
-	{}
+    VMethodSpec()
+        : m_vtable(NULL), m_index(-1)
+    {}
 
     void Initialize(VTableSpec *vtable, int index);
 
     const VTableSpec *GetVTable() { return m_vtable; }
-	int GetIndex() const { return m_index; }
+    int GetIndex() const { return m_index; }
 
     void StealFrom(FunctionSpec *funcSpec);
 
 protected:
-	VTableSpec *m_vtable;
-	int m_index;
+    VTableSpec *m_vtable;
+    int m_index;
 };
 
 class VMethod : public Function
@@ -97,10 +97,10 @@ public:
 
     virtual const OString GetParentName() const { return m_vtable->GetName(); }
 
-	VTable *GetVTable() const { return m_vtable; }
+    VTable *GetVTable() const { return m_vtable; }
 
 protected:
-	VTable *m_vtable;
+    VTable *m_vtable;
 };
 
 } // namespace InterceptPP

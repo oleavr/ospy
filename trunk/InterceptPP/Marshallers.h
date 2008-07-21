@@ -24,11 +24,11 @@ namespace InterceptPP {
 class IPropertyProvider
 {
 public:
-	virtual bool QueryForProperty(const OString &query, int &result) = 0;
-	virtual bool QueryForProperty(const OString &query, unsigned int &result) = 0;
-	virtual bool QueryForProperty(const OString &query, void *&result) = 0;
-	virtual bool QueryForProperty(const OString &query, va_list &result) = 0;
-	virtual bool QueryForProperty(const OString &query, OString &result) = 0;
+    virtual bool QueryForProperty(const OString &query, int &result) = 0;
+    virtual bool QueryForProperty(const OString &query, unsigned int &result) = 0;
+    virtual bool QueryForProperty(const OString &query, void *&result) = 0;
+    virtual bool QueryForProperty(const OString &query, va_list &result) = 0;
+    virtual bool QueryForProperty(const OString &query, OString &result) = 0;
 };
 
 class PropertyOverrides : public BaseObject
@@ -56,14 +56,14 @@ public:
     virtual bool SetProperty(const OString &name, const OString &value) { return false; }
 
     bool HasPropertyBinding(const OString &propName) const;
-	const OString &GetPropertyBinding(const OString &propName) const;
-	void SetPropertyBinding(const OString &propName, const OString &value) { m_propBindings[propName] = value; }
-	void SetPropertyBindings(const char *firstPropName, ...);
+    const OString &GetPropertyBinding(const OString &propName) const;
+    void SetPropertyBinding(const OString &propName, const OString &value) { m_propBindings[propName] = value; }
+    void SetPropertyBindings(const char *firstPropName, ...);
 
     virtual const OString &GetName() const { return m_typeName; }
     virtual unsigned int GetSize() const = 0;
     virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const = 0;
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const = 0;
     virtual bool ToInt(void *start, int &result) const { return false; }
     virtual bool ToUInt(void *start, unsigned int &result) const { return false; }
     virtual bool ToPointer(void *start, void *&result) const { return false; }
@@ -72,7 +72,7 @@ public:
 protected:
     OString m_typeName;
     typedef OMap<OString, OString>::Type PropBindingsMap;
-	PropBindingsMap m_propBindings;
+    PropBindingsMap m_propBindings;
 };
 
 namespace Marshaller {
@@ -135,7 +135,7 @@ public:
 
     virtual unsigned int GetSize() const { return sizeof(void *); }
     virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
     virtual bool ToInt(void *start, int &result) const;
     virtual bool ToUInt(void *start, unsigned int &result) const;
     virtual bool ToPointer(void *start, void *&result) const;
@@ -155,7 +155,7 @@ public:
 
     virtual unsigned int GetSize() const { return sizeof(va_list); }
     virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
     virtual bool ToVaList(void *start, va_list &result) const;
 };
 
@@ -172,13 +172,13 @@ public:
 
     virtual bool SetProperty(const OString &name, const OString &value);
 
-	virtual unsigned int GetSize() const { return sizeof(T); }
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+    virtual unsigned int GetSize() const { return sizeof(T); }
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
     virtual bool ToInt(void *start, int &result) const;
     virtual bool ToUInt(void *start, unsigned int &result) const;
 
     bool GetFormatHex() const { return m_hex; }
-	void SetFormatHex(bool hex) { m_hex = hex; }
+    void SetFormatHex(bool hex) { m_hex = hex; }
 
 protected:
     bool m_bigEndian;
@@ -321,7 +321,7 @@ public:
     virtual bool SetProperty(const OString &name, const OString &value);
 
     virtual unsigned int GetSize() const { return m_marshaller->GetSize(); }
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
     virtual bool ToInt(void *start, int &result) const { return m_marshaller->ToInt(start, result); }
     virtual bool ToUInt(void *start, unsigned int &result) const { return m_marshaller->ToUInt(start, result); }
 
@@ -364,7 +364,7 @@ public:
 
     virtual unsigned int GetSize() const;
     virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
 
 protected:
     BaseMarshaller *m_elType;
@@ -382,7 +382,7 @@ public:
         : Pointer(new Array(elType, elCount))
     {}
 
-	ArrayPtr(BaseMarshaller *elType, const OString &elCountPropertyBinding)
+    ArrayPtr(BaseMarshaller *elType, const OString &elCountPropertyBinding)
         : Pointer(new Array(elType, elCountPropertyBinding))
     {}
 };
@@ -390,14 +390,14 @@ public:
 class ByteArray : public BaseMarshaller
 {
 public:
-	ByteArray(int size=0);
-	ByteArray(const OString &sizePropertyBinding);
+    ByteArray(int size=0);
+    ByteArray(const OString &sizePropertyBinding);
 
     virtual bool SetProperty(const OString &name, const OString &value);
 
     virtual unsigned int GetSize() const { return m_size; }
     virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
 
 protected:
     int m_size;
@@ -410,7 +410,7 @@ public:
         : Pointer(new ByteArray(size))
     {}
 
-	ByteArrayPtr(const OString &sizePropertyBinding)
+    ByteArrayPtr(const OString &sizePropertyBinding)
         : Pointer(new ByteArray(sizePropertyBinding))
     {}
 };
@@ -438,7 +438,7 @@ public:
         : CString("AsciiString", sizeof(CHAR), length)
     {}
 
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
 };
 
 class AsciiStringPtr : public Pointer
@@ -476,7 +476,7 @@ public:
         : CString("UnicodeString", sizeof(WCHAR), length)
     {}
 
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
 };
 
 class UnicodeStringPtr : public Pointer
@@ -522,7 +522,7 @@ public:
 
     virtual unsigned int GetSize() const { return m_marshaller->GetSize(); }
     virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
     virtual bool ToInt(void *start, int &result) const { return m_marshaller->ToInt(start, result); }
     virtual bool ToUInt(void *start, unsigned int &result) const { return m_marshaller->ToUInt(start, result); }
 
@@ -582,7 +582,7 @@ public:
 
     virtual unsigned int GetSize() const { return m_size; }
     virtual Logging::Node *ToNode(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
 
 protected:
     typedef OVector<StructureField *>::Type FieldsVector;
@@ -612,8 +612,8 @@ public:
         : BaseMarshaller("Ipv4InAddr")
     {}
 
-	virtual unsigned int GetSize() const { return sizeof(DWORD); }
-	virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
+    virtual unsigned int GetSize() const { return sizeof(DWORD); }
+    virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
 };
 
 } // namespace Marshaller

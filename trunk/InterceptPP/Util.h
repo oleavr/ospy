@@ -28,11 +28,11 @@ namespace InterceptPP {
 
 typedef struct {
     HMODULE handle;
-	OICString name;
+    OICString name;
     OString directory;
-	DWORD preferredStartAddress;
-	DWORD startAddress;
-	DWORD endAddress;
+    DWORD preferredStartAddress;
+    DWORD startAddress;
+    DWORD endAddress;
 } OModuleInfo;
 
 class INTERCEPTPP_API Util : public BaseObject
@@ -44,26 +44,26 @@ public:
 
     void Initialize();
     void UnInitialize();
-	void UpdateModuleList();
+    void UpdateModuleList();
 
-	const OString &GetProcessName() { return m_processName; }
-	OModuleInfo GetModuleInfo(const OICString &name);
+    const OString &GetProcessName() { return m_processName; }
+    OModuleInfo GetModuleInfo(const OICString &name);
     OModuleInfo GetModuleInfo(void *address);
-	OVector<OModuleInfo>::Type GetAllModules();
-	bool AddressIsWithinAnyModule(DWORD address);
-	bool AddressIsWithinModule(DWORD address, const OICString &moduleName);
+    OVector<OModuleInfo>::Type GetAllModules();
+    bool AddressIsWithinAnyModule(DWORD address);
+    bool AddressIsWithinModule(DWORD address, const OICString &moduleName);
 
     OString GetDirectory(const OModuleInfo &mi);
 
     Logging::Node *CreateBacktraceNode(void *address);
 
 private:
-	static void OnLoadLibrary(FunctionCall *call, void *userData, bool &shouldLog);
+    static void OnLoadLibrary(FunctionCall *call, void *userData, bool &shouldLog);
 
-	OModuleInfo *GetModuleInfoForAddress(DWORD address);
+    OModuleInfo *GetModuleInfoForAddress(DWORD address);
 
-	CRITICAL_SECTION m_cs;
-	OString m_processName;
+    CRITICAL_SECTION m_cs;
+    OString m_processName;
 
     FunctionSpec *m_asciiFuncSpec;
     FunctionSpec *m_uniFuncSpec;
@@ -71,9 +71,9 @@ private:
     DllFunction *m_asciiFunc;
     DllFunction *m_uniFunc;
 
-	OMap<OICString, OModuleInfo>::Type m_modules;
-	volatile DWORD m_lowestAddress;
-	volatile DWORD m_highestAddress;
+    OMap<OICString, OModuleInfo>::Type m_modules;
+    volatile DWORD m_lowestAddress;
+    volatile DWORD m_highestAddress;
 };
 
 #pragma warning (pop)

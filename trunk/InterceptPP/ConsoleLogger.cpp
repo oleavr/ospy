@@ -49,9 +49,9 @@ ConsoleLogger::PrintNode(Node *node, int level)
     {
         Logging::Node::FieldListConstIter iter, endIter = node->FieldsIterEnd();
         for (iter = node->FieldsIterBegin(); iter != endIter; iter++)
-	    {
+        {
             cout << indentStr << "\t" << iter->first << ": " << iter->second << endl;
-	    }
+        }
 
         cout << endl;
     }
@@ -75,12 +75,12 @@ ConsoleLogger::PrintNode(Node *node, int level)
     {
         cout << indentStr << "\tChildren:" << endl;
 
-		Logging::Node::ChildListConstIter iter, endIter = node->ChildrenIterEnd();
+        Logging::Node::ChildListConstIter iter, endIter = node->ChildrenIterEnd();
 
-		for (iter = node->ChildrenIterBegin(); iter != endIter; iter++)
-		{
-			PrintNode(*iter, level + 2);
-		}
+        for (iter = node->ChildrenIterBegin(); iter != endIter; iter++)
+        {
+            PrintNode(*iter, level + 2);
+        }
     }
 
     cout << endl;

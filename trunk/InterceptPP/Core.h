@@ -34,21 +34,21 @@ INTERCEPTPP_API Logging::Logger *GetLogger();
 INTERCEPTPP_API void SetLogger(Logging::Logger *logger);
 
 typedef struct {
-	DWORD edi;
-	DWORD esi;
-	DWORD ebp;
-	DWORD esp;
-	DWORD ebx;
-	DWORD edx;
-	DWORD ecx;
-	DWORD eax;
+    DWORD edi;
+    DWORD esi;
+    DWORD ebp;
+    DWORD esp;
+    DWORD ebx;
+    DWORD edx;
+    DWORD ecx;
+    DWORD eax;
 } CpuContext;
 
 typedef enum {
-	CALLING_CONV_UNKNOWN = 0,
-	CALLING_CONV_STDCALL,
-	CALLING_CONV_THISCALL,
-	CALLING_CONV_CDECL,
+    CALLING_CONV_UNKNOWN = 0,
+    CALLING_CONV_STDCALL,
+    CALLING_CONV_THISCALL,
+    CALLING_CONV_CDECL,
 } CallingConvention;
 
 typedef enum {
@@ -58,26 +58,26 @@ typedef enum {
 
 typedef enum {
     ARG_DIR_UNKNOWN = 0,
-	ARG_DIR_IN      = 1,
-	ARG_DIR_OUT     = 2,
+    ARG_DIR_IN      = 1,
+    ARG_DIR_OUT     = 2,
 } ArgumentDirection;
 
 #pragma pack(push, 1)
 typedef struct {
-	BYTE CALL_opcode;
-	DWORD CALL_offset;
-	void *data;
+    BYTE CALL_opcode;
+    DWORD CALL_offset;
+    void *data;
 } FunctionTrampoline;
 
 typedef struct {
-	BYTE JMP_opcode;
-	DWORD JMP_offset;
+    BYTE JMP_opcode;
+    DWORD JMP_offset;
 } FunctionRedirectStub;
 #pragma pack(pop)
 
 typedef struct {
-	SignatureSpec sig;
-	int numBytesToCopy;
+    SignatureSpec sig;
+    int numBytesToCopy;
 } PrologSignatureSpec;
 
 #define FUNCTION_ARGS_SIZE_UNKNOWN -1
@@ -91,18 +91,18 @@ typedef bool (__stdcall *RegisterEvalFunc) (const CpuContext *context);
 class INTERCEPTPP_API ArgumentSpec : public BaseObject
 {
 public:
-	ArgumentSpec(const OString &name, ArgumentDirection direction, BaseMarshaller *marshaller, RegisterEvalFunc shouldLogRegEval)
-		: m_name(name), m_direction(direction), m_offset(0), m_marshaller(marshaller), m_shouldLogRegEval(shouldLogRegEval)
-	{
-	}
+    ArgumentSpec(const OString &name, ArgumentDirection direction, BaseMarshaller *marshaller, RegisterEvalFunc shouldLogRegEval)
+        : m_name(name), m_direction(direction), m_offset(0), m_marshaller(marshaller), m_shouldLogRegEval(shouldLogRegEval)
+    {
+    }
 
-	~ArgumentSpec()
-	{
-		delete m_marshaller;
+    ~ArgumentSpec()
+    {
+        delete m_marshaller;
 
-		if (m_shouldLogRegEval != NULL)
-			delete[] ((BYTE *)  m_shouldLogRegEval);
-	}
+        if (m_shouldLogRegEval != NULL)
+            delete[] ((BYTE *)  m_shouldLogRegEval);
+    }
 
     const OString &GetName() const { return m_name; }
     ArgumentDirection GetDirection() const { return m_direction; }
@@ -113,20 +113,20 @@ public:
 
     unsigned int GetSize() const { return m_marshaller->GetSize(); }
 
-	bool ShouldLogEval(const CpuContext *ctx) const
-	{
-		if (m_shouldLogRegEval == NULL)
-			return true;
-		return m_shouldLogRegEval(ctx);
-	}
+    bool ShouldLogEval(const CpuContext *ctx) const
+    {
+        if (m_shouldLogRegEval == NULL)
+            return true;
+        return m_shouldLogRegEval(ctx);
+    }
 
 protected:
-	OString m_name;
-	ArgumentDirection m_direction;
+    OString m_name;
+    ArgumentDirection m_direction;
     unsigned int m_offset;
-	BaseMarshaller *m_marshaller;
+    BaseMarshaller *m_marshaller;
 
-	RegisterEvalFunc m_shouldLogRegEval;
+    RegisterEvalFunc m_shouldLogRegEval;
 };
 
 class INTERCEPTPP_API Argument : public BaseObject
@@ -156,7 +156,7 @@ public:
     ArgumentListSpec();
     ArgumentListSpec(unsigned int count, ...);
     ArgumentListSpec(unsigned int count, va_list args);
-	~ArgumentListSpec();
+    ~ArgumentListSpec();
 
     void AddArgument(ArgumentSpec *arg);
 
@@ -164,11 +164,11 @@ public:
     unsigned int GetCount() const { return static_cast<unsigned int>(m_arguments.size()); }
     bool GetHasOutArgs() const { return m_hasOutArgs; }
 
-	ArgumentSpec *operator[](int index) { return m_arguments[index]; }
+    ArgumentSpec *operator[](int index) { return m_arguments[index]; }
 
 protected:
     unsigned int m_size;
-	OVector<ArgumentSpec *>::Type m_arguments;
+    OVector<ArgumentSpec *>::Type m_arguments;
     bool m_hasOutArgs;
 
     void Initialize(unsigned int count, va_list args);
@@ -178,23 +178,23 @@ class INTERCEPTPP_API ArgumentList : public BaseObject
 {
 public:
     ArgumentList(ArgumentListSpec *spec, void *data);
-	~ArgumentList();
+    ~ArgumentList();
 
     const ArgumentListSpec *GetSpec() const { return m_spec; }
 
     unsigned int GetCount() const { return static_cast<unsigned int>(m_arguments.size()); }
 
-	const Argument &operator[](int index) const { return m_arguments[index]; }
+    const Argument &operator[](int index) const { return m_arguments[index]; }
 
 protected:
     ArgumentListSpec *m_spec;
-	OVector<Argument>::Type m_arguments;
+    OVector<Argument>::Type m_arguments;
 };
 
 class INTERCEPTPP_API FunctionSpec : public BaseObject
 {
 public:
-	FunctionSpec(const OString &name="",
+    FunctionSpec(const OString &name="",
                  CallingConvention conv=CALLING_CONV_UNKNOWN,
                  int argsSize=FUNCTION_ARGS_SIZE_UNKNOWN,
                  FunctionCallHandler handler=NULL,
@@ -214,30 +214,30 @@ public:
     const BaseMarshaller *GetReturnValueMarshaller() const;
     void SetReturnValueMarshaller(BaseMarshaller *marshaller);
 
-	const OString &GetName() const { return m_name; }
-	void SetName(const OString &name) { m_name = name; }
+    const OString &GetName() const { return m_name; }
+    void SetName(const OString &name) { m_name = name; }
 
-	CallingConvention GetCallingConvention() const { return m_callingConvention; }
-	void SetCallingConvention(CallingConvention conv) { m_callingConvention = conv; }
+    CallingConvention GetCallingConvention() const { return m_callingConvention; }
+    void SetCallingConvention(CallingConvention conv) { m_callingConvention = conv; }
 
-	int GetArgsSize() const { return m_argsSize; }
-	void SetArgsSize(int size) { m_argsSize = size; }
+    int GetArgsSize() const { return m_argsSize; }
+    void SetArgsSize(int size) { m_argsSize = size; }
 
-	FunctionCallHandler GetHandler() const { return m_handler; }
-	void *GetHandlerUserData() const { return m_handlerUserData; }
-	void SetHandler(FunctionCallHandler handler, void *userData=NULL) { m_handler = handler; m_handlerUserData = userData; }
+    FunctionCallHandler GetHandler() const { return m_handler; }
+    void *GetHandlerUserData() const { return m_handlerUserData; }
+    void SetHandler(FunctionCallHandler handler, void *userData=NULL) { m_handler = handler; m_handlerUserData = userData; }
 
     bool GetLogNestedCalls() const { return m_logNestedCalls; }
     void SetLogNestedCalls(bool logNestedCalls) { m_logNestedCalls = logNestedCalls; }
 
 protected:
-	OString m_name;
-	CallingConvention m_callingConvention;
-	int m_argsSize;
+    OString m_name;
+    CallingConvention m_callingConvention;
+    int m_argsSize;
     ArgumentListSpec *m_argList;
     BaseMarshaller *m_retValMarshaller;
-	FunctionCallHandler m_handler;
-	void *m_handlerUserData;
+    FunctionCallHandler m_handler;
+    void *m_handlerUserData;
     bool m_logNestedCalls;
 };
 
@@ -286,22 +286,22 @@ private:
 class INTERCEPTPP_API FunctionCall : public BaseObject, IPropertyProvider
 {
 public:
-	FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxEnter);
+    FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxEnter);
 
-	Function *GetFunction() const { return m_function; }
-	void *GetBacktraceAddress() const { return m_backtraceAddress; }
-	void *GetReturnAddress() const { return m_returnAddress; }
+    Function *GetFunction() const { return m_function; }
+    void *GetBacktraceAddress() const { return m_backtraceAddress; }
+    void *GetReturnAddress() const { return m_returnAddress; }
 
     CpuContext *GetCpuContextLive() const { return m_cpuCtxLive; }
-	void SetCpuContextLive(CpuContext *cpuCtx) { m_cpuCtxLive = cpuCtx; }
+    void SetCpuContextLive(CpuContext *cpuCtx) { m_cpuCtxLive = cpuCtx; }
 
     const CpuContext *GetCpuContextEnter() const { return &m_cpuCtxEnter; }
 
-	const CpuContext *GetCpuContextLeave() const { return &m_cpuCtxLeave; }
+    const CpuContext *GetCpuContextLeave() const { return &m_cpuCtxLeave; }
     void SetCpuContextLeave(const CpuContext *ctx) { m_cpuCtxLeave = *ctx; }
 
-	DWORD *GetLastErrorLive() const { return m_lastErrorLive; }
-	void SetLastErrorLive(DWORD *lastError) { m_lastErrorLive = lastError; }
+    DWORD *GetLastErrorLive() const { return m_lastErrorLive; }
+    void SetLastErrorLive(DWORD *lastError) { m_lastErrorLive = lastError; }
 
     const OString &GetArgumentsData() const { return m_argumentsData; }
     const ArgumentList *GetArguments() const { return m_arguments; }
@@ -309,8 +309,8 @@ public:
     FunctionCallState GetState() const { return m_state; }
     void SetState(FunctionCallState state) { m_state = state; }
 
-	bool GetShouldCarryOn() const { return m_shouldCarryOn; }
-	void SetShouldCarryOn(bool carryOn) { m_shouldCarryOn = carryOn; }
+    bool GetShouldCarryOn() const { return m_shouldCarryOn; }
+    void SetShouldCarryOn(bool carryOn) { m_shouldCarryOn = carryOn; }
 
     void *GetUserData() const { return m_userData; }
     void SetUserData(void *data) { m_userData = data; }
@@ -319,29 +319,29 @@ public:
     void AppendCpuContextToElement(Logging::Element *el);
     void AppendArgumentsToElement(Logging::Element *el);
     void AppendReturnValueToElement(Logging::Element *el);
-	OString ToString();
+    OString ToString();
 
-	virtual bool QueryForProperty(const OString &query, int &result);
-	virtual bool QueryForProperty(const OString &query, unsigned int &result);
-	virtual bool QueryForProperty(const OString &query, void *&result);
-	virtual bool QueryForProperty(const OString &query, va_list &result);
-	virtual bool QueryForProperty(const OString &query, OString &result);
+    virtual bool QueryForProperty(const OString &query, int &result);
+    virtual bool QueryForProperty(const OString &query, unsigned int &result);
+    virtual bool QueryForProperty(const OString &query, void *&result);
+    virtual bool QueryForProperty(const OString &query, va_list &result);
+    virtual bool QueryForProperty(const OString &query, OString &result);
 
 protected:
-	Function *m_function;
-	void *m_backtraceAddress;
-	void *m_returnAddress;
-	CpuContext *m_cpuCtxLive;
-	CpuContext m_cpuCtxEnter;
-	CpuContext m_cpuCtxLeave;
-	DWORD *m_lastErrorLive;
+    Function *m_function;
+    void *m_backtraceAddress;
+    void *m_returnAddress;
+    CpuContext *m_cpuCtxLive;
+    CpuContext m_cpuCtxEnter;
+    CpuContext m_cpuCtxLeave;
+    DWORD *m_lastErrorLive;
 
-	OString m_argumentsData;
+    OString m_argumentsData;
     ArgumentList *m_arguments;
 
     FunctionCallState m_state;
 
-	bool m_shouldCarryOn;
+    bool m_shouldCarryOn;
 
     void *m_userData;
 

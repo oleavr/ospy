@@ -18,9 +18,9 @@
 using System;
 
 namespace oSpy.SharpDumpLib
-{	
-	public class CryptoResource : Resource
-	{
+{    
+    public class CryptoResource : Resource
+    {
         public CryptoResource(UInt32 handle)
             : base(handle)
         {
@@ -28,7 +28,7 @@ namespace oSpy.SharpDumpLib
 
         public override string ToString()
         {
-        	return String.Format("<CryptoResource Handle=0x{0:x8}>", handle);
+            return String.Format("<CryptoResource Handle=0x{0:x8}>", handle);
         }
-	}
+    }
 }

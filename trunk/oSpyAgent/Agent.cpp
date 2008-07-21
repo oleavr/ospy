@@ -68,18 +68,18 @@ Agent::Initialize()
     catch (Error &e)
     {
         GetLogger()->LogError("LoadDefinitions failed: %s", e.what());
-		return;
+        return;
     }
     catch (...)
     {
         GetLogger()->LogError("LoadDefinitions failed: unknown error");
-		return;
+        return;
     }
 
-	// Trap calls to socket functions for softwalling
-	FunctionSpec *funcSpec = mgr->GetFunctionSpecById("connect");
+    // Trap calls to socket functions for softwalling
+    FunctionSpec *funcSpec = mgr->GetFunctionSpecById("connect");
     if (funcSpec != NULL)
-	    funcSpec->SetHandler(OnSocketConnectWrapper, this);
+        funcSpec->SetHandler(OnSocketConnectWrapper, this);
 
     /*
     try
@@ -89,12 +89,12 @@ Agent::Initialize()
     catch (Error &e)
     {
         GetLogger()->LogError("LoadPlugins failed: %s", e.what());
-		return;
+        return;
     }
     catch (...)
     {
         GetLogger()->LogError("LoadPlugins failed: unknown error");
-		return;
+        return;
     }
     */
 
@@ -186,8 +186,8 @@ Agent::GetBinPath () const
 void
 Agent::OnSocketConnectWrapper(FunctionCall *call, void *userData, bool &shouldLog)
 {
-	Agent *self = static_cast<Agent *>(userData);
-	self->OnSocketConnect(call);
+    Agent *self = static_cast<Agent *>(userData);
+    self->OnSocketConnect(call);
 }
 
 void

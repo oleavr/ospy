@@ -24,12 +24,12 @@ namespace InterceptPP {
 void
 VMethodSpec::Initialize(VTableSpec *vtable, int index)
 {
-	m_vtable = vtable;
-	m_index = index;
+    m_vtable = vtable;
+    m_index = index;
 
-	OOStringStream ss;
-	ss << "method_" << index;
-	m_name = ss.str();
+    OOStringStream ss;
+    ss << "method_" << index;
+    m_name = ss.str();
 }
 
 void
@@ -55,10 +55,10 @@ VMethodSpec::StealFrom(FunctionSpec *funcSpec)
         m_handler = funcSpec->GetHandler();
     }
 
-	if (funcSpec->GetHandlerUserData() != NULL)
-	{
-		m_handlerUserData = funcSpec->GetHandlerUserData();
-	}
+    if (funcSpec->GetHandlerUserData() != NULL)
+    {
+        m_handlerUserData = funcSpec->GetHandlerUserData();
+    }
 
     if (funcSpec->GetArguments() != NULL)
     {
@@ -76,45 +76,45 @@ VMethodSpec::StealFrom(FunctionSpec *funcSpec)
 }
 
 VTableSpec::VTableSpec(const OString &name, int methodCount)
-	: m_name(name), m_methods(methodCount)
+    : m_name(name), m_methods(methodCount)
 {
-	for (int i = 0; i < methodCount; i++)
-	{
-		m_methods[i].Initialize(this, i);
-	}
+    for (int i = 0; i < methodCount; i++)
+    {
+        m_methods[i].Initialize(this, i);
+    }
 }
 
 VTable::VTable(VTableSpec *spec, const OString &name, DWORD startOffset)
-	: m_spec(spec), m_name(name), m_startOffset(startOffset), m_methods(spec->GetMethodCount())
+    : m_spec(spec), m_name(name), m_startOffset(startOffset), m_methods(spec->GetMethodCount())
 {
-	DWORD *funcs = reinterpret_cast<DWORD *>(startOffset);
+    DWORD *funcs = reinterpret_cast<DWORD *>(startOffset);
 
-	for (unsigned int i = 0; i < spec->GetMethodCount(); i++)
-	{
-		m_methods[i].Initialize(this, &(*spec)[i], funcs[i]);
-	}
+    for (unsigned int i = 0; i < spec->GetMethodCount(); i++)
+    {
+        m_methods[i].Initialize(this, &(*spec)[i], funcs[i]);
+    }
 }
 
 void
 VTable::Hook()
 {
-	VTableSpec *spec = GetSpec();
+    VTableSpec *spec = GetSpec();
 
     DWORD vtSize = spec->GetMethodCount() * sizeof(LPVOID);
 
     DWORD oldProtect;
-	VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, PAGE_READWRITE, &oldProtect);
+    VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, PAGE_READWRITE, &oldProtect);
 
-	DWORD *methods = reinterpret_cast<DWORD *>(m_startOffset);
+    DWORD *methods = reinterpret_cast<DWORD *>(m_startOffset);
 
-	for (unsigned int i = 0; i < spec->GetMethodCount(); i++)
-	{
-		methods[i] = reinterpret_cast<DWORD>(m_methods[i].CreateTrampoline());
-	}
+    for (unsigned int i = 0; i < spec->GetMethodCount(); i++)
+    {
+        methods[i] = reinterpret_cast<DWORD>(m_methods[i].CreateTrampoline());
+    }
 
     FlushInstructionCache(GetCurrentProcess(), NULL, 0);
 
-	VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, oldProtect, &oldProtect);
+    VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, oldProtect, &oldProtect);
 }
 
 void
@@ -125,22 +125,22 @@ VTable::UnHook()
     DWORD vtSize = spec->GetMethodCount() * sizeof(LPVOID);
 
     DWORD oldProtect;
-	VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, PAGE_READWRITE, &oldProtect);
+    VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, PAGE_READWRITE, &oldProtect);
 
     DWORD *methods = reinterpret_cast<DWORD *>(m_startOffset);
 
-	for (unsigned int i = 0; i < spec->GetMethodCount(); i++)
-	{
-		void *trampoline = reinterpret_cast<void *>(methods[i]);
+    for (unsigned int i = 0; i < spec->GetMethodCount(); i++)
+    {
+        void *trampoline = reinterpret_cast<void *>(methods[i]);
 
         methods[i] = m_methods[i].GetOffset();
 
         delete[] trampoline;
-	}
+    }
 
     FlushInstructionCache(GetCurrentProcess(), NULL, 0);
 
-	VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, oldProtect, &oldProtect);
+    VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, oldProtect, &oldProtect);
 }
 
 } // namespace InterceptPP

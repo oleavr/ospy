@@ -68,60 +68,60 @@ SetLogger(Logger *logger)
 FARPROC Function::tlsGetValueFunc = NULL;
 DWORD Function::tlsIdx = 0xFFFFFFFF;
 const PrologSignatureSpec Function::prologSignatureSpecs[] = {
-	{
-		{
-			NULL,
+    {
+        {
+            NULL,
             0,
-			"8B FF"					// mov edi, edi
-			"55"					// push ebp
-			"8B EC",				// mov ebp, esp
-		},
+            "8B FF"                 // mov edi, edi
+            "55"                    // push ebp
+            "8B EC",                // mov ebp, esp
+        },
 
-		5,
-	},
-	{
-		{
-			NULL,
+        5,
+    },
+    {
+        {
+            NULL,
             0,
-			"6A xx"					// push xxh
-			"68 xx xx xx xx"		// push offset dword_xxxxxxxx
-			"E8 xx xx xx xx",		// call __SEH_prolog
-		},
+            "6A xx"                 // push xxh
+            "68 xx xx xx xx"        // push offset dword_xxxxxxxx
+            "E8 xx xx xx xx",       // call __SEH_prolog
+        },
 
-		7,
-	},
-	{
-		{
-			NULL,
+        7,
+    },
+    {
+        {
+            NULL,
             0,
-			"68 xx xx xx xx"		// push xxxxxxxxh
-			"68 xx xx xx xx"		// push offset dword_xxxxxxxx
-			"E8 xx xx xx xx",		// call __SEH_prolog
-		},
+            "68 xx xx xx xx"        // push xxxxxxxxh
+            "68 xx xx xx xx"        // push offset dword_xxxxxxxx
+            "E8 xx xx xx xx",       // call __SEH_prolog
+        },
 
-		5,
-	},
-	{
-		{
-			NULL,
+        5,
+    },
+    {
+        {
+            NULL,
             0,
-			"FF 25 xx xx xx xx"		// jmp ds:__imp__*
-		},
+            "FF 25 xx xx xx xx"     // jmp ds:__imp__*
+        },
 
-		6,
-	},
-	{
-		{
-			NULL,
+        6,
+    },
+    {
+        {
+            NULL,
             0,
-			"33 C0"		// xor eax, eax
-			"50"		// push eax
-			"50"		// push eax
-			"6A xx"		// push xx
-		},
+            "33 C0"                 // xor eax, eax
+            "50"                    // push eax
+            "50"                    // push eax
+            "6A xx"                 // push xx
+        },
 
-		6,
-	},
+        6,
+    },
 };
 
 OVector<Signature>::Type Function::prologSignatures;
@@ -193,8 +193,8 @@ ArgumentListSpec::~ArgumentListSpec()
 {
     for (unsigned int i = 0; i < m_arguments.size(); i++)
     {
-		delete m_arguments[i];
-	}
+        delete m_arguments[i];
+    }
 }
 
 void
@@ -244,13 +244,13 @@ FunctionSpec::FunctionSpec(const OString &name,
                            int argsSize,
                            FunctionCallHandler handler,
                            bool logNestedCalls)
-	: m_name(name),
+    : m_name(name),
       m_callingConvention(conv),
-	  m_argsSize(argsSize),
+      m_argsSize(argsSize),
       m_argList(NULL),
       m_retValMarshaller(NULL),
-	  m_handler(handler),
-	  m_handlerUserData(NULL),
+      m_handler(handler),
+      m_handlerUserData(NULL),
       m_logNestedCalls(logNestedCalls)
 {
 }
@@ -271,9 +271,9 @@ FunctionSpec::SetParams(const OString &name,
                         FunctionCallHandler handler,
                         bool logNestedCalls)
 {
-	SetName(name);
+    SetName(name);
     SetCallingConvention(conv);
-	SetArgsSize(argsSize);
+    SetArgsSize(argsSize);
     SetHandler(handler);
     SetLogNestedCalls(logNestedCalls);
 }
@@ -331,8 +331,8 @@ Function::Initialize()
     tlsGetValueFunc = GetProcAddress(LoadLibraryW(L"kernel32.dll"), "TlsGetValue");
     tlsIdx = TlsAlloc();
 
-	for (int i = 0; i < sizeof(prologSignatureSpecs) / sizeof(PrologSignatureSpec); i++)
-	{
+    for (int i = 0; i < sizeof(prologSignatureSpecs) / sizeof(PrologSignatureSpec); i++)
+    {
         prologSignatures.push_back(Signature(prologSignatureSpecs[i].sig.signature));
     }
 }
@@ -364,12 +364,12 @@ Function::GetFullName() const
 FunctionTrampoline *
 Function::CreateTrampoline(unsigned int bytesToCopy)
 {
-	int trampoSize = sizeof(FunctionTrampoline) + bytesToCopy + sizeof(FunctionRedirectStub);
+    int trampoSize = sizeof(FunctionTrampoline) + bytesToCopy + sizeof(FunctionRedirectStub);
     FunctionTrampoline *trampoline = reinterpret_cast<FunctionTrampoline *>(new unsigned char[trampoSize]);
 
-	trampoline->CALL_opcode = 0xE8;
-	trampoline->CALL_offset = (DWORD) OnEnterProxy - (DWORD) &(trampoline->data);
-	trampoline->data = this;
+    trampoline->CALL_opcode = 0xE8;
+    trampoline->CALL_offset = (DWORD) OnEnterProxy - (DWORD) &(trampoline->data);
+    trampoline->data = this;
 
     if (bytesToCopy > 0)
     {
@@ -381,10 +381,10 @@ Function::CreateTrampoline(unsigned int bytesToCopy)
     redirStub->JMP_offset = (m_offset + bytesToCopy) - (reinterpret_cast<DWORD>(reinterpret_cast<unsigned char *>(redirStub) + sizeof(FunctionRedirectStub)));
 
     DWORD oldProtect;
-	if (!VirtualProtect(trampoline, trampoSize, PAGE_EXECUTE_READWRITE, &oldProtect))
-		throw Error("VirtualProtected failed");
+    if (!VirtualProtect(trampoline, trampoSize, PAGE_EXECUTE_READWRITE, &oldProtect))
+        throw Error("VirtualProtected failed");
 
-	return trampoline;
+    return trampoline;
 }
 
 void
@@ -419,7 +419,7 @@ Function::Hook()
         ud_t udObj;
         ud_init(&udObj);
         ud_set_input_buffer(&udObj, p, 16);
-	    ud_set_mode(&udObj, 32);
+        ud_set_mode(&udObj, 32);
 
         while (nBytesToCopy < bytesNeeded)
         {
@@ -481,12 +481,12 @@ Function::UnHook()
 __declspec(naked) void
 Function::OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, FunctionTrampoline *trampoline, void **proxyRet, void **finalRet)
 {
-	DWORD lastError;
-	Function *function;
-	FunctionTrampoline *nextTrampoline;
+    DWORD lastError;
+    Function *function;
+    FunctionTrampoline *nextTrampoline;
 
-	__asm {
-											// *** We're coming in hot from the modified prolog/vtable through the trampoline ***
+    __asm {
+                                            // *** We're coming in hot from the modified prolog/vtable through the trampoline ***
 
                                             // First off, is this a nested call?
         pushad;
@@ -500,172 +500,172 @@ Function::OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, FunctionTramp
         ret;
 
 NOT_NESTED:
-		sub esp, 12;						//  1. Reserve space for the last 3 arguments.
+        sub esp, 12;                        //  1. Reserve space for the last 3 arguments.
 
-		push 16;							//  2. Set unwindSize to the size of the last 4 arguments.
+        push 16;                            //  2. Set unwindSize to the size of the last 4 arguments.
 
-		pushad;								//  3. Save all registers and conveniently place them so that they're available
-											//     from C++ through the first argument.
+        pushad;                             //  3. Save all registers and conveniently place them so that they're available
+                                            //     from C++ through the first argument.
 
-		lea eax, [esp+48+4];				//  4. Set finalRet to point to the final return address.
-		mov [esp+48-4], eax;
+        lea eax, [esp+48+4];                //  4. Set finalRet to point to the final return address.
+        mov [esp+48-4], eax;
 
-		lea eax, [esp+48+0];				//  5. Set proxyRet to point to this function's return address.
-		mov [esp+48-8], eax;
+        lea eax, [esp+48+0];                //  5. Set proxyRet to point to this function's return address.
+        mov [esp+48-8], eax;
 
-		mov eax, [eax];						//  6. Set trampoline to point to the start of the trampoline, ie. *proxyRet - 5.
+        mov eax, [eax];                     //  6. Set trampoline to point to the start of the trampoline, ie. *proxyRet - 5.
         sub eax, 5;
-		mov [esp+48-12], eax;
+        mov [esp+48-12], eax;
 
-		sub esp, 4;							//  7. Padding/fake return address so that ebp+8 refers to the first argument.
-		push ebp;							//  8. Standard prolog.
-		mov ebp, esp;
-		sub esp, __LOCAL_SIZE;
-	}
+        sub esp, 4;                         //  7. Padding/fake return address so that ebp+8 refers to the first argument.
+        push ebp;                           //  8. Standard prolog.
+        mov ebp, esp;
+        sub esp, __LOCAL_SIZE;
+    }
 
-	lastError = GetLastError();
+    lastError = GetLastError();
 
-	function = static_cast<Function *>(trampoline->data);
+    function = static_cast<Function *>(trampoline->data);
 
     if (!function->GetSpec()->GetLogNestedCalls())
         TlsSetValue(tlsIdx, reinterpret_cast<LPVOID>(1));
 
-	nextTrampoline = function->OnEnterWrapper(&cpuCtx, &unwindSize, trampoline, finalRet, &lastError);
-	if (nextTrampoline != NULL)
-	{
-		*proxyRet = reinterpret_cast<unsigned char *>(trampoline) + sizeof(FunctionTrampoline);
-		*finalRet = nextTrampoline;
-	}
+    nextTrampoline = function->OnEnterWrapper(&cpuCtx, &unwindSize, trampoline, finalRet, &lastError);
+    if (nextTrampoline != NULL)
+    {
+        *proxyRet = reinterpret_cast<unsigned char *>(trampoline) + sizeof(FunctionTrampoline);
+        *finalRet = nextTrampoline;
+    }
 
-	SetLastError(lastError);
+    SetLastError(lastError);
 
-	__asm {
-											// *** Bounce off to the actual method, or straight back to the caller. ***
+    __asm {
+                                            // *** Bounce off to the actual method, or straight back to the caller. ***
 
-		mov esp, ebp;						//  1. Standard epilog.
-		pop ebp;
-		add esp, 4;							//  2. Remove the padding/fake return address (see step 7 above).
+        mov esp, ebp;                        //  1. Standard epilog.
+        pop ebp;
+        add esp, 4;                            //  2. Remove the padding/fake return address (see step 7 above).
 
-		popad;								//  3. Clean up the first argument and restore the registers (see step 3 above).
+        popad;                                //  3. Clean up the first argument and restore the registers (see step 3 above).
 
-		add esp, [esp];						//  4. Clean up the remaining arguments (and more if returning straight back).
+        add esp, [esp];                        //  4. Clean up the remaining arguments (and more if returning straight back).
 
-		ret;
-	}
+        ret;
+    }
 }
 
 FunctionTrampoline *
 Function::OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, FunctionTrampoline *trampoline, void *btAddr, DWORD *lastError)
 {
-	// Keep track of the function call
-	FunctionCall *call = new FunctionCall(this, btAddr, cpuCtx);
-	call->SetCpuContextLive(cpuCtx);
-	call->SetLastErrorLive(lastError);
+    // Keep track of the function call
+    FunctionCall *call = new FunctionCall(this, btAddr, cpuCtx);
+    call->SetCpuContextLive(cpuCtx);
+    call->SetLastErrorLive(lastError);
 
     OnEnter(call);
 
-	bool carryOn = call->GetShouldCarryOn();
+    bool carryOn = call->GetShouldCarryOn();
 
-	FunctionSpec *spec = call->GetFunction()->GetSpec();
-	CallingConvention conv = spec->GetCallingConvention();
-	if (!carryOn && (conv == CALLING_CONV_UNKNOWN ||
-		    (conv != CALLING_CONV_CDECL && spec->GetArgsSize() == FUNCTION_ARGS_SIZE_UNKNOWN)))
-	{
+    FunctionSpec *spec = call->GetFunction()->GetSpec();
+    CallingConvention conv = spec->GetCallingConvention();
+    if (!carryOn && (conv == CALLING_CONV_UNKNOWN ||
+            (conv != CALLING_CONV_CDECL && spec->GetArgsSize() == FUNCTION_ARGS_SIZE_UNKNOWN)))
+    {
         Logger *logger = GetLogger();
         if (logger != NULL)
             logger->LogWarning("Ignoring ShouldCarryOn override for %s because of lack of information",
                 spec->GetName().c_str());
-		carryOn = true;
-	}
+        carryOn = true;
+    }
 
-	if (carryOn)
-	{
-		// Set up a trampoline used to trap the return
-		FunctionTrampoline *retTrampoline = new FunctionTrampoline;
+    if (carryOn)
+    {
+        // Set up a trampoline used to trap the return
+        FunctionTrampoline *retTrampoline = new FunctionTrampoline;
 
-		retTrampoline->CALL_opcode = 0xE8;
-		retTrampoline->CALL_offset = (DWORD) Function::OnLeaveProxy - (DWORD) &(retTrampoline->data);
-		retTrampoline->data = call;
+        retTrampoline->CALL_opcode = 0xE8;
+        retTrampoline->CALL_offset = (DWORD) Function::OnLeaveProxy - (DWORD) &(retTrampoline->data);
+        retTrampoline->data = call;
 
-		DWORD oldProtect;
-		VirtualProtect(retTrampoline, sizeof(FunctionTrampoline), PAGE_EXECUTE_READWRITE, &oldProtect);
+        DWORD oldProtect;
+        VirtualProtect(retTrampoline, sizeof(FunctionTrampoline), PAGE_EXECUTE_READWRITE, &oldProtect);
 
-		return retTrampoline;
-	}
-	else
+        return retTrampoline;
+    }
+    else
     {
         TlsSetValue(tlsIdx, NULL);
 
-		// Clear off the proxy return address.
-		*unwindSize += sizeof(void *);
+        // Clear off the proxy return address.
+        *unwindSize += sizeof(void *);
 
-		if (conv != CALLING_CONV_CDECL)
-		{
-			*unwindSize += spec->GetArgsSize();
+        if (conv != CALLING_CONV_CDECL)
+        {
+            *unwindSize += spec->GetArgsSize();
 
-			void **retAddr = reinterpret_cast<void **>(static_cast<char *>(btAddr) + spec->GetArgsSize());
-			*retAddr = call->GetReturnAddress();
-		}
-	}
+            void **retAddr = reinterpret_cast<void **>(static_cast<char *>(btAddr) + spec->GetArgsSize());
+            *retAddr = call->GetReturnAddress();
+        }
+    }
 
-	delete call;
-	return NULL;
+    delete call;
+    return NULL;
 }
 
 __declspec(naked) void
 Function::OnLeaveProxy(CpuContext cpuCtx, FunctionTrampoline *trampoline)
 {
-	FunctionCall *call;
-	DWORD lastError;
+    FunctionCall *call;
+    DWORD lastError;
 
-	__asm {
-											// *** We're coming in hot and the method has just been called ***
+    __asm {
+                                            // *** We're coming in hot and the method has just been called ***
 
-		sub esp, 4;							//  1. Reserve space for the second argument to this function (VMethodTrampoline *).
-		push eax;
-		push ebx;
-		mov eax, [esp+8+4];					//  2. Get the trampoline returnaddress, which is the address of the VMethodCall *
-											//     right after the CALL instruction on the trampoline.
-		mov ebx, eax;						//  3. Store the VMethodCall ** in ebx.
-		mov ebx, [ebx];						//  4. Dereference the VMethodCall **.
-		sub eax, 5;							//  5. Rewind the pointer to the start of the VMethodTrampoline structure.
-		mov [esp+8+0], eax;					//  6. Store the VMethodTrampoline * on the reserved spot so that we can access it from
-											//     C++ through the second argument.
-		mov eax, [ebx+FunctionCall::m_returnAddress];	//  6. Get the return address of the caller.
-		mov [esp+8+4], eax;					//  7. Replace the trampoline return-address with the return address of the caller.
-		pop ebx;
-		pop eax;
+        sub esp, 4;                         //  1. Reserve space for the second argument to this function (VMethodTrampoline *).
+        push eax;
+        push ebx;
+        mov eax, [esp+8+4];                 //  2. Get the trampoline returnaddress, which is the address of the VMethodCall *
+                                            //     right after the CALL instruction on the trampoline.
+        mov ebx, eax;                       //  3. Store the VMethodCall ** in ebx.
+        mov ebx, [ebx];                     //  4. Dereference the VMethodCall **.
+        sub eax, 5;                         //  5. Rewind the pointer to the start of the VMethodTrampoline structure.
+        mov [esp+8+0], eax;                 //  6. Store the VMethodTrampoline * on the reserved spot so that we can access it from
+                                            //     C++ through the second argument.
+        mov eax, [ebx+FunctionCall::m_returnAddress];    //  6. Get the return address of the caller.
+        mov [esp+8+4], eax;                 //  7. Replace the trampoline return-address with the return address of the caller.
+        pop ebx;
+        pop eax;
 
-		pushad;								//  8. Save all registers and conveniently place them so that they're available
-											//     from C++ through the first argument.
+        pushad;                             //  8. Save all registers and conveniently place them so that they're available
+                                            //     from C++ through the first argument.
 
-		sub esp, 4;							//  9. Padding/fake return address so that ebp+8 refers to the first argument.
-		push ebp;							// 10. Standard prolog.
-		mov ebp, esp;
-		sub esp, __LOCAL_SIZE;
-	}
+        sub esp, 4;                         //  9. Padding/fake return address so that ebp+8 refers to the first argument.
+        push ebp;                           // 10. Standard prolog.
+        mov ebp, esp;
+        sub esp, __LOCAL_SIZE;
+    }
 
     lastError = GetLastError();
 
-	call = static_cast<FunctionCall *>(trampoline->data);
-	call->GetFunction()->OnLeaveWrapper(&cpuCtx, trampoline, call, &lastError);
+    call = static_cast<FunctionCall *>(trampoline->data);
+    call->GetFunction()->OnLeaveWrapper(&cpuCtx, trampoline, call, &lastError);
 
     TlsSetValue(tlsIdx, NULL);
 
     SetLastError(lastError);
 
-	__asm {
-											// *** Bounce off back to the caller ***
+    __asm {
+                                            // *** Bounce off back to the caller ***
 
-		mov esp, ebp;						//  1. Standard epilog.
-		pop ebp;
-		add esp, 4;							//  2. Remove the padding/fake return address (see step 10 above).
+        mov esp, ebp;                       //  1. Standard epilog.
+        pop ebp;
+        add esp, 4;                         //  2. Remove the padding/fake return address (see step 10 above).
 
-		popad;								//  3. Clean up the first argument and restore the registers (see step 9 above).
+        popad;                              //  3. Clean up the first argument and restore the registers (see step 9 above).
 
-		add esp, 4;							//  4. Clean up the second argument.
-		ret;								//  5. Bounce to the caller.
-	}
+        add esp, 4;                         //  4. Clean up the second argument.
+        ret;                                //  5. Bounce to the caller.
+    }
 }
 
 void
@@ -673,30 +673,30 @@ Function::OnLeaveWrapper(CpuContext *cpuCtx, FunctionTrampoline *trampoline, Fun
 {
     call->SetState(FUNCTION_CALL_LEAVING);
 
-	call->SetCpuContextLive(cpuCtx);
-	call->SetLastErrorLive(lastError);
+    call->SetCpuContextLive(cpuCtx);
+    call->SetLastErrorLive(lastError);
 
     // Got this now
-	call->SetCpuContextLeave(cpuCtx);
+    call->SetCpuContextLeave(cpuCtx);
 
-	// Do some logging
-	OnLeave(call);
+    // Do some logging
+    OnLeave(call);
 
-	delete trampoline;
-	delete call;
+    delete trampoline;
+    delete call;
 }
 
 void
 Function::OnEnter(FunctionCall *call)
 {
-	bool shouldLog = true;
-	FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetHandler();
+    bool shouldLog = true;
+    FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetHandler();
 
-	if (handler != NULL)
-		handler(call, call->GetFunction()->GetSpec()->GetHandlerUserData(), shouldLog);
+    if (handler != NULL)
+        handler(call, call->GetFunction()->GetSpec()->GetHandlerUserData(), shouldLog);
 
-	if (shouldLog)
-	{
+    if (shouldLog)
+    {
         Logging::Event *ev = GetLogger()->NewEvent("FunctionCall");
 
         Logging::TextNode *textNode = new Logging::TextNode("name", GetFullName());
@@ -710,20 +710,20 @@ Function::OnEnter(FunctionCall *call)
             call->SetUserData(ev);
         else
             ev->Submit();
-	}
+    }
 }
 
 void
 Function::OnLeave(FunctionCall *call)
 {
-	bool shouldLog = true;
-	FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetHandler();
+    bool shouldLog = true;
+    FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetHandler();
 
-	if (handler != NULL)
-		handler(call, call->GetFunction()->GetSpec()->GetHandlerUserData(), shouldLog);
+    if (handler != NULL)
+        handler(call, call->GetFunction()->GetSpec()->GetHandlerUserData(), shouldLog);
 
-	if (shouldLog)
-	{
+    if (shouldLog)
+    {
         Logging::Event *ev = static_cast<Logging::Event *>(call->GetUserData());
         if (ev != NULL)
         {
@@ -733,7 +733,7 @@ Function::OnLeave(FunctionCall *call)
 
             ev->Submit();
         }
-	}
+    }
 }
 
 FunctionCall::FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxEnter)
@@ -746,15 +746,15 @@ FunctionCall::FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxE
       m_shouldCarryOn(true),
       m_userData(NULL)
 {
-	memset(&m_cpuCtxLeave, 0, sizeof(m_cpuCtxLeave));
+    memset(&m_cpuCtxLeave, 0, sizeof(m_cpuCtxLeave));
 
-	int argsSize = function->GetSpec()->GetArgsSize();
-	if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN)
-	{
+    int argsSize = function->GetSpec()->GetArgsSize();
+    if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN)
+    {
         if (argsSize > 0)
         {
-		    m_argumentsData.resize(argsSize);
-		    memcpy((void *) m_argumentsData.data(), (BYTE *) btAddr + 4, argsSize);
+            m_argumentsData.resize(argsSize);
+            memcpy((void *) m_argumentsData.data(), (BYTE *) btAddr + 4, argsSize);
         }
 
         ArgumentListSpec *spec = function->GetSpec()->GetArguments();
@@ -762,13 +762,13 @@ FunctionCall::FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxE
         {
             m_arguments = new ArgumentList(spec, const_cast<void *>(static_cast<const void *>(m_argumentsData.data())));
         }
-	}
+    }
 }
 
 bool
 FunctionCall::ShouldLogArgumentDeep(const Argument *arg) const
 {
-	ArgumentSpec *spec = arg->GetSpec();
+    ArgumentSpec *spec = arg->GetSpec();
     ArgumentDirection dir = spec->GetDirection();
 
     if (m_state == FUNCTION_CALL_ENTERING)
@@ -777,12 +777,12 @@ FunctionCall::ShouldLogArgumentDeep(const Argument *arg) const
     }
     else
     {
-		bool shouldLog = (dir & ARG_DIR_OUT) != 0;
-		if (!shouldLog)
-			return false;
+        bool shouldLog = (dir & ARG_DIR_OUT) != 0;
+        if (!shouldLog)
+            return false;
 
-		// TODO: we only check this when leaving for now -- does it make any sense to do it on entry?
-		return spec->ShouldLogEval(&m_cpuCtxLeave);
+        // TODO: we only check this when leaving for now -- does it make any sense to do it on entry?
+        return spec->ShouldLogEval(&m_cpuCtxLeave);
     }
 }
 
@@ -832,7 +832,7 @@ FunctionCall::AppendCpuRegisterToElement(Logging::Element *el, const char *name,
 void
 FunctionCall::AppendArgumentsToElement(Logging::Element *el)
 {
-	FunctionSpec *spec = m_function->GetSpec();
+    FunctionSpec *spec = m_function->GetSpec();
 
     const ArgumentList *args = GetArguments();
     if (args != NULL)
@@ -856,7 +856,7 @@ FunctionCall::AppendArgumentsToElement(Logging::Element *el)
                 const Argument &arg = (*args)[i];
 
                 if (!(m_state == FUNCTION_CALL_LEAVING && arg.GetSpec()->GetDirection() == ARG_DIR_IN))
-			        argsEl->AppendChild(arg.ToNode(ShouldLogArgumentDeep(&arg), this));
+                    argsEl->AppendChild(arg.ToNode(ShouldLogArgumentDeep(&arg), this));
             }
         }
     }
@@ -870,35 +870,35 @@ FunctionCall::AppendArgumentsToElement(Logging::Element *el)
         el->AppendChild(argsEl);
         argsEl->AddField("direction", "in");
 
-	    int argsSize = spec->GetArgsSize();
-	    if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN && argsSize % sizeof(DWORD) == 0)
-	    {
-		    DWORD *args = (DWORD *) m_argumentsData.data();
+        int argsSize = spec->GetArgsSize();
+        if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN && argsSize % sizeof(DWORD) == 0)
+        {
+            DWORD *args = (DWORD *) m_argumentsData.data();
 
-			Marshaller::UInt32 marshaller;
+            Marshaller::UInt32 marshaller;
 
-		    for (unsigned int i = 0; i < argsSize / sizeof(DWORD); i++)
-		    {
-				Logging::Element *argElement = new Logging::Element("argument");
+            for (unsigned int i = 0; i < argsSize / sizeof(DWORD); i++)
+            {
+                Logging::Element *argElement = new Logging::Element("argument");
                 argsEl->AppendChild(argElement);
 
-				OOStringStream ss;
-				ss << "arg" << (i + 1);
-				argElement->AddField("name", ss.str());
+                OOStringStream ss;
+                ss << "arg" << (i + 1);
+                argElement->AddField("name", ss.str());
 
-				bool hex = false;
+                bool hex = false;
 
-				// FIXME: optimize this
-				if (args[i] > 0xFFFF && !IsBadReadPtr((void *) args[i], 1))
-					hex = true;
+                // FIXME: optimize this
+                if (args[i] > 0xFFFF && !IsBadReadPtr((void *) args[i], 1))
+                    hex = true;
 
-				marshaller.SetFormatHex(hex);
+                marshaller.SetFormatHex(hex);
 
                 Logging::Node *valueNode = marshaller.ToNode(&args[i], true, this);
                 if (valueNode != NULL)
                     argElement->AppendChild(valueNode);
-		    }
-	    }
+            }
+        }
     }
 }
 
@@ -922,11 +922,11 @@ FunctionCall::AppendReturnValueToElement(Logging::Element *el)
 OString
 FunctionCall::ToString()
 {
-	FunctionSpec *spec = m_function->GetSpec();
+    FunctionSpec *spec = m_function->GetSpec();
 
-	OOStringStream ss;
+    OOStringStream ss;
 
-	ss << m_function->GetFullName();
+    ss << m_function->GetFullName();
 
     const ArgumentList *args = GetArguments();
     if (args != NULL)
@@ -938,7 +938,7 @@ FunctionCall::ToString()
             const Argument &arg = (*args)[i];
 
             if (i)
-			    ss << ", ";
+                ss << ", ";
 
             ss << arg.ToString(ShouldLogArgumentDeep(&arg), this);
         }
@@ -947,32 +947,32 @@ FunctionCall::ToString()
     }
     else
     {
-	    int argsSize = spec->GetArgsSize();
-	    if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN && argsSize % sizeof(DWORD) == 0)
-	    {
-		    ss << "(";
+        int argsSize = spec->GetArgsSize();
+        if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN && argsSize % sizeof(DWORD) == 0)
+        {
+            ss << "(";
 
-		    DWORD *args = (DWORD *) m_argumentsData.data();
+            DWORD *args = (DWORD *) m_argumentsData.data();
 
-		    for (unsigned int i = 0; i < argsSize / sizeof(DWORD); i++)
-		    {
-			    if (i)
-				    ss << ", ";
+            for (unsigned int i = 0; i < argsSize / sizeof(DWORD); i++)
+            {
+                if (i)
+                    ss << ", ";
 
-			    // FIXME: optimize this
-			    if (args[i] > 0xFFFF && !IsBadReadPtr((void *) args[i], 1))
-				    ss << hex << "0x";
-			    else
-				    ss << dec;
+                // FIXME: optimize this
+                if (args[i] > 0xFFFF && !IsBadReadPtr((void *) args[i], 1))
+                    ss << hex << "0x";
+                else
+                    ss << dec;
 
-			    ss << args[i];
-		    }
+                ss << args[i];
+            }
 
-		    ss << ")";
-	    }
+            ss << ")";
+        }
     }
 
-	return ss.str();
+    return ss.str();
 }
 
 bool

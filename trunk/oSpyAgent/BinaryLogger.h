@@ -25,7 +25,7 @@ class BinaryLogger : public Logging::Logger
 {
 public:
     BinaryLogger(Agent *agent, const OWString &filename);
-	virtual ~BinaryLogger();
+    virtual ~BinaryLogger();
 
     virtual Logging::Event *NewEvent(const OString &eventType);
     virtual void SubmitEvent(Logging::Event *ev);
@@ -33,7 +33,7 @@ public:
 protected:
     Agent *m_agent;
 
-	HANDLE m_handle;
+    HANDLE m_handle;
     HANDLE m_destroyEvent;
     HANDLE m_loggingThreadHandle;
     SLIST_HEADER m_pendingEvents;
@@ -47,14 +47,14 @@ protected:
 class BinarySerializer : public BaseObject
 {
 public:
-	const OString &GetData() { return m_buf; }
+    const OString &GetData() { return m_buf; }
 
-	void AppendNode(Logging::Node *node);
-	void AppendString(const OString &s);
-	void AppendDWord(DWORD dw);
+    void AppendNode(Logging::Node *node);
+    void AppendString(const OString &s);
+    void AppendDWord(DWORD dw);
 
 protected:
-	OString m_buf;
+    OString m_buf;
 };
 
 } // namespace oSpy
