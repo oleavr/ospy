@@ -50,13 +50,13 @@ Util::Instance()
 void
 Util::Initialize()
 {
-	InitializeCriticalSection(&m_cs);
+    InitializeCriticalSection(&m_cs);
 
         char buf[_MAX_PATH] = { 0, };
-	if (GetModuleBaseNameA(GetCurrentProcess(), NULL, buf, sizeof(buf)) > 0)
-	{
-		m_processName = buf;
-	}
+    if (GetModuleBaseNameA(GetCurrentProcess(), NULL, buf, sizeof(buf)) > 0)
+    {
+        m_processName = buf;
+    }
 
     m_asciiFuncSpec = new FunctionSpec("LoadLibraryA");
     m_asciiFuncSpec->SetHandler(OnLoadLibrary);
@@ -71,7 +71,7 @@ Util::Initialize()
     m_asciiFunc->Hook();
     m_uniFunc->Hook();
 
-	UpdateModuleList();
+    UpdateModuleList();
 }
 
 void
@@ -114,18 +114,18 @@ Util::OnLoadLibrary(FunctionCall *call, void *userData, bool &shouldLog)
         Instance()->UpdateModuleList();
     }
 
-	shouldLog = false;
+    shouldLog = false;
 }
 
 void
 Util::UpdateModuleList()
 {
-	EnterCriticalSection(&m_cs);
+    EnterCriticalSection(&m_cs);
 
-	m_lowestAddress = 0xFFFFFFFF;
-	m_highestAddress = 0;
+    m_lowestAddress = 0xFFFFFFFF;
+    m_highestAddress = 0;
 
-	m_modules.clear();
+    m_modules.clear();
 
     HANDLE process = GetCurrentProcess();
 
@@ -143,35 +143,35 @@ Util::UpdateModuleList()
 
     for (unsigned int i = 0; i < bytes_needed / sizeof(HMODULE); i++)
     {
-		char buf[128];
+        char buf[128];
 
-		if (GetModuleBaseNameA(process, modules[i], buf, sizeof(buf)) != 0)
-		{
-			MODULEINFO mi;
-			if (GetModuleInformation(process, modules[i], &mi, sizeof(mi)) != 0)
-			{
-				OModuleInfo modInfo;
-				modInfo.name = buf;
+        if (GetModuleBaseNameA(process, modules[i], buf, sizeof(buf)) != 0)
+        {
+            MODULEINFO mi;
+            if (GetModuleInformation(process, modules[i], &mi, sizeof(mi)) != 0)
+            {
+                OModuleInfo modInfo;
+                modInfo.name = buf;
 
-				IMAGE_DOS_HEADER *dosHeader = (IMAGE_DOS_HEADER *) modules[i];
-				IMAGE_NT_HEADERS *peHeader = (IMAGE_NT_HEADERS *) ((char *) modules[i] + dosHeader->e_lfanew);
+                IMAGE_DOS_HEADER *dosHeader = (IMAGE_DOS_HEADER *) modules[i];
+                IMAGE_NT_HEADERS *peHeader = (IMAGE_NT_HEADERS *) ((char *) modules[i] + dosHeader->e_lfanew);
 
                 modInfo.handle = modules[i];
-				modInfo.preferredStartAddress = peHeader->OptionalHeader.ImageBase;
-				modInfo.startAddress = (DWORD) mi.lpBaseOfDll;
-				modInfo.endAddress = (DWORD) mi.lpBaseOfDll + mi.SizeOfImage - 1;
-				m_modules[buf] = modInfo;
+                modInfo.preferredStartAddress = peHeader->OptionalHeader.ImageBase;
+                modInfo.startAddress = (DWORD) mi.lpBaseOfDll;
+                modInfo.endAddress = (DWORD) mi.lpBaseOfDll + mi.SizeOfImage - 1;
+                m_modules[buf] = modInfo;
 
-				if (modInfo.startAddress < m_lowestAddress)
-					m_lowestAddress = modInfo.startAddress;
-				if (modInfo.endAddress > m_highestAddress)
-					m_highestAddress = modInfo.endAddress;
-			}
-		}
+                if (modInfo.startAddress < m_lowestAddress)
+                    m_lowestAddress = modInfo.startAddress;
+                if (modInfo.endAddress > m_highestAddress)
+                    m_highestAddress = modInfo.endAddress;
+            }
+        }
     }
 
 DONE:
-	LeaveCriticalSection(&m_cs);
+    LeaveCriticalSection(&m_cs);
 }
 
 OModuleInfo
@@ -193,17 +193,17 @@ Util::GetModuleInfo(void *address)
 {
     OModuleInfo result;
 
-	EnterCriticalSection(&m_cs);
+    EnterCriticalSection(&m_cs);
 
     bool found = false;
-	OModuleInfo *mi = GetModuleInfoForAddress(reinterpret_cast<DWORD>(address));
-	if (mi != NULL)
+    OModuleInfo *mi = GetModuleInfoForAddress(reinterpret_cast<DWORD>(address));
+    if (mi != NULL)
     {
         found = true;
-		result = *mi;
+        result = *mi;
     }
 
-	LeaveCriticalSection(&m_cs);
+    LeaveCriticalSection(&m_cs);
 
     if (!found)
         throw Error("No module found");
@@ -214,33 +214,33 @@ Util::GetModuleInfo(void *address)
 OVector<OModuleInfo>::Type
 Util::GetAllModules()
 {
-	OVector<OModuleInfo>::Type ret;
+    OVector<OModuleInfo>::Type ret;
 
-	EnterCriticalSection(&m_cs);
+    EnterCriticalSection(&m_cs);
 
-	OMap<OICString, OModuleInfo>::Type::iterator it;
-	for (it = m_modules.begin(); it != m_modules.end(); it++)
-	{
-		ret.push_back((*it).second);
-	}
+    OMap<OICString, OModuleInfo>::Type::iterator it;
+    for (it = m_modules.begin(); it != m_modules.end(); it++)
+    {
+        ret.push_back((*it).second);
+    }
 
-	LeaveCriticalSection(&m_cs);
+    LeaveCriticalSection(&m_cs);
 
-	return ret;
+    return ret;
 }
 
 bool
 Util::AddressIsWithinAnyModule(DWORD address)
 {
-	bool result;
+    bool result;
 
-	EnterCriticalSection(&m_cs);
+    EnterCriticalSection(&m_cs);
 
-	result = (address >= m_lowestAddress && address <= m_highestAddress);
+    result = (address >= m_lowestAddress && address <= m_highestAddress);
 
-	LeaveCriticalSection(&m_cs);
+    LeaveCriticalSection(&m_cs);
 
-	return result;
+    return result;
 }
 
 bool
@@ -248,16 +248,16 @@ Util::AddressIsWithinModule(DWORD address, const OICString &moduleName)
 {
     bool result = false;
 
-	EnterCriticalSection(&m_cs);
+    EnterCriticalSection(&m_cs);
 
-	OModuleInfo *mi = GetModuleInfoForAddress(address);
+    OModuleInfo *mi = GetModuleInfoForAddress(address);
     if (mi != NULL)
     {
         if (mi->name == moduleName)
             result = true;
     }
 
-	LeaveCriticalSection(&m_cs);
+    LeaveCriticalSection(&m_cs);
 
     return result;
 }
@@ -285,19 +285,19 @@ Util::CreateBacktraceNode(void *address)
     Logging::Element *btNode = NULL;
 
     int count = 0;
-	DWORD *p = (DWORD *) address;
+    DWORD *p = (DWORD *) address;
 
-	for (; count < 8 && (char *) p < (char *) address + 16384; p++)
-	{
+    for (; count < 8 && (char *) p < (char *) address + 16384; p++)
+    {
         if (IsBadReadPtr(p, 4))
-			break;
+            break;
 
         DWORD value = *p;
 
-		if (value < m_lowestAddress || value > m_highestAddress)
+        if (value < m_lowestAddress || value > m_highestAddress)
             continue;
 
-		unsigned char *codeAddr = (unsigned char *) value;
+        unsigned char *codeAddr = (unsigned char *) value;
         if (IsBadReadPtr(reinterpret_cast<FARPROC>(codeAddr - 6), 6))
             continue;
 
@@ -305,14 +305,14 @@ Util::CreateBacktraceNode(void *address)
             *(codeAddr - 6) == OPCODE_CALL_NEAR_ABS_INDIRECT ||
             *(codeAddr - 3) == OPCODE_CALL_NEAR_ABS_INDIRECT ||
             *(codeAddr - 2) == OPCODE_CALL_NEAR_ABS_INDIRECT)
-		{
+        {
             EnterCriticalSection(&m_cs);
 
             OModuleInfo *mi = GetModuleInfoForAddress(value);
 
-			if (mi != NULL && mi->name != "oSpyAgent.dll")
+            if (mi != NULL && mi->name != "oSpyAgent.dll")
             {
-			    DWORD canonicalAddress = mi->preferredStartAddress + (value - mi->startAddress);
+                DWORD canonicalAddress = mi->preferredStartAddress + (value - mi->startAddress);
 
                 Logging::TextNode *entry = new Logging::TextNode("entry");
                 entry->AddField("moduleName", mi->name.c_str());
@@ -326,31 +326,31 @@ Util::CreateBacktraceNode(void *address)
                     btNode = new Logging::Element("backtrace");
                 btNode->AppendChild(entry);
 
-				count++;
+                count++;
             }
 
             LeaveCriticalSection(&m_cs);
-		}
-	}
+        }
+    }
 
-	return btNode;
+    return btNode;
 }
 
 OModuleInfo *
 Util::GetModuleInfoForAddress(DWORD address)
 {
-	OMap<OICString, OModuleInfo>::Type::iterator it;
-	for (it = m_modules.begin(); it != m_modules.end(); it++)
-	{
-		OModuleInfo &mi = (*it).second;
+    OMap<OICString, OModuleInfo>::Type::iterator it;
+    for (it = m_modules.begin(); it != m_modules.end(); it++)
+    {
+        OModuleInfo &mi = (*it).second;
 
-		if (address >= mi.startAddress && address <= mi.endAddress)
-		{
-			return &mi;
-		}
-	}
+        if (address >= mi.startAddress && address <= mi.endAddress)
+        {
+            return &mi;
+        }
+    }
 
-	return NULL;
+    return NULL;
 }
 
 } // namespace InterceptPP

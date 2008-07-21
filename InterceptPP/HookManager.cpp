@@ -258,10 +258,10 @@ HookManager::Reset()
 FunctionSpec *
 HookManager::GetFunctionSpecById(const OString &id)
 {
-	if (m_funcSpecs.find(id) != m_funcSpecs.end())
-		return m_funcSpecs[id];
-	else
-		return NULL;
+    if (m_funcSpecs.find(id) != m_funcSpecs.end())
+        return m_funcSpecs[id];
+    else
+        return NULL;
 }
 
 void
@@ -755,8 +755,8 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
 }
 
 typedef enum {
-	OPERATOR_EQUALITY,
-	OPERATOR_INEQUALITY,
+    OPERATOR_EQUALITY,
+    OPERATOR_INEQUALITY,
 } ComparisonOperator;
 
 static const unsigned char reg_eval_template[] =
@@ -774,78 +774,78 @@ static const unsigned char reg_eval_template[] =
 RegisterEvalFunc
 ParseLogCondition(const OString &expr)
 {
-	int regOffset; // offset into CpuContext
-	ComparisonOperator op;
-	int rhsValue;
+    int regOffset; // offset into CpuContext
+    ComparisonOperator op;
+    int rhsValue;
 
-	// Has to start with 'reg.'
-	if (expr.find("reg.") != 0)
-		return NULL;
+    // Has to start with 'reg.'
+    if (expr.find("reg.") != 0)
+        return NULL;
 
-	// Find the operator
-	OString::size_type opIdx;
-	if ((opIdx = expr.find("==")) != expr.npos)
-		op = OPERATOR_EQUALITY;
-	else if ((opIdx = expr.find("!=")) != expr.npos)
-		op = OPERATOR_INEQUALITY;
-	else
-		return NULL;
+    // Find the operator
+    OString::size_type opIdx;
+    if ((opIdx = expr.find("==")) != expr.npos)
+        op = OPERATOR_EQUALITY;
+    else if ((opIdx = expr.find("!=")) != expr.npos)
+        op = OPERATOR_INEQUALITY;
+    else
+        return NULL;
 
-	// Check which register
-	OString regName = expr.substr(4, opIdx - 4 - 1);
-	TrimString(regName);
-	if (regName == "eax")
-		regOffset = 28;
-	else if (regName == "ebx")
-		regOffset = 16;
-	else if (regName == "ecx")
-		regOffset = 24;
-	else if (regName == "edx")
-		regOffset = 20;
-	else if (regName == "edi")
-		regOffset = 0;
-	else if (regName == "esi")
-		regOffset = 4;
-	else if (regName == "ebp")
-		regOffset = 8;
-	else if (regName == "esp")
-		regOffset = 12;
-	else
-		return NULL;
+    // Check which register
+    OString regName = expr.substr(4, opIdx - 4 - 1);
+    TrimString(regName);
+    if (regName == "eax")
+        regOffset = 28;
+    else if (regName == "ebx")
+        regOffset = 16;
+    else if (regName == "ecx")
+        regOffset = 24;
+    else if (regName == "edx")
+        regOffset = 20;
+    else if (regName == "edi")
+        regOffset = 0;
+    else if (regName == "esi")
+        regOffset = 4;
+    else if (regName == "ebp")
+        regOffset = 8;
+    else if (regName == "esp")
+        regOffset = 12;
+    else
+        return NULL;
 
-	// And the right hand side integer value
-	OString rhs = expr.substr(opIdx + 2);
-	TrimString(rhs);
-	if (rhs.length() == 0)
-		return NULL;
+    // And the right hand side integer value
+    OString rhs = expr.substr(opIdx + 2);
+    TrimString(rhs);
+    if (rhs.length() == 0)
+        return NULL;
     char *endPtr = NULL;
     rhsValue = strtol(rhs.c_str(), &endPtr, 0);
     if (endPtr == rhs.c_str())
-		return NULL;
+        return NULL;
 
-	// Good, now let's generate the machine code
-	unsigned char *code = new unsigned char[sizeof(reg_eval_template)];
-	memcpy(code, reg_eval_template, sizeof(reg_eval_template));
-	code[REG_EVAL_REGOFF_OFFSET] = regOffset;
-	*((DWORD *) (code + REG_EVAL_RHSVAL_OFFSET)) = rhsValue;
-	if (op == OPERATOR_EQUALITY)
-	  code[REG_EVAL_OPINSN_OFFSET] = 0x94;
-	else if (op == OPERATOR_INEQUALITY)
-	  code[REG_EVAL_OPINSN_OFFSET] = 0x95;
-	else
-	{
-	  // Should never get here
-	  delete[] code;
-	  return NULL;
-	}
+    // Good, now let's generate the machine code
+    unsigned char *code = new unsigned char[sizeof(reg_eval_template)];
+    memcpy(code, reg_eval_template, sizeof(reg_eval_template));
+    code[REG_EVAL_REGOFF_OFFSET] = regOffset;
+    *((DWORD *) (code + REG_EVAL_RHSVAL_OFFSET)) = rhsValue;
+    if (op == OPERATOR_EQUALITY)
+      code[REG_EVAL_OPINSN_OFFSET] = 0x94;
+    else if (op == OPERATOR_INEQUALITY)
+      code[REG_EVAL_OPINSN_OFFSET] = 0x95;
+    else
+    {
+      // Should never get here
+      delete[] code;
+      return NULL;
+    }
 
-	// Make it executable
-	// FIXME: should use a pool here instead of polluting the heap, as
-	//        VirtualProtect will obviously affect the entire memory page...
-	DWORD oldProtect;
-	VirtualProtect(code, sizeof(reg_eval_template), PAGE_EXECUTE_READWRITE, &oldProtect);
+    // Make it executable
+    // FIXME: should use a pool here instead of polluting the heap, as
+    //        VirtualProtect will obviously affect the entire memory page...
+    DWORD oldProtect;
+    VirtualProtect(code, sizeof(reg_eval_template), PAGE_EXECUTE_READWRITE, &oldProtect);
 
-	return (RegisterEvalFunc) code;
+    return (RegisterEvalFunc) code;
 }
 
 ArgumentSpec *
@@ -855,7 +855,7 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
     ArgumentDirection argDir = ARG_DIR_UNKNOWN;
     OString argType;
     PropertyList argTypeProps;
-	RegisterEvalFunc shouldLogRegEval = NULL;
+    RegisterEvalFunc shouldLogRegEval = NULL;
 
     // Parse attributes
     MSXML2::IXMLDOMNamedNodeMapPtr attrs = argNode->attributes;
@@ -908,22 +908,22 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
         OString subNodeName = subNode->nodeName;
         if (subNodeName == "logCondition")
         {
-			OOStringStream ss;
+            OOStringStream ss;
 
-			MSXML2::IXMLDOMNodeListPtr condNodeList = subNode->childNodes;
-			for (int j = 0; j < condNodeList->length; j++)
-			{
-				MSXML2::IXMLDOMNodePtr condNode = condNodeList->item[j];
+            MSXML2::IXMLDOMNodeListPtr condNodeList = subNode->childNodes;
+            for (int j = 0; j < condNodeList->length; j++)
+            {
+                MSXML2::IXMLDOMNodePtr condNode = condNodeList->item[j];
 
-				if (condNode->nodeType == NODE_TEXT)
-				{
-					OString chunk = static_cast<bstr_t>(condNode->nodeTypedValue);
-					TrimString(chunk);
-					ss << chunk;
-				}
-			}
+                if (condNode->nodeType == NODE_TEXT)
+                {
+                    OString chunk = static_cast<bstr_t>(condNode->nodeTypedValue);
+                    TrimString(chunk);
+                    ss << chunk;
+                }
+            }
 
-			OString condStr = ss.str();
+            OString condStr = ss.str();
 
             shouldLogRegEval = ParseLogCondition(condStr);
         }

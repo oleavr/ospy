@@ -119,10 +119,10 @@ namespace oSpy.Capture
         private WinApi.SP_DEVINFO_DATA devInfoData;
 
         private string name;
-	public string Name
-	{
-	  get { return name; }
-	}
+    public string Name
+    {
+      get { return name; }
+    }
 
         private string hardwareId;
         public string HardwareId

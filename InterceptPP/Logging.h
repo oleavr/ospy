@@ -62,7 +62,7 @@ public:
     bool GetContentIsRaw() const { return m_contentIsRaw; }
     const OString &GetContent() const { return m_content; }
 
-	unsigned int GetFieldCount() const { return static_cast<unsigned int>(m_fields.size()); }
+    unsigned int GetFieldCount() const { return static_cast<unsigned int>(m_fields.size()); }
     FieldListConstIter FieldsIterBegin() const { return m_fields.begin(); }
     FieldListConstIter FieldsIterEnd() const { return m_fields.end(); }
     void AddField(const OString &name, const OString &value);
@@ -71,7 +71,7 @@ public:
     void AddField(const OString &name, unsigned long value);
     void AddField(const OString &name, unsigned long long value);
 
-	unsigned int GetChildCount() const { return static_cast<unsigned int>(m_children.size()); }
+    unsigned int GetChildCount() const { return static_cast<unsigned int>(m_children.size()); }
     ChildListConstIter ChildrenIterBegin() const { return m_children.begin(); }
     ChildListConstIter ChildrenIterEnd() const { return m_children.end(); }
 

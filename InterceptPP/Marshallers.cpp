@@ -77,7 +77,7 @@ PropertyOverrides::GetValue(const OString &propName, unsigned int &value) const
 }
 
 BaseMarshaller::BaseMarshaller(const OString &typeName)
-	: m_typeName(typeName)
+    : m_typeName(typeName)
 {
 }
 
@@ -103,9 +103,9 @@ BaseMarshaller::SetPropertyBindings(const char *firstPropName, ...)
     const char *propName = firstPropName;
     while (propName != NULL)
     {
-		const char *propValue = va_arg(args, const char *);
+        const char *propValue = va_arg(args, const char *);
 
-		m_propBindings[propName] = propValue;
+        m_propBindings[propName] = propValue;
 
         propName = va_arg(args, const char *);
     }

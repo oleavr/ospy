@@ -72,7 +72,7 @@ namespace oSpy.SharpDumpLib
         
         public override string ToString()
         {
-        	return String.Format("<Resource Handle=0x{0:x8>", handle);
+            return String.Format("<Resource Handle=0x{0:x8>", handle);
         }
     }
 
