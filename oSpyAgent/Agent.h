@@ -79,7 +79,7 @@ typedef struct {
     SoftwallRule Rules[MAX_SOFTWALL_RULES];
 } Capture;
 
-class Agent //: public BaseObject
+class Agent : public BaseObject
 {
 public:
     Agent ();
