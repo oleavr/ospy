@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="ReleaseWdkCrt-x64"
+	InheritedPropertySheets="$(SolutionDir)vsprops\Common-x64.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		Optimization="1"
+		FavorSizeOrSpeed="2"
+		OmitFramePointers="true"
+		EnableFiberSafeOptimizations="true"
+		WholeProgramOptimization="true"
+		StringPooling="true"
+		RuntimeLibrary="2"
+		DebugInformationFormat="3"
+		AdditionalIncludeDirectories="$(SolutionDir)builddeps\wdkcrt\include;$(SolutionDir)builddeps\wdkcrt\include\atl71"
+		PreprocessorDefinitions="_CRT_NONSTDC_FORCE_DEPRECATE;_CRT_SECURE_FORCE_DEPRECATE"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		LinkIncremental="1"
+		OptimizeReferences="2"
+		EnableCOMDATFolding="2"
+		LinkTimeCodeGeneration="1"
+		AdditionalDependencies="msvcrt.lib msvcrt_win2003.obj"
+		AdditionalLibraryDirectories="$(SolutionDir)builddeps\wdkcrt\lib\amd64"
+		IgnoreAllDefaultLibraries="true"
+	/>
+</VisualStudioPropertySheet>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="Common-Win32"
+	InheritedPropertySheets="$(SolutionDir)vsprops\Common.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		PreprocessorDefinitions="WIN32;_WIN32_WINNT=0x0501;WINVER=0x0501"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		TargetMachine="1"
+	/>
+</VisualStudioPropertySheet>

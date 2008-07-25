@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2006-2007 Ole André Vadla Ravnås <oleavr@gmail.com>
+// Copyright (c) 2006-2008 Ole André Vadla Ravnås <oleavr@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -81,7 +81,6 @@ Agent::Initialize()
     if (funcSpec != NULL)
         funcSpec->SetHandler(OnSocketConnectWrapper, this);
 
-    /*
     try
     {
         LoadPlugins();
@@ -96,7 +95,6 @@ Agent::Initialize()
         GetLogger()->LogError("LoadPlugins failed: unknown error");
         return;
     }
-    */
 
 #ifdef RESEARCH_MODE
     funcSpec = mgr->GetFunctionSpecById("WaitForSingleObject");
@@ -135,52 +133,83 @@ Agent::Initialize()
 }
 
 void
-Agent::LoadPlugins()
+Agent::LoadPlugins ()
 {
-  OWString pluginDir = GetBinPath();
-  pluginDir.append(L"\\plugins\\");
+    OWString pluginDir = GetBinPath ();
+    pluginDir.append (L"\\Plugins\\");
 
-  WIN32_FIND_DATA findData;
-  OWString matchStr = pluginDir + L"*.dll";
-  HANDLE findHandle = FindFirstFile(matchStr.c_str(), &findData);
-  if (findHandle == INVALID_HANDLE_VALUE)
-    return;
+    WIN32_FIND_DATA findData;
+    OWString matchStr = pluginDir + L"oSpyAgent_*.dll";
+    HANDLE findHandle = FindFirstFile (matchStr.c_str (), &findData);
+    if (findHandle == INVALID_HANDLE_VALUE)
+        return;
 
-  do
-  {
-    OWString pluginPath = pluginDir + findData.cFileName;
-
-    HMODULE module = LoadLibrary(pluginPath.c_str());
-    if (module != NULL)
+    do
     {
-      AgentPluginGetDescFunc pluginGetDesc =
-          (AgentPluginGetDescFunc) GetProcAddress(module, "oSpyAgentPluginGetDesc");
+        OWString pluginPath = pluginDir + findData.cFileName;
 
-      if (pluginGetDesc != NULL)
-      {
-      }
-      else
-      {
-        FreeLibrary(module);
-      }
+        HMODULE module = LoadLibrary (pluginPath.c_str ());
+        if (module != NULL)
+        {
+            AgentPlugin * plugin = NULL;
+
+            AgentPluginGetDescFunc pluginGetDesc =
+              (AgentPluginGetDescFunc) GetProcAddress (module, "oSpyAgentPluginGetDesc");
+
+            if (pluginGetDesc != NULL)
+            {
+                const AgentPluginDesc * desc = pluginGetDesc ();
+
+                if (desc->ApiVersion == 1)
+                {
+                    plugin = desc->CreateFunc ();
+
+                    m_plugins[desc] = plugin;
+                    m_pluginModules.push_back (module);
+
+                    plugin->Open ();
+                }
+            }
+
+            if (plugin == NULL)
+                FreeLibrary (module);
+        }
     }
-  }
-  while (FindNextFile (findHandle, &findData));
+    while (FindNextFile (findHandle, &findData));
 
-  FindClose(findHandle);
+    FindClose(findHandle);
+}
+
+void
+Agent::UnloadPlugins ()
+{
+    PluginMap::iterator pi;
+    for (pi = m_plugins.begin (); pi != m_plugins.end (); pi++)
+    {
+        pi->second->Close ();
+        pi->first->DestroyFunc (pi->second);
+    }
+
+    m_plugins.clear ();
+
+    PluginModuleList::iterator mi;
+    for (mi = m_pluginModules.begin (); mi != m_pluginModules.end (); mi++)
+        FreeLibrary (*mi);
+
+    m_pluginModules.clear ();
 }
 
 OWString
 Agent::GetBinPath () const
 {
-  WCHAR path[MAX_PATH];
+    WCHAR path[MAX_PATH];
 
-  if (GetModuleFileName(::g_mod, path, MAX_PATH) == 0)
-    throw Error("GetModuleFileName failed");
+    if (GetModuleFileName(::g_mod, path, MAX_PATH) == 0)
+        throw Error("GetModuleFileName failed");
 
-  PathRemoveFileSpec(path);
+    PathRemoveFileSpec(path);
 
-  return path;
+    return path;
 }
 
 void
@@ -434,6 +463,8 @@ Agent::HaveMatchingSoftwallRule(const OString &functionName,
 void
 Agent::UnInitialize()
 {
+    UnloadPlugins ();
+
     // Uninitialize Intercept++, effectively unhooking everything
     InterceptPP::UnInitialize();
 
@@ -487,8 +518,6 @@ AgentStartFunc (void * arg)
         // Aborted
         return NULL;
     }
-
-    MessageBoxA (NULL, "Yay!", "oSpyAgent Starting", MB_OK | MB_ICONERROR);
 
     g_agent = new oSpy::Agent ();
 
