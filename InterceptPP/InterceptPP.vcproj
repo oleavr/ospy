@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="InterceptPP"
 	ProjectGUID="{B0F22416-9E7A-4265-B431-520C6ECAFFBA}"
 	RootNamespace="InterceptPP"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -17,9 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(OutDir)\obj\$(ProjectName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="$(SolutionDir)vsprops\$(ConfigurationName)-$(PlatformName).vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -39,17 +39,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
-				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories="..\udis86"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=_WIN32_WINNT_WINXP;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;INTERCEPTPP_EXPORTS"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"
+				PreprocessorDefinitions="INTERCEPTPP_EXPORTS"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -63,9 +54,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="psapi.lib shlwapi.lib"
-				DelayLoadDLLs=""
-				OptimizeReferences="1"
-				EnableCOMDATFolding="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -86,17 +74,13 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(OutDir)\obj\$(ProjectName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="$(SolutionDir)vsprops\$(ConfigurationName)-$(PlatformName).vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -117,14 +101,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories="..\udis86"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=_WIN32_WINNT_WINXP;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;INTERCEPTPP_EXPORTS"
-				RuntimeLibrary="2"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
+				PreprocessorDefinitions="INTERCEPTPP_EXPORTS"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -138,7 +116,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="psapi.lib shlwapi.lib"
-				DelayLoadDLLs=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -159,7 +136,66 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseWdkCrt|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(SolutionDir)vsprops\$(ConfigurationName)-$(PlatformName).vsprops"
+			CharacterSet="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\udis86"
+				PreprocessorDefinitions="INTERCEPTPP_EXPORTS"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="psapi.lib shlwapi.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -170,7 +206,6 @@
 		<ProjectReference
 			ReferencedProjectIdentifier="{CC5862D8-900F-4738-BDE0-8C2D6164A688}"
 			CopyLocal="false"
-			RelativePathToProject=".\udis86\libudis86.vcproj"
 		/>
 	</References>
 	<Files>

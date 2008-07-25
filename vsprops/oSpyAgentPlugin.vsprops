@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="oSpyAgentPlugin"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="$(SolutionDir)"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		OutputFile="$(OutDir)\Plugins\$(ProjectName).dll"
+		ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+	/>
+</VisualStudioPropertySheet>

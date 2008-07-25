@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="Common"
+	OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+	IntermediateDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)\obj\$(ProjectName)"
+	BuildLogFile="$(IntDir)\BuildLog.htm"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		PreprocessorDefinitions="_WINDOWS;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
+		ExceptionHandling="2"
+		BufferSecurityCheck="false"
+		RuntimeTypeInfo="false"
+		ProgramDataBaseFileName="$(IntDir)\$(TargetName).pdb"
+		WarningLevel="3"
+		WarnAsError="true"
+		CompileAs="0"
+		ForcedIncludeFiles="$(SolutionDir)msvc_recommended_pragmas.h"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		OutputFile="$(OutDir)\$(ProjectName).dll"
+		AdditionalLibraryDirectories="$(OutDir)\lib;$(SolutionDir)\builddeps\lib"
+		GenerateDebugInformation="true"
+		ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
+		SubSystem="2"
+		RandomizedBaseAddress="1"
+		DataExecutionPrevention="0"
+	/>
+</VisualStudioPropertySheet>

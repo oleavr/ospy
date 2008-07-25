@@ -18,28 +18,14 @@
 #pragma once
 
 #include <winsock2.h>
+
+#include "AgentPlugin.h"
 #include "BinaryLogger.h"
 
 // FIXME: move this into a separate plugin once the planned plugin architecture has been introduced
 //#define RESEARCH_MODE
 
 namespace oSpy {
-
-typedef struct _AgentPluginDesc AgentPluginDesc;
-
-typedef void (WINAPI * AgentPluginGetDescFunc) (AgentPluginDesc * desc);
-typedef void * (WINAPI * AgentPluginCreateFunc) ();
-typedef void (WINAPI * AgentPluginDestroyFunc) (void * instance);
-
-struct _AgentPluginDesc
-{
-  DWORD ApiVersion;
-  const WCHAR * Name;
-  const WCHAR * Description;
-
-  AgentPluginCreateFunc CreateFunc;
-  AgentPluginDestroyFunc DestroyFunc;
-};
 
 #define MAX_SOFTWALL_RULES   128
 
@@ -92,6 +78,7 @@ public:
 
 private:
     void LoadPlugins ();
+    void UnloadPlugins ();
 
     OWString GetBinPath () const;
 
@@ -99,6 +86,11 @@ protected:
     HANDLE m_map;
     Capture *m_capture;
     OICString m_processName;
+
+    typedef OMap<const AgentPluginDesc *, AgentPlugin *>::Type PluginMap;
+    typedef OList<HMODULE>::Type PluginModuleList;
+    PluginMap m_plugins;
+    PluginModuleList m_pluginModules;
 
     static void OnSocketConnectWrapper(FunctionCall *call, void *userData, bool &shouldLog);
     void OnSocketConnect(FunctionCall *call);
