@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="oSpyAgent_AsyncIO"
+	Name="AsyncIO"
 	ProjectGUID="{14583EF5-6D95-430C-BE48-03CB8D713EA3}"
-	RootNamespace="oSpyAgent_AsyncIO"
+	RootNamespace="AsyncIO"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>

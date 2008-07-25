@@ -47,7 +47,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oSpyDriverAgent", "oSpyDriv
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libudis86", "udis86\libudis86.vcproj", "{CC5862D8-900F-4738-BDE0-8C2D6164A688}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oSpyAgent_AsyncIO", "oSpyAgent\Plugins\AsyncIO\oSpyAgent_AsyncIO.vcproj", "{14583EF5-6D95-430C-BE48-03CB8D713EA3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AsyncIO", "oSpyAgent\Plugins\AsyncIO\AsyncIO.vcproj", "{14583EF5-6D95-430C-BE48-03CB8D713EA3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

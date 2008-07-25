@@ -10,7 +10,7 @@
 	/>
 	<Tool
 		Name="VCLinkerTool"
-		OutputFile="$(OutDir)\Plugins\$(ProjectName).dll"
+		OutputFile="$(OutDir)\Plugins\oSpyAgent_$(ProjectName).dll"
 		ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 	/>
 </VisualStudioPropertySheet>
