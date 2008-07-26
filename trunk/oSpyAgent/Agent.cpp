@@ -40,6 +40,10 @@ Agent::Agent()
 void
 Agent::Initialize()
 {
+    // Make sure we protect this scope so that our own API usage doesn't
+    // cause any logging of hooked functions.
+    ReentranceProtector protector;
+
     InterceptPP::Initialize();
 
     m_map = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, L"Global\\oSpyCapture");
@@ -543,10 +547,10 @@ DllMain(HMODULE hModule,
         DWORD  ul_reason_for_call,
         LPVOID lpReserved)
 {
+    ReentranceProtector protector;
+
     if (ul_reason_for_call == DLL_PROCESS_ATTACH)
     {
-        InterceptPP::AllocUtils::Malloc(1024); // testing, just to link against something
-
         // Just to make sure that floating point support is dynamically loaded...
         float dummy_float = 1.0f;
 
