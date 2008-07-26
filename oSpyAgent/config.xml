@@ -162,6 +162,16 @@
     <specs>
         <functions>
             <!-- kernel32 -->
+            <!--
+            <function name="HeapAlloc" callingConvention="stdcall">
+                <returnValue type="UInt32" hex="true"/>
+                <arguments>
+                    <argument name="hHeap" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwFlags" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwBytes" direction="in" type="UInt32"/>
+                </arguments>
+            </function>
+            -->
             <function name="DeviceIoControl" callingConvention="stdcall">
                 <returnValue type="MSBool"/>
                 <arguments>
@@ -600,6 +610,9 @@
         <!-- DLLs -->
 
         <dllModule name="kernel32.dll">
+            <!--
+            <function specId="HeapAlloc"/>
+            -->
             <function specId="DeviceIoControl"/>
 
             <!--
