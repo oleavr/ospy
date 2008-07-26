@@ -88,6 +88,21 @@ typedef void (*FunctionCallHandler) (FunctionCall *call, void *userData, bool &s
 
 typedef bool (__stdcall *RegisterEvalFunc) (const CpuContext *context);
 
+class INTERCEPTPP_API ReentranceProtector
+{
+public:
+    ReentranceProtector ();
+    ~ReentranceProtector ();
+
+    static DWORD Protect ();
+    static void Unprotect (DWORD oldValue);
+
+    static const DWORD MAGIC;
+
+private:
+    DWORD m_oldValue;
+};
+
 class INTERCEPTPP_API ArgumentSpec : public BaseObject
 {
 public:
@@ -263,8 +278,10 @@ public:
 protected:
     FunctionSpec *m_spec;
     DWORD m_offset;
+
     static FARPROC tlsGetValueFunc;
     static DWORD tlsIdx;
+
     static const PrologSignatureSpec prologSignatureSpecs[];
     static OVector<Signature>::Type prologSignatures;
 
@@ -276,10 +293,10 @@ protected:
     void OnLeave(FunctionCall *call);
 
 private:
-    static void OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, FunctionTrampoline *trampoline, void **proxyRet, void **finalRet);
+    static void OnEnterProxy(CpuContext cpuCtx, DWORD cpuFlags, unsigned int unwindSize, FunctionTrampoline *trampoline, void **proxyRet, void **finalRet);
     FunctionTrampoline *OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, FunctionTrampoline *trampoline, void *btAddr, DWORD *lastError);
 
-    static void OnLeaveProxy(CpuContext cpuCtx, FunctionTrampoline *trampoline);
+    static void OnLeaveProxy(CpuContext cpuCtx, DWORD cpuFlags, FunctionTrampoline *trampoline);
     void OnLeaveWrapper(CpuContext *cpuCtx, FunctionTrampoline *trampoline, FunctionCall *call, DWORD *lastError);
 };
 

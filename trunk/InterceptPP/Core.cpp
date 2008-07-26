@@ -65,8 +65,54 @@ SetLogger(Logger *logger)
         delete prevLogger;
 }
 
+#define TIB_MAGIC_OFFSET 700h
+
+ReentranceProtector::ReentranceProtector ()
+{
+    m_oldValue = Protect ();
+}
+
+ReentranceProtector::~ReentranceProtector ()
+{
+    Unprotect (m_oldValue);
+}
+
+DWORD
+ReentranceProtector::Protect ()
+{
+    DWORD oldValue;
+
+    __asm
+    {
+        mov eax, fs:[TIB_MAGIC_OFFSET];
+        mov [oldValue], eax;
+
+        mov eax, [ReentranceProtector::MAGIC];
+        mov fs:[TIB_MAGIC_OFFSET], eax;
+    }
+
+    return oldValue;
+}
+
+void
+ReentranceProtector::Unprotect (DWORD oldValue)
+{
+    __asm
+    {
+        push eax;
+
+        mov eax, [oldValue];
+        mov fs:[TIB_MAGIC_OFFSET], eax;
+
+        pop eax;
+    }
+}
+
+const DWORD ReentranceProtector::MAGIC = 0x6F537079; // 'oSpy'
+
 FARPROC Function::tlsGetValueFunc = NULL;
 DWORD Function::tlsIdx = 0xFFFFFFFF;
+
 const PrologSignatureSpec Function::prologSignatureSpecs[] = {
     {
         {
@@ -361,13 +407,16 @@ Function::GetFullName() const
     return ss.str();
 }
 
+#define OPCODE_CALL_RELATIVE 0xE8
+#define OPCODE_JMP_RELATIVE  0xE9
+
 FunctionTrampoline *
 Function::CreateTrampoline(unsigned int bytesToCopy)
 {
     int trampoSize = sizeof(FunctionTrampoline) + bytesToCopy + sizeof(FunctionRedirectStub);
     FunctionTrampoline *trampoline = reinterpret_cast<FunctionTrampoline *>(new unsigned char[trampoSize]);
 
-    trampoline->CALL_opcode = 0xE8;
+    trampoline->CALL_opcode = OPCODE_CALL_RELATIVE;
     trampoline->CALL_offset = (DWORD) OnEnterProxy - (DWORD) &(trampoline->data);
     trampoline->data = this;
 
@@ -431,6 +480,8 @@ Function::Hook()
         }
     }
 
+#define _INSANE_DEBUG 1
+
 #ifdef _INSANE_DEBUG
     Logging::Logger *logger = GetLogger();
     if (logger != NULL)
@@ -448,6 +499,9 @@ Function::Hook()
     if (!VirtualProtect(reinterpret_cast<LPVOID>(m_offset), sizeof(LONGLONG), PAGE_EXECUTE_WRITECOPY, &m_oldMemProtect))
         throw Error("VirtualProtected failed");
 
+    // Make two copies of the start of the function:
+    //  1) m_origStart: need it to revert in UnHook()
+    //  2) buf: our working copy that we'll modify and copy back
     FunctionRedirectStub *redirStub = reinterpret_cast<FunctionRedirectStub *>(m_offset);
 
     memcpy(m_origStart, redirStub, sizeof(m_origStart));
@@ -455,10 +509,13 @@ Function::Hook()
     unsigned char buf[8];
     memcpy(buf, redirStub, sizeof(buf));
 
+    // Modify 2)
+    // JMP to the trampoline
     FunctionRedirectStub *stub = reinterpret_cast<FunctionRedirectStub *>(buf);
-    stub->JMP_opcode = 0xE9;
+    stub->JMP_opcode = OPCODE_JMP_RELATIVE;
     stub->JMP_offset = reinterpret_cast<DWORD>(trampoline) - (reinterpret_cast<DWORD>(reinterpret_cast<unsigned char *>(redirStub) + sizeof(FunctionRedirectStub)));
 
+    // Copy back 2)
     // HACK: make sure we start with a fresh timeslice
     //       (we might be able to fix this later on by doing the swap atomically)
     Sleep(0);
@@ -474,48 +531,64 @@ Function::UnHook()
     memcpy(reinterpret_cast<void *>(m_offset), m_origStart, sizeof(m_origStart));
     FlushInstructionCache(GetCurrentProcess(), NULL, 0);
 
+    // FIXME: this is racy, if someone has called the function and not yet returned, things will go horribly wrong for them...
+    // Workaround: Make sure that the process being monitored is as idle as possible when UnHook() is called.
     delete m_trampoline;
     m_trampoline = NULL;
 }
 
 __declspec(naked) void
-Function::OnEnterProxy(CpuContext cpuCtx, unsigned int unwindSize, FunctionTrampoline *trampoline, void **proxyRet, void **finalRet)
+Function::OnEnterProxy(CpuContext cpuCtx, DWORD cpuFlags, unsigned int unwindSize, FunctionTrampoline *trampoline, void **proxyRet, void **finalRet)
 {
-    DWORD lastError;
+    DWORD oldProtect, lastError;
     Function *function;
     FunctionTrampoline *nextTrampoline;
 
     __asm {
                                             // *** We're coming in hot from the modified prolog/vtable through the trampoline ***
 
-                                            // First off, is this a nested call?
+        pushfd;
         pushad;
-        push [tlsIdx];
+
+        mov eax, fs:[TIB_MAGIC_OFFSET];     // Protect against re-entrance (if we call a hooked function from the logging code)
+        cmp eax, [ReentranceProtector::MAGIC];
+        jz SHORT_CIRCUIT;
+
+        push [tlsIdx];                      // Nested call?
         call [tlsGetValueFunc];
         test eax, eax;
-        popad;
-        jz NOT_NESTED;
+        jnz SHORT_CIRCUIT;
 
-        add [esp], 4;                       // We're in a nested call, just short-circuit this trampoline.
+        popad;
+        popfd;
+        jmp CARRY_ON;
+
+SHORT_CIRCUIT:
+        popad;                              // Just short-circuit this trampoline; no interception desired.
+        popfd;
+        add [esp], 4;
         ret;
 
-NOT_NESTED:
-        sub esp, 12;                        //  1. Reserve space for the last 3 arguments.
+CARRY_ON:
+        push eax;                           //  1. Reserve space for the last 3 arguments.
+        push eax;                           //     We avoid using sub here because we don't want to modify any flags.
+        push eax;
 
         push 16;                            //  2. Set unwindSize to the size of the last 4 arguments.
 
-        pushad;                             //  3. Save all registers and conveniently place them so that they're available
-                                            //     from C++ through the first argument.
+        pushfd;                             //  3. Save all flags and registers and place them so that they're available
+        pushad;                             //     from C++ through the first two arguments.
+                                            //
 
-        lea eax, [esp+48+4];                //  4. Set finalRet to point to the final return address.
-        mov [esp+48-4], eax;
+        lea eax, [esp+52+4];                //  4. Set finalRet to point to the final return address.
+        mov [esp+52-4], eax;
 
-        lea eax, [esp+48+0];                //  5. Set proxyRet to point to this function's return address.
-        mov [esp+48-8], eax;
+        lea eax, [esp+52+0];                //  5. Set proxyRet to point to this function's return address.
+        mov [esp+52-8], eax;
 
         mov eax, [eax];                     //  6. Set trampoline to point to the start of the trampoline, ie. *proxyRet - 5.
         sub eax, 5;
-        mov [esp+48-12], eax;
+        mov [esp+52-12], eax;
 
         sub esp, 4;                         //  7. Padding/fake return address so that ebp+8 refers to the first argument.
         push ebp;                           //  8. Standard prolog.
@@ -523,6 +596,7 @@ NOT_NESTED:
         sub esp, __LOCAL_SIZE;
     }
 
+    oldProtect = ReentranceProtector::Protect ();
     lastError = GetLastError();
 
     function = static_cast<Function *>(trampoline->data);
@@ -538,17 +612,19 @@ NOT_NESTED:
     }
 
     SetLastError(lastError);
+    ReentranceProtector::Unprotect (oldProtect);
 
     __asm {
                                             // *** Bounce off to the actual method, or straight back to the caller. ***
 
-        mov esp, ebp;                        //  1. Standard epilog.
+        mov esp, ebp;                       //  1. Standard epilog.
         pop ebp;
-        add esp, 4;                            //  2. Remove the padding/fake return address (see step 7 above).
+        add esp, 4;                         //  2. Remove the padding/fake return address (see step 7 above).
 
-        popad;                                //  3. Clean up the first argument and restore the registers (see step 3 above).
+        popad;                              //  3. Clean up the first argument and restore registers and flags (see step 3 above).
+        popfd;
 
-        add esp, [esp];                        //  4. Clean up the remaining arguments (and more if returning straight back).
+        add esp, [esp];                     //  4. Clean up the remaining arguments (and more if returning straight back).
 
         ret;
     }
@@ -613,38 +689,44 @@ Function::OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, FunctionT
 }
 
 __declspec(naked) void
-Function::OnLeaveProxy(CpuContext cpuCtx, FunctionTrampoline *trampoline)
+Function::OnLeaveProxy(CpuContext cpuCtx, DWORD cpuFlags, FunctionTrampoline *trampoline)
 {
     FunctionCall *call;
-    DWORD lastError;
+    DWORD oldProtect, lastError;
 
     __asm {
                                             // *** We're coming in hot and the method has just been called ***
 
-        sub esp, 4;                         //  1. Reserve space for the second argument to this function (VMethodTrampoline *).
+        push eax;                           //  1. Reserve space for the third argument to this function (FunctionTrampoline *).
+                                            //     We avoid using sub here because we don't want to modify any flags.
+        pushfd;                             //  2. Save flags and conveniently place them so that they're available from C++ through
+                                            //     the second argument.
+
         push eax;
         push ebx;
-        mov eax, [esp+8+4];                 //  2. Get the trampoline returnaddress, which is the address of the VMethodCall *
+
+        mov eax, [esp+8+8];                 //  3. Get the trampoline returnaddress, which is the address of the VMethodCall *
                                             //     right after the CALL instruction on the trampoline.
-        mov ebx, eax;                       //  3. Store the VMethodCall ** in ebx.
-        mov ebx, [ebx];                     //  4. Dereference the VMethodCall **.
-        sub eax, 5;                         //  5. Rewind the pointer to the start of the VMethodTrampoline structure.
-        mov [esp+8+0], eax;                 //  6. Store the VMethodTrampoline * on the reserved spot so that we can access it from
+        mov ebx, eax;                       //  4. Store the VMethodCall ** in ebx.
+        mov ebx, [ebx];                     //  5. Dereference the VMethodCall **.
+        sub eax, 5;                         //  6. Rewind the pointer to the start of the VMethodTrampoline structure.
+        mov [esp+8+4], eax;                 //  7. Store the FunctionTrampoline * on the reserved spot so that we can access it from
                                             //     C++ through the second argument.
-        mov eax, [ebx+FunctionCall::m_returnAddress];    //  6. Get the return address of the caller.
-        mov [esp+8+4], eax;                 //  7. Replace the trampoline return-address with the return address of the caller.
+        mov eax, [ebx+FunctionCall::m_returnAddress];    //  8. Get the return address of the caller.
+        mov [esp+8+8], eax;                 //  9. Replace the trampoline return-address with the return address of the caller.
+
         pop ebx;
         pop eax;
 
-        pushad;                             //  8. Save all registers and conveniently place them so that they're available
-                                            //     from C++ through the first argument.
+        pushad;                             // 10. Save all registers and conveniently place them as the first argument.
 
-        sub esp, 4;                         //  9. Padding/fake return address so that ebp+8 refers to the first argument.
-        push ebp;                           // 10. Standard prolog.
+        sub esp, 4;                         // 11. Padding/fake return address so that ebp+8 refers to the first argument.
+        push ebp;                           // 12. Standard prolog.
         mov ebp, esp;
         sub esp, __LOCAL_SIZE;
     }
 
+    oldProtect = ReentranceProtector::Protect ();
     lastError = GetLastError();
 
     call = static_cast<FunctionCall *>(trampoline->data);
@@ -653,15 +735,17 @@ Function::OnLeaveProxy(CpuContext cpuCtx, FunctionTrampoline *trampoline)
     TlsSetValue(tlsIdx, NULL);
 
     SetLastError(lastError);
+    ReentranceProtector::Unprotect (oldProtect);
 
     __asm {
                                             // *** Bounce off back to the caller ***
 
         mov esp, ebp;                       //  1. Standard epilog.
         pop ebp;
-        add esp, 4;                         //  2. Remove the padding/fake return address (see step 10 above).
+        add esp, 4;                         //  2. Remove the padding/fake return address (see step 11 above).
 
-        popad;                              //  3. Clean up the first argument and restore the registers (see step 9 above).
+        popad;                              //  3. Clean up the first two arguments and restore the registers and flags (see steps 2 and 10 above).
+        popfd;
 
         add esp, 4;                         //  4. Clean up the second argument.
         ret;                                //  5. Bounce to the caller.
