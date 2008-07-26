@@ -21,6 +21,8 @@
 #include "Util.h"
 #include <udis86.h>
 
+#define ENABLE_BACKTRACE_SUPPORT 1
+
 #pragma warning( disable : 4311 4312 )
 
 namespace InterceptPP {
@@ -480,8 +482,6 @@ Function::Hook()
         }
     }
 
-#define _INSANE_DEBUG 1
-
 #ifdef _INSANE_DEBUG
     Logging::Logger *logger = GetLogger();
     if (logger != NULL)
@@ -873,11 +873,13 @@ FunctionCall::ShouldLogArgumentDeep(const Argument *arg) const
 void
 FunctionCall::AppendBacktraceToElement(Logging::Element *el)
 {
+#if ENABLE_BACKTRACE_SUPPORT
     Logging::Node *btNode = Util::Instance()->CreateBacktraceNode(m_backtraceAddress);
     if (btNode != NULL)
     {
         el->AppendChild(btNode);
     }
+#endif
 }
 
 void
