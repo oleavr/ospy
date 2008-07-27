@@ -450,7 +450,18 @@ namespace oSpy.Capture
             // Wait for all of them to unload
             while (Marshal.ReadInt32 (activeAgentCountPtr) > 0)
             {
-                WinApi.WaitForSingleObject (stopRespEvent.DangerousGetHandle (), WinApi.INFINITE);
+                bool allExited = true;
+
+                foreach (Process p in processes)
+                {
+                    if (!p.HasExited)
+                        allExited = false;
+                }
+
+                if (allExited)
+                    break;
+
+                WinApi.WaitForSingleObject (stopRespEvent.DangerousGetHandle (), 500);
             }
         }
 
