@@ -47,6 +47,8 @@ namespace oSpy.Capture
         [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
         public struct Capture
         {
+            public volatile UInt32 ActiveAgentCount;
+
             [MarshalAs (UnmanagedType.ByValTStr, SizeConst = WinApi.MAX_PATH)]
             public string LogPath;
             public volatile UInt32 LogIndexUserspace;
@@ -65,8 +67,9 @@ namespace oSpy.Capture
         private UIntPtr[] handles = null;
         private IProgressFeedback progress = null;
 
-        private SafeWaitHandle startEvent;
+        private SafeWaitHandle startReqEvent, stopReqEvent, stopRespEvent;
         private IntPtr fileMapping, cfgPtr;
+        private IntPtr activeAgentCountPtr;
         private IntPtr logIndexUserspacePtr, logCountPtr, logSizePtr;
 
         private bool restartDevices;
@@ -174,7 +177,9 @@ namespace oSpy.Capture
 
                 UpdateCaptureStatistics ();
 
-                startEvent.Close ();
+                stopRespEvent.Close ();
+                stopReqEvent.Close ();
+                startReqEvent.Close ();
 
                 WinApi.UnmapViewOfFile (cfgPtr);
                 WinApi.CloseHandle (fileMapping);
@@ -327,7 +332,9 @@ namespace oSpy.Capture
         {
             progress.ProgressUpdate("Preparing capture", 100);
 
-            startEvent = WinApi.CreateEvent (IntPtr.Zero, true, false, "oSpyAgentStartEvent");
+            startReqEvent = WinApi.CreateEvent (IntPtr.Zero, true, false, "oSpyAgentStartRequest");
+            stopReqEvent = WinApi.CreateEvent (IntPtr.Zero, true, false, "oSpyAgentStopRequest");
+            stopRespEvent = WinApi.CreateEvent (IntPtr.Zero, false, false, "oSpyAgentStopResponse");
 
             fileMapping = WinApi.CreateFileMapping (0xFFFFFFFFu, IntPtr.Zero,
                 WinApi.enumProtect.PAGE_READWRITE,
@@ -346,6 +353,9 @@ namespace oSpy.Capture
             while (Directory.Exists(capturePath));
 
             Directory.CreateDirectory(capturePath);
+
+            // We need to know how many agents are still active when waiting for the uninjection to complete
+            activeAgentCountPtr = (IntPtr) (cfgPtr.ToInt64 () + Marshal.OffsetOf (typeof (Capture), "ActiveAgentCount").ToInt64 ());
 
             // Write the temporary directory to shared memory
             char[] tmpDirChars = capturePath.ToCharArray();
@@ -414,12 +424,15 @@ namespace oSpy.Capture
                 throw;
             }
 
-            WinApi.SetEvent (startEvent);
+            WinApi.SetEvent (startReqEvent);
         }
 
         private void DoUnInjection ()
         {
-            // Uninject the DLLs previously injected
+            // Signal agents to start unloading
+            WinApi.SetEvent (stopReqEvent);
+
+            // Start uninjecting the DLLs previously injected
             for (int i = 0; i < processes.Length; i++)
             {
                 int percentComplete = (int)(((float)(i + 1) / (float)processes.Length) * 100.0f);
@@ -432,6 +445,12 @@ namespace oSpy.Capture
                         // TODO: warning here?
                     }
                 }
+            }
+
+            // Wait for all of them to unload
+            while (Marshal.ReadInt32 (activeAgentCountPtr) > 0)
+            {
+                WinApi.WaitForSingleObject (stopRespEvent.DangerousGetHandle (), WinApi.INFINITE);
             }
         }
 

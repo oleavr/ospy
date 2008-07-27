@@ -5,12 +5,12 @@ class AsyncIOPlugin : public oSpy::AgentPlugin
 public:
     virtual void Open ()
     {
-        MessageBoxW (NULL, L"Open", L"AsyncIOPlugin", MB_OK | MB_ICONINFORMATION);
+        //MessageBoxW (NULL, L"Open", L"AsyncIOPlugin", MB_OK | MB_ICONINFORMATION);
     }
 
     virtual void Close ()
     {
-        MessageBoxW (NULL, L"Close", L"AsyncIOPlugin", MB_OK | MB_ICONINFORMATION);
+        //MessageBoxW (NULL, L"Close", L"AsyncIOPlugin", MB_OK | MB_ICONINFORMATION);
     }
 };
 

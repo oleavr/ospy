@@ -56,6 +56,8 @@ typedef struct {
 } SoftwallRule;
 
 typedef struct {
+    volatile LONG ActiveAgentCount;
+
     WCHAR LogPath[MAX_PATH];
     volatile ULONG LogIndexUserspace;
     volatile ULONG LogCount;
@@ -84,7 +86,8 @@ private:
 
 protected:
     HANDLE m_map;
-    Capture *m_capture;
+    Capture * m_capture;
+    oSpy::BinaryLogger * m_binaryLogger;
     OICString m_processName;
 
     typedef OMap<const AgentPluginDesc *, AgentPlugin *>::Type PluginMap;

@@ -43,15 +43,16 @@ protected:
 class VTable : public BaseObject
 {
 public:
-    VTable(VTableSpec *spec, const OString &name, DWORD startOffset);
+    VTable (VTableSpec *spec, const OString &name, DWORD startOffset);
+    ~VTable ();
 
-    const OString &GetName() const { return m_name; }
-    VTableSpec *GetSpec() { return m_spec; }
-    DWORD GetStartOffset() const { return m_startOffset; }
-    VMethod &GetMethodByIndex(int index) { return m_methods[index]; }
+    const OString &GetName () const { return m_name; }
+    VTableSpec *GetSpec () { return m_spec; }
+    DWORD GetStartOffset () const { return m_startOffset; }
+    VMethod &GetMethodByIndex (int index) { return m_methods[index]; }
 
-    void Hook();
-    void UnHook();
+    void Hook ();
+    void UnHook ();
 
     VMethod &operator[](int index) { return m_methods[index]; }
 
@@ -60,6 +61,9 @@ protected:
     OString m_name;
     DWORD m_startOffset;
     OVector<VMethod>::Type m_methods;
+
+    typedef OVector<void *>::Type TrampolineVector;
+    TrampolineVector m_trampolines;
 };
 
 class VMethodSpec : public FunctionSpec

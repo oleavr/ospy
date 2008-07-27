@@ -95,52 +95,58 @@ VTable::VTable(VTableSpec *spec, const OString &name, DWORD startOffset)
     }
 }
 
+VTable::~VTable ()
+{
+    TrampolineVector::iterator it;
+    for (it = m_trampolines.begin (); it != m_trampolines.end (); it++)
+    {
+        delete[] *it;
+    }
+    m_trampolines.clear ();
+}
+
 void
 VTable::Hook()
 {
-    VTableSpec *spec = GetSpec();
+    VTableSpec * spec = GetSpec ();
+    DWORD vtSize = spec->GetMethodCount () * sizeof (LPVOID);
 
-    DWORD vtSize = spec->GetMethodCount() * sizeof(LPVOID);
+    void ** methods = reinterpret_cast<void **> (m_startOffset);
 
     DWORD oldProtect;
-    VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, PAGE_READWRITE, &oldProtect);
-
-    DWORD *methods = reinterpret_cast<DWORD *>(m_startOffset);
+    VirtualProtect(methods, vtSize, PAGE_READWRITE, &oldProtect);
 
     for (unsigned int i = 0; i < spec->GetMethodCount(); i++)
     {
-        methods[i] = reinterpret_cast<DWORD>(m_methods[i].CreateTrampoline());
+        methods[i] = m_methods[i].CreateTrampoline ();
+
+        m_trampolines.push_back (methods[i]);
     }
 
-    FlushInstructionCache(GetCurrentProcess(), NULL, 0);
+    FlushInstructionCache (GetCurrentProcess (), NULL, 0);
 
-    VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, oldProtect, &oldProtect);
+    VirtualProtect (methods, vtSize, oldProtect, &oldProtect);
 }
 
 void
 VTable::UnHook()
 {
-    VTableSpec *spec = GetSpec();
+    VTableSpec * spec = GetSpec ();
+    DWORD vtSize = spec->GetMethodCount () * sizeof (LPVOID);
 
-    DWORD vtSize = spec->GetMethodCount() * sizeof(LPVOID);
+    void ** methods = reinterpret_cast<void **> (m_startOffset);
 
     DWORD oldProtect;
-    VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, PAGE_READWRITE, &oldProtect);
-
-    DWORD *methods = reinterpret_cast<DWORD *>(m_startOffset);
+    VirtualProtect (methods, vtSize, PAGE_READWRITE, &oldProtect);
 
     for (unsigned int i = 0; i < spec->GetMethodCount(); i++)
     {
-        void *trampoline = reinterpret_cast<void *>(methods[i]);
-
-        methods[i] = m_methods[i].GetOffset();
-
-        delete[] trampoline;
+        methods[i] = reinterpret_cast<void *> (m_methods[i].GetOffset ());
     }
 
-    FlushInstructionCache(GetCurrentProcess(), NULL, 0);
+    FlushInstructionCache (GetCurrentProcess (), NULL, 0);
 
-    VirtualProtect(reinterpret_cast<LPVOID>(m_startOffset), vtSize, oldProtect, &oldProtect);
+    VirtualProtect (methods, vtSize, oldProtect, &oldProtect);
 }
 
 } // namespace InterceptPP

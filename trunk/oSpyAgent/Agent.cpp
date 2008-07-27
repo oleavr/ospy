@@ -20,20 +20,23 @@
 
 #include <shlwapi.h>
 
+#define OSPY_AGENT_MODULE_NAME              L"oSpyAgent.dll"
+#define OSPY_AGENT_START_REQUEST_EVENT_NAME L"oSpyAgentStartRequest"
+#define OSPY_AGENT_STOP_REQUEST_EVENT_NAME  L"oSpyAgentStopRequest"
+#define OSPY_AGENT_STOP_RESPONSE_EVENT_NAME L"oSpyAgentStopResponse"
+
+#define OSPY_CAPTURE_FILE_NAME      L"Global\\oSpyCapture"
+
 #ifdef _MANAGED
 #pragma managed(push, off)
 #endif
-
-static HMODULE g_mod = NULL;
-static HANDLE g_unloadEvent = NULL;
-static HANDLE g_startThread = NULL;
-static oSpy::Agent *g_agent = NULL;
 
 namespace oSpy {
 
 Agent::Agent()
     : m_map(INVALID_HANDLE_VALUE),
-      m_capture(NULL)
+      m_capture (NULL),
+      m_binaryLogger (NULL)
 {
 }
 
@@ -46,17 +49,21 @@ Agent::Initialize()
 
     InterceptPP::Initialize();
 
-    m_map = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, L"Global\\oSpyCapture");
+    m_map = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, OSPY_CAPTURE_FILE_NAME);
     m_capture = static_cast<Capture *>(MapViewOfFile(m_map, FILE_MAP_WRITE, 0, 0, sizeof(Capture)));
     if (m_capture == NULL)
         throw Error("MapViewOfFile failed");
+
+    // Let the UI know about us
+    InterlockedIncrement (&m_capture->ActiveAgentCount);
 
     // Create the logger and tell Intercept++ to use it
     {
         OOWStringStream ss;
         ss << m_capture->LogPath << "\\" << GetProcessId(GetCurrentProcess()) << ".log";
+        m_binaryLogger = new BinaryLogger (this, ss.str ());
 
-        InterceptPP::SetLogger(new BinaryLogger(this, ss.str()));
+        InterceptPP::SetLogger (m_binaryLogger);
     }
 
     m_processName = Util::Instance()->GetProcessName().c_str();
@@ -206,9 +213,12 @@ Agent::UnloadPlugins ()
 OWString
 Agent::GetBinPath () const
 {
-    WCHAR path[MAX_PATH];
+    HMODULE moduleHandle = GetModuleHandle (OSPY_AGENT_MODULE_NAME);
+    if (moduleHandle == NULL)
+        throw Error("GetModuleHandle failed");
 
-    if (GetModuleFileName(::g_mod, path, MAX_PATH) == 0)
+    WCHAR path[MAX_PATH];
+    if (GetModuleFileName(moduleHandle, path, MAX_PATH) == 0)
         throw Error("GetModuleFileName failed");
 
     PathRemoveFileSpec(path);
@@ -472,16 +482,23 @@ Agent::UnInitialize()
     // Uninitialize Intercept++, effectively unhooking everything
     InterceptPP::UnInitialize();
 
+    // Delete our logger
+    delete m_binaryLogger;
+    m_binaryLogger = NULL;
+
+    // Let the UI know that we're no longer active
+    InterlockedDecrement (&m_capture->ActiveAgentCount);
+
     // Clean up the rest
     if (m_capture != NULL)
     {
-        UnmapViewOfFile(m_capture);
+        UnmapViewOfFile (m_capture);
         m_capture = NULL;
     }
 
     if (m_map != NULL)
     {
-        CloseHandle(m_map);
+        CloseHandle (m_map);
         m_map = NULL;
     }
 }
@@ -507,27 +524,56 @@ Agent::AddBytesLogged (ULONG n)
 extern "C" {
 
 static DWORD WINAPI
-AgentStartFunc (void * arg)
+AgentWorkerFunc (void * arg)
 {
-    HANDLE startEvent = CreateEvent (NULL, TRUE, FALSE, L"oSpyAgentStartEvent");
-    if (startEvent == NULL || GetLastError () != ERROR_ALREADY_EXISTS)
+    // Just to make sure that floating point support is dynamically loaded...
+    float dummy_float = 1.0f;
+
+    // And to make sure that the compiler doesn't optimize the previous statement out.
+    if (dummy_float == 0.0f)
+        return 1;
+
+    // Grab an extra reference
+    HMODULE moduleHandle = LoadLibrary (OSPY_AGENT_MODULE_NAME);
+    HANDLE startReqEvent = NULL;
+    HANDLE stopReqEvent = NULL;
+    HANDLE stopRespEvent = NULL;
+    oSpy::Agent * agent = NULL;
+
+    // Should not happen
+    if (moduleHandle == NULL)
+        goto beach;
+
+    startReqEvent = CreateEvent (NULL, TRUE, FALSE, OSPY_AGENT_START_REQUEST_EVENT_NAME);
+    if (startReqEvent == NULL || GetLastError () != ERROR_ALREADY_EXISTS)
     {
-        MessageBoxA (NULL, "CreateEvent failed (event doesn't exist?)", "oSpyAgent Error", MB_OK | MB_ICONERROR);
-        return NULL;
+        MessageBoxA (NULL, "CreateEvent failed (start event doesn't exist?)", "oSpyAgent Error", MB_OK | MB_ICONERROR);
+        goto beach;
     }
 
-    HANDLE events[2] = { g_unloadEvent, startEvent };
-    if (WaitForMultipleObjects (2, events, FALSE, INFINITE) == WAIT_OBJECT_0)
+    stopReqEvent = CreateEvent (NULL, TRUE, FALSE, OSPY_AGENT_STOP_REQUEST_EVENT_NAME);
+    if (stopReqEvent == NULL || GetLastError () != ERROR_ALREADY_EXISTS)
     {
-        // Aborted
-        return NULL;
+        MessageBoxA (NULL, "CreateEvent failed (stop request event doesn't exist?)", "oSpyAgent Error", MB_OK | MB_ICONERROR);
+        goto beach;
     }
 
-    g_agent = new oSpy::Agent ();
+    stopRespEvent = CreateEvent (NULL, FALSE, FALSE, OSPY_AGENT_STOP_RESPONSE_EVENT_NAME);
+    if (stopRespEvent == NULL || GetLastError () != ERROR_ALREADY_EXISTS)
+    {
+        MessageBoxA (NULL, "CreateEvent failed (stop response event doesn't exist?)", "oSpyAgent Error", MB_OK | MB_ICONERROR);
+        goto beach;
+    }
+
+    HANDLE events[2] = { startReqEvent, stopReqEvent };
+    if (WaitForMultipleObjects (2, events, FALSE, INFINITE) != WAIT_OBJECT_0)
+        goto beach;
+
+    agent = new oSpy::Agent ();
 
     try
     {
-        g_agent->Initialize ();
+        agent->Initialize ();
     }
     catch (Error &e)
     {
@@ -538,8 +584,31 @@ AgentStartFunc (void * arg)
         MessageBoxA (NULL, "Unknown error", "oSpyAgent Error", MB_OK | MB_ICONERROR);
     }
 
-    CloseHandle (startEvent);
-    return NULL;
+    WaitForSingleObject (stopReqEvent, INFINITE);
+
+beach:
+    if (agent != NULL)
+    {
+        agent->UnInitialize ();
+        delete agent;
+    }
+
+    if (stopRespEvent != NULL)
+    {
+        SetEvent (stopRespEvent);
+        CloseHandle (stopRespEvent);
+    }
+
+    if (stopReqEvent != NULL)
+        CloseHandle (stopReqEvent);
+
+    if (startReqEvent != NULL)
+        CloseHandle (startReqEvent);
+
+    if (moduleHandle != NULL)
+        FreeLibraryAndExitThread (moduleHandle, 0);
+
+    return 1;
 }
 
 BOOL APIENTRY
@@ -551,41 +620,13 @@ DllMain(HMODULE hModule,
 
     if (ul_reason_for_call == DLL_PROCESS_ATTACH)
     {
-        // Just to make sure that floating point support is dynamically loaded...
-        float dummy_float = 1.0f;
+        DisableThreadLibraryCalls (hModule);
 
-        // And to make sure that the compiler doesn't optimize the previous statement out.
-        if (dummy_float > 0.0f)
-        {
-            g_mod = hModule;
-            g_unloadEvent = CreateEvent (NULL, FALSE, FALSE, NULL);
-
-            g_startThread = CreateThread (NULL, 0, AgentStartFunc, NULL, 0, NULL);
-            if (g_startThread == NULL)
-            {
-                MessageBoxA (NULL, "CreateThread failed", "oSpyAgent Error", MB_OK | MB_ICONERROR);
-            }
-        }
-    }
-    else if (ul_reason_for_call == DLL_PROCESS_DETACH)
-    {
-        SetEvent (g_unloadEvent);
-
-        WaitForSingleObject (g_startThread, INFINITE);
-        CloseHandle (g_startThread);
-        g_startThread = NULL;
-
-        CloseHandle (g_unloadEvent);
-        g_unloadEvent = NULL;
-
-        if (g_agent != NULL)
-        {
-            g_agent->UnInitialize();
-            delete g_agent;
-            g_agent = NULL;
-        }
-
-        g_mod = NULL;
+        HANDLE workerThread = CreateThread (NULL, 0, AgentWorkerFunc, NULL, 0, NULL);
+        if (workerThread != NULL)
+            CloseHandle (workerThread);
+        else
+            MessageBoxA (NULL, "CreateThread failed", "oSpyAgent Error", MB_OK | MB_ICONERROR);
     }
 
     return TRUE;
