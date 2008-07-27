@@ -29,42 +29,71 @@ namespace InterceptPP {
 
 using namespace Logging;
 
-static Logger *g_logger = NULL;
+static CRITICAL_SECTION g_lock;
+static Logger * g_logger = NULL;
+static bool g_ownLogger = false;
+
+#define INTERCEPT_PP_LOCK() EnterCriticalSection (&g_lock)
+#define INTERCEPT_PP_UNLOCK() LeaveCriticalSection (&g_lock)
 
 void
 Initialize()
 {
-    Function::Initialize();
-    Util::Instance()->Initialize();
-    SetLogger(NULL);
+    InitializeCriticalSection (&g_lock);
+
+    Function::Initialize ();
+    Util::Instance()->Initialize ();
+    SetLogger (NULL);
 }
 
 void
 UnInitialize()
 {
-    HookManager::Instance()->Reset();
-    Logger *logger = static_cast<Logger *>(InterlockedExchangePointer(&g_logger, NULL));
-    if (logger != NULL)
-        delete logger;
-    Util::Instance()->UnInitialize();
-    Function::UnInitialize();
+    HookManager::Instance()->Reset ();
+
+    if (g_ownLogger)
+        delete g_logger;
+    g_logger = NULL;
+
+    Util::Instance()->UnInitialize ();
+    Function::UnInitialize ();
+
+    DeleteCriticalSection (&g_lock);
 }
 
 Logger *
-GetLogger()
+GetLogger ()
 {
-    return g_logger;
+    Logger * logger;
+
+    INTERCEPT_PP_LOCK ();
+    logger = g_logger;
+    INTERCEPT_PP_UNLOCK ();
+
+    return logger;
 }
 
 void
-SetLogger(Logger *logger)
+SetLogger (Logger *logger)
 {
-    if (logger == NULL)
-        logger = new Logging::NullLogger();
+    INTERCEPT_PP_LOCK ();
 
-    Logger *prevLogger = static_cast<Logger *>(InterlockedExchangePointer(&g_logger, logger));
-    if (prevLogger != NULL)
-        delete prevLogger;
+    if (g_ownLogger)
+        delete g_logger;
+
+    if (logger == NULL)
+    {
+        logger = new Logging::NullLogger ();
+        g_ownLogger = true;
+    }
+    else
+    {
+        g_ownLogger = false;
+    }
+
+    g_logger = logger;
+
+    INTERCEPT_PP_UNLOCK ();
 }
 
 #define TIB_MAGIC_OFFSET 700h
@@ -173,6 +202,8 @@ const PrologSignatureSpec Function::prologSignatureSpecs[] = {
 };
 
 OVector<Signature>::Type Function::prologSignatures;
+
+volatile LONG Function::m_callsInProgress = 0;
 
 Logging::Node *
 Argument::ToNode(bool deep, IPropertyProvider *propProv) const
@@ -367,53 +398,59 @@ FunctionSpec::SetReturnValueMarshaller(BaseMarshaller *marshaller)
     m_retValMarshaller = marshaller;
 }
 
-Function::Function(FunctionSpec *spec, DWORD offset)
-    : m_trampoline(NULL), m_oldMemProtect(0)
+Function::Function (FunctionSpec * spec, DWORD offset)
+    : m_trampoline (NULL), m_oldMemProtect (0)
 {
-    Initialize(spec, offset);
+    Initialize (spec, offset);
+}
+
+Function::~Function ()
+{
+    delete m_trampoline;
+    m_trampoline = NULL;
 }
 
 void
-Function::Initialize()
+Function::Initialize ()
 {
-    tlsGetValueFunc = GetProcAddress(LoadLibraryW(L"kernel32.dll"), "TlsGetValue");
-    tlsIdx = TlsAlloc();
+    tlsGetValueFunc = GetProcAddress (LoadLibraryW (L"kernel32.dll"), "TlsGetValue");
+    tlsIdx = TlsAlloc ();
 
-    for (int i = 0; i < sizeof(prologSignatureSpecs) / sizeof(PrologSignatureSpec); i++)
+    for (int i = 0; i < sizeof (prologSignatureSpecs) / sizeof (PrologSignatureSpec); i++)
     {
-        prologSignatures.push_back(Signature(prologSignatureSpecs[i].sig.signature));
+        prologSignatures.push_back (Signature (prologSignatureSpecs[i].sig.signature));
     }
 }
 
 void
-Function::UnInitialize()
+Function::UnInitialize ()
 {
-    prologSignatures.clear();
+    prologSignatures.clear ();
 
-    TlsFree(tlsIdx);
+    TlsFree (tlsIdx);
 }
 
 OString
-Function::GetFullName() const
+Function::GetFullName () const
 {
     OOStringStream ss;
 
-    const OString &parentName = GetParentName();
-    if (parentName.length() > 0)
+    const OString &parentName = GetParentName ();
+    if (parentName.length () > 0)
     {
         ss << parentName << "::";
     }
 
-    ss << GetSpec()->GetName();
+    ss << GetSpec ()->GetName ();
 
-    return ss.str();
+    return ss.str ();
 }
 
 #define OPCODE_CALL_RELATIVE 0xE8
 #define OPCODE_JMP_RELATIVE  0xE9
 
 FunctionTrampoline *
-Function::CreateTrampoline(unsigned int bytesToCopy)
+Function::CreateTrampoline (unsigned int bytesToCopy)
 {
     int trampoSize = sizeof(FunctionTrampoline) + bytesToCopy + sizeof(FunctionRedirectStub);
     FunctionTrampoline *trampoline = reinterpret_cast<FunctionTrampoline *>(new unsigned char[trampoSize]);
@@ -439,18 +476,18 @@ Function::CreateTrampoline(unsigned int bytesToCopy)
 }
 
 void
-Function::Hook()
+Function::Hook ()
 {
-    const PrologSignatureSpec *spec = NULL;
+    const PrologSignatureSpec * spec = NULL;
     int prologIndex = -1;
     int nBytesToCopy = 0;
 
-    for (unsigned int i = 0; i < prologSignatures.size(); i++)
+    for (unsigned int i = 0; i < prologSignatures.size (); i++)
     {
         const Signature *sig = &prologSignatures[i];
 
-        OVector<void *>::Type matches = SignatureMatcher::Instance()->FindInRange(*sig, reinterpret_cast<void *>(m_offset), sig->GetLength());
-        if (matches.size() == 1)
+        OVector<void *>::Type matches = SignatureMatcher::Instance ()->FindInRange (*sig, reinterpret_cast<void *> (m_offset), sig->GetLength ());
+        if (matches.size () == 1)
         {
             spec = &prologSignatureSpecs[i];
             prologIndex = i;
@@ -464,77 +501,89 @@ Function::Hook()
     }
     else
     {
-        unsigned char *p = reinterpret_cast<unsigned char *>(m_offset);
+        unsigned char * p = reinterpret_cast<unsigned char *> (m_offset);
         const int bytesNeeded = 5;
 
         ud_t udObj;
-        ud_init(&udObj);
-        ud_set_input_buffer(&udObj, p, 16);
-        ud_set_mode(&udObj, 32);
+        ud_init (&udObj);
+        ud_set_input_buffer (&udObj, p, 16);
+        ud_set_mode (&udObj, 32);
 
         while (nBytesToCopy < bytesNeeded)
         {
-            int size = ud_disassemble(&udObj);
+            int size = ud_disassemble (&udObj);
             if (size == 0)
-                throw Error("none of the supported signatures matched and libudis86 fallback failed as well");
+                throw Error ("none of the supported signatures matched and libudis86 fallback failed as well");
 
             nBytesToCopy += size;
         }
     }
 
 #ifdef _INSANE_DEBUG
-    Logging::Logger *logger = GetLogger();
+    Logging::Logger *logger = GetLogger ();
     if (logger != NULL)
     {
         if (prologIndex >= 0)
-            logger->LogDebug("%s: based on prologIndex %d we need to copy %d bytes of the original function", GetFullName().c_str(), prologIndex, nBytesToCopy);
+            logger->LogDebug ("%s: based on prologIndex %d we need to copy %d bytes of the original function", GetFullName ().c_str (), prologIndex, nBytesToCopy);
         else
-            logger->LogDebug("%s: based on runtime disassembly we need to copy %d bytes of the original function", GetFullName().c_str(), nBytesToCopy);
+            logger->LogDebug ("%s: based on runtime disassembly we need to copy %d bytes of the original function", GetFullName ().c_str (), nBytesToCopy);
     }
 #endif
 
-    FunctionTrampoline *trampoline = CreateTrampoline(nBytesToCopy);
+    FunctionTrampoline * trampoline = CreateTrampoline (nBytesToCopy);
     m_trampoline = trampoline;
 
-    if (!VirtualProtect(reinterpret_cast<LPVOID>(m_offset), sizeof(LONGLONG), PAGE_EXECUTE_WRITECOPY, &m_oldMemProtect))
-        throw Error("VirtualProtected failed");
+    if (!VirtualProtect (reinterpret_cast<LPVOID> (m_offset), sizeof (LONGLONG), PAGE_EXECUTE_READWRITE, &m_oldMemProtect))
+        throw Error ("VirtualProtected failed");
 
     // Make two copies of the start of the function:
     //  1) m_origStart: need it to revert in UnHook()
     //  2) buf: our working copy that we'll modify and copy back
-    FunctionRedirectStub *redirStub = reinterpret_cast<FunctionRedirectStub *>(m_offset);
+    FunctionRedirectStub * redirStub = reinterpret_cast<FunctionRedirectStub *> (m_offset);
 
-    memcpy(m_origStart, redirStub, sizeof(m_origStart));
+    memcpy (m_origStart, redirStub, sizeof(m_origStart));
 
     unsigned char buf[8];
-    memcpy(buf, redirStub, sizeof(buf));
+    memcpy (buf, redirStub, sizeof (buf));
 
     // Modify 2)
     // JMP to the trampoline
-    FunctionRedirectStub *stub = reinterpret_cast<FunctionRedirectStub *>(buf);
+    FunctionRedirectStub *stub = reinterpret_cast<FunctionRedirectStub *> (buf);
     stub->JMP_opcode = OPCODE_JMP_RELATIVE;
-    stub->JMP_offset = reinterpret_cast<DWORD>(trampoline) - (reinterpret_cast<DWORD>(reinterpret_cast<unsigned char *>(redirStub) + sizeof(FunctionRedirectStub)));
+    stub->JMP_offset = reinterpret_cast<DWORD> (trampoline) - (reinterpret_cast<DWORD> (reinterpret_cast<unsigned char *> (redirStub) + sizeof (FunctionRedirectStub)));
 
     // Copy back 2)
     // HACK: make sure we start with a fresh timeslice
     //       (we might be able to fix this later on by doing the swap atomically)
-    Sleep(0);
-    memcpy(redirStub, buf, sizeof(buf));
-    FlushInstructionCache(GetCurrentProcess(), NULL, 0);
+    Sleep (0);
+    memcpy (redirStub, buf, sizeof(buf));
+    FlushInstructionCache (GetCurrentProcess (), NULL, 0);
 }
 
 void
 Function::UnHook()
 {
-    // HACK: see above
-    Sleep(0);
-    memcpy(reinterpret_cast<void *>(m_offset), m_origStart, sizeof(m_origStart));
-    FlushInstructionCache(GetCurrentProcess(), NULL, 0);
+    DWORD oldProtect;
+    if (!VirtualProtect (reinterpret_cast<LPVOID> (m_offset), sizeof (LONGLONG), PAGE_EXECUTE_READWRITE, &oldProtect))
+        throw Error ("VirtualProtected failed");
 
-    // FIXME: this is racy, if someone has called the function and not yet returned, things will go horribly wrong for them...
-    // Workaround: Make sure that the process being monitored is as idle as possible when UnHook() is called.
-    delete m_trampoline;
-    m_trampoline = NULL;
+    // HACK: see above
+    Sleep (0);
+    memcpy (reinterpret_cast<void *> (m_offset), m_origStart, sizeof (m_origStart));
+
+    VirtualProtect (reinterpret_cast<LPVOID> (m_offset), sizeof (LONGLONG), m_oldMemProtect, &oldProtect);
+    FlushInstructionCache (GetCurrentProcess (), NULL, 0);
+}
+
+void
+Function::WaitForCallsToComplete ()
+{
+    while (m_callsInProgress > 0)
+    {
+        Sleep (30);
+    }
+
+    Sleep (15);
 }
 
 __declspec(naked) void
@@ -596,6 +645,8 @@ CARRY_ON:
         sub esp, __LOCAL_SIZE;
     }
 
+    InterlockedIncrement (&m_callsInProgress);
+
     oldProtect = ReentranceProtector::Protect ();
     lastError = GetLastError();
 
@@ -613,6 +664,9 @@ CARRY_ON:
 
     SetLastError(lastError);
     ReentranceProtector::Unprotect (oldProtect);
+
+    if (nextTrampoline == NULL)
+        InterlockedDecrement (&m_callsInProgress);
 
     __asm {
                                             // *** Bounce off to the actual method, or straight back to the caller. ***
@@ -736,6 +790,8 @@ Function::OnLeaveProxy(CpuContext cpuCtx, DWORD cpuFlags, FunctionTrampoline *tr
 
     SetLastError(lastError);
     ReentranceProtector::Unprotect (oldProtect);
+
+    InterlockedDecrement (&m_callsInProgress);
 
     __asm {
                                             // *** Bounce off back to the caller ***

@@ -259,24 +259,27 @@ protected:
 class INTERCEPTPP_API Function : public BaseObject
 {
 public:
-    Function(FunctionSpec *spec=NULL, DWORD offset=0);
+    Function (FunctionSpec *spec = NULL, DWORD offset = 0);
+    ~Function ();
 
-    static void Initialize();
-    static void UnInitialize();
-    void Initialize(FunctionSpec *spec, DWORD offset) { m_spec = spec; m_offset = offset; }
+    static void Initialize ();
+    static void UnInitialize ();
+    void Initialize (FunctionSpec * spec, DWORD offset) { m_spec = spec; m_offset = offset; }
 
-    virtual const OString GetParentName() const { return ""; }
-    OString GetFullName() const;
+    virtual const OString GetParentName () const { return ""; }
+    OString GetFullName () const;
 
-    FunctionTrampoline *CreateTrampoline(unsigned int bytesToCopy=0);
-    FunctionSpec *GetSpec() const { return m_spec; }
-    DWORD GetOffset() const { return m_offset; }
+    FunctionTrampoline * CreateTrampoline (unsigned int bytesToCopy = 0);
+    FunctionSpec * GetSpec () const { return m_spec; }
+    DWORD GetOffset () const { return m_offset; }
 
-    void Hook();
-    void UnHook();
+    void Hook ();
+    void UnHook ();
+
+    static void WaitForCallsToComplete ();
 
 protected:
-    FunctionSpec *m_spec;
+    FunctionSpec * m_spec;
     DWORD m_offset;
 
     static FARPROC tlsGetValueFunc;
@@ -285,19 +288,21 @@ protected:
     static const PrologSignatureSpec prologSignatureSpecs[];
     static OVector<Signature>::Type prologSignatures;
 
-    void *m_trampoline;
+    void * m_trampoline;
     DWORD m_oldMemProtect;
     unsigned char m_origStart[8];
 
-    void OnEnter(FunctionCall *call);
-    void OnLeave(FunctionCall *call);
+    static volatile LONG m_callsInProgress;
+
+    void OnEnter (FunctionCall * call);
+    void OnLeave (FunctionCall * call);
 
 private:
-    static void OnEnterProxy(CpuContext cpuCtx, DWORD cpuFlags, unsigned int unwindSize, FunctionTrampoline *trampoline, void **proxyRet, void **finalRet);
-    FunctionTrampoline *OnEnterWrapper(CpuContext *cpuCtx, unsigned int *unwindSize, FunctionTrampoline *trampoline, void *btAddr, DWORD *lastError);
+    static void OnEnterProxy (CpuContext cpuCtx, DWORD cpuFlags, unsigned int unwindSize, FunctionTrampoline * trampoline, void ** proxyRet, void ** finalRet);
+    FunctionTrampoline * OnEnterWrapper (CpuContext * cpuCtx, unsigned int * unwindSize, FunctionTrampoline * trampoline, void * btAddr, DWORD * lastError);
 
-    static void OnLeaveProxy(CpuContext cpuCtx, DWORD cpuFlags, FunctionTrampoline *trampoline);
-    void OnLeaveWrapper(CpuContext *cpuCtx, FunctionTrampoline *trampoline, FunctionCall *call, DWORD *lastError);
+    static void OnLeaveProxy (CpuContext cpuCtx, DWORD cpuFlags, FunctionTrampoline * trampoline);
+    void OnLeaveWrapper (CpuContext * cpuCtx, FunctionTrampoline * trampoline, FunctionCall * call, DWORD * lastError);
 };
 
 class INTERCEPTPP_API FunctionCall : public BaseObject, IPropertyProvider

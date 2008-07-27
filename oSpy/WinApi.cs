@@ -79,6 +79,11 @@ namespace oSpy
         [DllImport ("kernel32.dll", SetLastError = true)]
         public static extern bool SetEvent (SafeWaitHandle hEvent);
 
+        [DllImport ("kernel32.dll", SetLastError = true)]
+        public static extern Int32 WaitForSingleObject (IntPtr handle, Int32 milliseconds);
+
+        public const int INFINITE = -1;
+
         [DllImport ("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         public static extern bool GetExitCodeThread (IntPtr hThread, out uint lpExitCode);
 
