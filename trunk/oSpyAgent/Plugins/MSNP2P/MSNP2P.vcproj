@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="Template"
-	ProjectGUID="{613824D3-F3DC-48AA-9F67-C3F25145C225}"
-	RootNamespace="Template"
+	Name="MSNP2P"
+	ProjectGUID="{95232EE0-6DA4-42DD-8E1C-777BDD0E7464}"
+	RootNamespace="MSNP2P"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -51,6 +51,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\Plugins\DoSpyAgent_$(ProjectName).dll"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -110,6 +111,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\Plugins\DoSpyAgent_$(ProjectName).dll"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -169,6 +171,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\Plugins\DoSpyAgent_$(ProjectName).dll"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -207,7 +210,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\Template.cpp"
+				RelativePath=".\MSNP2P.cpp"
 				>
 			</File>
 		</Filter>

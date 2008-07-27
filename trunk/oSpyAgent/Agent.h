@@ -22,9 +22,6 @@
 #include "AgentPlugin.h"
 #include "BinaryLogger.h"
 
-// FIXME: move this into a separate plugin once the planned plugin architecture has been introduced
-//#define RESEARCH_MODE
-
 namespace oSpy {
 
 #define MAX_SOFTWALL_RULES   128
@@ -97,13 +94,6 @@ protected:
 
     FunctionCallHandler<Agent> m_socketConnectHandler;
     void OnSocketConnect (FunctionCall * call, bool & shouldLog);
-
-#ifdef RESEARCH_MODE
-    static void OnWaitForSingleObject(FunctionCall *call, void *userData, bool &shouldLog);
-    static void OnWaitForMultipleObjects(FunctionCall *call, void *userData, bool &shouldLog);
-
-    static void PacketSchedulerRunAfterGetSendQueue();
-#endif
 
     bool HaveMatchingSoftwallRule(const OString &functionName, void *returnAddress, const sockaddr_in *localAddress, const sockaddr_in *peerAddress, DWORD &retval, DWORD &lastError);
 };

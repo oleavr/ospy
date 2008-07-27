@@ -51,7 +51,7 @@ public:
         m_hookManager = hookManager;
     }
 
-    virtual void Open () = 0;
+    virtual bool Open () = 0;
     virtual void Close () = 0;
 
 protected:
