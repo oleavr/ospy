@@ -91,7 +91,7 @@ Agent::Initialize()
     // Trap calls to socket functions for softwalling
     FunctionSpec * funcSpec = mgr->GetFunctionSpecById ("connect");
     if (funcSpec != NULL)
-        funcSpec->SetHandler (&m_socketConnectHandler);
+        funcSpec->AddHandler (&m_socketConnectHandler);
 
     try
     {
@@ -108,22 +108,24 @@ Agent::Initialize()
         return;
     }
 
+    mgr->HookFunctions ();
+
 #ifdef RESEARCH_MODE
     funcSpec = mgr->GetFunctionSpecById("WaitForSingleObject");
     if (funcSpec != NULL)
-        funcSpec->SetHandler(OnWaitForSingleObject, this);
+        funcSpec->AddHandler(OnWaitForSingleObject, this);
 
     funcSpec = mgr->GetFunctionSpecById("WaitForSingleObjectEx");
     if (funcSpec != NULL)
-        funcSpec->SetHandler(OnWaitForSingleObject, this);
+        funcSpec->AddHandler(OnWaitForSingleObject, this);
 
     funcSpec = mgr->GetFunctionSpecById("WaitForMultipleObjects");
     if (funcSpec != NULL)
-        funcSpec->SetHandler(OnWaitForMultipleObjects, this);
+        funcSpec->AddHandler(OnWaitForMultipleObjects, this);
 
     funcSpec = mgr->GetFunctionSpecById("WaitForMultipleObjectsEx");
     if (funcSpec != NULL)
-        funcSpec->SetHandler(OnWaitForMultipleObjects, this);
+        funcSpec->AddHandler(OnWaitForMultipleObjects, this);
 
     if (m_processName == "msnmsgr.exe")
     {
@@ -145,6 +147,43 @@ Agent::Initialize()
 }
 
 void
+Agent::UnInitialize()
+{
+    HookManager * hookManager = HookManager::Instance ();
+
+    // Bring things down safely:
+    //   1) Unhook functions and wait for function calls in progress to return
+    //   2) Unload plugins
+    //   3) Uninitialize Intercept++
+    //   4) Get rid of the logger
+
+    hookManager->UnhookFunctions ();
+
+    UnloadPlugins ();
+
+    InterceptPP::UnInitialize ();
+
+    delete m_binaryLogger;
+    m_binaryLogger = NULL;
+
+    // Let the UI know that we're no longer active
+    InterlockedDecrement (&m_capture->ActiveAgentCount);
+
+    // Clean up the rest
+    if (m_capture != NULL)
+    {
+        UnmapViewOfFile (m_capture);
+        m_capture = NULL;
+    }
+
+    if (m_map != NULL)
+    {
+        CloseHandle (m_map);
+        m_map = NULL;
+    }
+}
+
+void
 Agent::LoadPlugins ()
 {
     OWString pluginDir = GetBinPath ();
@@ -156,6 +195,7 @@ Agent::LoadPlugins ()
     if (findHandle == INVALID_HANDLE_VALUE)
         return;
 
+    const char * processName = Util::Instance ()->GetProcessName ().c_str ();
     InterceptPP::HookManager * hookManager = InterceptPP::HookManager::Instance ();
 
     do
@@ -177,11 +217,14 @@ Agent::LoadPlugins ()
                 if (desc->ApiVersion == 1)
                 {
                     plugin = desc->CreateFunc ();
+                    if (plugin != NULL)
+                    {
+                        m_plugins[desc] = plugin;
+                        m_pluginModules.push_back (module);
 
-                    m_plugins[desc] = plugin;
-                    m_pluginModules.push_back (module);
-
-                    plugin->Open (hookManager);
+                        plugin->Initialize (processName, hookManager);
+                        plugin->Open ();
+                    }
                 }
             }
 
@@ -202,7 +245,7 @@ Agent::UnloadPlugins ()
     PluginMap::iterator pi;
     for (pi = m_plugins.begin (); pi != m_plugins.end (); pi++)
     {
-        pi->second->Close (hookManager);
+        pi->second->Close ();
         pi->first->DestroyFunc (pi->second);
     }
 
@@ -470,43 +513,6 @@ Agent::HaveMatchingSoftwallRule(const OString &functionName,
 
     //GetLogger()->LogDebug("No match");
     return false;
-}
-
-void
-Agent::UnInitialize()
-{
-    HookManager * hookManager = HookManager::Instance ();
-
-    // Bring things down safely:
-    //   1) Unhook functions and wait for function calls in progress to return
-    //   2) Unload plugins
-    //   3) Uninitialize Intercept++
-    //   4) Get rid of the logger
-
-    hookManager->Shutdown ();
-
-    UnloadPlugins ();
-
-    InterceptPP::UnInitialize ();
-
-    delete m_binaryLogger;
-    m_binaryLogger = NULL;
-
-    // Let the UI know that we're no longer active
-    InterlockedDecrement (&m_capture->ActiveAgentCount);
-
-    // Clean up the rest
-    if (m_capture != NULL)
-    {
-        UnmapViewOfFile (m_capture);
-        m_capture = NULL;
-    }
-
-    if (m_map != NULL)
-    {
-        CloseHandle (m_map);
-        m_map = NULL;
-    }
 }
 
 ULONG

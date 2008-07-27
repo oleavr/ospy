@@ -19,6 +19,7 @@
 
 #include <InterceptPP/InterceptPP.h>
 #include <InterceptPP/HookManager.h>
+#include <InterceptPP/Core.h>
 
 namespace oSpy {
 
@@ -44,8 +45,18 @@ class AgentPlugin
 public:
     virtual ~AgentPlugin () {}
 
-    virtual void Open (InterceptPP::HookManager * mgr) = 0;
-    virtual void Close (InterceptPP::HookManager * mgr) = 0;
+    void Initialize (const char * processName, InterceptPP::HookManager * hookManager)
+    {
+        m_processName = processName;
+        m_hookManager = hookManager;
+    }
+
+    virtual void Open () = 0;
+    virtual void Close () = 0;
+
+protected:
+    std::string m_processName;
+    InterceptPP::HookManager * m_hookManager;
 };
 
 #define OSPY_AGENT_PLUGIN_DEFINE(API_VERSION, NAME, DESCRIPTION, PREFIX) \
