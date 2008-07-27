@@ -3,11 +3,11 @@
 class TemplatePlugin : public oSpy::AgentPlugin
 {
 public:
-    virtual void Open (InterceptPP::HookManager * mgr)
+    virtual void Open ()
     {
     }
 
-    virtual void Close (InterceptPP::HookManager * mgr)
+    virtual void Close ()
     {
     }
 };

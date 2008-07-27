@@ -1,33 +1,43 @@
 #include <oSpyAgent/AgentPlugin.h>
 
-#include <functional>
-#include <algorithm>
+#pragma pack(push, 1)
+
+typedef struct {
+    HANDLE hDevice;
+    DWORD dwIoControlCode;
+    LPVOID lpInBuffer;
+    DWORD nInBufferSize;
+    LPVOID lpOutBuffer;
+    DWORD nOutBufferSize;
+    LPDWORD lpBytesReturned;
+    LPOVERLAPPED lpOverlapped;
+} AsyncIoControlArgs;
+
+#pragma pack(pop, 1)
 
 class AsyncIOPlugin : public oSpy::AgentPlugin
 {
 public:
-    AsyncIOPlugin ()
+    virtual void Open ()
     {
-        m_deviceIoControlHandler.Initialize (this, &AsyncIOPlugin::OnDeviceIoControl);
-    }
-
-    virtual void Open (InterceptPP::HookManager * mgr)
-    {
-        InterceptPP::FunctionSpec * spec = mgr->GetFunctionSpecById ("DeviceIoControl");
+        InterceptPP::FunctionSpec * spec = m_hookManager->GetFunctionSpecById ("DeviceIoControl");
 
         if (spec != NULL)
         {
-            spec->SetHandler (&m_deviceIoControlHandler);
+            m_deviceIoControlHandler.Initialize (this, &AsyncIOPlugin::OnDeviceIoControl);
+            spec->AddHandler (&m_deviceIoControlHandler);
         }
     }
 
-    virtual void Close (InterceptPP::HookManager * mgr)
+    virtual void Close ()
     {
     }
 
 private:
     void OnDeviceIoControl (InterceptPP::FunctionCall * call, bool & shouldLog)
     {
+        AsyncIoControlArgs * args = call->GetArgumentsPtr<AsyncIoControlArgs> ();
+
         //MessageBoxW (NULL, L"OnDeviceIoControl", L"AsyncIOPlugin", MB_OK | MB_ICONINFORMATION);
     }
 
