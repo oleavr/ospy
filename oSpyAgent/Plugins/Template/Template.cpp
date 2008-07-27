@@ -3,8 +3,9 @@
 class TemplatePlugin : public oSpy::AgentPlugin
 {
 public:
-    virtual void Open ()
+    virtual bool Open ()
     {
+        return true;
     }
 
     virtual void Close ()

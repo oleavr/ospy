@@ -18,7 +18,7 @@ typedef struct {
 class AsyncIOPlugin : public oSpy::AgentPlugin
 {
 public:
-    virtual void Open ()
+    virtual bool Open ()
     {
         InterceptPP::FunctionSpec * spec = m_hookManager->GetFunctionSpecById ("DeviceIoControl");
 
@@ -27,6 +27,8 @@ public:
             m_deviceIoControlHandler.Initialize (this, &AsyncIOPlugin::OnDeviceIoControl);
             spec->AddHandler (&m_deviceIoControlHandler);
         }
+
+        return true;
     }
 
     virtual void Close ()
