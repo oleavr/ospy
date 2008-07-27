@@ -24,14 +24,15 @@
 namespace InterceptPP {
 
 Util::Util()
-    : m_asciiFuncSpec(NULL),
+    : m_ansiFuncSpec(NULL),
       m_uniFuncSpec(NULL),
       m_mod(NULL),
-      m_asciiFunc(NULL),
+      m_ansiFunc(NULL),
       m_uniFunc(NULL),
       m_lowestAddress(0xFFFFFFFF),
       m_highestAddress(0)
 {
+    m_loadLibraryHandler.Initialize (this, &Util::OnLoadLibrary);
 }
 
 Util *
@@ -52,23 +53,23 @@ Util::Initialize()
 {
     InitializeCriticalSection(&m_cs);
 
-        char buf[_MAX_PATH] = { 0, };
+    char buf[_MAX_PATH] = { 0, };
     if (GetModuleBaseNameA(GetCurrentProcess(), NULL, buf, sizeof(buf)) > 0)
     {
         m_processName = buf;
     }
 
-    m_asciiFuncSpec = new FunctionSpec("LoadLibraryA");
-    m_asciiFuncSpec->SetHandler(OnLoadLibrary);
+    m_ansiFuncSpec = new FunctionSpec("LoadLibraryA");
+    m_ansiFuncSpec->SetHandler(&m_loadLibraryHandler);
 
     m_uniFuncSpec = new FunctionSpec("LoadLibraryW");
-    m_uniFuncSpec->SetHandler(OnLoadLibrary);
+    m_uniFuncSpec->SetHandler(&m_loadLibraryHandler);
 
     m_mod = new DllModule("kernel32.dll");
-    m_asciiFunc = new DllFunction(m_mod, m_asciiFuncSpec);
+    m_ansiFunc = new DllFunction(m_mod, m_ansiFuncSpec);
     m_uniFunc = new DllFunction(m_mod, m_uniFuncSpec);
 
-    m_asciiFunc->Hook();
+    m_ansiFunc->Hook();
     m_uniFunc->Hook();
 
     UpdateModuleList();
@@ -85,10 +86,10 @@ Util::UnInitialize()
         delete m_uniFunc;
     }
 
-    if (m_asciiFunc != NULL)
+    if (m_ansiFunc != NULL)
     {
-        m_asciiFunc->UnHook();
-        delete m_asciiFunc;
+        m_ansiFunc->UnHook();
+        delete m_ansiFunc;
     }
 
     if (m_mod != NULL)
@@ -97,8 +98,8 @@ Util::UnInitialize()
     if (m_uniFuncSpec != NULL)
         delete m_uniFuncSpec;
 
-    if (m_asciiFuncSpec != NULL)
-        delete m_asciiFuncSpec;
+    if (m_ansiFuncSpec != NULL)
+        delete m_ansiFuncSpec;
 
     m_processName = "";
 
@@ -107,11 +108,11 @@ Util::UnInitialize()
 }
 
 void
-Util::OnLoadLibrary(FunctionCall *call, void *userData, bool &shouldLog)
+Util::OnLoadLibrary (FunctionCall * call, bool & shouldLog)
 {
-    if (call->GetState() == FUNCTION_CALL_LEAVING)
+    if (call->GetState () == FUNCTION_CALL_LEAVING)
     {
-        Instance()->UpdateModuleList();
+        Instance()->UpdateModuleList ();
     }
 
     shouldLog = false;

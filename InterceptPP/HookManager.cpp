@@ -200,7 +200,7 @@ HookManager::LoadDefinitions(const OWString &path)
 }
 
 void
-HookManager::Reset()
+HookManager::Shutdown ()
 {
     // Unhook all functions
     VTableList::iterator vtIter;
@@ -223,20 +223,29 @@ HookManager::Reset()
 
     // Wait for all calls to return
     Function::WaitForCallsToComplete ();
+}
+
+void
+HookManager::Reset ()
+{
+    Shutdown ();
 
     // Free objects, trampolines, etc.
+    VTableList::iterator vtIter;
     for (vtIter = m_vtables.begin (); vtIter != m_vtables.end (); vtIter++)
     {
         delete *vtIter;
     }
     m_vtables.clear ();
 
+    FunctionList::iterator funcIter;
     for (funcIter = m_functions.begin (); funcIter != m_functions.end (); funcIter++)
     {
         delete *funcIter;
     }
     m_functions.clear ();
 
+    DllFunctionList::iterator dfIter;
     for (dfIter = m_dllFunctions.begin (); dfIter != m_dllFunctions.end (); dfIter++)
     {
         delete *dfIter;

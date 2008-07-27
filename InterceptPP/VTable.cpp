@@ -55,11 +55,6 @@ VMethodSpec::StealFrom(FunctionSpec *funcSpec)
         m_handler = funcSpec->GetHandler();
     }
 
-    if (funcSpec->GetHandlerUserData() != NULL)
-    {
-        m_handlerUserData = funcSpec->GetHandlerUserData();
-    }
-
     if (funcSpec->GetArguments() != NULL)
     {
         m_argList = funcSpec->GetArguments();

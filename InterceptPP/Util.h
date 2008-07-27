@@ -58,17 +58,18 @@ public:
     Logging::Node *CreateBacktraceNode(void *address);
 
 private:
-    static void OnLoadLibrary(FunctionCall *call, void *userData, bool &shouldLog);
+    void OnLoadLibrary (FunctionCall * call, bool & shouldLog);
 
     OModuleInfo *GetModuleInfoForAddress(DWORD address);
 
     CRITICAL_SECTION m_cs;
     OString m_processName;
 
-    FunctionSpec *m_asciiFuncSpec;
+    FunctionSpec *m_ansiFuncSpec;
     FunctionSpec *m_uniFuncSpec;
+    FunctionCallHandler<Util> m_loadLibraryHandler;
     DllModule *m_mod;
-    DllFunction *m_asciiFunc;
+    DllFunction *m_ansiFunc;
     DllFunction *m_uniFunc;
 
     OMap<OICString, OModuleInfo>::Type m_modules;

@@ -84,7 +84,45 @@ typedef struct {
 
 class FunctionCall;
 
-typedef void (*FunctionCallHandler) (FunctionCall *call, void *userData, bool &shouldLog);
+class IFunctionCallHandler
+{
+public:
+    virtual void operator() (FunctionCall * call, bool & shouldLog) = 0;
+};
+
+template<class Class>
+class FunctionCallHandler : public IFunctionCallHandler
+{
+public:
+    typedef void (Class::*Method) (FunctionCall * call, bool & shouldLog);
+
+    FunctionCallHandler ()
+        : m_instance (NULL),
+          m_method (NULL)
+    {
+    }
+
+    FunctionCallHandler (Class * instance, Method method)
+        : m_instance (instance),
+          m_method (method)
+    {
+    }
+
+    void Initialize (Class * instance, Method method)
+    {
+        m_instance = instance;
+        m_method = method;
+    }
+
+    virtual void operator() (FunctionCall * call, bool & shouldLog)
+    {
+        (m_instance->*m_method) (call, shouldLog);
+    }
+
+private:
+    Class * m_instance;
+    Method m_method;
+};
 
 typedef bool (__stdcall *RegisterEvalFunc) (const CpuContext *context);
 
@@ -212,14 +250,14 @@ public:
     FunctionSpec(const OString &name="",
                  CallingConvention conv=CALLING_CONV_UNKNOWN,
                  int argsSize=FUNCTION_ARGS_SIZE_UNKNOWN,
-                 FunctionCallHandler handler=NULL,
+                 IFunctionCallHandler * handler=NULL,
                  bool logNestedCalls=false);
     ~FunctionSpec();
 
     void SetParams(const OString &name,
                    CallingConvention conv=CALLING_CONV_UNKNOWN,
                    int argsSize=FUNCTION_ARGS_SIZE_UNKNOWN,
-                   FunctionCallHandler handler=NULL,
+                   IFunctionCallHandler * handler=NULL,
                    bool logNestedCalls=false);
 
     ArgumentListSpec *GetArguments() const { return m_argList; }
@@ -238,9 +276,8 @@ public:
     int GetArgsSize() const { return m_argsSize; }
     void SetArgsSize(int size) { m_argsSize = size; }
 
-    FunctionCallHandler GetHandler() const { return m_handler; }
-    void *GetHandlerUserData() const { return m_handlerUserData; }
-    void SetHandler(FunctionCallHandler handler, void *userData=NULL) { m_handler = handler; m_handlerUserData = userData; }
+    IFunctionCallHandler * GetHandler () const { return m_handler; }
+    void SetHandler (IFunctionCallHandler * handler) { m_handler = handler; }
 
     bool GetLogNestedCalls() const { return m_logNestedCalls; }
     void SetLogNestedCalls(bool logNestedCalls) { m_logNestedCalls = logNestedCalls; }
@@ -251,8 +288,7 @@ protected:
     int m_argsSize;
     ArgumentListSpec *m_argList;
     BaseMarshaller *m_retValMarshaller;
-    FunctionCallHandler m_handler;
-    void *m_handlerUserData;
+    IFunctionCallHandler * m_handler;
     bool m_logNestedCalls;
 };
 

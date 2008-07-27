@@ -38,6 +38,7 @@ Agent::Agent()
       m_capture (NULL),
       m_binaryLogger (NULL)
 {
+    m_socketConnectHandler.Initialize (this, &Agent::OnSocketConnect);
 }
 
 void
@@ -88,9 +89,9 @@ Agent::Initialize()
     }
 
     // Trap calls to socket functions for softwalling
-    FunctionSpec *funcSpec = mgr->GetFunctionSpecById("connect");
+    FunctionSpec * funcSpec = mgr->GetFunctionSpecById ("connect");
     if (funcSpec != NULL)
-        funcSpec->SetHandler(OnSocketConnectWrapper, this);
+        funcSpec->SetHandler (&m_socketConnectHandler);
 
     try
     {
@@ -155,6 +156,8 @@ Agent::LoadPlugins ()
     if (findHandle == INVALID_HANDLE_VALUE)
         return;
 
+    InterceptPP::HookManager * hookManager = InterceptPP::HookManager::Instance ();
+
     do
     {
         OWString pluginPath = pluginDir + findData.cFileName;
@@ -178,7 +181,7 @@ Agent::LoadPlugins ()
                     m_plugins[desc] = plugin;
                     m_pluginModules.push_back (module);
 
-                    plugin->Open ();
+                    plugin->Open (hookManager);
                 }
             }
 
@@ -194,10 +197,12 @@ Agent::LoadPlugins ()
 void
 Agent::UnloadPlugins ()
 {
+    InterceptPP::HookManager * hookManager = InterceptPP::HookManager::Instance ();
+
     PluginMap::iterator pi;
     for (pi = m_plugins.begin (); pi != m_plugins.end (); pi++)
     {
-        pi->second->Close ();
+        pi->second->Close (hookManager);
         pi->first->DestroyFunc (pi->second);
     }
 
@@ -227,14 +232,7 @@ Agent::GetBinPath () const
 }
 
 void
-Agent::OnSocketConnectWrapper(FunctionCall *call, void *userData, bool &shouldLog)
-{
-    Agent *self = static_cast<Agent *>(userData);
-    self->OnSocketConnect(call);
-}
-
-void
-Agent::OnSocketConnect(FunctionCall *call)
+Agent::OnSocketConnect (FunctionCall * call, bool & shouldLog)
 {
     if (call->GetState() != FUNCTION_CALL_ENTERING)
         return;
@@ -477,12 +475,20 @@ Agent::HaveMatchingSoftwallRule(const OString &functionName,
 void
 Agent::UnInitialize()
 {
+    HookManager * hookManager = HookManager::Instance ();
+
+    // Bring things down safely:
+    //   1) Unhook functions and wait for function calls in progress to return
+    //   2) Unload plugins
+    //   3) Uninitialize Intercept++
+    //   4) Get rid of the logger
+
+    hookManager->Shutdown ();
+
     UnloadPlugins ();
 
-    // Uninitialize Intercept++, effectively unhooking everything
-    InterceptPP::UnInitialize();
+    InterceptPP::UnInitialize ();
 
-    // Delete our logger
     delete m_binaryLogger;
     m_binaryLogger = NULL;
 
