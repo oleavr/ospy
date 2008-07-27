@@ -321,16 +321,15 @@ ArgumentList::ArgumentList(ArgumentListSpec *spec, void *data)
 FunctionSpec::FunctionSpec(const OString &name,
                            CallingConvention conv,
                            int argsSize,
-                           FunctionCallHandler handler,
+                           IFunctionCallHandler * handler,
                            bool logNestedCalls)
-    : m_name(name),
-      m_callingConvention(conv),
-      m_argsSize(argsSize),
-      m_argList(NULL),
-      m_retValMarshaller(NULL),
-      m_handler(handler),
-      m_handlerUserData(NULL),
-      m_logNestedCalls(logNestedCalls)
+    : m_name (name),
+      m_callingConvention (conv),
+      m_argsSize (argsSize),
+      m_argList (NULL),
+      m_retValMarshaller (NULL),
+      m_handler (handler),
+      m_logNestedCalls (logNestedCalls)
 {
 }
 
@@ -344,17 +343,17 @@ FunctionSpec::~FunctionSpec()
 }
 
 void
-FunctionSpec::SetParams(const OString &name,
-                        CallingConvention conv,
-                        int argsSize,
-                        FunctionCallHandler handler,
-                        bool logNestedCalls)
+FunctionSpec::SetParams (const OString &name,
+                         CallingConvention conv,
+                         int argsSize,
+                         IFunctionCallHandler * handler,
+                         bool logNestedCalls)
 {
-    SetName(name);
-    SetCallingConvention(conv);
-    SetArgsSize(argsSize);
-    SetHandler(handler);
-    SetLogNestedCalls(logNestedCalls);
+    SetName (name);
+    SetCallingConvention (conv);
+    SetArgsSize (argsSize);
+    SetHandler (handler);
+    SetLogNestedCalls (logNestedCalls);
 }
 
 void
@@ -832,10 +831,10 @@ void
 Function::OnEnter(FunctionCall *call)
 {
     bool shouldLog = true;
-    FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetHandler();
+    IFunctionCallHandler * handler = call->GetFunction ()->GetSpec ()->GetHandler ();
 
     if (handler != NULL)
-        handler(call, call->GetFunction()->GetSpec()->GetHandlerUserData(), shouldLog);
+        (*handler) (call, shouldLog);
 
     if (shouldLog)
     {
@@ -859,10 +858,10 @@ void
 Function::OnLeave(FunctionCall *call)
 {
     bool shouldLog = true;
-    FunctionCallHandler handler = call->GetFunction()->GetSpec()->GetHandler();
+    IFunctionCallHandler * handler = call->GetFunction ()->GetSpec ()->GetHandler ();
 
     if (handler != NULL)
-        handler(call, call->GetFunction()->GetSpec()->GetHandlerUserData(), shouldLog);
+        (*handler) (call, shouldLog);
 
     if (shouldLog)
     {

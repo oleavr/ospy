@@ -95,8 +95,8 @@ protected:
     PluginMap m_plugins;
     PluginModuleList m_pluginModules;
 
-    static void OnSocketConnectWrapper(FunctionCall *call, void *userData, bool &shouldLog);
-    void OnSocketConnect(FunctionCall *call);
+    FunctionCallHandler<Agent> m_socketConnectHandler;
+    void OnSocketConnect (FunctionCall * call, bool & shouldLog);
 
 #ifdef RESEARCH_MODE
     static void OnWaitForSingleObject(FunctionCall *call, void *userData, bool &shouldLog);

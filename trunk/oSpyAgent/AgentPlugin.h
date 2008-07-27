@@ -17,7 +17,8 @@
 
 #pragma once
 
-#include <windows.h>
+#include <InterceptPP/InterceptPP.h>
+#include <InterceptPP/HookManager.h>
 
 namespace oSpy {
 
@@ -43,8 +44,8 @@ class AgentPlugin
 public:
     virtual ~AgentPlugin () {}
 
-    virtual void Open () = 0;
-    virtual void Close () = 0;
+    virtual void Open (InterceptPP::HookManager * mgr) = 0;
+    virtual void Close (InterceptPP::HookManager * mgr) = 0;
 };
 
 #define OSPY_AGENT_PLUGIN_DEFINE(API_VERSION, NAME, DESCRIPTION, PREFIX) \

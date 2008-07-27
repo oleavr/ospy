@@ -194,6 +194,11 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{B0F22416-9E7A-4265-B431-520C6ECAFFBA}"
+			CopyLocal="false"
+			RelativePathToProject=".\InterceptPP\InterceptPP.vcproj"
+		/>
 	</References>
 	<Files>
 		<Filter
