@@ -60,10 +60,10 @@ Util::Initialize()
     }
 
     m_ansiFuncSpec = new FunctionSpec("LoadLibraryA");
-    m_ansiFuncSpec->SetHandler(&m_loadLibraryHandler);
+    m_ansiFuncSpec->AddHandler(&m_loadLibraryHandler);
 
     m_uniFuncSpec = new FunctionSpec("LoadLibraryW");
-    m_uniFuncSpec->SetHandler(&m_loadLibraryHandler);
+    m_uniFuncSpec->AddHandler(&m_loadLibraryHandler);
 
     m_mod = new DllModule("kernel32.dll");
     m_ansiFunc = new DllFunction(m_mod, m_ansiFuncSpec);
@@ -82,13 +82,13 @@ Util::UnInitialize()
 
     if (m_uniFunc != NULL)
     {
-        m_uniFunc->UnHook();
+        m_uniFunc->Unhook();
         delete m_uniFunc;
     }
 
     if (m_ansiFunc != NULL)
     {
-        m_ansiFunc->UnHook();
+        m_ansiFunc->Unhook();
         delete m_ansiFunc;
     }
 
