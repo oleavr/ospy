@@ -67,7 +67,7 @@ namespace oSpy.SharpDumpLib
             }
         }
 
-        private Stream stream;
+        private Stream stream = null;
         public Stream Stream
         {
             get { return stream; }
@@ -102,7 +102,7 @@ namespace oSpy.SharpDumpLib
     {
         private Stream stream;
         private long offset;
-        private long size;
+        //private long size;
 
         public StreamSegment (Stream stream)
         {
