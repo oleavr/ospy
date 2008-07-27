@@ -50,10 +50,7 @@ VMethodSpec::StealFrom(FunctionSpec *funcSpec)
         m_argsSize = funcSpec->GetArgsSize();
     }
 
-    if (funcSpec->GetHandler() != NULL)
-    {
-        m_handler = funcSpec->GetHandler();
-    }
+    m_handlers = funcSpec->GetHandlers ();
 
     if (funcSpec->GetArguments() != NULL)
     {
@@ -124,7 +121,7 @@ VTable::Hook()
 }
 
 void
-VTable::UnHook()
+VTable::Unhook()
 {
     VTableSpec * spec = GetSpec ();
     DWORD vtSize = spec->GetMethodCount () * sizeof (LPVOID);

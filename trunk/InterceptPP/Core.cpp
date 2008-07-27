@@ -321,14 +321,14 @@ ArgumentList::ArgumentList(ArgumentListSpec *spec, void *data)
 FunctionSpec::FunctionSpec(const OString &name,
                            CallingConvention conv,
                            int argsSize,
-                           IFunctionCallHandler * handler,
+                           FunctionCallHandlerVector handlers,
                            bool logNestedCalls)
     : m_name (name),
       m_callingConvention (conv),
       m_argsSize (argsSize),
       m_argList (NULL),
       m_retValMarshaller (NULL),
-      m_handler (handler),
+      m_handlers (handlers),
       m_logNestedCalls (logNestedCalls)
 {
 }
@@ -343,16 +343,16 @@ FunctionSpec::~FunctionSpec()
 }
 
 void
-FunctionSpec::SetParams (const OString &name,
+FunctionSpec::SetParams (const OString & name,
                          CallingConvention conv,
                          int argsSize,
-                         IFunctionCallHandler * handler,
+                         const FunctionCallHandlerVector & handlers,
                          bool logNestedCalls)
 {
     SetName (name);
     SetCallingConvention (conv);
     SetArgsSize (argsSize);
-    SetHandler (handler);
+    m_handlers = handlers;
     SetLogNestedCalls (logNestedCalls);
 }
 
@@ -536,7 +536,7 @@ Function::Hook ()
         throw Error ("VirtualProtected failed");
 
     // Make two copies of the start of the function:
-    //  1) m_origStart: need it to revert in UnHook()
+    //  1) m_origStart: need it to revert in Unhook()
     //  2) buf: our working copy that we'll modify and copy back
     FunctionRedirectStub * redirStub = reinterpret_cast<FunctionRedirectStub *> (m_offset);
 
@@ -560,7 +560,7 @@ Function::Hook ()
 }
 
 void
-Function::UnHook()
+Function::Unhook()
 {
     DWORD oldProtect;
     if (!VirtualProtect (reinterpret_cast<LPVOID> (m_offset), sizeof (LONGLONG), PAGE_EXECUTE_READWRITE, &oldProtect))
@@ -831,10 +831,14 @@ void
 Function::OnEnter(FunctionCall *call)
 {
     bool shouldLog = true;
-    IFunctionCallHandler * handler = call->GetFunction ()->GetSpec ()->GetHandler ();
+    const FunctionCallHandlerVector & handlers = call->GetFunction ()->GetSpec ()->GetHandlers ();
+    if (handlers.size () > 0)
+    {
+        FunctionCallHandlerVector::const_iterator it;
 
-    if (handler != NULL)
-        (*handler) (call, shouldLog);
+        for (it = handlers.begin (); it != handlers.end (); it++)
+            (**it) (call, shouldLog);
+    }
 
     if (shouldLog)
     {
@@ -858,10 +862,14 @@ void
 Function::OnLeave(FunctionCall *call)
 {
     bool shouldLog = true;
-    IFunctionCallHandler * handler = call->GetFunction ()->GetSpec ()->GetHandler ();
+    const FunctionCallHandlerVector & handlers = call->GetFunction ()->GetSpec ()->GetHandlers ();
+    if (handlers.size () > 0)
+    {
+        FunctionCallHandlerVector::const_iterator it;
 
-    if (handler != NULL)
-        (*handler) (call, shouldLog);
+        for (it = handlers.begin (); it != handlers.end (); it++)
+            (**it) (call, shouldLog);
+    }
 
     if (shouldLog)
     {

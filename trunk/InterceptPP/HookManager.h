@@ -39,7 +39,9 @@ public:
 
     void LoadDefinitions(const OWString &path);
 
-    void Shutdown ();
+    void HookFunctions ();
+    void UnhookFunctions ();
+
     void Reset ();
 
     unsigned int GetFunctionSpecCount() const { return static_cast<unsigned int>(m_funcSpecs.size()); }

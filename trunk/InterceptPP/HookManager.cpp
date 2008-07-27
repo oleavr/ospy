@@ -200,35 +200,58 @@ HookManager::LoadDefinitions(const OWString &path)
 }
 
 void
-HookManager::Shutdown ()
+HookManager::HookFunctions ()
 {
-    // Unhook all functions
     VTableList::iterator vtIter;
     for (vtIter = m_vtables.begin (); vtIter != m_vtables.end (); vtIter++)
     {
-        (*vtIter)->UnHook ();
+        (*vtIter)->Hook ();
     }
 
     FunctionList::iterator funcIter;
     for (funcIter = m_functions.begin (); funcIter != m_functions.end (); funcIter++)
     {
-        (*funcIter)->UnHook ();
+        (*funcIter)->Hook ();
     }
 
     DllFunctionList::iterator dfIter;
     for (dfIter = m_dllFunctions.begin (); dfIter != m_dllFunctions.end (); dfIter++)
     {
-        (*dfIter)->UnHook ();
+        (*dfIter)->Hook ();
+    }
+}
+
+void
+HookManager::UnhookFunctions ()
+{
+    bool needToWait = (m_vtables.size () > 0 || m_functions.size () > 0 || m_dllFunctions.size () > 0);
+
+    VTableList::iterator vtIter;
+    for (vtIter = m_vtables.begin (); vtIter != m_vtables.end (); vtIter++)
+    {
+        (*vtIter)->Unhook ();
     }
 
-    // Wait for all calls to return
-    Function::WaitForCallsToComplete ();
+    FunctionList::iterator funcIter;
+    for (funcIter = m_functions.begin (); funcIter != m_functions.end (); funcIter++)
+    {
+        (*funcIter)->Unhook ();
+    }
+
+    DllFunctionList::iterator dfIter;
+    for (dfIter = m_dllFunctions.begin (); dfIter != m_dllFunctions.end (); dfIter++)
+    {
+        (*dfIter)->Unhook ();
+    }
+
+    if (needToWait)
+        Function::WaitForCallsToComplete ();
 }
 
 void
 HookManager::Reset ()
 {
-    Shutdown ();
+    UnhookFunctions ();
 
     // Free objects, trampolines, etc.
     VTableList::iterator vtIter;
@@ -669,7 +692,7 @@ HookManager::ParseFunctionSpecNode(MSXML2::IXMLDOMNodePtr &funcSpecNode, OString
         if (id.size() == 0)
             id = name;
 
-        funcSpec = new FunctionSpec(name, conv, argsSize, NULL, logNested);
+        funcSpec = new FunctionSpec(name, conv, argsSize, FunctionCallHandlerVector (), logNested);
 
         MSXML2::IXMLDOMNodePtr node;
         MSXML2::IXMLDOMNodeListPtr nodeList;
@@ -1229,7 +1252,6 @@ HookManager::ParseDllFunctionNode(DllModule *dllMod, MSXML2::IXMLDOMNodePtr &dll
         {
             DllFunction *dllFunc = new DllFunction(dllMod, m_funcSpecs[specId]);
             m_dllFunctions.push_back(dllFunc);
-            dllFunc->Hook();
         }
         else
         {
@@ -1324,7 +1346,6 @@ HookManager::ParseFunctionNode(const OString &processName, MSXML2::IXMLDOMNodePt
 
     Function *func = new Function(m_funcSpecs[specId], offset);
     m_functions.push_back(func);
-    func->Hook();
 }
 
 void
@@ -1450,7 +1471,6 @@ HookManager::ParseVTableNode(const OString &processName, MSXML2::IXMLDOMNodePtr 
 
     VTable *vtable = new VTable(m_vtableSpecs[specId], name, offset);
     m_vtables.push_back(vtable);
-    vtable->Hook();
 }
 
 TypeBuilder *

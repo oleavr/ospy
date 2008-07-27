@@ -244,20 +244,22 @@ protected:
     OVector<Argument>::Type m_arguments;
 };
 
+typedef OVector<IFunctionCallHandler *>::Type FunctionCallHandlerVector;
+
 class INTERCEPTPP_API FunctionSpec : public BaseObject
 {
 public:
     FunctionSpec(const OString &name="",
                  CallingConvention conv=CALLING_CONV_UNKNOWN,
                  int argsSize=FUNCTION_ARGS_SIZE_UNKNOWN,
-                 IFunctionCallHandler * handler=NULL,
+                 FunctionCallHandlerVector handlers=FunctionCallHandlerVector(),
                  bool logNestedCalls=false);
     ~FunctionSpec();
 
     void SetParams(const OString &name,
                    CallingConvention conv=CALLING_CONV_UNKNOWN,
                    int argsSize=FUNCTION_ARGS_SIZE_UNKNOWN,
-                   IFunctionCallHandler * handler=NULL,
+                   const FunctionCallHandlerVector &handlers=FunctionCallHandlerVector(),
                    bool logNestedCalls=false);
 
     ArgumentListSpec *GetArguments() const { return m_argList; }
@@ -276,8 +278,8 @@ public:
     int GetArgsSize() const { return m_argsSize; }
     void SetArgsSize(int size) { m_argsSize = size; }
 
-    IFunctionCallHandler * GetHandler () const { return m_handler; }
-    void SetHandler (IFunctionCallHandler * handler) { m_handler = handler; }
+    const FunctionCallHandlerVector & GetHandlers () const { return m_handlers; }
+    void AddHandler (IFunctionCallHandler * handler) { m_handlers.push_back (handler); }
 
     bool GetLogNestedCalls() const { return m_logNestedCalls; }
     void SetLogNestedCalls(bool logNestedCalls) { m_logNestedCalls = logNestedCalls; }
@@ -288,7 +290,7 @@ protected:
     int m_argsSize;
     ArgumentListSpec *m_argList;
     BaseMarshaller *m_retValMarshaller;
-    IFunctionCallHandler * m_handler;
+    FunctionCallHandlerVector m_handlers;
     bool m_logNestedCalls;
 };
 
@@ -310,7 +312,7 @@ public:
     DWORD GetOffset () const { return m_offset; }
 
     void Hook ();
-    void UnHook ();
+    void Unhook ();
 
     static void WaitForCallsToComplete ();
 
@@ -361,8 +363,9 @@ public:
     DWORD *GetLastErrorLive() const { return m_lastErrorLive; }
     void SetLastErrorLive(DWORD *lastError) { m_lastErrorLive = lastError; }
 
-    const OString &GetArgumentsData() const { return m_argumentsData; }
     const ArgumentList *GetArguments() const { return m_arguments; }
+    const OString &GetArgumentsData() const { return m_argumentsData; }
+    template<typename T> T * GetArgumentsPtr() const { return reinterpret_cast<T *> (const_cast<char *> (m_argumentsData.data ())); }
 
     FunctionCallState GetState() const { return m_state; }
     void SetState(FunctionCallState state) { m_state = state; }
