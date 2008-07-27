@@ -578,6 +578,8 @@ Function::UnHook()
 void
 Function::WaitForCallsToComplete ()
 {
+    Sleep (15);
+
     while (m_callsInProgress > 0)
     {
         Sleep (30);
