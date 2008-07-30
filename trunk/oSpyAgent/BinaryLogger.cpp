@@ -113,6 +113,8 @@ BinaryLogger::LoggingThreadFuncWrapper(LPVOID param)
 void
 BinaryLogger::LoggingThreadFunc()
 {
+    ReentranceProtector protector;
+
     while (WaitForSingleObject(m_destroyEvent, 5000) != WAIT_OBJECT_0)
     {
         FlushPending();

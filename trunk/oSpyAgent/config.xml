@@ -172,6 +172,31 @@
                 </arguments>
             </function>
             -->
+            <function name="CreateFileA" callingConvention="stdcall">
+                <returnValue type="UInt32" hex="true"/>
+                <arguments>
+                    <argument name="lpFileName" direction="in" type="AsciiStringPtr"/>
+                    <argument name="dwDesiredAccess" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwShareMode" direction="in" type="UInt32" hex="true"/>
+                    <argument name="lpSecurityAttributes" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwCreationDisposition" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwFlagsAndAttributes" direction="in" type="UInt32" hex="true"/>
+                    <argument name="hTemplateFile" direction="in" type="UInt32" hex="true"/>
+                </arguments>
+            </function>
+            <function name="CreateFileW" callingConvention="stdcall">
+                <returnValue type="UInt32" hex="true"/>
+                <arguments>
+                    <argument name="lpFileName" direction="in" type="UnicodeStringPtr"/>
+                    <argument name="dwDesiredAccess" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwShareMode" direction="in" type="UInt32" hex="true"/>
+                    <argument name="lpSecurityAttributes" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwCreationDisposition" direction="in" type="UInt32" hex="true"/>
+                    <argument name="dwFlagsAndAttributes" direction="in" type="UInt32" hex="true"/>
+                    <argument name="hTemplateFile" direction="in" type="UInt32" hex="true"/>
+                </arguments>
+            </function>
+
             <function name="DeviceIoControl" callingConvention="stdcall">
                 <returnValue type="MSBool"/>
                 <arguments>
@@ -224,8 +249,37 @@
                     <argument name="bAlertable" direction="in" type="UInt32"/>
                 </arguments>
             </function>
+            <function name="GetOverlappedResult" callingConvention="stdcall">
+                <returnValue type="MSBool"/>
+                <arguments>
+                    <argument name="hFile" direction="in" type="UInt32" hex="true"/>
+                    <argument name="lpOverlapped" direction="in" type="UInt32" hex="true"/>
+                    <argument name="lpNumberOfBytesTransferred" direction="out" type="UInt32Ptr"/>
+                    <argument name="bWait" direction="in" type="MSBool"/>
+                </arguments>
+            </function>
             <function name="GetTickCount">
                 <returnValue type="UInt32"/>
+            </function>
+
+            <!-- KernelStreaming userspace API -->
+            <function name="KsCreatePin" callingConvention="stdcall">
+                <returnValue type="UInt32" hex="true"/>
+                <arguments>
+                    <argument name="FilterHandle" direction="in" type="UInt32" hex="true"/>
+                    <argument name="Connect" direction="in" type="UInt32" hex="true"/>
+                    <argument name="DesiredAccess" direction="in" type="UInt32" hex="true"/>
+                    <argument name="ConnectionHandle" direction="out" type="UInt32Ptr" hex="true"/>
+                </arguments>
+            </function>
+
+            <function name="KsCreateClock" callingConvention="stdcall">
+                <returnValue type="UInt32" hex="true"/>
+                <arguments>
+                    <argument name="ConnectionHandle" direction="in" type="UInt32" hex="true"/>
+                    <argument name="ClockCreate" direction="in" type="UInt32" hex="true"/>
+                    <argument name="ClockHandle" direction="out" type="UInt32Ptr" hex="true"/>
+                </arguments>
             </function>
 
             <!-- user32 -->
@@ -613,15 +667,24 @@
             <!--
             <function specId="HeapAlloc"/>
             -->
+            <function specId="CreateFileA"/>
+            <function specId="CreateFileW"/>
 
             <function specId="DeviceIoControl"/>
 
             <!--
             <function specId="WaitForSingleObject"/>
-            <function specId="WaitForSingleObjectEx"/>
             <function specId="WaitForMultipleObjects"/>
+            <function specId="WaitForSingleObjectEx"/>
             <function specId="WaitForMultipleObjectsEx"/>
             -->
+
+            <function specId="GetOverlappedResult"/>
+        </dllModule>
+
+        <dllModule name="ksuser.dll">
+            <function specId="KsCreatePin"/>
+            <function specId="KsCreateClock"/>
         </dllModule>
 
         <!--
