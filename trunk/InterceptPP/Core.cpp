@@ -577,14 +577,14 @@ Function::Unhook()
 void
 Function::WaitForCallsToComplete ()
 {
-    Sleep (15);
+    Sleep (100);
 
     while (m_callsInProgress > 0)
     {
         Sleep (30);
     }
 
-    Sleep (15);
+    Sleep (100);
 }
 
 __declspec(naked) void
@@ -851,8 +851,8 @@ Function::OnEnter(FunctionCall *call)
         call->AppendCpuContextToElement(ev);
         call->AppendArgumentsToElement(ev);
 
-        if (call->GetShouldCarryOn())
-            call->SetUserData(ev);
+        if (call->GetShouldCarryOn ())
+            call->SetLogEvent (ev);
         else
             ev->Submit();
     }
@@ -873,14 +873,16 @@ Function::OnLeave(FunctionCall *call)
 
     if (shouldLog)
     {
-        Logging::Event *ev = static_cast<Logging::Event *>(call->GetUserData());
+        Logging::Event * ev = call->GetLogEvent ();
+
         if (ev != NULL)
         {
-            call->AppendCpuContextToElement(ev);
-            call->AppendArgumentsToElement(ev);
-            call->AppendReturnValueToElement(ev);
+            call->AppendCpuContextToElement (ev);
+            call->AppendArgumentsToElement (ev);
+            call->AppendReturnValueToElement (ev);
+            call->AppendLastErrorToElement (ev);
 
-            ev->Submit();
+            ev->Submit ();
         }
     }
 }
@@ -903,7 +905,7 @@ FunctionCall::FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxE
         if (argsSize > 0)
         {
             m_argumentsData.resize(argsSize);
-            memcpy((void *) m_argumentsData.data(), (BYTE *) btAddr + 4, argsSize);
+            memcpy((void *) m_argumentsData.data(), (BYTE *) btAddr + sizeof (void *), argsSize);
         }
 
         ArgumentListSpec *spec = function->GetSpec()->GetArguments();
@@ -1068,6 +1070,17 @@ FunctionCall::AppendReturnValueToElement(Logging::Element *el)
 
     void *start = &(m_cpuCtxLive->eax);
     retEl->AppendChild(marshaller->ToNode(start, true, this));
+}
+
+void
+FunctionCall::AppendLastErrorToElement (Logging::Element *el)
+{
+    if (m_state != FUNCTION_CALL_LEAVING)
+        return;
+
+    Logging::TextNode * node = new Logging::TextNode ("lastError");
+    node->AddField ("value", GetLastError ());
+    el->AppendChild (node);
 }
 
 OString

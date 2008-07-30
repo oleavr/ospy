@@ -346,71 +346,81 @@ private:
 class INTERCEPTPP_API FunctionCall : public BaseObject, IPropertyProvider
 {
 public:
-    FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxEnter);
+    FunctionCall (Function * function, void * btAddr, CpuContext * cpuCtxEnter);
 
-    Function *GetFunction() const { return m_function; }
-    void *GetBacktraceAddress() const { return m_backtraceAddress; }
-    void *GetReturnAddress() const { return m_returnAddress; }
+    Function *GetFunction () const { return m_function; }
+    void *GetBacktraceAddress () const { return m_backtraceAddress; }
+    void *GetReturnAddress () const { return m_returnAddress; }
 
-    CpuContext *GetCpuContextLive() const { return m_cpuCtxLive; }
-    void SetCpuContextLive(CpuContext *cpuCtx) { m_cpuCtxLive = cpuCtx; }
+    CpuContext * GetCpuContextLive () const { return m_cpuCtxLive; }
+    void SetCpuContextLive (CpuContext * cpuCtx) { m_cpuCtxLive = cpuCtx; }
 
-    const CpuContext *GetCpuContextEnter() const { return &m_cpuCtxEnter; }
+    const CpuContext * GetCpuContextEnter () const { return &m_cpuCtxEnter; }
 
-    const CpuContext *GetCpuContextLeave() const { return &m_cpuCtxLeave; }
-    void SetCpuContextLeave(const CpuContext *ctx) { m_cpuCtxLeave = *ctx; }
+    const CpuContext * GetCpuContextLeave () const { return &m_cpuCtxLeave; }
+    void SetCpuContextLeave (const CpuContext * ctx) { m_cpuCtxLeave = *ctx; }
 
-    DWORD *GetLastErrorLive() const { return m_lastErrorLive; }
-    void SetLastErrorLive(DWORD *lastError) { m_lastErrorLive = lastError; }
+    DWORD GetLastError () const { return *m_lastErrorLive; }
+    DWORD *GetLastErrorLive () const { return m_lastErrorLive; }
+    void SetLastErrorLive (DWORD *lastError) { m_lastErrorLive = lastError; }
 
-    const ArgumentList *GetArguments() const { return m_arguments; }
-    const OString &GetArgumentsData() const { return m_argumentsData; }
-    template<typename T> T * GetArgumentsPtr() const { return reinterpret_cast<T *> (const_cast<char *> (m_argumentsData.data ())); }
+    const ArgumentList * GetArguments () const { return m_arguments; }
+    const OString & GetArgumentsData () const { return m_argumentsData; }
+    template<typename T> T * GetArgumentsPtr () const { return reinterpret_cast<T *> (const_cast<char *> (m_argumentsData.data ())); }
+    template<typename T> T * GetArgumentsPtrLive () const { return reinterpret_cast<T *> (static_cast<char *> (m_backtraceAddress) + sizeof (void *)); }
 
-    FunctionCallState GetState() const { return m_state; }
-    void SetState(FunctionCallState state) { m_state = state; }
+    DWORD GetReturnValue () { return m_cpuCtxLeave.eax; }
 
-    bool GetShouldCarryOn() const { return m_shouldCarryOn; }
-    void SetShouldCarryOn(bool carryOn) { m_shouldCarryOn = carryOn; }
+    FunctionCallState GetState () const { return m_state; }
+    void SetState (FunctionCallState state) { m_state = state; }
 
-    void *GetUserData() const { return m_userData; }
-    void SetUserData(void *data) { m_userData = data; }
+    bool GetShouldCarryOn () const { return m_shouldCarryOn; }
+    void SetShouldCarryOn (bool carryOn) { m_shouldCarryOn = carryOn; }
 
-    void AppendBacktraceToElement(Logging::Element *el);
-    void AppendCpuContextToElement(Logging::Element *el);
-    void AppendArgumentsToElement(Logging::Element *el);
-    void AppendReturnValueToElement(Logging::Element *el);
-    OString ToString();
+    Logging::Event * GetLogEvent () const { return m_logEvent; }
+    void SetLogEvent (Logging::Event * ev) { m_logEvent = ev; }
 
-    virtual bool QueryForProperty(const OString &query, int &result);
-    virtual bool QueryForProperty(const OString &query, unsigned int &result);
-    virtual bool QueryForProperty(const OString &query, void *&result);
-    virtual bool QueryForProperty(const OString &query, va_list &result);
-    virtual bool QueryForProperty(const OString &query, OString &result);
+    void *GetUserData () const { return m_userData; }
+    template<typename T> T * GetUserData () const { return static_cast<T *> (m_userData); }
+    void SetUserData (void *data) { m_userData = data; }
+
+    void AppendBacktraceToElement (Logging::Element * el);
+    void AppendCpuContextToElement (Logging::Element * el);
+    void AppendArgumentsToElement (Logging::Element * el);
+    void AppendReturnValueToElement (Logging::Element * el);
+    void AppendLastErrorToElement (Logging::Element * el);
+    OString ToString ();
+
+    virtual bool QueryForProperty(const OString &query, int & result);
+    virtual bool QueryForProperty(const OString &query, unsigned int & result);
+    virtual bool QueryForProperty(const OString &query, void *& result);
+    virtual bool QueryForProperty(const OString &query, va_list & result);
+    virtual bool QueryForProperty(const OString &query, OString & result);
 
 protected:
-    Function *m_function;
-    void *m_backtraceAddress;
-    void *m_returnAddress;
-    CpuContext *m_cpuCtxLive;
+    Function * m_function;
+    void * m_backtraceAddress;
+    void * m_returnAddress;
+    CpuContext * m_cpuCtxLive;
     CpuContext m_cpuCtxEnter;
     CpuContext m_cpuCtxLeave;
-    DWORD *m_lastErrorLive;
+    DWORD * m_lastErrorLive;
 
     OString m_argumentsData;
-    ArgumentList *m_arguments;
+    ArgumentList * m_arguments;
 
     FunctionCallState m_state;
 
     bool m_shouldCarryOn;
 
-    void *m_userData;
+    Logging::Event * m_logEvent;
+    void * m_userData;
 
 private:
-    bool ShouldLogArgumentDeep(const Argument *arg) const;
-    void AppendCpuRegisterToElement(Logging::Element *el, const char *name, DWORD value);
+    bool ShouldLogArgumentDeep(const Argument * arg) const;
+    void AppendCpuRegisterToElement(Logging::Element * el, const char * name, DWORD value);
 
-    bool ResolveProperty(const OString &query, const Argument *&arg, DWORD &reg, bool &isArgument, bool &wantAddressOf);
+    bool ResolveProperty(const OString & query, const Argument *& arg, DWORD & reg, bool & isArgument, bool & wantAddressOf);
 };
 
 #pragma warning (pop)

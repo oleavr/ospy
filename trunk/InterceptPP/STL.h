@@ -33,7 +33,7 @@ using namespace std;
 
 namespace InterceptPP {
 
-class BaseObject
+class INTERCEPTPP_API BaseObject
 {
 public:
     void *operator new(size_t, void *an_address)
