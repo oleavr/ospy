@@ -102,6 +102,7 @@ namespace oSpy.SharpDumpLib
         Warning,
         Error,
         FunctionCall,
+        AsyncResult,
         IOCTL_INTERNAL_USB_SUBMIT_URB,
     }
 
