@@ -40,15 +40,16 @@ struct _AgentPluginDesc
     AgentPluginDestroyFunc DestroyFunc;
 };
 
-class AgentPlugin
+class AgentPlugin : public InterceptPP::BaseObject
 {
 public:
     virtual ~AgentPlugin () {}
 
-    void Initialize (const char * processName, InterceptPP::HookManager * hookManager)
+    void Initialize (const char * processName, InterceptPP::Logging::Logger * logger, InterceptPP::HookManager * hookManager)
     {
         m_processName = processName;
         m_hookManager = hookManager;
+        m_logger = logger;
     }
 
     virtual bool Open () = 0;
@@ -56,6 +57,7 @@ public:
 
 protected:
     std::string m_processName;
+    InterceptPP::Logging::Logger * m_logger;
     InterceptPP::HookManager * m_hookManager;
 };
 

@@ -44,10 +44,6 @@ Agent::Agent()
 void
 Agent::Initialize()
 {
-    // Make sure we protect this scope so that our own API usage doesn't
-    // cause any logging of hooked functions.
-    ReentranceProtector protector;
-
     InterceptPP::Initialize();
 
     m_map = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, OSPY_CAPTURE_FILE_NAME);
@@ -161,6 +157,7 @@ Agent::LoadPlugins ()
         return;
 
     const char * processName = Util::Instance ()->GetProcessName ().c_str ();
+    InterceptPP::Logging::Logger * logger = InterceptPP::GetLogger ();
     InterceptPP::HookManager * hookManager = InterceptPP::HookManager::Instance ();
 
     do
@@ -184,7 +181,7 @@ Agent::LoadPlugins ()
                     plugin = desc->CreateFunc ();
                     if (plugin != NULL)
                     {
-                        plugin->Initialize (processName, hookManager);
+                        plugin->Initialize (processName, logger, hookManager);
 
                         if (plugin->Open ())
                         {
@@ -369,6 +366,8 @@ extern "C" {
 static DWORD WINAPI
 AgentWorkerFunc (void * arg)
 {
+    ReentranceProtector protector;
+
     // Just to make sure that floating point support is dynamically loaded...
     float dummy_float = 1.0f;
 
