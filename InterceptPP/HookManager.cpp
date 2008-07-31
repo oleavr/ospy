@@ -48,11 +48,11 @@ HookManager::Instance()
 
 // Utility functions
 static OString
-FilterString(const OString &str)
+FilterString (const OString & str)
 {
     OString result;
 
-    for (unsigned int i = 0; i < str.size(); i++)
+    for (unsigned int i = 0; i < str.size (); i++)
     {
         char c = str[i];
         if (isalnum(c) || c == ' ')
@@ -65,17 +65,17 @@ FilterString(const OString &str)
 }
 
 static void
-TrimString(OString &str)
+TrimString(OString & str)
 {
-    string::size_type pos = str.find_last_not_of(' ');
+    OString::size_type pos = str.find_last_not_of (' ');
     if (pos != string::npos)
     {
-        str.erase(pos + 1);
-        pos = str.find_first_not_of(' ');
+        str.erase (pos + 1);
+        pos = str.find_first_not_of (' ');
         if (pos != string::npos)
-            str.erase(0, pos);
+            str.erase (0, pos);
     }
-    else str.erase(str.begin(), str.end());
+    else str.erase (str.begin (), str.end ());
 }
 
 // Member functions
@@ -903,7 +903,9 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
     OString argName;
     ArgumentDirection argDir = ARG_DIR_UNKNOWN;
     OString argType;
-    PropertyList argTypeProps;
+    PropertyList argTypePropsIn;
+    PropertyList argTypePropsOut;
+    bool argTypePropsSeparate = false;
     RegisterEvalFunc shouldLogRegEval = NULL;
 
     // Parse attributes
@@ -912,15 +914,15 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
     MSXML2::IXMLDOMNodePtr attrNode;
     while ((attrNode = attrs->nextNode()) != NULL)
     {
-        OString attrName = static_cast<OString>(attrNode->nodeName);
+        OString attrName = static_cast<OString> (attrNode->nodeName);
 
         if (attrName == "name")
         {
-            argName = static_cast<bstr_t>(attrNode->nodeTypedValue);
+            argName = static_cast<bstr_t> (attrNode->nodeTypedValue);
         }
         else if (attrName == "direction")
         {
-            OString dirStr = static_cast<bstr_t>(attrNode->nodeTypedValue);
+            OString dirStr = static_cast<bstr_t> (attrNode->nodeTypedValue);
 
             if (dirStr == "in")
                 argDir = ARG_DIR_IN;
@@ -930,7 +932,7 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
                 argDir = static_cast<ArgumentDirection> (ARG_DIR_IN | ARG_DIR_OUT);
             else
             {
-                GetLogger()->LogWarning("unknown direction '%s'", dirStr.c_str());
+                GetLogger ()->LogWarning ("unknown direction '%s'", dirStr.c_str ());
             }
         }
         else if (attrName == "type")
@@ -939,7 +941,21 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
         }
         else
         {
-            argTypeProps.push_back(pair<OString, OString>(attrName, OString(static_cast<bstr_t>(attrNode->nodeTypedValue))));
+            OString propValue = OString (static_cast<bstr_t> (attrNode->nodeTypedValue));
+
+            int pos = propValue.find_first_of ('/');
+            if (pos == propValue.npos)
+            {
+                argTypePropsIn.push_back (pair<OString, OString> (attrName, propValue));
+                argTypePropsOut.push_back (pair<OString, OString> (attrName, propValue));
+            }
+            else
+            {
+                argTypePropsIn.push_back (pair<OString, OString> (attrName, propValue.substr (0, pos)));
+                argTypePropsOut.push_back (pair<OString, OString> (attrName, propValue.substr (pos + 1)));
+
+                argTypePropsSeparate = true;
+            }
         }
     }
 
@@ -1000,23 +1016,39 @@ HookManager::ParseFunctionSpecArgumentNode(FunctionSpec *funcSpec, MSXML2::IXMLD
         return NULL;
     }
 
-    BaseMarshaller *marshaller = Marshaller::Factory::Instance()->CreateMarshaller(argType);
-    if (marshaller == NULL)
+    BaseMarshaller * marshallerIn = Marshaller::Factory::Instance ()->CreateMarshaller (argType);
+    if (marshallerIn == NULL)
     {
         GetLogger()->LogError("argument type '%s' is unknown", argType.c_str());
         return NULL;
     }
 
-    for (PropertyList::const_iterator iter = argTypeProps.begin(); iter != argTypeProps.end(); iter++)
+    BaseMarshaller * marshallerOut = marshallerIn;
+    if (argTypePropsSeparate)
+        marshallerOut = Marshaller::Factory::Instance ()->CreateMarshaller (argType);
+
+    for (PropertyList::const_iterator iter = argTypePropsIn.begin (); iter != argTypePropsIn.end (); iter++)
     {
-        if (!marshaller->SetProperty(iter->first, iter->second))
+        if (!marshallerIn->SetProperty (iter->first, iter->second))
         {
-            GetLogger()->LogWarning("failed to set property '%s' to '%s' on Marshaller::%s",
-                iter->first.c_str(), iter->second.c_str(), argType.c_str());
+            GetLogger ()->LogWarning ("failed to set property '%s' to '%s' on Marshaller::%s",
+                iter->first.c_str (), iter->second.c_str (), argType.c_str ());
         }
     }
 
-    return new ArgumentSpec(argName, argDir, marshaller, shouldLogRegEval);
+    if (argTypePropsSeparate)
+    {
+        for (PropertyList::const_iterator iter = argTypePropsOut.begin (); iter != argTypePropsOut.end (); iter++)
+        {
+            if (!marshallerOut->SetProperty (iter->first, iter->second))
+            {
+                GetLogger ()->LogWarning ("failed to set property '%s' to '%s' on Marshaller::%s",
+                    iter->first.c_str (), iter->second.c_str (), argType.c_str ());
+            }
+        }
+    }
+
+    return new ArgumentSpec (argName, argDir, marshallerIn, marshallerOut, shouldLogRegEval);
 }
 
 void

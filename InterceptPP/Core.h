@@ -144,14 +144,27 @@ private:
 class INTERCEPTPP_API ArgumentSpec : public BaseObject
 {
 public:
-    ArgumentSpec(const OString &name, ArgumentDirection direction, BaseMarshaller *marshaller, RegisterEvalFunc shouldLogRegEval)
-        : m_name(name), m_direction(direction), m_offset(0), m_marshaller(marshaller), m_shouldLogRegEval(shouldLogRegEval)
+    ArgumentSpec (const OString & name, ArgumentDirection direction, BaseMarshaller * marshaller, RegisterEvalFunc shouldLogRegEval)
+        : m_name (name), m_direction (direction), m_offset (0), m_marshallerIn (marshaller), m_marshallerOut (marshaller), m_shouldLogRegEval (shouldLogRegEval)
+    {
+    }
+
+    ArgumentSpec (const OString & name, ArgumentDirection direction, BaseMarshaller * marshallerIn, BaseMarshaller * marshallerOut, RegisterEvalFunc shouldLogRegEval)
+        : m_name (name), m_direction (direction), m_offset (0), m_marshallerIn (marshallerIn), m_marshallerOut (marshallerOut), m_shouldLogRegEval (shouldLogRegEval)
     {
     }
 
     ~ArgumentSpec()
     {
-        delete m_marshaller;
+        if (m_marshallerIn == m_marshallerOut)
+        {
+            delete m_marshallerIn;
+        }
+        else
+        {
+            delete m_marshallerIn;
+            delete m_marshallerOut;
+        }
 
         if (m_shouldLogRegEval != NULL)
             delete[] ((BYTE *)  m_shouldLogRegEval);
@@ -159,12 +172,21 @@ public:
 
     const OString &GetName() const { return m_name; }
     ArgumentDirection GetDirection() const { return m_direction; }
-    const BaseMarshaller *GetMarshaller() const { return m_marshaller; }
+    const BaseMarshaller * GetMarshaller (ArgumentDirection direction) const
+    {
+        if (direction == ARG_DIR_UNKNOWN)
+            return (m_marshallerIn != NULL) ? m_marshallerIn : m_marshallerOut;
+        else
+            return (direction == ARG_DIR_IN) ? m_marshallerIn : m_marshallerOut;
+    }
 
     unsigned int GetOffset() const { return m_offset; }
     void SetOffset(unsigned int offset) { m_offset = offset; }
 
-    unsigned int GetSize() const { return m_marshaller->GetSize(); }
+    unsigned int GetSize() const
+    {
+        return (m_marshallerIn != NULL) ? m_marshallerIn->GetSize () : m_marshallerOut->GetSize ();
+    }
 
     bool ShouldLogEval(const CpuContext *ctx) const
     {
@@ -177,7 +199,8 @@ protected:
     OString m_name;
     ArgumentDirection m_direction;
     unsigned int m_offset;
-    BaseMarshaller *m_marshaller;
+    BaseMarshaller * m_marshallerIn;
+    BaseMarshaller * m_marshallerOut;
 
     RegisterEvalFunc m_shouldLogRegEval;
 };
@@ -185,22 +208,22 @@ protected:
 class INTERCEPTPP_API Argument : public BaseObject
 {
 public:
-    Argument(ArgumentSpec *spec, void *data)
-        : m_spec(spec), m_data(data)
+    Argument(ArgumentSpec * spec, void * data)
+        : m_spec (spec), m_data (data)
     {}
 
-    ArgumentSpec *GetSpec() const { return m_spec; }
+    ArgumentSpec * GetSpec () const { return m_spec; }
 
-    Logging::Node *ToNode(bool deep, IPropertyProvider *propProv) const;
-    OString ToString(bool deep, IPropertyProvider *propProv) const;
-    bool ToInt(int &result) const;
-    bool ToUInt(unsigned int &result) const;
-    bool ToPointer(void *&result) const;
-    bool ToVaList(va_list &result) const;
+    Logging::Node * ToNode (ArgumentDirection direction, bool deep, IPropertyProvider * propProv) const;
+    OString ToString (ArgumentDirection direction, bool deep, IPropertyProvider * propProv) const;
+    bool ToInt (ArgumentDirection direction, int & result) const;
+    bool ToUInt (ArgumentDirection direction, unsigned int & result) const;
+    bool ToPointer (ArgumentDirection direction, void *& result) const;
+    bool ToVaList (ArgumentDirection direction, va_list & result) const;
 
 protected:
-    ArgumentSpec *m_spec;
-    void *m_data;
+    ArgumentSpec * m_spec;
+    void * m_data;
 };
 
 class INTERCEPTPP_API ArgumentListSpec : public BaseObject
@@ -391,11 +414,11 @@ public:
     void AppendLastErrorToElement (Logging::Element * el);
     OString ToString ();
 
-    virtual bool QueryForProperty(const OString &query, int & result);
-    virtual bool QueryForProperty(const OString &query, unsigned int & result);
-    virtual bool QueryForProperty(const OString &query, void *& result);
-    virtual bool QueryForProperty(const OString &query, va_list & result);
-    virtual bool QueryForProperty(const OString &query, OString & result);
+    virtual bool QueryForProperty (const OString &query, int & result);
+    virtual bool QueryForProperty (const OString &query, unsigned int & result);
+    virtual bool QueryForProperty (const OString &query, void *& result);
+    virtual bool QueryForProperty (const OString &query, va_list & result);
+    virtual bool QueryForProperty (const OString &query, OString & result);
 
 protected:
     Function * m_function;
@@ -417,10 +440,11 @@ protected:
     void * m_userData;
 
 private:
-    bool ShouldLogArgumentDeep(const Argument * arg) const;
-    void AppendCpuRegisterToElement(Logging::Element * el, const char * name, DWORD value);
+    bool ShouldLogArgumentDeep (const Argument * arg) const;
+    inline ArgumentDirection GetCurrentArgumentDirection () const { return (m_state == FUNCTION_CALL_ENTERING) ? ARG_DIR_IN : ARG_DIR_OUT; }
+    void AppendCpuRegisterToElement (Logging::Element * el, const char * name, DWORD value);
 
-    bool ResolveProperty(const OString & query, const Argument *& arg, DWORD & reg, bool & isArgument, bool & wantAddressOf);
+    bool ResolveProperty (const OString & query, const Argument *& arg, DWORD & reg, bool & isArgument, bool & wantAddressOf);
 };
 
 #pragma warning (pop)
