@@ -204,7 +204,7 @@
                     <argument name="dwIoControlCode" direction="in" type="IoControlCode"/>
                     <argument name="lpInBuffer" direction="in" type="ByteArrayPtr" size="arg.nInBufferSize"/>
                     <argument name="nInBufferSize" direction="in" type="UInt32"/>
-                    <argument name="lpOutBuffer" direction="out" type="ByteArrayPtr" size="arg.lpBytesReturned">
+                    <argument name="lpOutBuffer" direction="in/out" type="ByteArrayPtr" size="arg.nOutBufferSize/arg.lpBytesReturned">
                         <logCondition>reg.eax != 0</logCondition>
                     </argument>
                     <argument name="nOutBufferSize" direction="in" type="UInt32"/>

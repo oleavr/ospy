@@ -206,46 +206,46 @@ OVector<Signature>::Type Function::prologSignatures;
 volatile LONG Function::m_callsInProgress = 0;
 
 Logging::Node *
-Argument::ToNode(bool deep, IPropertyProvider *propProv) const
+Argument::ToNode (ArgumentDirection direction, bool deep, IPropertyProvider * propProv) const
 {
-    Logging::Element *el = new Logging::Element("argument");
-    el->AddField("name", m_spec->GetName());
+    Logging::Element * el = new Logging::Element ("argument");
+    el->AddField ("name", m_spec->GetName ());
 
-    Logging::Node *valueNode = m_spec->GetMarshaller()->ToNode(m_data, deep, propProv);
+    Logging::Node *valueNode = m_spec->GetMarshaller (direction)->ToNode (m_data, deep, propProv);
     if (valueNode != NULL)
-        el->AppendChild(valueNode);
+        el->AppendChild (valueNode);
 
     return el;
 }
 
 OString
-Argument::ToString(bool deep, IPropertyProvider *propProv) const
+Argument::ToString (ArgumentDirection direction, bool deep, IPropertyProvider * propProv) const
 {
-    return m_spec->GetMarshaller()->ToString(m_data, deep, propProv);
+    return m_spec->GetMarshaller (direction)->ToString (m_data, deep, propProv);
 }
 
 bool
-Argument::ToInt(int &result) const
+Argument::ToInt (ArgumentDirection direction, int & result) const
 {
-    return m_spec->GetMarshaller()->ToInt(m_data, result);
+    return m_spec->GetMarshaller (direction)->ToInt (m_data, result);
 }
 
 bool
-Argument::ToUInt(unsigned int &result) const
+Argument::ToUInt (ArgumentDirection direction, unsigned int & result) const
 {
-    return m_spec->GetMarshaller()->ToUInt(m_data, result);
+    return m_spec->GetMarshaller (direction)->ToUInt (m_data, result);
 }
 
 bool
-Argument::ToPointer(void *&result) const
+Argument::ToPointer (ArgumentDirection direction, void *& result) const
 {
-    return m_spec->GetMarshaller()->ToPointer(m_data, result);
+    return m_spec->GetMarshaller (direction)->ToPointer (m_data, result);
 }
 
 bool
-Argument::ToVaList(va_list &result) const
+Argument::ToVaList (ArgumentDirection direction, va_list & result) const
 {
-    return m_spec->GetMarshaller()->ToVaList(m_data, result);
+    return m_spec->GetMarshaller (direction)->ToVaList (m_data, result);
 }
 
 ArgumentListSpec::ArgumentListSpec()
@@ -291,16 +291,16 @@ ArgumentListSpec::Initialize(unsigned int count, va_list args)
 }
 
 void
-ArgumentListSpec::AddArgument(ArgumentSpec *arg)
+ArgumentListSpec::AddArgument (ArgumentSpec * arg)
 {
-    m_arguments.push_back(arg);
+    m_arguments.push_back (arg);
 
     if ((arg->GetDirection() & ARG_DIR_OUT) != 0)
         m_hasOutArgs = true;
 
-    arg->SetOffset(m_size);
+    arg->SetOffset (m_size);
 
-    m_size += arg->GetMarshaller()->GetSize();
+    m_size += arg->GetMarshaller (ARG_DIR_UNKNOWN)->GetSize ();
 }
 
 ArgumentList::ArgumentList(ArgumentListSpec *spec, void *data)
@@ -917,10 +917,10 @@ FunctionCall::FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxE
 }
 
 bool
-FunctionCall::ShouldLogArgumentDeep(const Argument *arg) const
+FunctionCall::ShouldLogArgumentDeep(const Argument * arg) const
 {
-    ArgumentSpec *spec = arg->GetSpec();
-    ArgumentDirection dir = spec->GetDirection();
+    ArgumentSpec *spec = arg->GetSpec ();
+    ArgumentDirection dir = spec->GetDirection ();
 
     if (m_state == FUNCTION_CALL_ENTERING)
     {
@@ -933,18 +933,18 @@ FunctionCall::ShouldLogArgumentDeep(const Argument *arg) const
             return false;
 
         // TODO: we only check this when leaving for now -- does it make any sense to do it on entry?
-        return spec->ShouldLogEval(&m_cpuCtxLeave);
+        return spec->ShouldLogEval (&m_cpuCtxLeave);
     }
 }
 
 void
-FunctionCall::AppendBacktraceToElement(Logging::Element *el)
+FunctionCall::AppendBacktraceToElement (Logging::Element * el)
 {
 #if ENABLE_BACKTRACE_SUPPORT
-    Logging::Node *btNode = Util::Instance()->CreateBacktraceNode(m_backtraceAddress);
+    Logging::Node * btNode = Util::Instance ()->CreateBacktraceNode (m_backtraceAddress);
     if (btNode != NULL)
     {
-        el->AppendChild(btNode);
+        el->AppendChild (btNode);
     }
 #endif
 }
@@ -1009,7 +1009,9 @@ FunctionCall::AppendArgumentsToElement(Logging::Element *el)
                 const Argument &arg = (*args)[i];
 
                 if (!(m_state == FUNCTION_CALL_LEAVING && arg.GetSpec()->GetDirection() == ARG_DIR_IN))
-                    argsEl->AppendChild(arg.ToNode(ShouldLogArgumentDeep(&arg), this));
+                {
+                    argsEl->AppendChild (arg.ToNode (GetCurrentArgumentDirection (), ShouldLogArgumentDeep (&arg), this));
+                }
             }
         }
     }
@@ -1086,45 +1088,45 @@ FunctionCall::AppendLastErrorToElement (Logging::Element *el)
 OString
 FunctionCall::ToString()
 {
-    FunctionSpec *spec = m_function->GetSpec();
+    FunctionSpec * spec = m_function->GetSpec ();
 
     OOStringStream ss;
 
-    ss << m_function->GetFullName();
+    ss << m_function->GetFullName ();
 
-    const ArgumentList *args = GetArguments();
+    const ArgumentList * args = GetArguments ();
     if (args != NULL)
     {
         ss << "(";
 
-        for (unsigned int i = 0; i < args->GetCount(); i++)
+        for (unsigned int i = 0; i < args->GetCount (); i++)
         {
-            const Argument &arg = (*args)[i];
+            const Argument & arg = (*args)[i];
 
             if (i)
                 ss << ", ";
 
-            ss << arg.ToString(ShouldLogArgumentDeep(&arg), this);
+            ss << arg.ToString (GetCurrentArgumentDirection (), ShouldLogArgumentDeep (&arg), this);
         }
 
         ss << ")";
     }
     else
     {
-        int argsSize = spec->GetArgsSize();
-        if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN && argsSize % sizeof(DWORD) == 0)
+        int argsSize = spec->GetArgsSize ();
+        if (argsSize != FUNCTION_ARGS_SIZE_UNKNOWN && argsSize % sizeof (DWORD) == 0)
         {
             ss << "(";
 
-            DWORD *args = (DWORD *) m_argumentsData.data();
+            DWORD *args = (DWORD *) m_argumentsData.data ();
 
-            for (unsigned int i = 0; i < argsSize / sizeof(DWORD); i++)
+            for (unsigned int i = 0; i < argsSize / sizeof (DWORD); i++)
             {
                 if (i)
                     ss << ", ";
 
                 // FIXME: optimize this
-                if (args[i] > 0xFFFF && !IsBadReadPtr((void *) args[i], 1))
+                if (args[i] > 0xFFFF && !IsBadReadPtr ((void *) args[i], 1))
                     ss << hex << "0x";
                 else
                     ss << dec;
@@ -1136,71 +1138,71 @@ FunctionCall::ToString()
         }
     }
 
-    return ss.str();
+    return ss.str ();
 }
 
 bool
-FunctionCall::QueryForProperty(const OString &query, int &result)
+FunctionCall::QueryForProperty (const OString & query, int & result)
 {
-    const Argument *arg;
+    const Argument * arg;
     DWORD reg;
     bool isArg, wantAddrOf;
 
-    if (!ResolveProperty(query, arg, reg, isArg, wantAddrOf))
+    if (!ResolveProperty (query, arg, reg, isArg, wantAddrOf))
         return false;
 
     if (wantAddrOf)
         return false;
 
     if (isArg)
-        return arg->ToInt(result);
+        return arg->ToInt (GetCurrentArgumentDirection (), result);
 
     result = reg;
     return true;
 }
 
 bool
-FunctionCall::QueryForProperty(const OString &query, unsigned int &result)
+FunctionCall::QueryForProperty (const OString & query, unsigned int & result)
 {
-    const Argument *arg;
+    const Argument * arg;
     DWORD reg;
     bool isArg, wantAddrOf;
 
-    if (!ResolveProperty(query, arg, reg, isArg, wantAddrOf))
+    if (!ResolveProperty (query, arg, reg, isArg, wantAddrOf))
         return false;
 
     if (wantAddrOf)
         return false;
 
     if (isArg)
-        return arg->ToUInt(result);
+        return arg->ToUInt (GetCurrentArgumentDirection (), result);
 
     result = reg;
     return true;
 }
 
 bool
-FunctionCall::QueryForProperty(const OString &query, void *&result)
+FunctionCall::QueryForProperty (const OString & query, void *& result)
 {
-    const Argument *arg;
+    const Argument * arg;
     DWORD reg;
     bool isArg, wantAddrOf;
 
-    if (!ResolveProperty(query, arg, reg, isArg, wantAddrOf))
+    if (!ResolveProperty (query, arg, reg, isArg, wantAddrOf))
         return false;
 
     if (isArg)
     {
         if (!wantAddrOf)
         {
-            return arg->ToPointer(result);
+            return arg->ToPointer (GetCurrentArgumentDirection (), result);
         }
         else
         {
             if (m_state != FUNCTION_CALL_ENTERING)
                 return false;
 
-            result = static_cast<unsigned char *>(m_backtraceAddress) + 4 + arg->GetSpec()->GetOffset();
+            result = static_cast<unsigned char *> (m_backtraceAddress) + sizeof (void *) + arg->GetSpec ()->GetOffset ();
             return true;
         }
     }
@@ -1209,38 +1211,38 @@ FunctionCall::QueryForProperty(const OString &query, void *&result)
         if (wantAddrOf)
             return false;
 
-        result = reinterpret_cast<void *>(reg);
+        result = reinterpret_cast<void *> (reg);
         return true;
     }
 }
 
 bool
-FunctionCall::QueryForProperty(const OString &query, va_list &result)
+FunctionCall::QueryForProperty (const OString & query, va_list & result)
 {
-    const Argument *arg;
+    const Argument * arg;
     DWORD reg;
     bool isArg, wantAddrOf;
 
-    if (!ResolveProperty(query, arg, reg, isArg, wantAddrOf))
+    if (!ResolveProperty (query, arg, reg, isArg, wantAddrOf))
         return false;
 
     if (wantAddrOf)
         return false;
 
     if (isArg)
-        return arg->ToVaList(result);
+        return arg->ToVaList (GetCurrentArgumentDirection (), result);
     else
         return false;
 }
 
 bool
-FunctionCall::QueryForProperty(const OString &query, OString &result)
+FunctionCall::QueryForProperty (const OString & query, OString & result)
 {
-    const Argument *arg;
+    const Argument * arg;
     DWORD reg;
     bool isArg, wantAddrOf;
 
-    if (!ResolveProperty(query, arg, reg, isArg, wantAddrOf))
+    if (!ResolveProperty (query, arg, reg, isArg, wantAddrOf))
         return false;
 
     if (wantAddrOf)
@@ -1249,7 +1251,7 @@ FunctionCall::QueryForProperty(const OString &query, OString &result)
     if (!isArg)
         return false;
 
-    result = arg->ToString(true, this);
+    result = arg->ToString (GetCurrentArgumentDirection (), true, this);
     return true;
 }
 
