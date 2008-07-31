@@ -205,19 +205,6 @@ OVector<Signature>::Type Function::prologSignatures;
 
 volatile LONG Function::m_callsInProgress = 0;
 
-Logging::Node *
-Argument::ToNode (ArgumentDirection direction, bool deep, IPropertyProvider * propProv) const
-{
-    Logging::Element * el = new Logging::Element ("argument");
-    el->AddField ("name", m_spec->GetName ());
-
-    Logging::Node *valueNode = m_spec->GetMarshaller (direction)->ToNode (m_data, deep, propProv);
-    if (valueNode != NULL)
-        el->AppendChild (valueNode);
-
-    return el;
-}
-
 OString
 Argument::ToString (ArgumentDirection direction, bool deep, IPropertyProvider * propProv) const
 {
@@ -828,10 +815,11 @@ Function::OnLeaveWrapper(CpuContext *cpuCtx, FunctionTrampoline *trampoline, Fun
 }
 
 void
-Function::OnEnter(FunctionCall *call)
+Function::OnEnter (FunctionCall * call)
 {
     bool shouldLog = true;
-    const FunctionCallHandlerVector & handlers = call->GetFunction ()->GetSpec ()->GetHandlers ();
+
+    const FunctionCallHandlerVector & handlers = m_spec->GetHandlers ();
     if (handlers.size () > 0)
     {
         FunctionCallHandlerVector::const_iterator it;
@@ -842,24 +830,24 @@ Function::OnEnter(FunctionCall *call)
 
     if (shouldLog)
     {
-        Logging::Event *ev = GetLogger()->NewEvent("FunctionCall");
+        Logging::Event * ev = GetLogger ()->NewEvent ("FunctionCall");
 
-        Logging::TextNode *textNode = new Logging::TextNode("name", GetFullName());
-        ev->AppendChild(textNode);
+        Logging::TextNode * textNode = new Logging::TextNode ("name", GetFullName ());
+        ev->AppendChild (textNode);
 
-        call->AppendBacktraceToElement(ev);
-        call->AppendCpuContextToElement(ev);
-        call->AppendArgumentsToElement(ev);
+        call->AppendBacktraceToElement (ev);
+        call->AppendCpuContextToElement (ev);
+        call->AppendArgumentsToElement (ev);
 
         if (call->GetShouldCarryOn ())
             call->SetLogEvent (ev);
         else
-            ev->Submit();
+            ev->Submit ();
     }
 }
 
 void
-Function::OnLeave(FunctionCall *call)
+Function::OnLeave (FunctionCall * call)
 {
     bool shouldLog = true;
     const FunctionCallHandlerVector & handlers = call->GetFunction ()->GetSpec ()->GetHandlers ();
@@ -885,6 +873,9 @@ Function::OnLeave(FunctionCall *call)
             ev->Submit ();
         }
     }
+
+    // FIXME: free event if OnEnter started logging but OnLeave set shouldLog to false
+    // FIXME: multiple plugins and SetUserData() is a bad idea right now
 }
 
 FunctionCall::FunctionCall(Function *function, void *btAddr, CpuContext *cpuCtxEnter)
@@ -1006,11 +997,40 @@ FunctionCall::AppendArgumentsToElement(Logging::Element *el)
 
             for (unsigned int i = 0; i < args->GetCount(); i++)
             {
-                const Argument &arg = (*args)[i];
+                const Argument * arg = &(*args)[i];
 
-                if (!(m_state == FUNCTION_CALL_LEAVING && arg.GetSpec()->GetDirection() == ARG_DIR_IN))
+                if (!(m_state == FUNCTION_CALL_LEAVING && arg->GetSpec()->GetDirection() == ARG_DIR_IN))
                 {
-                    argsEl->AppendChild (arg.ToNode (GetCurrentArgumentDirection (), ShouldLogArgumentDeep (&arg), this));
+                    ArgumentSpec * argSpec = arg->GetSpec ();
+
+                    ArgumentDirection direction = GetCurrentArgumentDirection ();
+                    bool deep = ShouldLogArgumentDeep (arg);
+                    IPropertyProvider * propProv = this;
+
+                    Logging::Element * argEl = new Logging::Element ("argument");
+                    argEl->AddField ("name", argSpec->GetName ());
+
+                    bool handled = false;
+
+                    const ArgumentLogHandlerVector & handlers = argSpec->GetLogHandlers ();
+                    if (handlers.size () > 0)
+                    {
+                        ArgumentLogHandlerVector::const_iterator it;
+
+                        for (it = handlers.begin (); !handled && it != handlers.end (); it++)
+                        {
+                            handled = (**it) (this, args, arg, argEl);
+                        }
+                    }
+
+                    if (!handled)
+                    {
+                        Logging::Node * valueNode = argSpec->GetMarshaller (direction)->ToNode (arg->GetData (), deep, propProv);
+                        if (valueNode != NULL)
+                            argEl->AppendChild (valueNode);
+                    }
+
+                    argsEl->AppendChild (argEl);
                 }
             }
         }

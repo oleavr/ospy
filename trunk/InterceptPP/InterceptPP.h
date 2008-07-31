@@ -25,9 +25,5 @@
 #  endif
 #endif
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
 #include "STL.h"
 #include <windows.h>
