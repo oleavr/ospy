@@ -396,9 +396,9 @@ Pointer::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyO
 }
 
 bool
-Pointer::ToInt(void *start, int &result) const
+Pointer::ToInt (void * start, int & result) const
 {
-    int **ptr = static_cast<int **>(start);
+    int ** ptr = static_cast<int **> (start);
     if (*ptr == NULL)
       return false;
 
@@ -406,19 +406,19 @@ Pointer::ToInt(void *start, int &result) const
 }
 
 bool
-Pointer::ToUInt(void *start, unsigned int &result) const
+Pointer::ToUInt (void * start, unsigned int & result) const
 {
-    int **ptr = static_cast<int **>(start);
-    if (**ptr == NULL)
+    int ** ptr = static_cast<int **> (start);
+    if (*ptr == NULL)
       return false;
 
-    return m_type->ToUInt(*ptr, result);
+    return m_type->ToUInt (*ptr, result);
 }
 
 bool
-Pointer::ToPointer(void *start, void *&result) const
+Pointer::ToPointer (void * start, void *& result) const
 {
-    void **ptr = static_cast<void **>(start);
+    void ** ptr = static_cast<void **> (start);
     result = *ptr;
     return true;
 }
