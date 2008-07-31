@@ -83,6 +83,9 @@ typedef struct {
 #define FUNCTION_ARGS_SIZE_UNKNOWN -1
 
 class FunctionCall;
+class ArgumentList;
+class Argument;
+class FunctionCall;
 
 class IFunctionCallHandler
 {
@@ -124,6 +127,46 @@ private:
     Method m_method;
 };
 
+class IArgumentLogHandler
+{
+public:
+    virtual bool operator() (const FunctionCall * call, const ArgumentList * argList, const Argument * arg, Logging::Element * argElement) = 0;
+};
+
+template<class Class>
+class ArgumentLogHandler : public IArgumentLogHandler
+{
+public:
+    typedef bool (Class::*Method) (const FunctionCall * call, const ArgumentList * argList, const Argument * arg, Logging::Element * argElement);
+
+    ArgumentLogHandler ()
+        : m_instance (NULL),
+          m_method (NULL)
+    {
+    }
+
+    ArgumentLogHandler (Class * instance, Method method)
+        : m_instance (instance),
+          m_method (method)
+    {
+    }
+
+    void Initialize (Class * instance, Method method)
+    {
+        m_instance = instance;
+        m_method = method;
+    }
+
+    virtual bool operator() (const FunctionCall * call, const ArgumentList * argList, const Argument * arg, Logging::Element * argElement)
+    {
+        return (m_instance->*m_method) (call, argList, arg, argElement);
+    }
+
+private:
+    Class * m_instance;
+    Method m_method;
+};
+
 typedef bool (__stdcall *RegisterEvalFunc) (const CpuContext *context);
 
 class INTERCEPTPP_API ReentranceProtector
@@ -140,6 +183,8 @@ public:
 private:
     DWORD m_oldValue;
 };
+
+typedef OVector<IArgumentLogHandler *>::Type ArgumentLogHandlerVector;
 
 class INTERCEPTPP_API ArgumentSpec : public BaseObject
 {
@@ -195,6 +240,9 @@ public:
         return m_shouldLogRegEval(ctx);
     }
 
+    const ArgumentLogHandlerVector & GetLogHandlers () const { return m_logHandlers; }
+    void AddLogHandler (IArgumentLogHandler * handler) { m_logHandlers.push_back (handler); }
+
 protected:
     OString m_name;
     ArgumentDirection m_direction;
@@ -203,6 +251,8 @@ protected:
     BaseMarshaller * m_marshallerOut;
 
     RegisterEvalFunc m_shouldLogRegEval;
+
+    ArgumentLogHandlerVector m_logHandlers;
 };
 
 class INTERCEPTPP_API Argument : public BaseObject
@@ -213,8 +263,9 @@ public:
     {}
 
     ArgumentSpec * GetSpec () const { return m_spec; }
+    void * GetData () const { return m_data; }
+    template<typename T> T GetValue () const { return *static_cast<T *> (m_data); }
 
-    Logging::Node * ToNode (ArgumentDirection direction, bool deep, IPropertyProvider * propProv) const;
     OString ToString (ArgumentDirection direction, bool deep, IPropertyProvider * propProv) const;
     bool ToInt (ArgumentDirection direction, int & result) const;
     bool ToUInt (ArgumentDirection direction, unsigned int & result) const;
@@ -241,10 +292,23 @@ public:
     bool GetHasOutArgs() const { return m_hasOutArgs; }
 
     ArgumentSpec *operator[](int index) { return m_arguments[index]; }
+    ArgumentSpec *operator[](const OString &name)
+    {
+        ArgumentListSpecVector::iterator it;
+        for (it = m_arguments.begin (); it != m_arguments.end (); it++)
+        {
+            ArgumentSpec * arg = *it;
+            if (arg->GetName () == name)
+                return arg;
+        }
+
+        return NULL;
+    }
 
 protected:
     unsigned int m_size;
-    OVector<ArgumentSpec *>::Type m_arguments;
+    typedef OVector<ArgumentSpec *>::Type ArgumentListSpecVector;
+    ArgumentListSpecVector m_arguments;
     bool m_hasOutArgs;
 
     void Initialize(unsigned int count, va_list args);
@@ -261,10 +325,23 @@ public:
     unsigned int GetCount() const { return static_cast<unsigned int>(m_arguments.size()); }
 
     const Argument &operator[](int index) const { return m_arguments[index]; }
+    const Argument &operator[](const OString &name) const
+    {
+        ArgumentListVector::const_iterator it;
+        for (it = m_arguments.begin (); it != m_arguments.end (); it++)
+        {
+            const Argument & arg = *it;
+            if (arg.GetSpec ()->GetName () == name)
+                return arg;
+        }
+
+        throw Error ("Argument not found");
+    }
 
 protected:
     ArgumentListSpec *m_spec;
-    OVector<Argument>::Type m_arguments;
+    typedef OVector<Argument>::Type ArgumentListVector;
+    ArgumentListVector m_arguments;
 };
 
 typedef OVector<IFunctionCallHandler *>::Type FunctionCallHandlerVector;
@@ -392,7 +469,7 @@ public:
     template<typename T> T * GetArgumentsPtr () const { return reinterpret_cast<T *> (const_cast<char *> (m_argumentsData.data ())); }
     template<typename T> T * GetArgumentsPtrLive () const { return reinterpret_cast<T *> (static_cast<char *> (m_backtraceAddress) + sizeof (void *)); }
 
-    DWORD GetReturnValue () { return m_cpuCtxLeave.eax; }
+    DWORD GetReturnValue () const { return m_cpuCtxLeave.eax; }
 
     FunctionCallState GetState () const { return m_state; }
     void SetState (FunctionCallState state) { m_state = state; }

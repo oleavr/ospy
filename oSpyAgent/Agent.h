@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include <winsock2.h>
-
 #include "AgentPlugin.h"
 #include "BinaryLogger.h"
 

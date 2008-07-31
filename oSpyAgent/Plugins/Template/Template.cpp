@@ -5,7 +5,7 @@ class TemplatePlugin : public oSpy::AgentPlugin
 public:
     virtual bool Open ()
     {
-        return true;
+        return false; // unload the plugin, no need to stay resident
     }
 
     virtual void Close ()
