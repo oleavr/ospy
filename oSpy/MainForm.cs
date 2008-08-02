@@ -68,6 +68,7 @@ namespace oSpy
         private void fileToolStripMenuItem_DropDownOpening(object sender, EventArgs e)
         {
             saveMenuItem.Enabled = (curDump != null);
+            saveUncompressedMenuItem.Enabled = (curDump != null);
             closeMenuItem.Enabled = (curDump != null);
         }
 
@@ -142,12 +143,28 @@ namespace oSpy
             OpenDump(dump);
         }
 
+        private byte[] uncompressedFileMagic = { (byte) 'o', (byte) 'S', (byte) 'p', (byte) 'y' };
+
         private void openMenuItem_Click(object sender, EventArgs e)
         {
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 NewOperation("Loading");
-                BZip2InputStream stream = new BZip2InputStream(File.OpenRead(openFileDialog.FileName));
+
+                Stream stream = File.OpenRead (openFileDialog.FileName);
+                byte[] magic = new byte[4];
+                stream.Read (magic, 0, magic.Length);
+
+                // FIXME: not too elegant
+                if (magic[0] != uncompressedFileMagic[0] ||
+                    magic[1] != uncompressedFileMagic[1] ||
+                    magic[2] != uncompressedFileMagic[2] ||
+                    magic[3] != uncompressedFileMagic[3])
+                {
+                    stream.Seek (0, SeekOrigin.Begin);
+                    stream = new BZip2InputStream (stream);
+                }
+
                 dumpLoader.LoadAsync(stream, curOperation);
                 curProgress.ShowDialog(this);
             }
@@ -191,6 +208,7 @@ namespace oSpy
                 return;
             }
 
+            playgroundToolStripMenuItem.Enabled = true;
 #if TESTING_PARSER
             DumpParser parser = new DumpParser();
             parser.ParseProgressChanged += new ParseProgressChangedEventHandler(parser_ParseProgressChanged);
@@ -204,6 +222,8 @@ namespace oSpy
 
         private void CloseCurrentDump()
         {
+            playgroundToolStripMenuItem.Enabled = false;
+
             if (curDump == null)
                 return;
 
@@ -236,14 +256,14 @@ namespace oSpy
                         curProgress.ProgressUpdate(curOperation, pct);
                     }
 
-                    rows.Add(ev.Id, ev.Timestamp, ev);
+                    rows.Add(ev.Id, ev.Timestamp, "", ev);
                 }
 
                 tbl.EndLoadData();
             }
             catch (Exception e)
             {
-                CloseCurrentDump();
+                Invoke (new ThreadStart (CloseCurrentDump));
                 curProgress.OperationFailed(e.Message);
                 return;
             }
@@ -311,15 +331,35 @@ namespace oSpy
         }
 #endif
 
+        private void Save (bool compressed)
+        {
+            if (saveFileDialog.ShowDialog () == DialogResult.OK)
+            {
+                NewOperation ("Saving");
+
+                Stream stream = File.Open (saveFileDialog.FileName, FileMode.Create);
+                if (compressed)
+                {
+                    stream = new BZip2OutputStream (stream);
+                }
+                else
+                {
+                    stream.Write (uncompressedFileMagic, 0, uncompressedFileMagic.Length);
+                }
+
+                dumpSaver.SaveAsync (curDump, stream, curOperation);
+                curProgress.ShowDialog (this);
+            }
+        }
+
         private void saveMenuItem_Click(object sender, EventArgs e)
         {
-            if (saveFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                NewOperation("Saving");
-                BZip2OutputStream stream = new BZip2OutputStream(File.Open(saveFileDialog.FileName, FileMode.Create));
-                dumpSaver.SaveAsync(curDump, stream, curOperation);
-                curProgress.ShowDialog(this);
-            }
+            Save (true);
+        }
+
+        private void saveuncompressedToolStripMenuItem_Click (object sender, EventArgs e)
+        {
+            Save (false);
         }
 
         private void dumpSaver_SaveCompleted(object sender, SaveCompletedEventArgs e)
@@ -362,7 +402,7 @@ namespace oSpy
             if (row.Cells.Count <= 1)
                 return;
 
-            Event ev = dataGridView.SelectedRows[0].Cells[2].Value as Event;
+            Event ev = dataGridView.SelectedRows[0].Cells[3].Value as Event;
 
             string prettyXml;
             XmlHighlighter highlighter = new XmlHighlighter(XmlHighlightColorScheme.DarkBlueScheme);
@@ -381,6 +421,15 @@ namespace oSpy
         {
             AboutBoxForm frm = new AboutBoxForm();
             frm.ShowDialog();
+        }
+
+        private void playgroundToolStripMenuItem_Click (object sender, EventArgs e)
+        {
+            if (curDump == null)
+                return;
+
+            Playground.VisualizationForm frm = new oSpy.Playground.VisualizationForm (curDump);
+            frm.ShowDialog ();
         }
     }
 }
