@@ -570,7 +570,7 @@ namespace oSpy.Playground
             //
             headlineBox.Left = 0 + framePenWidth + boxesLeftRightSpacing;
             headlineBox.Top = 0 + framePenWidth + boxesTopBottomSpacing;
-            headlineBox.Width = commonWidth - (2 * boxesLeftRightSpacing);
+            headlineBox.Width = commonWidth - (2 * boxesLeftRightSpacing) - framePenWidth - 2 - ctxSquareWidth - 2;
             int height = headlineBox.GetPreferredSize(new Size(commonWidth, headlineMaxHeight)).Height;
             if (height > headlineMaxHeight)
                 height = headlineMaxHeight;

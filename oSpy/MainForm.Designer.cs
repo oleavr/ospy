@@ -51,6 +51,7 @@ namespace oSpy
             this.newCaptureToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem ();
             this.openMenuItem = new System.Windows.Forms.ToolStripMenuItem ();
             this.saveMenuItem = new System.Windows.Forms.ToolStripMenuItem ();
+            this.saveUncompressedMenuItem = new System.Windows.Forms.ToolStripMenuItem ();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator ();
             this.closeMenuItem = new System.Windows.Forms.ToolStripMenuItem ();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator ();
@@ -64,14 +65,12 @@ namespace oSpy
             this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem ();
             this.mainSplitContainer = new System.Windows.Forms.SplitContainer ();
             this.dataGridView = new System.Windows.Forms.DataGridView ();
-            this.idDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn ();
-            this.timestampDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn ();
-            this.description = new System.Windows.Forms.DataGridViewTextBoxColumn ();
             this.bindingSource = new System.Windows.Forms.BindingSource (this.components);
             this.dataSet = new System.Data.DataSet ();
             this.eventsTbl = new System.Data.DataTable ();
             this.idCol = new System.Data.DataColumn ();
             this.timestampCol = new System.Data.DataColumn ();
+            this.threadIdCol = new System.Data.DataColumn ();
             this.descriptionCol = new System.Data.DataColumn ();
             this.richTextBox = new System.Windows.Forms.RichTextBox ();
             this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn ();
@@ -80,10 +79,14 @@ namespace oSpy
             this.dumpSaver = new oSpy.SharpDumpLib.DumpSaver (this.components);
             this.dumpLoader = new oSpy.SharpDumpLib.DumpLoader (this.components);
             this.dataGridViewTextBoxColumn3 = new System.Windows.Forms.DataGridViewTextBoxColumn ();
+            this.idDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn ();
+            this.timestampDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn ();
+            this.threadId = new System.Windows.Forms.DataGridViewTextBoxColumn ();
+            this.description = new System.Windows.Forms.DataGridViewTextBoxColumn ();
+            this.dataGridViewTextBoxColumn4 = new System.Windows.Forms.DataGridViewTextBoxColumn ();
             this.eventObj = new System.Windows.Forms.DataGridViewTextBoxColumn ();
             this.eventObjCol = new System.Data.DataColumn ();
             this.eventCol = new System.Data.DataColumn ();
-            this.saveUncompressedMenuItem = new System.Windows.Forms.ToolStripMenuItem ();
             this.menuStrip.SuspendLayout ();
             this.dumpContextMenuStrip.SuspendLayout ();
             this.mainSplitContainer.Panel1.SuspendLayout ();
@@ -154,6 +157,13 @@ namespace oSpy
             this.saveMenuItem.Size = new System.Drawing.Size (188, 22);
             this.saveMenuItem.Text = "&Save...";
             this.saveMenuItem.Click += new System.EventHandler (this.saveMenuItem_Click);
+            // 
+            // saveUncompressedMenuItem
+            // 
+            this.saveUncompressedMenuItem.Name = "saveUncompressedMenuItem";
+            this.saveUncompressedMenuItem.Size = new System.Drawing.Size (188, 22);
+            this.saveUncompressedMenuItem.Text = "Save &uncompressed...";
+            this.saveUncompressedMenuItem.Click += new System.EventHandler (this.saveuncompressedToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
@@ -259,10 +269,10 @@ namespace oSpy
             this.dataGridView.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
             this.dataGridView.BackgroundColor = System.Drawing.SystemColors.ControlDark;
             this.dataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView.ColumnHeadersVisible = false;
             this.dataGridView.Columns.AddRange (new System.Windows.Forms.DataGridViewColumn[] {
             this.idDataGridViewTextBoxColumn,
             this.timestampDataGridViewTextBoxColumn,
+            this.threadId,
             this.description,
             this.eventObj});
             this.dataGridView.DataSource = this.bindingSource;
@@ -277,30 +287,6 @@ namespace oSpy
             this.dataGridView.Size = new System.Drawing.Size (828, 254);
             this.dataGridView.TabIndex = 2;
             this.dataGridView.SelectionChanged += new System.EventHandler (this.dataGridView_SelectionChanged);
-            // 
-            // idDataGridViewTextBoxColumn
-            // 
-            this.idDataGridViewTextBoxColumn.DataPropertyName = "id";
-            this.idDataGridViewTextBoxColumn.HeaderText = "id";
-            this.idDataGridViewTextBoxColumn.Name = "idDataGridViewTextBoxColumn";
-            this.idDataGridViewTextBoxColumn.ReadOnly = true;
-            this.idDataGridViewTextBoxColumn.Width = 5;
-            // 
-            // timestampDataGridViewTextBoxColumn
-            // 
-            this.timestampDataGridViewTextBoxColumn.DataPropertyName = "timestamp";
-            this.timestampDataGridViewTextBoxColumn.HeaderText = "timestamp";
-            this.timestampDataGridViewTextBoxColumn.Name = "timestampDataGridViewTextBoxColumn";
-            this.timestampDataGridViewTextBoxColumn.ReadOnly = true;
-            this.timestampDataGridViewTextBoxColumn.Width = 5;
-            // 
-            // description
-            // 
-            this.description.DataPropertyName = "description";
-            this.description.HeaderText = "description";
-            this.description.Name = "description";
-            this.description.ReadOnly = true;
-            this.description.Width = 5;
             // 
             // bindingSource
             // 
@@ -318,6 +304,7 @@ namespace oSpy
             this.eventsTbl.Columns.AddRange (new System.Data.DataColumn[] {
             this.idCol,
             this.timestampCol,
+            this.threadIdCol,
             this.descriptionCol,
             this.eventObjCol});
             this.eventsTbl.TableName = "events";
@@ -331,8 +318,16 @@ namespace oSpy
             // 
             // timestampCol
             // 
+            this.timestampCol.AllowDBNull = false;
             this.timestampCol.Caption = "Timestamp";
             this.timestampCol.ColumnName = "timestamp";
+            // 
+            // threadIdCol
+            // 
+            this.threadIdCol.AllowDBNull = false;
+            this.threadIdCol.Caption = "Thread ID";
+            this.threadIdCol.ColumnName = "threadId";
+            this.threadIdCol.DataType = typeof (uint);
             // 
             // descriptionCol
             // 
@@ -394,6 +389,47 @@ namespace oSpy
             this.dataGridViewTextBoxColumn3.Visible = false;
             this.dataGridViewTextBoxColumn3.Width = 5;
             // 
+            // idDataGridViewTextBoxColumn
+            // 
+            this.idDataGridViewTextBoxColumn.DataPropertyName = "id";
+            this.idDataGridViewTextBoxColumn.HeaderText = "id";
+            this.idDataGridViewTextBoxColumn.Name = "idDataGridViewTextBoxColumn";
+            this.idDataGridViewTextBoxColumn.ReadOnly = true;
+            this.idDataGridViewTextBoxColumn.Width = 40;
+            // 
+            // timestampDataGridViewTextBoxColumn
+            // 
+            this.timestampDataGridViewTextBoxColumn.DataPropertyName = "timestamp";
+            this.timestampDataGridViewTextBoxColumn.HeaderText = "timestamp";
+            this.timestampDataGridViewTextBoxColumn.Name = "timestampDataGridViewTextBoxColumn";
+            this.timestampDataGridViewTextBoxColumn.ReadOnly = true;
+            this.timestampDataGridViewTextBoxColumn.Width = 79;
+            // 
+            // threadId
+            // 
+            this.threadId.DataPropertyName = "threadId";
+            this.threadId.HeaderText = "thread id";
+            this.threadId.Name = "threadId";
+            this.threadId.ReadOnly = true;
+            this.threadId.Width = 73;
+            // 
+            // description
+            // 
+            this.description.DataPropertyName = "description";
+            this.description.HeaderText = "description";
+            this.description.Name = "description";
+            this.description.ReadOnly = true;
+            this.description.Width = 83;
+            // 
+            // dataGridViewTextBoxColumn4
+            // 
+            this.dataGridViewTextBoxColumn4.DataPropertyName = "eventObj";
+            this.dataGridViewTextBoxColumn4.HeaderText = "eventObj";
+            this.dataGridViewTextBoxColumn4.Name = "dataGridViewTextBoxColumn4";
+            this.dataGridViewTextBoxColumn4.ReadOnly = true;
+            this.dataGridViewTextBoxColumn4.Visible = false;
+            this.dataGridViewTextBoxColumn4.Width = 5;
+            // 
             // eventObj
             // 
             this.eventObj.DataPropertyName = "eventObj";
@@ -416,13 +452,6 @@ namespace oSpy
             this.eventCol.ColumnMapping = System.Data.MappingType.Hidden;
             this.eventCol.ColumnName = "event";
             this.eventCol.DataType = typeof (object);
-            // 
-            // saveuncompressedToolStripMenuItem
-            // 
-            this.saveUncompressedMenuItem.Name = "saveuncompressedToolStripMenuItem";
-            this.saveUncompressedMenuItem.Size = new System.Drawing.Size (188, 22);
-            this.saveUncompressedMenuItem.Text = "Save &uncompressed...";
-            this.saveUncompressedMenuItem.Click += new System.EventHandler (this.saveuncompressedToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -485,11 +514,14 @@ namespace oSpy
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn2;
         private System.Data.DataColumn descriptionCol;
         private System.Data.DataColumn eventObjCol;
-        private System.Windows.Forms.DataGridViewTextBoxColumn idDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn timestampDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn description;
-        private System.Windows.Forms.DataGridViewTextBoxColumn eventObj;
         private System.Windows.Forms.ToolStripMenuItem saveUncompressedMenuItem;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn3;
+        private System.Data.DataColumn threadIdCol;
+        private System.Windows.Forms.DataGridViewTextBoxColumn idDataGridViewTextBoxColumn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn timestampDataGridViewTextBoxColumn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn threadId;
+        private System.Windows.Forms.DataGridViewTextBoxColumn description;
+        private System.Windows.Forms.DataGridViewTextBoxColumn eventObj;
+        private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn4;
     }
 }

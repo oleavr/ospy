@@ -60,6 +60,7 @@ public:
 private:
     void OnLoadLibrary (FunctionCall * call, bool & shouldLog);
 
+    DWORD GetModulePreferredStartAddress(HMODULE mod);
     OModuleInfo *GetModuleInfoForAddress(DWORD address);
 
     CRITICAL_SECTION m_cs;

@@ -327,6 +327,8 @@ public:
 
 protected:
     BaseMarshaller *m_marshaller;
+    OString m_trueStr;
+    OString m_falseStr;
 };
 
 class CPPBool : public Boolean
@@ -344,7 +346,10 @@ class MSBool : public Boolean
 public:
     MSBool()
         : Boolean(new UInt32())
-    {}
+    {
+        m_trueStr = "TRUE";
+        m_falseStr = "FALSE";
+    }
 
     virtual BaseMarshaller *Clone() const { return new MSBool(*this); }
 };

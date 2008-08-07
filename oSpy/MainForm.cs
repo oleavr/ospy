@@ -256,7 +256,7 @@ namespace oSpy
                         curProgress.ProgressUpdate(curOperation, pct);
                     }
 
-                    rows.Add(ev.Id, ev.Timestamp, "", ev);
+                    rows.Add(ev.Id, ev.Timestamp, ev.ThreadId, CreateEventDescription (ev), ev);
                 }
 
                 tbl.EndLoadData();
@@ -271,6 +271,37 @@ namespace oSpy
             Invoke(new ThreadStart(RestoreDataSource));
 
             curProgress.OperationComplete();
+        }
+
+        private string CreateEventDescription (Event ev)
+        {
+            switch (ev.Type)
+            {
+                case DumpEventType.FunctionCall:
+                    string fullName = ev.Data.SelectSingleNode ("/event/name").InnerText;
+                    string[] tokens = fullName.Split (new string[] { "::" }, 2, StringSplitOptions.None);
+                    string shortName = tokens[tokens.Length - 1];
+
+                    List<string> argList = new List<string> ();
+                    foreach (XmlNode node in ev.Data.SelectNodes ("/event/arguments[@direction='in']/argument/value"))
+                    {
+                        if (node.Attributes["value"] != null)
+                            argList.Add (node.Attributes["value"].Value);
+                        else
+                            argList.Add ("<FIXME>");
+                    }
+
+                    string retVal = ev.Data.SelectSingleNode ("/event/returnValue/value").Attributes["value"].Value;
+
+                    return String.Format ("{0}({1}) => {2}", shortName, String.Join (", ", argList.ToArray ()), retVal);
+
+                case DumpEventType.AsyncResult:
+                    uint requestEventId = Convert.ToUInt32 (ev.Data.SelectSingleNode ("/event/requestId").InnerText);
+                    return String.Format ("AsyncResult for event {0}", requestEventId);
+                /* TODO: extend */
+            }
+
+            return "";
         }
 
         private void RestoreDataSource()
@@ -402,7 +433,7 @@ namespace oSpy
             if (row.Cells.Count <= 1)
                 return;
 
-            Event ev = dataGridView.SelectedRows[0].Cells[3].Value as Event;
+            Event ev = dataGridView.SelectedRows[0].Cells[4].Value as Event;
 
             string prettyXml;
             XmlHighlighter highlighter = new XmlHighlighter(XmlHighlightColorScheme.DarkBlueScheme);

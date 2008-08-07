@@ -68,11 +68,19 @@ public:
         m_dicHandler.Initialize (this, &AsyncIOPlugin::OnDeviceIoControl);
         m_dicOutBufferLogHandler.Initialize (this, &AsyncIOPlugin::LogDeviceIoControlOutBuffer);
         m_gorHandler.Initialize (this, &AsyncIOPlugin::OnGetOverlappedResult);
+        m_cpConnectLogHandler.Initialize (this, &AsyncIOPlugin::LogKsCreatePinConnect);
 
         ArgumentSpec * dicOutBufArg = (*dicSpec->GetArguments ())["lpOutBuffer"];
         dicSpec->AddHandler (&m_dicHandler);
         dicOutBufArg->AddLogHandler (&m_dicOutBufferLogHandler);
         gorSpec->AddHandler (&m_gorHandler);
+
+        FunctionSpec * cpSpec = m_hookManager->GetFunctionSpecById ("KsCreatePin");
+        if (cpSpec != NULL)
+        {
+            ArgumentSpec * cpConnArg = (*cpSpec->GetArguments ())["Connect"];
+            cpConnArg->AddLogHandler (&m_cpConnectLogHandler);
+        }
 
         InitializeCriticalSection (&m_lock);
 
@@ -120,11 +128,18 @@ private:
 
         const KSSTREAM_HEADER * streamHdr = static_cast<const KSSTREAM_HEADER *> (headerData);
 
+        Logging::Element * ptrNode = new Logging::Element ("value");
+        ptrNode->AddField ("type", "Pointer");
+        OOStringStream ss;
+        ss << "0x" << hex << (DWORD) streamHdr;
+        ptrNode->AddField ("value", ss.str ());
+        el->AppendChild (ptrNode);
+
         Logging::DataNode * streamHdrNode = new Logging::DataNode ("value");
         streamHdrNode->AddField ("type", "KSSTREAM_HEADER");
         streamHdrNode->AddField ("size", sizeof (KSSTREAM_HEADER));
         streamHdrNode->SetData (streamHdr, sizeof (KSSTREAM_HEADER));
-        el->AppendChild (streamHdrNode);
+        ptrNode->AppendChild (streamHdrNode);
 
         if (headerSize >= sizeof (KSSTREAM_HEADER) + sizeof (KS_FRAME_INFO))
         {
@@ -134,7 +149,7 @@ private:
             frameInfoNode->AddField ("type", "KS_FRAME_INFO");
             frameInfoNode->AddField ("size", sizeof (KS_FRAME_INFO));
             frameInfoNode->SetData (frameInfo, sizeof (KS_FRAME_INFO));
-            el->AppendChild (frameInfoNode);
+            ptrNode->AppendChild (frameInfoNode);
         }
 
         Logging::DataNode * streamBufNode = new Logging::DataNode ("value");
@@ -142,7 +157,7 @@ private:
         streamBufNode->AddField ("size", streamHdr->FrameExtent);
         if (full && streamHdr->Data != NULL && streamHdr->FrameExtent != 0)
             streamBufNode->SetData (streamHdr->Data, streamHdr->FrameExtent);
-        el->AppendChild (streamBufNode);
+        ptrNode->AppendChild (streamBufNode);
     }
 
     bool LogDeviceIoControlOutBuffer (const FunctionCall * call, const ArgumentList * argList, const Argument * arg, Logging::Element * argElement)
@@ -165,8 +180,6 @@ private:
 
     void OnGetOverlappedResult (FunctionCall * call, bool & shouldLog)
     {
-        shouldLog = false;
-
         if (call->GetState () == FUNCTION_CALL_LEAVING && call->GetReturnValue () == TRUE)
         {
             GetOverlappedResultArgs * origArgs = call->GetArgumentsPtr<GetOverlappedResultArgs> ();
@@ -208,11 +221,49 @@ private:
         }
     }
 
+    bool LogKsCreatePinConnect (const FunctionCall * call, const ArgumentList * argList, const Argument * arg, Logging::Element * argElement)
+    {
+        bool entering = (call->GetState () == FUNCTION_CALL_ENTERING);
+        if (!entering)
+            return false;
+
+        KSPIN_CONNECT * conn = (*argList)["Connect"].GetValue<KSPIN_CONNECT *> ();
+
+        Logging::Element * ptrNode = new Logging::Element ("value");
+        ptrNode->AddField ("type", "Pointer");
+        OOStringStream ss;
+        ss << "0x" << hex << (DWORD) conn;
+        ptrNode->AddField ("value", ss.str ());
+        argElement->AppendChild (ptrNode);
+
+        if (conn != NULL)
+        {
+            Logging::DataNode * connNode = new Logging::DataNode ("value");
+            connNode->AddField ("type", "KSPIN_CONNECT");
+            connNode->AddField ("size", sizeof (KSPIN_CONNECT));
+            connNode->SetData (conn, sizeof (KSPIN_CONNECT));
+            ptrNode->AppendChild (connNode);
+
+            KSDATAFORMAT * format = reinterpret_cast<KSDATAFORMAT *> (conn + 1);
+            if (format->FormatSize >= sizeof (KSDATAFORMAT))
+            {
+                Logging::DataNode * formatNode = new Logging::DataNode ("value");
+                formatNode->AddField ("type", "KSDATAFORMAT");
+                formatNode->AddField ("size", format->FormatSize);
+                formatNode->SetData (format, format->FormatSize);
+                ptrNode->AppendChild (formatNode);
+            }
+        }
+
+        return true;
+    }
+
     CRITICAL_SECTION m_lock;
 
     FunctionCallHandler<AsyncIOPlugin> m_dicHandler;
     ArgumentLogHandler<AsyncIOPlugin> m_dicOutBufferLogHandler;
     FunctionCallHandler<AsyncIOPlugin> m_gorHandler;
+    ArgumentLogHandler<AsyncIOPlugin> m_cpConnectLogHandler;
 
     typedef OMap<HANDLE, TrackedIoControl *>::Type EventToIoControlMap;
     typedef OMap<OVERLAPPED *, TrackedIoControl *>::Type OverlappedToIoControlMap;

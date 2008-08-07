@@ -116,6 +116,9 @@ namespace oSpy.Playground
                 maxSize.Width = (int)((float)defaultMaxWH * ratio);
                 maxSize.Height = defaultMaxWH;
 
+                if (maxSize.Width < 64)
+                    maxSize.Width = 64;
+
                 maxScaleBitmap = new Bitmap(maxSize.Width, maxSize.Height);
 
                 timeline.DrawToBitmapScaled(maxScaleBitmap);
@@ -201,6 +204,11 @@ namespace oSpy.Playground
                 h = (int) ((float)h * ratioY);
                 if (h >= ClientRectangle.Height)
                     h = ClientRectangle.Height - (int) pen.Width;
+
+                if (w < 1)
+                    w = 1;
+                if (h < 1)
+                    h = 1;
 
                 ExtendedGraphics eg = new ExtendedGraphics(g);
                 eg.FillRoundRectangle(new SolidBrush(Color.FromArgb(127, 0x9B, 0x57, 0x9F)),

@@ -154,13 +154,11 @@ Util::UpdateModuleList()
                 OModuleInfo modInfo;
                 modInfo.name = buf;
 
-                IMAGE_DOS_HEADER *dosHeader = (IMAGE_DOS_HEADER *) modules[i];
-                IMAGE_NT_HEADERS *peHeader = (IMAGE_NT_HEADERS *) ((char *) modules[i] + dosHeader->e_lfanew);
-
                 modInfo.handle = modules[i];
-                modInfo.preferredStartAddress = peHeader->OptionalHeader.ImageBase;
+                modInfo.preferredStartAddress = GetModulePreferredStartAddress(modules[i]);
                 modInfo.startAddress = (DWORD) mi.lpBaseOfDll;
                 modInfo.endAddress = (DWORD) mi.lpBaseOfDll + mi.SizeOfImage - 1;
+
                 m_modules[buf] = modInfo;
 
                 if (modInfo.startAddress < m_lowestAddress)
@@ -335,6 +333,49 @@ Util::CreateBacktraceNode(void *address)
     }
 
     return btNode;
+}
+
+DWORD
+Util::GetModulePreferredStartAddress(HMODULE mod)
+{
+    // This is not as easy as it used to be starting with Vista, as the
+    // dynamic linker seems to overwrite the in-memory OptionalHeader.ImageBase
+    // with the actual randomized base address of the image in memory.
+    OWString path;
+    path.resize(MAX_PATH);
+
+    if (GetModuleFileNameW(mod, const_cast<wchar_t *>(path.data()), path.size()) == 0)
+        return 0;
+
+    HANDLE fh = CreateFileW(path.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (fh == INVALID_HANDLE_VALUE)
+        return 0;
+
+    DWORD ret = 0;
+
+    unsigned char *buf = new unsigned char[sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS)];
+
+    IMAGE_DOS_HEADER *dosHeader = reinterpret_cast<IMAGE_DOS_HEADER *>(buf);
+    IMAGE_NT_HEADERS *peHeader = reinterpret_cast<IMAGE_NT_HEADERS *>(dosHeader + 1);
+
+    DWORD bytesRead;
+    if (ReadFile(fh, dosHeader, sizeof(IMAGE_DOS_HEADER), &bytesRead, NULL) && bytesRead == sizeof(IMAGE_DOS_HEADER))
+    {
+        LONG ntHeaderOffset = dosHeader->e_lfanew;
+
+        if (SetFilePointer(fh, ntHeaderOffset, NULL, FILE_BEGIN) != INVALID_SET_FILE_POINTER)
+        {
+            if (ReadFile(fh, peHeader, sizeof(IMAGE_NT_HEADERS), &bytesRead, NULL) && bytesRead == sizeof(IMAGE_NT_HEADERS))
+            {
+                ret = peHeader->OptionalHeader.ImageBase;
+            }
+        }
+    }
+
+    delete buf;
+    CloseHandle (fh);
+
+    return ret;
 }
 
 OModuleInfo *
