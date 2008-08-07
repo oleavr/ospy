@@ -530,17 +530,17 @@ Integer<T>::ToUInt(void *start, unsigned int &result) const
 }
 
 Boolean::Boolean()
-    : BaseMarshaller("Boolean"), m_marshaller(new UInt8())
+    : BaseMarshaller("Boolean"), m_marshaller(new UInt8()), m_trueStr("true"), m_falseStr("false")
 {
 }
 
 Boolean::Boolean(BaseMarshaller *marshaller)
-    : BaseMarshaller("Boolean"), m_marshaller(marshaller)
+    : BaseMarshaller("Boolean"), m_marshaller(marshaller), m_trueStr("true"), m_falseStr("false")
 {
 }
 
 Boolean::Boolean(const Boolean &b)
-    : BaseMarshaller("Boolean"), m_marshaller(b.m_marshaller->Clone())
+    : BaseMarshaller("Boolean"), m_marshaller(b.m_marshaller->Clone()), m_trueStr("true"), m_falseStr("false")
 {
 }
 
@@ -586,7 +586,7 @@ Boolean::ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyO
     if (m_marshaller == NULL || !m_marshaller->ToInt(start, value))
         return "unknown";
 
-    return (value) ? "true" : "false";
+    return (value) ? m_trueStr : m_falseStr;
 }
 
 Array::Array()

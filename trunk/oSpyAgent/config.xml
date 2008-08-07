@@ -2,8 +2,14 @@
     <types>
         <!-- Kernel -->
         <enumeration name="IoControlCode">
-            <member name="IOCTL_KS_PROPERTY" value="3080195"/>
-            <member name="IOCTL_KS_READ_STREAM" value="3096599"/>
+            <member name="IOCTL_KS_PROPERTY" value="0x002f0003"/>
+            <member name="IOCTL_KS_ENABLE_EVENT" value="0x002f0007"/>
+            <member name="IOCTL_KS_DISABLE_EVENT" value="0x002f000b"/>
+            <member name="IOCTL_KS_METHOD" value="0x002f000f"/>
+            <member name="IOCTL_KS_WRITE_STREAM" value="0x002f8013"/>
+            <member name="IOCTL_KS_READ_STREAM" value="0x002f4017"/>
+            <member name="IOCTL_KS_RESET_STATE" value="0x002f001b"/>
+            <member name="IOCTL_KS_HANDSHAKE" value="0x002f001f"/>
         </enumeration>
 
         <!-- Winsock -->
@@ -263,6 +269,24 @@
             </function>
 
             <!-- KernelStreaming userspace API -->
+            <function name="KsCreateAllocator" callingConvention="stdcall">
+                <returnValue type="UInt32" hex="true"/>
+                <arguments>
+                    <argument name="ConnectionHandle" direction="in" type="UInt32" hex="true"/>
+                    <argument name="AllocatorFraming" direction="in" type="UInt32" hex="true"/>
+                    <argument name="AllocatorHandle" direction="out" type="UInt32Ptr" hex="true"/>
+                </arguments>
+            </function>
+
+            <function name="KsCreateClock" callingConvention="stdcall">
+                <returnValue type="UInt32" hex="true"/>
+                <arguments>
+                    <argument name="ConnectionHandle" direction="in" type="UInt32" hex="true"/>
+                    <argument name="ClockCreate" direction="in" type="UInt32" hex="true"/>
+                    <argument name="ClockHandle" direction="out" type="UInt32Ptr" hex="true"/>
+                </arguments>
+            </function>
+
             <function name="KsCreatePin" callingConvention="stdcall">
                 <returnValue type="UInt32" hex="true"/>
                 <arguments>
@@ -273,12 +297,13 @@
                 </arguments>
             </function>
 
-            <function name="KsCreateClock" callingConvention="stdcall">
+            <function name="KsCreateTopologyNode" callingConvention="stdcall">
                 <returnValue type="UInt32" hex="true"/>
                 <arguments>
-                    <argument name="ConnectionHandle" direction="in" type="UInt32" hex="true"/>
-                    <argument name="ClockCreate" direction="in" type="UInt32" hex="true"/>
-                    <argument name="ClockHandle" direction="out" type="UInt32Ptr" hex="true"/>
+                    <argument name="ParentHandle" direction="in" type="UInt32" hex="true"/>
+                    <argument name="NodeCreate" direction="in" type="UInt32" hex="true"/>
+                    <argument name="DesiredAccess" direction="in" type="UInt32" hex="true"/>
+                    <argument name="NodeHandle" direction="out" type="UInt32Ptr" hex="true"/>
                 </arguments>
             </function>
 

@@ -271,7 +271,7 @@ namespace oSpy.Playground
 
         private string FormatTime(DateTime t)
         {
-            return String.Format("[{0}]", t.ToLongTimeString());
+            return String.Format("[{0:00}:{1:00}:{2:00}.{3}]", t.Hour, t.Minute, t.Second, t.Millisecond);
         }
 
         protected override void OnPaint(PaintEventArgs e)
