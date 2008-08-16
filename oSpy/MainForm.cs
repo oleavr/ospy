@@ -460,7 +460,7 @@ namespace oSpy
                 return;
 
             Playground.VisualizationForm frm = new oSpy.Playground.VisualizationForm (curDump);
-            frm.ShowDialog ();
+            frm.Show (this);
         }
     }
 }

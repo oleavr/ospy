@@ -151,6 +151,13 @@ namespace oSpy.Playground
         Dictionary<Guid, string> ksSubFormats = new Dictionary<Guid,string> ();
         Dictionary<Guid, string> ksSpecifiers = new Dictionary<Guid,string> ();
 
+        Dictionary<Guid, string> ksMemoryTypes = new Dictionary<Guid, string> ();
+        Dictionary<Guid, string> ksBusTypes = new Dictionary<Guid, string> ();
+        List<KeyValuePair<uint, string>> ksAllocatorCreateFlags = new List<KeyValuePair<uint, string>> ();
+        List<KeyValuePair<uint, string>> ksAllocatorQueryFlags = new List<KeyValuePair<uint, string>> ();
+
+        List<KeyValuePair<uint, string>> fileAlignmentFlags = new List<KeyValuePair<uint, string>> ();
+
         Dictionary<uint, bool> pendingReadStreamRequests = new Dictionary<uint, bool> ();
 
         public VisualizationForm (Dump dump)
@@ -235,7 +242,7 @@ namespace oSpy.Playground
             ksPropertySets[new Guid ("{6A2E0670-28E4-11D0-A18C-00A0C9118956}")] = "PROPSETID_VIDCAP_VIDEOCONTROL";
             ksPropertySets[new Guid ("{C6E13344-30AC-11D0-A18C-00A0C9118956}")] = "PROPSETID_VIDCAP_DROPPEDFRAMES";
 
-            // Flags
+            // Property Flags
             ksPropertyFlags.Add (new KeyValuePair<uint, string> (0x00000001, "GET"));
             ksPropertyFlags.Add (new KeyValuePair<uint, string> (0x00000002, "SET"));
             ksPropertyFlags.Add (new KeyValuePair<uint, string> (0x00000100, "SETSUPPORT"));
@@ -448,6 +455,51 @@ namespace oSpy.Playground
             ksSpecifiers[new Guid ("{0482dde0-7817-11cf-8a03-00aa006ecb65}")] = "KSDATAFORMAT_SPECIFIER_ANALOGVIDEO";
             ksSpecifiers[new Guid ("{f72a76e0-eb0a-11d0-ace4-0000c0cc16ba}")] = "KSDATAFORMAT_SPECIFIER_VBI";
 
+            // Memory types
+            ksMemoryTypes[new Guid ("{00000000-0000-0000-0000-000000000000}")] = "KSMEMORY_TYPE_WILDCARD";
+            ksMemoryTypes[new Guid ("{091BB638-603F-11D1-B067-00A0C9062802}")] = "KSMEMORY_TYPE_SYSTEM";
+            ksMemoryTypes[new Guid ("{8CB0FC28-7893-11D1-B069-00A0C9062802}")] = "KSMEMORY_TYPE_USER";
+            ksMemoryTypes[new Guid ("{D833F8F8-7894-11D1-B069-00A0C9062802}")] = "KSMEMORY_TYPE_KERNEL_PAGED";
+            ksMemoryTypes[new Guid ("{4A6D5FC4-7895-11D1-B069-00A0C9062802}")] = "KSMEMORY_TYPE_KERNEL_NONPAGED";
+            ksMemoryTypes[new Guid ("{091BB639-603F-11D1-B067-00A0C9062802}")] = "KSMEMORY_TYPE_DEVICE_UNKNOWN";
+
+            // Bus types TBD
+
+            // Allocator flags: Options (create)
+            ksAllocatorCreateFlags.Add (new KeyValuePair<uint, string> (0x00000001, "OPTIONF_COMPATIBLE"));
+            ksAllocatorCreateFlags.Add (new KeyValuePair<uint, string> (0x00000002, "OPTIONF_SYSTEM_MEMORY"));
+
+            // Allocator flags: Requirements (query)
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00000001, "REQUIREMENTF_INPLACE_MODIFIER"));
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00000002, "REQUIREMENTF_SYSTEM_MEMORY"));
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00000004, "REQUIREMENTF_FRAME_INTEGRITY"));
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00000008, "REQUIREMENTF_MUST_ALLOCATE"));
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x80000000, "REQUIREMENTF_PREFERENCES_ONLY"));
+
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00000010, "FLAG_PARTIAL_READ_SUPPORT"));
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00000020, "FLAG_DEVICE_SPECIFIC"));
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00000040, "FLAG_CAN_ALLOCATE"));
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00000080, "FLAG_INSIST_ON_FRAMESIZE_RATIO"));
+
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00000100, "FLAG_NO_FRAME_INTEGRITY"));
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00000200, "FLAG_MULTIPLE_OUTPUT"));
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00000400, "FLAG_CYCLE"));
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00000800, "FLAG_ALLOCATOR_EXISTS"));
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00001000, "FLAG_INDEPENDENT_RANGES"));
+            ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00002000, "FLAG_ATTENTION_STEPPING"));
+
+            // File alignments
+            fileAlignmentFlags.Add (new KeyValuePair<uint, string> (0x00000000, "FILE_BYTE_ALIGNMENT"));
+            fileAlignmentFlags.Add (new KeyValuePair<uint, string> (0x00000001, "FILE_WORD_ALIGNMENT"));
+            fileAlignmentFlags.Add (new KeyValuePair<uint, string> (0x00000003, "FILE_LONG_ALIGNMENT"));
+            fileAlignmentFlags.Add (new KeyValuePair<uint, string> (0x00000007, "FILE_QUAD_ALIGNMENT"));
+            fileAlignmentFlags.Add (new KeyValuePair<uint, string> (0x0000000f, "FILE_OCTA_ALIGNMENT"));
+            fileAlignmentFlags.Add (new KeyValuePair<uint, string> (0x0000001f, "FILE_32_BYTE_ALIGNMENT"));
+            fileAlignmentFlags.Add (new KeyValuePair<uint, string> (0x0000003f, "FILE_64_BYTE_ALIGNMENT"));
+            fileAlignmentFlags.Add (new KeyValuePair<uint, string> (0x0000007f, "FILE_128_BYTE_ALIGNMENT"));
+            fileAlignmentFlags.Add (new KeyValuePair<uint, string> (0x000000ff, "FILE_256_BYTE_ALIGNMENT"));
+            fileAlignmentFlags.Add (new KeyValuePair<uint, string> (0x000001ff, "FILE_512_BYTE_ALIGNMENT"));
+
             VisualizeDump (dump);
         }
 
@@ -648,27 +700,27 @@ namespace oSpy.Playground
             if (lastErrStr != null)
                 tr.AddHeaderField ("LastError", lastErrStr);
 
-            XmlNode inBufNode = eventRoot.SelectSingleNode ("/event/arguments[@direction='in']/argument[3]/value/value");
-            ByteArrayReader inBufReader = null;
-            if (inBufNode != null)
-            {
-                byte[] inBuf = Convert.FromBase64String (inBufNode.InnerText);
-                inBufReader = new ByteArrayReader (inBuf);
-            }
+            ByteArrayReader inBuf = null;
+            ByteArrayReader outBufEnter = null;
+            ByteArrayReader outBufLeave = null;
 
-            XmlNode outBufNode = eventRoot.SelectSingleNode ("/event/arguments[@direction='in']/argument[5]/value/value");
-            ByteArrayReader outBufReader = null;
-            if (outBufNode != null)
-            {
-                byte[] outBuf = Convert.FromBase64String (outBufNode.InnerText);
-                outBufReader = new ByteArrayReader (outBuf);
-            }
+            XmlNode node = eventRoot.SelectSingleNode ("/event/arguments[@direction='in']/argument[3]/value/value");
+            if (node != null)
+                inBuf = new ByteArrayReader (Convert.FromBase64String (node.InnerText));
 
-            if (codeStr == "IOCTL_KS_PROPERTY" && inBufReader != null)
+            node = eventRoot.SelectSingleNode ("/event/arguments[@direction='in']/argument[5]/value/value");
+            if (node != null)
+                outBufEnter = new ByteArrayReader (Convert.FromBase64String (node.InnerText));
+
+            node = eventRoot.SelectSingleNode ("/event/arguments[@direction='out']/argument[1]/value/value");
+            if (node != null)
+                outBufLeave = new ByteArrayReader (Convert.FromBase64String (node.InnerText));
+
+            if (codeStr == "IOCTL_KS_PROPERTY" && inBuf != null)
             {
-                Guid propSetGuid = inBufReader.ReadGuid ();
-                uint rawPropId = inBufReader.ReadU32LE ();
-                uint propFlags = inBufReader.ReadU32LE ();
+                Guid propSetGuid = inBuf.ReadGuid ();
+                uint rawPropId = inBuf.ReadU32LE ();
+                uint propFlags = inBuf.ReadU32LE ();
 
                 string propSetStr, propIdStr, propFlagsStr;
 
@@ -694,19 +746,7 @@ namespace oSpy.Playground
                     propIdStr = String.Format ("0x{0:x8}", rawPropId);
                 }
 
-                propFlagsStr = "";
-                foreach (KeyValuePair<uint, string> flagPair in ksPropertyFlags)
-                {
-                    uint mask = flagPair.Key;
-                    string name = flagPair.Value;
-
-                    if ((propFlags & mask) != 0)
-                    {
-                        if (propFlagsStr.Length > 0)
-                            propFlagsStr += "|";
-                        propFlagsStr += name;
-                    }
-                }
+                propFlagsStr = BitfieldToString (ksPropertyFlags, propFlags);
 
                 // HACK #3
                 if (propSetStr == "KSPROPSETID_Topology")
@@ -723,16 +763,36 @@ namespace oSpy.Playground
                 StringBuilder body = new StringBuilder ();
                 body.AppendFormat ("[lpInBuffer]\r\nKSPROPERTY: {0}, {1}, {2}", propSetStr, propIdStr, propFlagsStr);
 
-                string inBufRemainder = inBufReader.ReadRemainingBytesAsHexDump ();
-                if (inBufRemainder != null)
-                    body.AppendFormat ("\r\n\r\n[lpInBuffer]\r\nRemainder:\r\n{0}", inBufRemainder);
+                string remainder = inBuf.ReadRemainingBytesAsHexDump ();
+                if (remainder != null)
+                    body.AppendFormat ("\r\n{0}", remainder);
 
-                if (outBufReader != null)
+                if (outBufEnter != null)
                 {
+                    body.Append ("\r\n\r\n[lpOutBuffer on entry]");
+
                     if (propSetStr == "KSPROPSETID_Connection" && propIdStr == "DATAFORMAT")
                     {
-                        body.AppendFormat ("\r\n\r\n[lpOutBuffer]{0}", KsDataFormatToString (outBufReader));
+                        body.AppendFormat ("\r\n{0}", KsDataFormatToString (outBufEnter));
                     }
+
+                    remainder = outBufEnter.ReadRemainingBytesAsHexDump ();
+                    if (remainder != null)
+                        body.AppendFormat ("\r\n{0}", remainder);
+                }
+
+                if (outBufLeave != null)
+                {
+                    body.Append ("\r\n\r\n[lpOutBuffer on exit]");
+
+                    if (propSetStr == "KSPROPSETID_Connection" && propIdStr == "ALLOCATORFRAMING_EX")
+                    {
+                        body.Append (KsAllocatorFramingExToString (outBufLeave));
+                    }
+
+                    remainder = outBufLeave.ReadRemainingBytesAsHexDump ();
+                    if (remainder != null)
+                        body.AppendFormat ("\r\n{0}", remainder);
                 }
 
                 tr.BodyText = body.ToString ();
@@ -757,10 +817,10 @@ namespace oSpy.Playground
             else
             {
                 List<string> blobs = new List<string> ();
-                if (inBufReader != null)
-                    blobs.Add (inBufReader.ReadRemainingBytesAsHexDump ());
-                if (outBufReader != null)
-                    blobs.Add (outBufReader.ReadRemainingBytesAsHexDump ());
+                if (inBuf != null)
+                    blobs.Add (inBuf.ReadRemainingBytesAsHexDump ());
+                if (outBufEnter != null)
+                    blobs.Add (outBufEnter.ReadRemainingBytesAsHexDump ());
 
                 if (blobs.Count > 0)
                     tr.BodyText = String.Join ("\r\n\r\n", blobs.ToArray ());
@@ -835,9 +895,38 @@ namespace oSpy.Playground
                 result.AppendFormat ("\r\n   biClrImportant: {0}", clrImportant);
             }
 
-            string remainder = reader.ReadRemainingBytesAsHexDump ();
-            if (remainder != null)
-                result.AppendFormat ("\r\n\r\nRemainder:\r\n{0}", remainder);
+            return result.ToString ();
+        }
+
+        private string KsAllocatorFramingExToString (ByteArrayReader reader)
+        {
+            StringBuilder result = new StringBuilder ();
+
+            uint countItems = reader.ReadU32LE ();
+
+            result.Append ("\r\nKSALLOCATOR_FRAMING_EX:");
+            result.AppendFormat ("\r\n         CountItems: {0}", countItems);
+            result.AppendFormat ("\r\n           PinFlags: 0x{0:x8}", reader.ReadU32LE ());
+            result.AppendFormat ("\r\n  OutputCompression: ({0}/{1}, ConstantMargin={2})",
+                reader.ReadU32LE (), reader.ReadU32LE (), reader.ReadU32LE ());
+            result.AppendFormat ("\r\n          PinWeight: {0}", reader.ReadU32LE ());
+
+            for (int i = 0; i < countItems; i++)
+            {
+                result.AppendFormat ("\r\n\r\nFramingItem[{0}]:", i);
+                result.AppendFormat ("\r\n        MemoryType: {0}", MemoryTypeToString (reader.ReadGuid ()));
+                result.AppendFormat ("\r\n           BusType: {0}", BusTypeToString (reader.ReadGuid ()));
+                result.AppendFormat ("\r\n       MemoryFlags: {0}", BitfieldToString (ksAllocatorQueryFlags, reader.ReadU32LE ())); //
+                result.AppendFormat ("\r\n          BusFlags: 0x{0:x8}", reader.ReadU32LE ());
+                result.AppendFormat ("\r\n             Flags: {0}", BitfieldToString (ksAllocatorQueryFlags, reader.ReadU32LE ()));
+                result.AppendFormat ("\r\n            Frames: {0}", reader.ReadU32LE ());
+                result.AppendFormat ("\r\n     FileAlignment: {0}", BitfieldToString (fileAlignmentFlags, reader.ReadU32LE ())); //
+                result.AppendFormat ("\r\n  MemoryTypeWeight: {0}", reader.ReadU32LE ());
+                result.AppendFormat ("\r\n     PhysicalRange: ([{0}, {1}], Stepping={2})",
+                    reader.ReadU32LE (), reader.ReadU32LE (), reader.ReadU32LE ());
+                result.AppendFormat ("\r\n      FramingRange: (([{0}, {1}], Stepping={2}), InPlaceWeight={3}, NotInPlaceWeight={4})",
+                    reader.ReadU32LE (), reader.ReadU32LE (), reader.ReadU32LE (), reader.ReadU32LE (), reader.ReadU32LE ());
+            }
 
             return result.ToString ();
         }
@@ -935,6 +1024,52 @@ namespace oSpy.Playground
                 return ksSpecifiers[specifierGuid];
             else
                 return specifierGuid.ToString ("B");
+        }
+
+        private string MemoryTypeToString (Guid memoryTypeGuid)
+        {
+            if (ksMemoryTypes.ContainsKey (memoryTypeGuid))
+                return ksMemoryTypes[memoryTypeGuid];
+            else
+                return memoryTypeGuid.ToString ("B");
+        }
+
+        private string BusTypeToString (Guid busTypeGuid)
+        {
+            if (ksBusTypes.ContainsKey (busTypeGuid))
+                return ksBusTypes[busTypeGuid];
+            else
+                return busTypeGuid.ToString ("B");
+        }
+
+        // This should be turned into a class instead
+        private string BitfieldToString (List<KeyValuePair<uint, string>> def, uint bits)
+        {
+            StringBuilder result = new StringBuilder ();
+
+            foreach (KeyValuePair<uint, string> pair in def)
+            {
+                uint mask = pair.Key;
+                string name = pair.Value;
+
+                if ((bits & mask) != 0)
+                {
+                    if (result.Length > 0)
+                        result.Append ("|");
+                    result.Append (name);
+
+                    bits &= ~mask;
+                }
+            }
+
+            if (bits != 0 || result.Length == 0)
+            {
+                if (result.Length > 0)
+                    result.Append ("|");
+                result.AppendFormat ("0x{0:x8}", bits);
+            }
+
+            return result.ToString ();
         }
     }
 
