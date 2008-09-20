@@ -33,6 +33,18 @@
 
 namespace oSpy {
 
+class WinError : public Error
+{
+public:
+    WinError(const OString & funcName)
+        : Error("")
+    {
+        OOStringStream ss;
+        ss << funcName << " failed: 0x" << hex << setw(8) << setfill('0') << GetLastError();
+        m_what = ss.str();
+    }
+};
+
 Agent::Agent()
     : m_map(INVALID_HANDLE_VALUE),
       m_capture (NULL),
@@ -47,9 +59,12 @@ Agent::Initialize()
     InterceptPP::Initialize();
 
     m_map = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, OSPY_CAPTURE_FILE_NAME);
+    if (m_map == NULL)
+        throw WinError("OpenFileMapping");
+
     m_capture = static_cast<Capture *>(MapViewOfFile(m_map, FILE_MAP_WRITE, 0, 0, sizeof(Capture)));
     if (m_capture == NULL)
-        throw Error("MapViewOfFile failed");
+        throw WinError("MapViewOfFile");
 
     // Let the UI know about us
     InterlockedIncrement (&m_capture->ActiveAgentCount);
