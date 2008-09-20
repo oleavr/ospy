@@ -28,8 +28,8 @@ class Error : public std::exception
 {
 public:
     Error(const OString &message)
+        : m_what(message)
     {
-        m_what = message;
     }
 
     Error(const WCHAR *message)
@@ -50,6 +50,10 @@ public:
     }
 
 protected:
+    Error()
+    {
+    }
+
     OString m_what;
 };
 
