@@ -147,6 +147,7 @@ namespace oSpy.Playground
         Dictionary<Guid, object> ksPropertySets = new Dictionary<Guid,object> ();
         List<KeyValuePair<uint, string>> ksPropertyFlags = new List<KeyValuePair<uint, string>> ();
 
+        Dictionary<Guid, string> ksCategories = new Dictionary<Guid, string> ();
         Dictionary<Guid, string> ksMajorFormats = new Dictionary<Guid,string> ();
         Dictionary<Guid, string> ksSubFormats = new Dictionary<Guid,string> ();
         Dictionary<Guid, string> ksSpecifiers = new Dictionary<Guid,string> ();
@@ -156,8 +157,11 @@ namespace oSpy.Playground
         List<KeyValuePair<uint, string>> ksAllocatorCreateFlags = new List<KeyValuePair<uint, string>> ();
         List<KeyValuePair<uint, string>> ksAllocatorQueryFlags = new List<KeyValuePair<uint, string>> ();
 
+        List<KeyValuePair<uint, string>> ksEventFlags = new List<KeyValuePair<uint, string>> ();
+
         List<KeyValuePair<uint, string>> fileAlignmentFlags = new List<KeyValuePair<uint, string>> ();
 
+        List<string> interestingHandles = new List<string> ();
         Dictionary<uint, bool> pendingReadStreamRequests = new Dictionary<uint, bool> ();
 
         public VisualizationForm (Dump dump)
@@ -177,6 +181,57 @@ namespace oSpy.Playground
             errorCodes[1168] = "ERROR_NOT_FOUND";
             errorCodes[1169] = "ERROR_NO_MATCH";
             errorCodes[1170] = "ERROR_SET_NOT_FOUND";
+
+            // Categories
+            ksCategories[new Guid ("{085AFF00-62CE-11CF-A5D6-28DB04C10000}")] = "KSCATEGORY_BRIDGE";
+            ksCategories[new Guid ("{65E8773D-8F56-11D0-A3B9-00A0C9223196}")] = "KSCATEGORY_CAPTURE";
+            ksCategories[new Guid ("{65E8773E-8F56-11D0-A3B9-00A0C9223196}")] = "KSCATEGORY_RENDER";
+            ksCategories[new Guid ("{AD809C00-7B88-11D0-A5D6-28DB04C10000}")] = "KSCATEGORY_MIXER";
+            ksCategories[new Guid ("{0A4252A0-7E70-11D0-A5D6-28DB04C10000}")] = "KSCATEGORY_SPLITTER";
+            ksCategories[new Guid ("{1E84C900-7E70-11D0-A5D6-28DB04C10000}")] = "KSCATEGORY_DATACOMPRESSOR";
+            ksCategories[new Guid ("{2721AE20-7E70-11D0-A5D6-28DB04C10000}")] = "KSCATEGORY_DATADECOMPRESSOR";
+            ksCategories[new Guid ("{2EB07EA0-7E70-11D0-A5D6-28DB04C10000}")] = "KSCATEGORY_DATATRANSFORM";
+            ksCategories[new Guid ("{CF1DDA2C-9743-11D0-A3EE-00A0C9223196}")] = "KSCATEGORY_COMMUNICATIONSTRANSFORM";
+            ksCategories[new Guid ("{CF1DDA2D-9743-11D0-A3EE-00A0C9223196}")] = "KSCATEGORY_INTERFACETRANSFORM";
+            ksCategories[new Guid ("{CF1DDA2E-9743-11D0-A3EE-00A0C9223196}")] = "KSCATEGORY_MEDIUMTRANSFORM";
+            ksCategories[new Guid ("{760FED5E-9357-11D0-A3CC-00A0C9223196}")] = "KSCATEGORY_FILESYSTEM";
+            ksCategories[new Guid ("{53172480-4791-11D0-A5D6-28DB04C10000}")] = "KSCATEGORY_CLOCK";
+            ksCategories[new Guid ("{97EBAACA-95BD-11D0-A3EA-00A0C9223196}")] = "KSCATEGORY_PROXY";
+            ksCategories[new Guid ("{97EBAACB-95BD-11D0-A3EA-00A0C9223196}")] = "KSCATEGORY_QUALITY";
+
+            ksCategories[new Guid ("{830a44f2-a32d-476b-be97-42845673b35a}")] = "KSCATEGORY_MICROPHONE_ARRAY_PROCESSOR";
+            ksCategories[new Guid ("{6994AD04-93EF-11D0-A3CC-00A0C9223196}")] = "KSCATEGORY_AUDIO";
+            ksCategories[new Guid ("{6994AD05-93EF-11D0-A3CC-00A0C9223196}")] = "KSCATEGORY_VIDEO";
+            ksCategories[new Guid ("{EB115FFC-10C8-4964-831D-6DCB02E6F23F}")] = "KSCATEGORY_REALTIME";
+            ksCategories[new Guid ("{6994AD06-93EF-11D0-A3CC-00A0C9223196}")] = "KSCATEGORY_TEXT";
+            ksCategories[new Guid ("{67C9CC3C-69C4-11D2-8759-00A0C9223196}")] = "KSCATEGORY_NETWORK";
+            ksCategories[new Guid ("{DDA54A40-1E4C-11D1-A050-405705C10000}")] = "KSCATEGORY_TOPOLOGY";
+            ksCategories[new Guid ("{3503EAC4-1F26-11D1-8AB0-00A0C9223196}")] = "KSCATEGORY_VIRTUAL";
+            ksCategories[new Guid ("{BF963D80-C559-11D0-8A2B-00A0C9255AC1}")] = "KSCATEGORY_ACOUSTIC_ECHO_CANCEL";
+            ksCategories[new Guid ("{A7C7A5B1-5AF3-11D1-9CED-00A024BF0407}")] = "KSCATEGORY_SYSAUDIO";
+            ksCategories[new Guid ("{3E227E76-690D-11D2-8161-0000F8775BF1}")] = "KSCATEGORY_WDMAUD";
+            ksCategories[new Guid ("{9BAF9572-340C-11D3-ABDC-00A0C90AB16F}")] = "KSCATEGORY_AUDIO_GFX";
+            ksCategories[new Guid ("{9EA331FA-B91B-45F8-9285-BD2BC77AFCDE}")] = "KSCATEGORY_AUDIO_SPLITTER";
+            ksCategories[new Guid ("{FBF6F530-07B9-11D2-A71E-0000F8004788}")] = "KSCATEGORY_AUDIO_DEVICE";
+            ksCategories[new Guid ("{D6C5066E-72C1-11D2-9755-0000F8004788}")] = "KSCATEGORY_PREFERRED_WAVEOUT_DEVICE";
+            ksCategories[new Guid ("{D6C50671-72C1-11D2-9755-0000F8004788}")] = "KSCATEGORY_PREFERRED_WAVEIN_DEVICE";
+            ksCategories[new Guid ("{D6C50674-72C1-11D2-9755-0000F8004788}")] = "KSCATEGORY_PREFERRED_MIDIOUT_DEVICE";
+            ksCategories[new Guid ("{47A4FA20-A251-11D1-A050-0000F8004788}")] = "KSCATEGORY_WDMAUD_USE_PIN_NAME";
+            ksCategories[new Guid ("{74f3aea8-9768-11d1-8e07-00a0c95ec22e}")] = "KSCATEGORY_ESCALANTE_PLATFORM_DRIVER";
+            ksCategories[new Guid ("{a799a800-a46d-11d0-a18c-00a02401dcd4}")] = "KSCATEGORY_TVTUNER";
+            ksCategories[new Guid ("{a799a801-a46d-11d0-a18c-00a02401dcd4}")] = "KSCATEGORY_CROSSBAR";
+            ksCategories[new Guid ("{a799a802-a46d-11d0-a18c-00a02401dcd4}")] = "KSCATEGORY_TVAUDIO";
+            ksCategories[new Guid ("{a799a803-a46d-11d0-a18c-00a02401dcd4}")] = "KSCATEGORY_VPMUX";
+            ksCategories[new Guid ("{07dad660-22f1-11d1-a9f4-00c04fbbde8f}")] = "KSCATEGORY_VBICODEC";
+            ksCategories[new Guid ("{19689BF6-C384-48fd-AD51-90E58C79F70B}")] = "KSCATEGORY_ENCODER";
+            ksCategories[new Guid ("{7A5DE1D3-01A1-452c-B481-4FA2B96271E8}")] = "KSCATEGORY_MULTIPLEXER";
+
+            ksCategories[new Guid ("{FD0A5AF4-B41D-11d2-9C95-00C04F7971E0}")] = "KSCATEGORY_BDA_RECEIVER_COMPONENT";
+            ksCategories[new Guid ("{71985F48-1CA1-11d3-9CC8-00C04F7971E0}")] = "KSCATEGORY_BDA_NETWORK_TUNER";
+            ksCategories[new Guid ("{71985F49-1CA1-11d3-9CC8-00C04F7971E0}")] = "KSCATEGORY_BDA_NETWORK_EPG";
+            ksCategories[new Guid ("{71985F4A-1CA1-11d3-9CC8-00C04F7971E0}")] = "KSCATEGORY_BDA_IP_SINK";
+            ksCategories[new Guid ("{71985F4B-1CA1-11d3-9CC8-00C04F7971E0}")] = "KSCATEGORY_BDA_NETWORK_PROVIDER";
+            ksCategories[new Guid ("{A2E3074F-6C3D-11d3-B653-00C04F79498E}")] = "KSCATEGORY_BDA_TRANSPORT_INFORMATION";
 
             // Property sets
 
@@ -488,6 +543,16 @@ namespace oSpy.Playground
             ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00001000, "FLAG_INDEPENDENT_RANGES"));
             ksAllocatorQueryFlags.Add (new KeyValuePair<uint, string> (0x00002000, "FLAG_ATTENTION_STEPPING"));
 
+            // Event request types
+            ksEventFlags.Add (new KeyValuePair<uint,string> (0x00000001, "KSEVENT_TYPE_ENABLE"));
+            ksEventFlags.Add (new KeyValuePair<uint,string> (0x00000002, "KSEVENT_TYPE_ONESHOT"));
+            ksEventFlags.Add (new KeyValuePair<uint,string> (0x00000004, "KSEVENT_TYPE_ENABLEBUFFERED"));
+            ksEventFlags.Add (new KeyValuePair<uint,string> (0x00000100, "KSEVENT_TYPE_SETSUPPORT"));
+            ksEventFlags.Add (new KeyValuePair<uint,string> (0x00000200, "KSEVENT_TYPE_BASICSUPPORT"));
+            ksEventFlags.Add (new KeyValuePair<uint,string> (0x00000400, "KSEVENT_TYPE_QUERYBUFFER"));
+
+            ksEventFlags.Add (new KeyValuePair<uint, string> (0x10000000, "KSEVENT_TYPE_TOPOLOGY"));
+
             // File alignments
             fileAlignmentFlags.Add (new KeyValuePair<uint, string> (0x00000000, "FILE_BYTE_ALIGNMENT"));
             fileAlignmentFlags.Add (new KeyValuePair<uint, string> (0x00000001, "FILE_WORD_ALIGNMENT"));
@@ -516,6 +581,8 @@ namespace oSpy.Playground
                 //    continue;
                 //else if (ev.ThreadId == 7028 && ev.Id < 138)
                 //    continue;
+                if (ev.Id > 2200)
+                    continue;
 
                 VisualSession session;
 
@@ -533,7 +600,8 @@ namespace oSpy.Playground
                 XmlNode node = eventRoot.SelectSingleNode ("/event/name");
                 if (node != null)
                 {
-                    string funcNameShort = node.InnerText.Trim ().Split (new string[] { "::" }, 2, StringSplitOptions.None)[1];
+                    string[] tokens = node.InnerText.Trim ().Split (new string[] { "::" }, 2, StringSplitOptions.None);
+                    string funcNameShort = tokens[tokens.Length - 1];
 
                     if (funcNameShort == "DeviceIoControl")
                     {
@@ -546,6 +614,14 @@ namespace oSpy.Playground
                     else if (funcNameShort == "KsCreatePin")
                     {
                         tr = CreateTransactionFromKsCreatePin (ev, eventRoot);
+                    }
+                    else if (funcNameShort == "KsOpenDefaultDevice")
+                    {
+                        tr = CreateTransactionFromKsOpenDefaultDevice (ev, eventRoot);
+                    }
+                    else if (funcNameShort == "CloseHandle")
+                    {
+                        tr = CreateTransactionFromCloseHandle (ev, eventRoot);
                     }
                     else
                     {
@@ -683,6 +759,10 @@ namespace oSpy.Playground
             if (handleNode != null && codeNode != null && retValNode != null && lastErrNode != null)
             {
                 handleStr = handleNode.Attributes["value"].Value;
+
+                if (!interestingHandles.Contains (handleStr))
+                    interestingHandles.Add (handleStr);
+
                 codeStr = codeNode.Attributes["value"].Value;
                 retValStr = retValNode.Attributes["value"].Value;
                 lastErrStr = ErrorCodeToString (Convert.ToUInt32 (lastErrNode.Attributes["value"].Value));
@@ -690,7 +770,7 @@ namespace oSpy.Playground
             }
 
             // HACK #2:
-            if (lastErrStr == "ERROR_MORE_DATA" || lastErrStr == "ERROR_NOT_FOUND" || lastErrStr == "ERROR_SET_NOT_FOUND")
+            if (lastErrStr == "ERROR_MORE_DATA") // || lastErrStr == "ERROR_NOT_FOUND" || lastErrStr == "ERROR_SET_NOT_FOUND")
                 return null;
 
             VisualTransaction tr = new VisualTransaction (ev.Id, TransactionDirection.Out, ev.Timestamp);
@@ -749,13 +829,16 @@ namespace oSpy.Playground
                 propFlagsStr = BitfieldToString (ksPropertyFlags, propFlags);
 
                 // HACK #3
+                //if (propFlagsStr == "GET")
+                //    return null;
+
                 if (propSetStr == "KSPROPSETID_Topology")
                     return null;
                 else if (propSetStr == "KSPROPSETID_MediaSeeking" && propIdStr == "TIMEFORMAT" && propFlagsStr == "GET")
                     return null;
                 else if (propSetStr == "KSPROPSETID_Pin" && propFlagsStr == "GET")
                 {
-                    List<string> boringIds = new List<string> (new string[] { "CTYPES", "CINSTANCES", "COMMUNICATION", "DATAFLOW", "DATARANGES", "DATAINTERSECTION", "NAME" });
+                    List<string> boringIds = new List<string> (new string[] { "CTYPES", "CINSTANCES", "COMMUNICATION", "CONSTRAINEDDATARANGES", "DATAFLOW", "DATARANGES", "DATAINTERSECTION", "NAME" });
                     if (boringIds.Contains (propIdStr))
                         return null;
                 }
@@ -813,6 +896,36 @@ namespace oSpy.Playground
                 }
 
                 tr.BodyText = body;
+            }
+            else if (codeStr == "IOCTL_KS_ENABLE_EVENT" && inBuf != null)
+            {
+                StringBuilder body = new StringBuilder ();
+
+                body.AppendFormat ("[lpInBuffer]\r\nKSEVENT: {0} {1} {2}",
+                    inBuf.ReadGuid (), inBuf.ReadU32LE (),
+                    BitfieldToString (ksEventFlags, inBuf.ReadU32LE ()));
+
+                string remainder = inBuf.ReadRemainingBytesAsHexDump ();
+                if (remainder != null)
+                    body.AppendFormat ("\r\n{0}", remainder);
+
+                if (outBufEnter != null)
+                {
+                    body.Append ("\r\n\r\n[lpOutBuffer on entry]");
+                    remainder = outBufEnter.ReadRemainingBytesAsHexDump ();
+                    if (remainder != null)
+                        body.AppendFormat ("\r\n{0}", remainder);
+                }
+
+                if (outBufLeave != null)
+                {
+                    body.Append ("\r\n\r\n[lpOutBuffer on exit]");
+                    remainder = outBufLeave.ReadRemainingBytesAsHexDump ();
+                    if (remainder != null)
+                        body.AppendFormat ("\r\n{0}", remainder);
+                }
+
+                tr.BodyText = body.ToString ();
             }
             else
             {
@@ -916,11 +1029,11 @@ namespace oSpy.Playground
                 result.AppendFormat ("\r\n\r\nFramingItem[{0}]:", i);
                 result.AppendFormat ("\r\n        MemoryType: {0}", MemoryTypeToString (reader.ReadGuid ()));
                 result.AppendFormat ("\r\n           BusType: {0}", BusTypeToString (reader.ReadGuid ()));
-                result.AppendFormat ("\r\n       MemoryFlags: {0}", BitfieldToString (ksAllocatorQueryFlags, reader.ReadU32LE ())); //
+                result.AppendFormat ("\r\n       MemoryFlags: {0}", BitfieldToString (ksAllocatorQueryFlags, reader.ReadU32LE ()));
                 result.AppendFormat ("\r\n          BusFlags: 0x{0:x8}", reader.ReadU32LE ());
                 result.AppendFormat ("\r\n             Flags: {0}", BitfieldToString (ksAllocatorQueryFlags, reader.ReadU32LE ()));
                 result.AppendFormat ("\r\n            Frames: {0}", reader.ReadU32LE ());
-                result.AppendFormat ("\r\n     FileAlignment: {0}", BitfieldToString (fileAlignmentFlags, reader.ReadU32LE ())); //
+                result.AppendFormat ("\r\n     FileAlignment: {0}", BitfieldToString (fileAlignmentFlags, reader.ReadU32LE ()));
                 result.AppendFormat ("\r\n  MemoryTypeWeight: {0}", reader.ReadU32LE ());
                 result.AppendFormat ("\r\n     PhysicalRange: ([{0}, {1}], Stepping={2})",
                     reader.ReadU32LE (), reader.ReadU32LE (), reader.ReadU32LE ());
@@ -994,12 +1107,65 @@ namespace oSpy.Playground
             return tr;
         }
 
+        private VisualTransaction CreateTransactionFromKsOpenDefaultDevice (Event ev, XmlElement eventRoot)
+        {
+            VisualTransaction tr = new VisualTransaction (ev.Id, TransactionDirection.In, ev.Timestamp);
+
+            XmlNode node = eventRoot.SelectSingleNode ("/event/arguments[@direction='in']/argument[1]/value/value");
+            Guid category = new Guid (Convert.FromBase64String (node.InnerText));
+
+            node = eventRoot.SelectSingleNode ("/event/arguments[@direction='in']/argument[2]/value");
+            string access = node.Attributes["value"].Value;
+
+            node = eventRoot.SelectSingleNode ("/event/arguments[@direction='in']/argument[3]/value");
+            string deviceHandleStr = node.Attributes["value"].Value;
+
+            node = eventRoot.SelectSingleNode ("/event/arguments[@direction='out']/argument[1]/value/value");
+            if (node != null)
+            {
+                tr.ContextID = node.Attributes["value"].Value;
+                deviceHandleStr += String.Format (" => {0}", tr.ContextID);
+            }
+
+            string retValStr = eventRoot.SelectSingleNode ("/event/returnValue/value").Attributes["value"].Value;
+
+            tr.HeadlineText = String.Format ("KsOpenDefaultDevice ({0}, {1}, {2}) => {3}", CategoryToString (category), access, deviceHandleStr, retValStr);
+            tr.AddHeaderField ("Id", ev.Id);
+
+            return tr;
+        }
+
+        private VisualTransaction CreateTransactionFromCloseHandle (Event ev, XmlElement eventRoot)
+        {
+            string handleStr = eventRoot.SelectSingleNode ("/event/arguments[@direction='in']/argument[1]/value").Attributes["value"].Value;
+            if (!interestingHandles.Contains (handleStr))
+                return null;
+
+            VisualTransaction tr = new VisualTransaction (ev.Id, TransactionDirection.In, ev.Timestamp);
+            tr.AddHeaderField ("Id", ev.Id);
+
+            string retValStr = eventRoot.SelectSingleNode ("/event/returnValue/value").Attributes["value"].Value;
+
+            tr.ContextID = handleStr;
+            tr.HeadlineText = String.Format ("CloseHandle ({0}) => {1}", handleStr, retValStr);
+
+            return tr;
+        }
+
         private string ErrorCodeToString (uint errorCode)
         {
             if (errorCodes.ContainsKey (errorCode))
                 return errorCodes[errorCode];
             else
                 return Convert.ToString (errorCode);
+        }
+
+        private string CategoryToString (Guid categoryGuid)
+        {
+            if (ksCategories.ContainsKey (categoryGuid))
+                return ksCategories[categoryGuid];
+            else
+                return categoryGuid.ToString ("B");
         }
 
         private string MajorFormatToString (Guid majorFormatGuid)
