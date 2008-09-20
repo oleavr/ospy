@@ -8,6 +8,21 @@ namespace oSpy
 {
     public class WinApi
     {
+        [DllImport ("advapi32.dll", SetLastError = true)]
+        public static extern bool InitializeSecurityDescriptor (IntPtr pSecurityDescriptor, uint dwRevision);
+
+        [DllImport ("advapi32.dll", SetLastError = true)]
+        public static extern bool SetSecurityDescriptorDacl (IntPtr pSecurityDescriptor, bool bDaclPresent, IntPtr pDacl, bool bDaclDefaulted);
+
+        [DllImport ("advapi32.dll", SetLastError = true)]
+        public static extern bool ConvertStringSecurityDescriptorToSecurityDescriptor (string StringSecurityDescriptor, UInt32 StringSDRevision, out IntPtr SecurityDescriptor, out UInt32 SecurityDescriptorSize);
+
+        [DllImport ("advapi32.dll", SetLastError = true)]
+        public static extern bool GetSecurityDescriptorSacl (IntPtr pSecurityDescriptor, out bool lpbSaclPresent, out IntPtr pSacl, out bool lpbSaclDefaulted);
+
+        [DllImport ("advapi32.dll", SetLastError = true)]
+        public static extern bool SetSecurityDescriptorSacl (IntPtr pSecurityDescriptor, bool bSaclPresent, IntPtr pSacl, bool bSaclDefaulted);
+
         public static IntPtr GetClassLongPtr (IntPtr hWnd, int nIndex)
         {
             if (IntPtr.Size > 4)
@@ -157,6 +172,14 @@ namespace oSpy
         public static extern IntPtr ImageList_GetIcon (IntPtr himl, int i, int flags);
 
         [StructLayout (LayoutKind.Sequential)]
+        public struct SECURITY_ATTRIBUTES
+        {
+            public UInt32 nLength;
+            public IntPtr lpSecurityDescriptor;
+            public UInt32 bInheritHandle;
+        }
+
+        [StructLayout (LayoutKind.Sequential)]
         public struct SERVICE_STATUS
         {
             public UInt32 dwServiceType;
@@ -200,6 +223,10 @@ namespace oSpy
             public UInt32 Scope;
             public UInt32 HwProfile;
         }
+
+        public const int SECURITY_DESCRIPTOR_MIN_LENGTH = 20;
+        public const int SECURITY_DESCRIPTOR_REVISION = 1;
+        public const int SDDL_REVISION_1 = 1;
 
         public const int GCL_HICONSM = -34;
         public const int GCL_HICON = -14;
@@ -346,5 +373,43 @@ namespace oSpy
 
             return bytes.ToArray ();
         }
+    }
+
+    public class AnyAccessSecurityAttributes
+    {
+        private WinApi.SECURITY_ATTRIBUTES secAttr;
+
+        private IntPtr handle;
+        public IntPtr Handle
+        {
+            get { return handle; }
+        }
+
+        public AnyAccessSecurityAttributes ()
+        {
+            secAttr = new WinApi.SECURITY_ATTRIBUTES ();
+            IntPtr secDesc = Marshal.AllocHGlobal (WinApi.SECURITY_DESCRIPTOR_MIN_LENGTH);
+            secAttr.nLength = (uint) Marshal.SizeOf (secAttr);
+            secAttr.bInheritHandle = 0;
+            secAttr.lpSecurityDescriptor = secDesc;
+
+            WinApi.InitializeSecurityDescriptor (secAttr.lpSecurityDescriptor, WinApi.SECURITY_DESCRIPTOR_REVISION);
+            WinApi.SetSecurityDescriptorDacl (secAttr.lpSecurityDescriptor, true, IntPtr.Zero, false);
+
+            IntPtr sd;
+            uint sdSize;
+            WinApi.ConvertStringSecurityDescriptorToSecurityDescriptor ("S:(ML;;NW;;;LW)", WinApi.SDDL_REVISION_1, out sd, out sdSize);
+
+            IntPtr sacl = IntPtr.Zero;
+            bool saclPresent = false;
+            bool saclDefaulted = false;
+            WinApi.GetSecurityDescriptorSacl (sd, out saclPresent, out sacl, out saclDefaulted);
+            WinApi.SetSecurityDescriptorSacl (secAttr.lpSecurityDescriptor, true, sacl, false);
+
+            handle = Marshal.AllocHGlobal (Marshal.SizeOf (secAttr));
+            Marshal.StructureToPtr (secAttr, handle, false);
+        }
+
+        // TODO: free memory!
     }
 }
