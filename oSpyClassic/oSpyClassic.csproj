@@ -1,0 +1,346 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{FD65DDD8-C260-4BA2-B204-EA9CB56D8012}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>oSpyClassic</RootNamespace>
+    <AssemblyName>oSpyClassic</AssemblyName>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ICSharpCode.SharpZipLib, Version=0.85.5.452, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Deps\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AboutBoxForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AboutBoxForm.Designer.cs">
+      <DependentUpon>AboutBoxForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="BacktraceForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="BacktraceForm.Designer.cs">
+      <DependentUpon>BacktraceForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="CaptureForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CaptureForm.Designer.cs">
+      <DependentUpon>CaptureForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Configuration\ConfigManager.cs" />
+    <Compile Include="Configuration\ParserConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Configuration\ParserConfigDialog.Designer.cs">
+      <DependentUpon>ParserConfigDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Configuration\ParserConfiguration.cs" />
+    <Compile Include="DataAnalysisForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DataAnalysisForm.Designer.cs">
+      <DependentUpon>DataAnalysisForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Event\SocketEventType.cs" />
+    <Compile Include="Event\TCPEvent.cs" />
+    <Compile Include="ExtendedGraphics.cs" />
+    <Compile Include="GroovyRichTextBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="IDrawToBitmapFull.cs" />
+    <Compile Include="Net\IPEndpoint.cs" />
+    <Compile Include="Net\IPPacket.cs" />
+    <Compile Include="Net\IPSession.cs" />
+    <Compile Include="Net\PacketStream.cs" />
+    <Compile Include="NewVisualizationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="NewVisualizationForm.Designer.cs">
+      <DependentUpon>NewVisualizationForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Parser\ITransactionFactory.cs" />
+    <Compile Include="MultiSessionView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Parser\Oracle.cs" />
+    <Compile Include="Net\PacketParser.cs" />
+    <Compile Include="Net\PacketSlice.cs" />
+    <Compile Include="Net\ProtocolError.cs" />
+    <Compile Include="Parser\TransactionFactory.cs" />
+    <Compile Include="Parser\TransactionNode.cs" />
+    <Compile Include="Parser\TransactionNodeConverter.cs" />
+    <Compile Include="Parser\TransactionNodeList.cs" />
+    <Compile Include="Parser\XMPP.cs" />
+    <Compile Include="ProgressForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ProgressForm.Designer.cs">
+      <DependentUpon>ProgressForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ShareSuccessForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ShareSuccessForm.Designer.cs">
+      <DependentUpon>ShareSuccessForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SoftwallForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SoftwallForm.Designer.cs">
+      <DependentUpon>SoftwallForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ShareVisualizationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ShareVisualizationForm.Designer.cs">
+      <DependentUpon>ShareVisualizationForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TimelineNavigatorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TimelineNavigatorForm.Designer.cs">
+      <DependentUpon>TimelineNavigatorForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Util\Util.cs" />
+    <Compile Include="Util\Constants.cs" />
+    <Compile Include="Util\IDebugLogger.cs" />
+    <Compile Include="Util\XML.cs" />
+    <Compile Include="VisualSession.cs">
+    </Compile>
+    <Compile Include="ConversationsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ConversationsForm.Designer.cs">
+      <DependentUpon>ConversationsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DebugForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DebugForm.Designer.cs">
+      <DependentUpon>DebugForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Parser\HTTP.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="InjectForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="InjectForm.Designer.cs">
+      <DependentUpon>InjectForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Parser\MSN.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="AboutBoxForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>AboutBoxForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="BacktraceForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>BacktraceForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CaptureForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>CaptureForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Configuration\ParserConfigDialog.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ParserConfigDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ConversationsForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ConversationsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DataAnalysisForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>DataAnalysisForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DebugForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>DebugForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="InjectForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>InjectForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MainForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NewVisualizationForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>NewVisualizationForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ProgressForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ProgressForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ShareSuccessForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ShareSuccessForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SoftwallForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SoftwallForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ShareVisualizationForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ShareVisualizationForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TextView.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>TextView.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TimelineNavigatorForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>TimelineNavigatorForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="VisualTransaction.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>VisualTransaction.cs</DependentUpon>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="PropertyBag.cs" />
+    <Compile Include="Parser\RAPI.cs" />
+    <Compile Include="Listener.cs" />
+    <Compile Include="Parser\RemSync.cs" />
+    <Compile Include="Parser\RRAC.cs" />
+    <Compile Include="VisualTransaction.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="WBXML.cs" />
+    <Compile Include="TextView.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TextView.Designer.cs">
+      <DependentUpon>TextView.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Web References\oSpyRepository\Reference.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Reference.map</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Images\incoming.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Images\outgoing.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Images\event.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Images\connected.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Images\disconnected.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Images\info.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Images\warning.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Images\error.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="Images\activesync.png" />
+    <None Include="Images\listening.png" />
+    <None Include="Web References\oSpyRepository\Reference.map">
+      <Generator>MSDiscoCodeGenerator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
+    <None Include="Web References\oSpyRepository\Repository.wsdl" />
+  </ItemGroup>
+  <ItemGroup>
+    <WebReferences Include="Web References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WebReferenceUrl Include="http://projects.collabora.co.uk/~oleavr/oSpy/repository/api.php%3fwsdl">
+      <UrlBehavior>Dynamic</UrlBehavior>
+      <RelPath>Web References\oSpyRepository\</RelPath>
+      <UpdateFromURL>http://projects.collabora.co.uk/~oleavr/oSpy/repository/api.php%3fwsdl</UpdateFromURL>
+      <ServiceLocationURL>
+      </ServiceLocationURL>
+      <CachedDynamicPropName>
+      </CachedDynamicPropName>
+      <CachedAppSettingsObjectName>Settings</CachedAppSettingsObjectName>
+      <CachedSettingsPropName>oSpy_repository_RepositoryService</CachedSettingsPropName>
+    </WebReferenceUrl>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
