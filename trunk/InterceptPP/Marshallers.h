@@ -21,7 +21,10 @@
 
 namespace InterceptPP {
 
-class IPropertyProvider
+#pragma warning (push)
+#pragma warning (disable: 4251)
+
+class INTERCEPTPP_API IPropertyProvider
 {
 public:
     virtual bool QueryForProperty(const OString &query, int &result) = 0;
@@ -31,7 +34,7 @@ public:
     virtual bool QueryForProperty(const OString &query, OString &result) = 0;
 };
 
-class PropertyOverrides : public BaseObject
+class INTERCEPTPP_API PropertyOverrides : public BaseObject
 {
 public:
     void Add(const OString &propName, const OString &value);
@@ -45,7 +48,7 @@ protected:
     OverridesMap m_overrides;
 };
 
-class BaseMarshaller : public BaseObject
+class INTERCEPTPP_API BaseMarshaller : public BaseObject
 {
 public:
     BaseMarshaller(const OString &typeName);
@@ -79,7 +82,7 @@ namespace Marshaller {
 
 typedef BaseMarshaller *(*CreateMarshallerFunc) (const OString &name);
 
-class Factory : public BaseObject
+class INTERCEPTPP_API Factory : public BaseObject
 {
 public:
     static Factory *Instance();
@@ -98,7 +101,7 @@ protected:
     template<class T> static BaseMarshaller *CreateMarshallerInstance(const OString &name);
 };
 
-class Dynamic : public BaseMarshaller
+class INTERCEPTPP_API Dynamic : public BaseMarshaller
 {
 public:
     Dynamic();
@@ -122,7 +125,7 @@ protected:
     BaseMarshaller *CreateMarshaller(IPropertyProvider *propProv) const;
 };
 
-class Pointer : public BaseMarshaller
+class INTERCEPTPP_API Pointer : public BaseMarshaller
 {
 public:
     Pointer(BaseMarshaller *type=NULL, const OString &ptrTypeName="Pointer");
@@ -144,7 +147,7 @@ protected:
     BaseMarshaller *m_type;
 };
 
-class VaList : public BaseMarshaller
+class INTERCEPTPP_API VaList : public BaseMarshaller
 {
 public:
     VaList()
@@ -160,7 +163,7 @@ public:
 };
 
 template <class T>
-class Integer : public BaseMarshaller
+class INTERCEPTPP_API Integer : public BaseMarshaller
 {
 public:
     Integer(const OString &typeName, bool sign=true, bool hex=false)
@@ -188,7 +191,7 @@ protected:
     virtual T ToLittleEndian(T i) const { return i; }
 };
 
-class UInt8 : public Integer<unsigned char>
+class INTERCEPTPP_API UInt8 : public Integer<unsigned char>
 {
 public:
     UInt8(bool hex=false)
@@ -198,7 +201,7 @@ public:
     virtual BaseMarshaller *Clone() const { return new UInt8(*this); }
 };
 
-class UInt8Ptr : public Pointer
+class INTERCEPTPP_API UInt8Ptr : public Pointer
 {
 public:
     UInt8Ptr(bool hex=false)
@@ -206,7 +209,7 @@ public:
     {}
 };
 
-class Int8 : public Integer<short>
+class INTERCEPTPP_API Int8 : public Integer<short>
 {
 public:
     Int8(bool hex=false)
@@ -216,7 +219,7 @@ public:
     virtual BaseMarshaller *Clone() const { return new Int8(*this); }
 };
 
-class Int8Ptr : public Pointer
+class INTERCEPTPP_API Int8Ptr : public Pointer
 {
 public:
     Int8Ptr(bool hex=false)
@@ -224,7 +227,7 @@ public:
     {}
 };
 
-class UInt16 : public Integer<unsigned short>
+class INTERCEPTPP_API UInt16 : public Integer<unsigned short>
 {
 public:
     UInt16(bool hex=false)
@@ -237,7 +240,7 @@ protected:
     virtual unsigned short ToLittleEndian(unsigned short i) const { return _byteswap_ushort(i); }
 };
 
-class UInt16Ptr : public Pointer
+class INTERCEPTPP_API UInt16Ptr : public Pointer
 {
 public:
     UInt16Ptr(bool hex=false)
@@ -245,7 +248,7 @@ public:
     {}
 };
 
-class Int16 : public Integer<short>
+class INTERCEPTPP_API Int16 : public Integer<short>
 {
 public:
     Int16(bool hex=false)
@@ -258,7 +261,7 @@ protected:
     virtual short ToLittleEndian(short i) const { return _byteswap_ushort(i); }
 };
 
-class Int16Ptr : public Pointer
+class INTERCEPTPP_API Int16Ptr : public Pointer
 {
 public:
     Int16Ptr(bool hex=false)
@@ -266,7 +269,7 @@ public:
     {}
 };
 
-class UInt32 : public Integer<unsigned int>
+class INTERCEPTPP_API UInt32 : public Integer<unsigned int>
 {
 public:
     UInt32(bool hex=false)
@@ -279,7 +282,7 @@ protected:
     virtual unsigned int ToLittleEndian(unsigned int i) const { return _byteswap_ulong(i); }
 };
 
-class UInt32Ptr : public Pointer
+class INTERCEPTPP_API UInt32Ptr : public Pointer
 {
 public:
     UInt32Ptr(bool hex=false)
@@ -287,7 +290,7 @@ public:
     {}
 };
 
-class Int32 : public Integer<int>
+class INTERCEPTPP_API Int32 : public Integer<int>
 {
 public:
     Int32(bool hex=false)
@@ -300,7 +303,7 @@ protected:
     virtual int ToLittleEndian(int i) const { return _byteswap_ulong(i); }
 };
 
-class Int32Ptr : public Pointer
+class INTERCEPTPP_API Int32Ptr : public Pointer
 {
 public:
     Int32Ptr(bool hex=false)
@@ -308,7 +311,7 @@ public:
     {}
 };
 
-class Boolean : public BaseMarshaller
+class INTERCEPTPP_API Boolean : public BaseMarshaller
 {
 public:
     Boolean();
@@ -331,7 +334,7 @@ protected:
     OString m_falseStr;
 };
 
-class CPPBool : public Boolean
+class INTERCEPTPP_API CPPBool : public Boolean
 {
 public:
     CPPBool()
@@ -341,7 +344,7 @@ public:
     virtual BaseMarshaller *Clone() const { return new CPPBool(*this); }
 };
 
-class MSBool : public Boolean
+class INTERCEPTPP_API MSBool : public Boolean
 {
 public:
     MSBool()
@@ -354,7 +357,7 @@ public:
     virtual BaseMarshaller *Clone() const { return new MSBool(*this); }
 };
 
-class Array : public BaseMarshaller
+class INTERCEPTPP_API Array : public BaseMarshaller
 {
 public:
     Array();
@@ -376,7 +379,7 @@ protected:
     unsigned int m_elCount;
 };
 
-class ArrayPtr : public Pointer
+class INTERCEPTPP_API ArrayPtr : public Pointer
 {
 public:
     ArrayPtr()
@@ -392,7 +395,7 @@ public:
     {}
 };
 
-class ByteArray : public BaseMarshaller
+class INTERCEPTPP_API ByteArray : public BaseMarshaller
 {
 public:
     ByteArray(int size=0);
@@ -408,7 +411,7 @@ protected:
     int m_size;
 };
 
-class ByteArrayPtr : public Pointer
+class INTERCEPTPP_API ByteArrayPtr : public Pointer
 {
 public:
     ByteArrayPtr(int size=0)
@@ -420,7 +423,7 @@ public:
     {}
 };
 
-class CString : public BaseMarshaller
+class INTERCEPTPP_API CString : public BaseMarshaller
 {
 public:
     CString(const OString &typeName, unsigned int elementSize, int length)
@@ -436,7 +439,7 @@ protected:
     int m_length;
 };
 
-class AsciiString : public CString
+class INTERCEPTPP_API AsciiString : public CString
 {
 public:
     AsciiString(int length=-1)
@@ -446,7 +449,7 @@ public:
     virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
 };
 
-class AsciiStringPtr : public Pointer
+class INTERCEPTPP_API AsciiStringPtr : public Pointer
 {
 public:
     AsciiStringPtr()
@@ -454,7 +457,7 @@ public:
     {}
 };
 
-class AsciiFormatString : public CString
+class INTERCEPTPP_API AsciiFormatString : public CString
 {
 public:
     AsciiFormatString(int length=-1)
@@ -466,7 +469,7 @@ public:
     virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
 };
 
-class AsciiFormatStringPtr : public Pointer
+class INTERCEPTPP_API AsciiFormatStringPtr : public Pointer
 {
 public:
     AsciiFormatStringPtr()
@@ -474,7 +477,7 @@ public:
     {}
 };
 
-class UnicodeString : public CString
+class INTERCEPTPP_API UnicodeString : public CString
 {
 public:
     UnicodeString(int length=-1)
@@ -484,7 +487,7 @@ public:
     virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
 };
 
-class UnicodeStringPtr : public Pointer
+class INTERCEPTPP_API UnicodeStringPtr : public Pointer
 {
 public:
     UnicodeStringPtr()
@@ -492,7 +495,7 @@ public:
     {}
 };
 
-class UnicodeFormatString : public CString
+class INTERCEPTPP_API UnicodeFormatString : public CString
 {
 public:
     UnicodeFormatString(int length=-1)
@@ -504,7 +507,7 @@ public:
     virtual OString ToString(void *start, bool deep, IPropertyProvider *propProv, PropertyOverrides *overrides=NULL) const;
 };
 
-class UnicodeFormatStringPtr : public Pointer
+class INTERCEPTPP_API UnicodeFormatStringPtr : public Pointer
 {
 public:
     UnicodeFormatStringPtr()
@@ -512,7 +515,7 @@ public:
     {}
 };
 
-class Enumeration : public BaseMarshaller
+class INTERCEPTPP_API Enumeration : public BaseMarshaller
 {
 public:
     Enumeration(const char *name, BaseMarshaller *marshaller, const char *firstName, ...);
@@ -537,7 +540,7 @@ protected:
     BaseMarshaller *m_marshaller;
 };
 
-class StructureField : public BaseObject
+class INTERCEPTPP_API StructureField : public BaseObject
 {
 public:
     StructureField(const OString &name, DWORD offset, BaseMarshaller *marshaller)
@@ -554,7 +557,7 @@ protected:
     BaseMarshaller *m_marshaller;
 };
 
-class FieldTypePropertyBinding : public BaseObject
+class INTERCEPTPP_API FieldTypePropertyBinding : public BaseObject
 {
 public:
     FieldTypePropertyBinding(const OString &fieldName, const OString &propName, const OString &srcFieldName)
@@ -571,7 +574,7 @@ protected:
     OString m_srcFieldName;
 };
 
-class Structure : public BaseMarshaller
+class INTERCEPTPP_API Structure : public BaseMarshaller
 {
 public:
     Structure(const char *name, const char *firstFieldName, ...);
@@ -604,13 +607,13 @@ protected:
     void FreeFieldOverrides(PropertyOverrides **fieldOverrides) const;
 };
 
-class StructurePtr : public Pointer
+class INTERCEPTPP_API StructurePtr : public Pointer
 {
 public:
     StructurePtr(const char *firstFieldName, ...);
 };
 
-class Ipv4InAddr : public BaseMarshaller
+class INTERCEPTPP_API Ipv4InAddr : public BaseMarshaller
 {
 public:
     Ipv4InAddr()
@@ -622,5 +625,7 @@ public:
 };
 
 } // namespace Marshaller
+
+#pragma warning (pop)
 
 } // namespace InterceptPP
