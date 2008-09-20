@@ -178,7 +178,7 @@
                 </arguments>
             </function>
             -->
-            <function name="CreateFileA" callingConvention="stdcall">
+            <function name="CreateFileA" callingConvention="stdcall" logNested="true">
                 <returnValue type="UInt32" hex="true"/>
                 <arguments>
                     <argument name="lpFileName" direction="in" type="AsciiStringPtr"/>
@@ -190,7 +190,7 @@
                     <argument name="hTemplateFile" direction="in" type="UInt32" hex="true"/>
                 </arguments>
             </function>
-            <function name="CreateFileW" callingConvention="stdcall">
+            <function name="CreateFileW" callingConvention="stdcall" logNested="true">
                 <returnValue type="UInt32" hex="true"/>
                 <arguments>
                     <argument name="lpFileName" direction="in" type="UnicodeStringPtr"/>
@@ -203,7 +203,14 @@
                 </arguments>
             </function>
 
-            <function name="DeviceIoControl" callingConvention="stdcall">
+            <function name="CloseHandle" callingConvention="stdcall" logNested="true">
+                <returnValue type="MSBool"/>
+                <arguments>
+                    <argument name="hObject" direction="in" type="UInt32" hex="true"/>
+                </arguments>
+            </function>
+
+            <function name="DeviceIoControl" callingConvention="stdcall" logNested="true">
                 <returnValue type="MSBool"/>
                 <arguments>
                     <argument name="hDevice" direction="in" type="UInt32" hex="true"/>
@@ -219,14 +226,14 @@
                 </arguments>
             </function>
 
-            <function name="WaitForSingleObject" callingConvention="stdcall">
+            <function name="WaitForSingleObject" callingConvention="stdcall" logNested="true">
                 <returnValue type="UInt32" hex="true"/>
                 <arguments>
                     <argument name="hHandle" direction="in" type="UInt32" hex="true"/>
                     <argument name="dwMilliseconds" direction="in" type="UInt32"/>
                 </arguments>
             </function>
-            <function name="WaitForSingleObjectEx" callingConvention="stdcall">
+            <function name="WaitForSingleObjectEx" callingConvention="stdcall" logNested="true">
                 <returnValue type="UInt32" hex="true"/>
                 <arguments>
                     <argument name="hHandle" direction="in" type="UInt32" hex="true"/>
@@ -234,7 +241,7 @@
                     <argument name="bAlertable" direction="in" type="UInt32"/>
                 </arguments>
             </function>
-            <function name="WaitForMultipleObjects" callingConvention="stdcall">
+            <function name="WaitForMultipleObjects" callingConvention="stdcall" logNested="true">
                 <returnValue type="UInt32" hex="true"/>
                 <arguments>
                     <argument name="nCount" direction="in" type="UInt32"/>
@@ -244,7 +251,7 @@
                     <argument name="dwMilliseconds" direction="in" type="UInt32"/>
                 </arguments>
             </function>
-            <function name="WaitForMultipleObjectsEx" callingConvention="stdcall">
+            <function name="WaitForMultipleObjectsEx" callingConvention="stdcall" logNested="true">
                 <returnValue type="UInt32" hex="true"/>
                 <arguments>
                     <argument name="nCount" direction="in" type="UInt32"/>
@@ -255,7 +262,7 @@
                     <argument name="bAlertable" direction="in" type="UInt32"/>
                 </arguments>
             </function>
-            <function name="GetOverlappedResult" callingConvention="stdcall">
+            <function name="GetOverlappedResult" callingConvention="stdcall" logNested="true">
                 <returnValue type="MSBool"/>
                 <arguments>
                     <argument name="hFile" direction="in" type="UInt32" hex="true"/>
@@ -269,7 +276,7 @@
             </function>
 
             <!-- KernelStreaming userspace API -->
-            <function name="KsCreateAllocator" callingConvention="stdcall">
+            <function name="KsCreateAllocator" callingConvention="stdcall" logNested="true">
                 <returnValue type="UInt32" hex="true"/>
                 <arguments>
                     <argument name="ConnectionHandle" direction="in" type="UInt32" hex="true"/>
@@ -278,7 +285,7 @@
                 </arguments>
             </function>
 
-            <function name="KsCreateClock" callingConvention="stdcall">
+            <function name="KsCreateClock" callingConvention="stdcall" logNested="true">
                 <returnValue type="UInt32" hex="true"/>
                 <arguments>
                     <argument name="ConnectionHandle" direction="in" type="UInt32" hex="true"/>
@@ -287,7 +294,7 @@
                 </arguments>
             </function>
 
-            <function name="KsCreatePin" callingConvention="stdcall">
+            <function name="KsCreatePin" callingConvention="stdcall" logNested="true">
                 <returnValue type="UInt32" hex="true"/>
                 <arguments>
                     <argument name="FilterHandle" direction="in" type="UInt32" hex="true"/>
@@ -297,13 +304,23 @@
                 </arguments>
             </function>
 
-            <function name="KsCreateTopologyNode" callingConvention="stdcall">
+            <function name="KsCreateTopologyNode" callingConvention="stdcall" logNested="true">
                 <returnValue type="UInt32" hex="true"/>
                 <arguments>
                     <argument name="ParentHandle" direction="in" type="UInt32" hex="true"/>
                     <argument name="NodeCreate" direction="in" type="UInt32" hex="true"/>
                     <argument name="DesiredAccess" direction="in" type="UInt32" hex="true"/>
                     <argument name="NodeHandle" direction="out" type="UInt32Ptr" hex="true"/>
+                </arguments>
+            </function>
+
+            <!-- KernelStreaming DirectShow proxy -->
+            <function name="KsOpenDefaultDevice" callingConvention="stdcall" logNested="true">
+                <returnValue type="Int32"/>
+                <arguments>
+                    <argument name="Category" direction="in" type="ByteArrayPtr" size="16"/> <!-- GUID -->
+                    <argument name="Access" direction="in" type="UInt32" hex="true"/>
+                    <argument name="DeviceHandle" direction="out" type="UInt32Ptr" hex="true"/>
                 </arguments>
             </function>
 
@@ -695,6 +712,8 @@
             <function specId="CreateFileA"/>
             <function specId="CreateFileW"/>
 
+            <function specId="CloseHandle"/>
+
             <function specId="DeviceIoControl"/>
 
             <!--
@@ -708,8 +727,14 @@
         </dllModule>
 
         <dllModule name="ksuser.dll">
-            <function specId="KsCreatePin"/>
+            <function specId="KsCreateAllocator"/>
             <function specId="KsCreateClock"/>
+            <function specId="KsCreatePin"/>
+            <function specId="KsCreateTopologyNode"/>
+        </dllModule>
+
+        <dllModule name="ksproxy.ax">
+            <function specId="KsOpenDefaultDevice"/>
         </dllModule>
 
         <!--
