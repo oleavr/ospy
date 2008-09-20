@@ -21,10 +21,13 @@
 
 namespace InterceptPP {
 
+#pragma warning (push)
+#pragma warning (disable: 4251)
+
 class VMethodSpec;
 class VMethod;
 
-class VTableSpec : public BaseObject
+class INTERCEPTPP_API VTableSpec : public BaseObject
 {
 public:
     VTableSpec(const OString &name, int methodCount);
@@ -40,7 +43,7 @@ protected:
     OVector<VMethodSpec>::Type m_methods;
 };
 
-class VTable : public BaseObject
+class INTERCEPTPP_API VTable : public BaseObject
 {
 public:
     VTable (VTableSpec *spec, const OString &name, DWORD startOffset);
@@ -66,7 +69,7 @@ protected:
     TrampolineVector m_trampolines;
 };
 
-class VMethodSpec : public FunctionSpec
+class INTERCEPTPP_API VMethodSpec : public FunctionSpec
 {
 public:
     VMethodSpec()
@@ -85,7 +88,7 @@ protected:
     int m_index;
 };
 
-class VMethod : public Function
+class INTERCEPTPP_API VMethod : public Function
 {
 public:
     VMethod(VTable *vtable=NULL, FunctionSpec *spec=NULL, DWORD offset=0)
@@ -106,5 +109,7 @@ public:
 protected:
     VTable *m_vtable;
 };
+
+#pragma warning (pop)
 
 } // namespace InterceptPP
