@@ -291,9 +291,12 @@ namespace oSpy
                             argList.Add ("<FIXME>");
                     }
 
-                    string retVal = ev.Data.SelectSingleNode ("/event/returnValue/value").Attributes["value"].Value;
+                    string retVal = "";
+                    XmlNode retValNode = ev.Data.SelectSingleNode ("/event/returnValue/value");
+                    if (retValNode != null)
+                        retVal = String.Format (" => {0}", retValNode.Attributes["value"].Value);
 
-                    return String.Format ("{0}({1}) => {2}", shortName, String.Join (", ", argList.ToArray ()), retVal);
+                    return String.Format ("{0}({1}){2}", shortName, String.Join (", ", argList.ToArray ()), retVal);
 
                 case DumpEventType.AsyncResult:
                     uint requestEventId = Convert.ToUInt32 (ev.Data.SelectSingleNode ("/event/requestId").InnerText);
