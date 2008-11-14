@@ -1293,7 +1293,7 @@ FunctionCall::ResolveProperty(const OString &query, const Argument *&arg, DWORD 
         wantAddressOf = false;
     }
 
-    OString propObj = query.substr(off, off + 4);
+    OString propObj = query.substr(off, 4);
     OString propArg = query.substr(off + 4);
 
     if (propObj == "reg.")
