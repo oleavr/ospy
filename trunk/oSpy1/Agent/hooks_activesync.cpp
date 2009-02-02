@@ -383,7 +383,6 @@ static __declspec(naked) void
 ui_status_label_set(char *text)
 {
     CWnd *self;
-	HWND parent_hwnd;
     char *p;
     RECT parent_rect, label_rect;
     int x, y;

@@ -19,7 +19,14 @@
 #include "stdafx.h"
 #include "hooking.h"
 #include "logging.h"
-#include <Wincrypt.h>
+/* Ugly, but we'd like access to all definitions regardless of OS version */
+#define ORIGINAL_NTDDI_VERSION NTDDI_VERSION
+#undef NTDDI_VERSION
+#define NTDDI_VERSION NTDDI_VISTA
+#include <wincrypt.h>
+#undef NTDDI_VERSION
+#define NTDDI_VERSION ORIGINAL_NTDDI_VERSION
+#undef ORIGINAL_NTDDI_VERSION
 #include <psapi.h>
 #include <map>
 
