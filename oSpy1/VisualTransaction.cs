@@ -193,12 +193,33 @@ namespace oSpy
             set { contextID = value; Invalidate(); }
         }
 
+        protected PictureBox previewBox;
         protected Image previewImage;
     
         public Image PreviewImage
         {
             get { return previewImage; }
-            set { previewImage = value; Recalibrate(); }
+            set
+            {
+                previewImage = value;
+
+                if (previewImage != null)
+                {
+                    previewBox = new PictureBox();
+                    previewBox.Visible = false;
+                    previewBox.Parent = this;
+                    previewBox.Image = previewImage;
+                    previewBox.Width = previewImage.Width;
+                    previewBox.Height = previewImage.Height;
+                }
+                else if (previewBox != null)
+                {
+                    previewBox.Parent = null;
+                    previewBox = null;
+                }
+
+                Recalibrate();
+            }
         }
 
         private int testScenario;
@@ -662,6 +683,8 @@ namespace oSpy
             //
             // Body
             //
+
+            // Data
             bodyBox.Left = headerX + boxesLeftRightSpacing;
             bodyBox.Top = headerY + headerHeight + ((headerHeight > 0) ? sectionSpacing : 0) + boxesTopBottomSpacing;
             bodyBox.Width = commonWidth - (2 * boxesLeftRightSpacing);
@@ -670,6 +693,14 @@ namespace oSpy
                 height = bodyMaxHeight;
             bodyBox.Height = height;
             bodyBox.Visible = (bodyBox.Text.Length > 0);
+
+            // Preview
+            if (previewBox != null)
+            {
+                previewBox.Left = bodyBox.Left;
+                previewBox.Top = bodyBox.Top + bodyBox.Height + sectionSpacing;
+                previewBox.Visible = true;
+            }
 
             UpdateSize();
 
@@ -703,11 +734,17 @@ namespace oSpy
             {
                 height += bodyBox.Height + (2 * boxesTopBottomSpacing);
             }
+
+            if (previewImage != null)
+            {
+                height += previewImage.Height;
+            }
             
             int count = 0;
             if (headlineBox.Visible)  count++;
             if (headerHeight != 0)  count++;
             if (bodyBox.Visible)  count++;
+            if (previewImage != null)  count++;
 
             if (count > 0)
                 height += sectionSpacing * (count - 1);
@@ -752,10 +789,14 @@ namespace oSpy
             {
                 brush = new SolidBrush(bodyBox.BackColor);
 
+                int bodyHeight = (2 * boxesTopBottomSpacing) + bodyBox.Height;
+                if (previewBox != null)
+                    bodyHeight += boxesTopBottomSpacing + previewBox.Height;
+
                 g.FillRectangle(brush,
                     bodyBox.Left - boxesLeftRightSpacing,
                     bodyBox.Top - boxesTopBottomSpacing,
-                    commonWidth, (2 * boxesTopBottomSpacing) + bodyBox.Height);
+                    commonWidth, bodyHeight);
             }
         }
 
