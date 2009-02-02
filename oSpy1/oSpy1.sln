@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "oSpy", "oSpy.csproj", "{32EB5641-50CC-4A6B-A913-E814EEE3B34D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestPacketStream", "Tests\PacketStream\TestPacketStream.csproj", "{2986256A-383B-42E4-81C3-3C53A4DAB5D6}"

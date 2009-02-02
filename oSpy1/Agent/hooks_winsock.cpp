@@ -628,7 +628,7 @@ wsaRecvCompletedHandler(COverlappedOperation *operation)
         {
 			WSABUF *buf = &ctx->lpBuffers[i];
 
-			int n = bytesLeft;
+			ULONG n = bytesLeft;
 			if (n > buf->len)
 				n = buf->len;
 
@@ -715,7 +715,7 @@ WSARecv_done(int retval,
         {
             WSABUF *buf = &lpBuffers[i];
 
-			int n = bytes_left;
+			ULONG n = bytes_left;
 			if (n > buf->len)
 				n = buf->len;
 
@@ -791,7 +791,7 @@ WSASend_done(int retval,
         {
             WSABUF *buf = &lpBuffers[i];
 
-			int n = bytes_left;
+			ULONG n = bytes_left;
 			if (n > buf->len)
 				n = buf->len;
 

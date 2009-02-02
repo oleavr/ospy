@@ -107,7 +107,7 @@ public:
         }
         catch (bad_alloc &)
         {
-            exit(1);
+            abort();
         }
 
         return ret;
@@ -123,7 +123,7 @@ public:
         }
         catch (bad_alloc &)
         {
-            exit(1);
+            abort();
         }
     }
 
@@ -176,14 +176,13 @@ struct ci_char_traits : public char_traits<char>
 
 	static int compare(const char *s1, const char *s2, size_t n)
 	{
-		return memicmp(s1, s2, n);
+		return _memicmp(s1, s2, n);
 	}
 
 	static const char *find(const char *s, int n, char a)
 	{
-		while(n-- > 0 && toupper(*s) != toupper(a)) {
+		while (n-- > 0 && toupper(*s) != toupper(a))
 			++s;
-		}
 
 		return s;
 	}

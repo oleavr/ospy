@@ -74,7 +74,7 @@ COverlappedManager::MonitorThreadFunc(void *arg)
 
 		handleCount = 1;
 
-		for (int i = 0; i < m_operations.size(); i++)
+		for (OverlappedOperationVector::size_type i = 0; i < m_operations.size(); i++)
 		{
 			COverlappedOperation *op = m_operations[i];
 			if (!op->HasCompleted())

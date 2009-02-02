@@ -22,6 +22,8 @@ class COverlappedOperation;
 
 typedef void (*OperationCompleteHandler) (COverlappedOperation *operation);
 
+typedef OVector<COverlappedOperation *>::Type OverlappedOperationVector;
+
 class COverlappedManager
 {
 public:
@@ -34,7 +36,7 @@ protected:
 	static HANDLE m_opsChanged;
 
 	static CRITICAL_SECTION m_opsCriticalSection;
-	static OVector<COverlappedOperation *>::Type m_operations;
+	static OverlappedOperationVector m_operations;
 };
 
 class COverlappedOperation : public BaseObject

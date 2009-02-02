@@ -39,11 +39,11 @@ CHookContext::ShouldLog(void *returnAddress, CpuContext *ctx, ...)
 #define MAKEPTR(p,o) (LPVOID) ( (DWORD)p + (DWORD)o )
 #define WRITE_OPCODE(pCode, x) \
    res = WriteProcessMemory( hProcess, pCode, &x, sizeof(x), &nWritten ); \
-   if( !res ) return FALSE; \
+   if( !res ) return false; \
    pCode = MAKEPTR(pCode,sizeof(x))
 #define WRITE_DWORD(pCode, x) \
    res = WriteProcessMemory( hProcess, pCode, &x, sizeof(x), &nWritten ); \
-   if( !res ) return FALSE; \
+   if( !res ) return false; \
    pCode = MAKEPTR(pCode,sizeof(x))
 
 void
@@ -76,14 +76,14 @@ write_dword_to_addr(LPVOID lpAddr, DWORD dw)
   FlushInstructionCache(hProcess, NULL, 0);
 }
 
-BOOL
+bool
 write_jmp_instruction_to_addr(LPVOID lpOrgProc, LPVOID lpNewProc)
 {
    HANDLE hProcess;
    DWORD nWritten;
-   BOOL  res;
    DWORD dwOldProtect;
    LPVOID pCode;
+   BOOL res;
    DWORD dwAdr;
    BYTE opcode_jmp = 0xE9;
 
@@ -98,7 +98,7 @@ write_jmp_instruction_to_addr(LPVOID lpOrgProc, LPVOID lpNewProc)
 
    FlushInstructionCache(hProcess,NULL,0);
 
-   return TRUE;
+   return true;
 };
 
 typedef enum {
@@ -112,7 +112,7 @@ typedef struct {
     unsigned char *data;
 } SignatureToken;
 
-static BOOL
+static bool
 find_next_token(const char **input, int *num_ignores, char **error)
 {
     const char *p = *input;
@@ -144,7 +144,7 @@ find_next_token(const char **input, int *num_ignores, char **error)
 DONE:
     *input = p;
     *num_ignores = qms_skipped / 2;
-    return TRUE;
+    return true;
 }
 
 static SignatureToken *
@@ -220,7 +220,7 @@ signature_token_print (SignatureToken *token)
     fprintf(stderr, "\n");
 }
 
-static BOOL
+static bool
 parse_signature(const FunctionSignature *sig,
                 SignatureToken ***tokens,
                 int *num_tokens,
@@ -274,7 +274,7 @@ parse_signature(const FunctionSignature *sig,
 
     /* Start parsing. */
     p = sig->signature;
-    while (TRUE)
+    while (true)
     {
         unsigned int tmp;
         int ret, ignores;
@@ -347,7 +347,7 @@ parse_signature(const FunctionSignature *sig,
 
     *raw_size = offset;
     
-    return TRUE;
+    return true;
 
 ERR_OUT:
     if (ret_tokens != NULL)
@@ -355,10 +355,10 @@ ERR_OUT:
         signature_token_list_free(ret_tokens);
     }
 
-    return FALSE;
+    return false;
 }
 
-static BOOL
+static bool
 scan_against_all_tokens(unsigned char *p, SignatureToken **tokens)
 {
     SignatureToken **cur_token;
@@ -368,25 +368,25 @@ scan_against_all_tokens(unsigned char *p, SignatureToken **tokens)
         if ((*cur_token)->type == TOKEN_TYPE_LITERAL)
         {
             if (memcmp(p, (*cur_token)->data, (*cur_token)->length) != 0)
-                return FALSE;
+                return false;
         }
 
         p += (*cur_token)->length;
     }
 
-    return TRUE;
+    return true;
 }
 
-BOOL
+bool
 find_signature(const FunctionSignature *sig, LPVOID *address, char **error)
 {
     return find_signature_in_module(sig, sig->module_name, address, error);
 }
 
-BOOL
+bool
 find_signature_in_module(const FunctionSignature *sig, const char *module_name, LPVOID *address, char **error)
 {
-    BOOL result = FALSE;
+    bool result = false;
     unsigned char *base, *p, *match;
     DWORD size;
     SignatureToken **tokens = NULL, *longest_token;
@@ -409,8 +409,8 @@ find_signature_in_module(const FunctionSignature *sig, const char *module_name, 
     {
         if (memcmp(p, longest_token->data, longest_token->length) == 0)
         {
-            BOOL matched = scan_against_all_tokens(p - longest_offset, tokens);
-            if (matched == TRUE)
+            bool matched = scan_against_all_tokens(p - longest_offset, tokens);
+            if (matched)
             {
                 num_matches++;
                 match = p - longest_offset;
@@ -434,7 +434,7 @@ find_signature_in_module(const FunctionSignature *sig, const char *module_name, 
 
     *address = match - sig->start_offset;
 
-    result = TRUE;
+    result = true;
 
 DONE:
     if (tokens != NULL)
@@ -445,7 +445,7 @@ DONE:
     return result;
 }
 
-BOOL
+bool
 override_function_by_signature(const FunctionSignature *sig,
                                LPVOID replacement,
                                LPVOID *patched_address,
@@ -455,7 +455,7 @@ override_function_by_signature(const FunctionSignature *sig,
         replacement, patched_address, error);
 }
 
-BOOL
+bool
 override_function_by_signature_in_module(const FunctionSignature *sig,
                                          const char *module_name,
                                          LPVOID replacement,
@@ -465,16 +465,16 @@ override_function_by_signature_in_module(const FunctionSignature *sig,
     LPVOID address;
 
     if (!find_signature_in_module(sig, module_name, &address, error))
-        return FALSE;
+        return false;
 
     if (!write_jmp_instruction_to_addr(address, replacement))
     {
         *error = sspy_strdup("write_jmp_instruction_to_addr failed");
-        return FALSE;
+        return false;
     }
 
     if (patched_address != NULL)
         *patched_address = address;
 
-    return TRUE;
+    return true;
 }

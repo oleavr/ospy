@@ -85,8 +85,10 @@ message_element_init(MessageQueueElement *el,
     el->process_id = GetCurrentProcessId();      
     el->thread_id = GetCurrentThreadId();
 
+	std::string s;
+
     /* function name and return address */
-    strcpy(el->function_name, function_name);
+    strcpy_s(el->function_name, sizeof(el->function_name), function_name);
 	if (bt_address != NULL)
 	{
 		OString backtrace = CUtil::CreateBackTrace(bt_address);
@@ -199,14 +201,14 @@ message_logger_log_full(const char *function_name,
     /* fill in local address and port */
     if (local_addr)
     {
-        strcpy(el.local_address, inet_ntoa(local_addr->sin_addr));
+        strcpy_s(el.local_address, sizeof(el.local_address), inet_ntoa(local_addr->sin_addr));
         el.local_port = ntohs(local_addr->sin_port);
     }
 
     /* fill in peer address and port */
     if (peer_addr)
     {
-        strcpy(el.peer_address, inet_ntoa(peer_addr->sin_addr));
+        strcpy_s(el.peer_address, sizeof(el.peer_address), inet_ntoa(peer_addr->sin_addr));
         el.peer_port = ntohs(peer_addr->sin_port);
     }
 
@@ -308,8 +310,8 @@ log_tcp_connecting(const char *function_name,
     sin_len = sizeof(sin);
     getsockname(socket, (struct sockaddr *) &sin, &sin_len);
 
-    strcpy(local_addr_str, inet_ntoa(sin.sin_addr));
-    strcpy(peer_addr_str, inet_ntoa(peer_addr->sin_addr));
+    strcpy_s(local_addr_str, sizeof(local_addr_str), inet_ntoa(sin.sin_addr));
+    strcpy_s(peer_addr_str, sizeof(peer_addr_str), inet_ntoa(peer_addr->sin_addr));
 
     message_logger_log(function_name, bt_address, socket,
                        MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_SOCKET_CONNECTING,
@@ -334,8 +336,8 @@ log_tcp_connected(const char *function_name,
     sin_len = sizeof(sin);
     getsockname(socket, (struct sockaddr *) &sin, &sin_len);
 
-    strcpy(local_addr_str, inet_ntoa(sin.sin_addr));
-    strcpy(peer_addr_str, inet_ntoa(peer_addr->sin_addr));
+    strcpy_s(local_addr_str, sizeof(local_addr_str), inet_ntoa(sin.sin_addr));
+    strcpy_s(peer_addr_str, sizeof(peer_addr_str), inet_ntoa(peer_addr->sin_addr));
 
     message_logger_log(function_name, bt_address, socket,
                        MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_SOCKET_CONNECTED,
@@ -361,12 +363,12 @@ log_tcp_client_connected(const char *function_name,
      */
     sin_len = sizeof(sin_local);
     getsockname(server_socket, (struct sockaddr *) &sin_local, &sin_len);
-    strcpy(local_addr_str, inet_ntoa(sin_local.sin_addr));
+    strcpy_s(local_addr_str, sizeof(local_addr_str), inet_ntoa(sin_local.sin_addr));
 
     /* peer address */
     sin_len = sizeof(sin_peer);
     getpeername(client_socket, (struct sockaddr *) &sin_peer, &sin_len);
-    strcpy(peer_addr_str, inet_ntoa(sin_peer.sin_addr));
+    strcpy_s(peer_addr_str, sizeof(peer_addr_str), inet_ntoa(sin_peer.sin_addr));
 
     message_logger_log(function_name, bt_address, client_socket,
                        MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_SOCKET_CONNECTED,
@@ -389,12 +391,12 @@ log_tcp_disconnected(const char *function_name,
     /* local address */
     sin_len = sizeof(sin_local);
     getsockname(s, (struct sockaddr *) &sin_local, &sin_len);
-    strcpy(local_addr_str, inet_ntoa(sin_local.sin_addr));
+    strcpy_s(local_addr_str, sizeof(local_addr_str), inet_ntoa(sin_local.sin_addr));
 
     /* peer address */
     sin_len = sizeof(sin_peer);
     getpeername(s, (struct sockaddr *) &sin_peer, &sin_len);
-    strcpy(peer_addr_str, inet_ntoa(sin_peer.sin_addr));
+    strcpy_s(peer_addr_str, sizeof(peer_addr_str), inet_ntoa(sin_peer.sin_addr));
 
     message_logger_log(function_name, bt_address, s, MESSAGE_TYPE_MESSAGE,
                        (last_error == NULL) ? MESSAGE_CTX_SOCKET_DISCONNECTED : MESSAGE_CTX_SOCKET_RESET,
