@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006  Ole André Vadla Ravnås <oleavr@gmail.com>
+ * Copyright (C) 2006-2009  Ole André Vadla Ravnås <oleavr@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,27 +74,30 @@ namespace oSpy.Parser
 
                 string[] firstLineAndRest = str.Split(lineDelimiters, 2, StringSplitOptions.None);
 
-                Dictionary<string, string> slpHeaderFields, sessionHeaderFields;
-                string slpBody, sessionBody;
-
-                ParseHTTPStyle(firstLineAndRest[1], out slpHeaderFields, out slpBody);
-                ParseHTTPStyle(slpBody, out sessionHeaderFields, out sessionBody);
-
-                if (slpHeaderFields.ContainsKey("CALL-ID") &&
-                    sessionHeaderFields.ContainsKey("SESSIONID"))
+                if (firstLineAndRest.Length > 1)
                 {
-                    string cid = slpHeaderFields["CALL-ID"];
-                    UInt32 sid = Convert.ToUInt32(sessionHeaderFields["SESSIONID"]);
+                    Dictionary<string, string> slpHeaderFields, sessionHeaderFields;
+                    string slpBody, sessionBody;
 
-                    if (cidToCall.ContainsKey(cid))
+                    ParseHTTPStyle(firstLineAndRest[1], out slpHeaderFields, out slpBody);
+                    ParseHTTPStyle(slpBody, out sessionHeaderFields, out sessionBody);
+
+                    if (slpHeaderFields.ContainsKey("CALL-ID") &&
+                        sessionHeaderFields.ContainsKey("SESSIONID"))
                     {
-                        call = cidToCall[cid];
-                    }
-                    else
-                    {
-                        call = new MSNSLPCall(cid);
-                        cidToCall[cid] = call;
-                        sidToCall[sid] = call;
+                        string cid = slpHeaderFields["CALL-ID"];
+                        UInt32 sid = Convert.ToUInt32(sessionHeaderFields["SESSIONID"]);
+
+                        if (cidToCall.ContainsKey(cid))
+                        {
+                            call = cidToCall[cid];
+                        }
+                        else
+                        {
+                            call = new MSNSLPCall(cid);
+                            cidToCall[cid] = call;
+                            sidToCall[sid] = call;
+                        }
                     }
                 }
             }
@@ -596,7 +599,7 @@ namespace oSpy.Parser
 
             payloadCommandFormats = new Dictionary<string, PayloadFormat>();
             payloadCommandFormats["MSG"] = PayloadFormat.MESSAGE;
-            payloadCommandFormats["NOT"] = PayloadFormat.MESSAGE;
+            payloadCommandFormats["NOT"] = PayloadFormat.XML; // was: PayloadFormat.MESSAGE -- is that ever true?
             payloadCommandFormats["UBX"] = PayloadFormat.XML;
             payloadCommandFormats["UUX"] = PayloadFormat.XML;
             payloadCommandFormats["ADL"] = PayloadFormat.XML;
