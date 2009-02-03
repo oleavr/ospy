@@ -30,6 +30,7 @@ typedef enum {
     SIGNATURE_IDCRL_DEBUG,
 	SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME,
 	SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME_2,
+	SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME_3
 };
 
 static FunctionSignature msn_signatures[] = {
@@ -98,8 +99,6 @@ static FunctionSignature msn_signatures[] = {
 	{
 		"msnmsgr.exe",
 		-6,						// we include the last two instructions of the function before
-								// the one we're interested in in order to make sure we find
-								// just one match (since this function is so generic)
 
 		"5E"					// pop     esi
 		"E9 ?? ?? ?? ??"		// jmp     sub_421B16
@@ -110,6 +109,23 @@ static FunctionSignature msn_signatures[] = {
 		"83 F8 ??"				// cmp     eax, 71         ; switch 72 cases
 		"0F 87 ?? ?? ?? ??"		// ja      loc_479F00      ; default
 		"FF 24 85 ?? ?? ?? ??"	// jmp     ds:off_46D134[eax*4] ; switch jump
+	},
+
+	// SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME_3
+	{
+		"msnmsgr.exe",
+		-7,						// we include the last two instructions of the function before
+
+		"5E"					// pop     esi
+		"C3"					// retn
+
+		"CC CC CC CC CC"		// <padding>
+
+		"8B FF"					// mov edi, edi
+		"55"					// push ebp
+		"8B EC"					// mov ebp, esp
+		"8B 45 08"				// mov eax, [ebp+arg_0]
+		"83 F8 ??"				// cmp eax, ??
 	},
 };
 
@@ -224,6 +240,13 @@ hook_msn()
 	{
 		sspy_free(error);
 		found = find_signature(&msn_signatures[SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME_2],
+							   (LPVOID *) &contact_property_id_to_name, &error);
+	}
+
+	if (!found)
+	{
+		sspy_free(error);
+		found = find_signature(&msn_signatures[SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME_3],
 							   (LPVOID *) &contact_property_id_to_name, &error);
 	}
 
