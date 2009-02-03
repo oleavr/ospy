@@ -71,7 +71,15 @@ namespace oSpy
             foreach (ListViewItem item in listView.SelectedItems)
             {
                 Process proc = item.Tag as Process;
-                proc.Kill();
+
+                try
+                {
+                    proc.Kill();
+                }
+                catch (InvalidOperationException)
+                {
+                    // in case it has already exited
+                }
             }
 
             Thread.Sleep(1000);
