@@ -29,8 +29,8 @@ namespace oSpy
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.dataSet = new System.Data.DataSet();
             this.messageTbl = new System.Data.DataTable();
@@ -165,17 +165,17 @@ namespace oSpy
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
-            ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize) (this.dataSet)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize) (this.messageTbl)).BeginInit();
             this.menuStrip.SuspendLayout();
             this.dataGridContextMenuStrip.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.bindingSource)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize) (this.bindingSource)).BeginInit();
             this.dumpContextMenuStrip.SuspendLayout();
             this.propertyGridContextMenuStrip.SuspendLayout();
             this.mainSplitContainer.Panel1.SuspendLayout();
             this.mainSplitContainer.Panel2.SuspendLayout();
             this.mainSplitContainer.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize) (this.dataGridView)).BeginInit();
             this.lowerSplitContainer.Panel1.SuspendLayout();
             this.lowerSplitContainer.Panel2.SuspendLayout();
             this.lowerSplitContainer.SuspendLayout();
@@ -431,44 +431,44 @@ namespace oSpy
             this.toolStripSeparator2,
             this.exitMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(35, 20);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "&File";
             // 
             // openMenuItem
             // 
             this.openMenuItem.Name = "openMenuItem";
-            this.openMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.openMenuItem.Size = new System.Drawing.Size(112, 22);
             this.openMenuItem.Text = "&Open...";
             this.openMenuItem.Click += new System.EventHandler(this.openMenuItem_Click);
             // 
             // saveMenuItem
             // 
             this.saveMenuItem.Name = "saveMenuItem";
-            this.saveMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.saveMenuItem.Size = new System.Drawing.Size(112, 22);
             this.saveMenuItem.Text = "&Save...";
             this.saveMenuItem.Click += new System.EventHandler(this.saveMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(120, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(109, 6);
             // 
             // clearMenuItem
             // 
             this.clearMenuItem.Name = "clearMenuItem";
-            this.clearMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.clearMenuItem.Size = new System.Drawing.Size(112, 22);
             this.clearMenuItem.Text = "&Clear";
             this.clearMenuItem.Click += new System.EventHandler(this.clearMenuItem_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(120, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(109, 6);
             // 
             // exitMenuItem
             // 
             this.exitMenuItem.Name = "exitMenuItem";
-            this.exitMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.exitMenuItem.Size = new System.Drawing.Size(112, 22);
             this.exitMenuItem.Text = "E&xit";
             this.exitMenuItem.Click += new System.EventHandler(this.exitMenuItem_Click);
             // 
@@ -477,7 +477,7 @@ namespace oSpy
             this.editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.selectallToolStripMenuItem});
             this.editToolStripMenuItem.Name = "editToolStripMenuItem";
-            this.editToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
+            this.editToolStripMenuItem.Size = new System.Drawing.Size(39, 20);
             this.editToolStripMenuItem.Text = "&Edit";
             // 
             // selectallToolStripMenuItem
@@ -486,20 +486,20 @@ namespace oSpy
             this.rowsToolStripMenuItem,
             this.transactionsToolStripMenuItem});
             this.selectallToolStripMenuItem.Name = "selectallToolStripMenuItem";
-            this.selectallToolStripMenuItem.Size = new System.Drawing.Size(127, 22);
+            this.selectallToolStripMenuItem.Size = new System.Drawing.Size(120, 22);
             this.selectallToolStripMenuItem.Text = "Select &all";
             // 
             // rowsToolStripMenuItem
             // 
             this.rowsToolStripMenuItem.Name = "rowsToolStripMenuItem";
-            this.rowsToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
+            this.rowsToolStripMenuItem.Size = new System.Drawing.Size(141, 22);
             this.rowsToolStripMenuItem.Text = "&Rows";
             this.rowsToolStripMenuItem.Click += new System.EventHandler(this.rowsToolStripMenuItem_Click);
             // 
             // transactionsToolStripMenuItem
             // 
             this.transactionsToolStripMenuItem.Name = "transactionsToolStripMenuItem";
-            this.transactionsToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
+            this.transactionsToolStripMenuItem.Size = new System.Drawing.Size(141, 22);
             this.transactionsToolStripMenuItem.Text = "&Transactions";
             this.transactionsToolStripMenuItem.Click += new System.EventHandler(this.transactionsToolStripMenuItem_Click);
             // 
@@ -509,22 +509,22 @@ namespace oSpy
             this.nextpacketToolStripMenuItem,
             this.nextRowTransactionToolStripMenuItem});
             this.goToolStripMenuItem.Name = "goToolStripMenuItem";
-            this.goToolStripMenuItem.Size = new System.Drawing.Size(32, 20);
+            this.goToolStripMenuItem.Size = new System.Drawing.Size(34, 20);
             this.goToolStripMenuItem.Text = "&Go";
             // 
             // nextpacketToolStripMenuItem
             // 
             this.nextpacketToolStripMenuItem.Name = "nextpacketToolStripMenuItem";
-            this.nextpacketToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.R)));
-            this.nextpacketToolStripMenuItem.Size = new System.Drawing.Size(296, 22);
+            this.nextpacketToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys) ((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.R)));
+            this.nextpacketToolStripMenuItem.Size = new System.Drawing.Size(306, 22);
             this.nextpacketToolStripMenuItem.Text = "Next &packet row";
             this.nextpacketToolStripMenuItem.Click += new System.EventHandler(this.nextpacketToolStripMenuItem_Click);
             // 
             // nextRowTransactionToolStripMenuItem
             // 
             this.nextRowTransactionToolStripMenuItem.Name = "nextRowTransactionToolStripMenuItem";
-            this.nextRowTransactionToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
-            this.nextRowTransactionToolStripMenuItem.Size = new System.Drawing.Size(296, 22);
+            this.nextRowTransactionToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys) ((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
+            this.nextRowTransactionToolStripMenuItem.Size = new System.Drawing.Size(306, 22);
             this.nextRowTransactionToolStripMenuItem.Text = "Next row belonging to a &transaction";
             this.nextRowTransactionToolStripMenuItem.Click += new System.EventHandler(this.nextRowTransactionToolStripMenuItem_Click);
             // 
@@ -534,20 +534,20 @@ namespace oSpy
             this.injectToolStripMenuItem,
             this.captureStartMenuItem});
             this.captureToolStripMenuItem.Name = "captureToolStripMenuItem";
-            this.captureToolStripMenuItem.Size = new System.Drawing.Size(58, 20);
+            this.captureToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.captureToolStripMenuItem.Text = "&Capture";
             // 
             // injectToolStripMenuItem
             // 
             this.injectToolStripMenuItem.Name = "injectToolStripMenuItem";
-            this.injectToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+            this.injectToolStripMenuItem.Size = new System.Drawing.Size(145, 22);
             this.injectToolStripMenuItem.Text = "&Inject agent...";
             this.injectToolStripMenuItem.Click += new System.EventHandler(this.injectToolStripMenuItem_Click);
             // 
             // captureStartMenuItem
             // 
             this.captureStartMenuItem.Name = "captureStartMenuItem";
-            this.captureStartMenuItem.Size = new System.Drawing.Size(156, 22);
+            this.captureStartMenuItem.Size = new System.Drawing.Size(145, 22);
             this.captureStartMenuItem.Text = "&Start";
             this.captureStartMenuItem.Click += new System.EventHandler(this.captureStartMenuItem_Click);
             // 
@@ -557,20 +557,20 @@ namespace oSpy
             this.manageSoftwallRulesToolStripMenuItem,
             this.parserConfigToolStripMenuItem});
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
-            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
+            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.optionsToolStripMenuItem.Text = "&Options";
             // 
             // manageSoftwallRulesToolStripMenuItem
             // 
             this.manageSoftwallRulesToolStripMenuItem.Name = "manageSoftwallRulesToolStripMenuItem";
-            this.manageSoftwallRulesToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
+            this.manageSoftwallRulesToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
             this.manageSoftwallRulesToolStripMenuItem.Text = "&Softwall rules...";
             this.manageSoftwallRulesToolStripMenuItem.Click += new System.EventHandler(this.manageSoftwallRulesToolStripMenuItem_Click);
             // 
             // parserConfigToolStripMenuItem
             // 
             this.parserConfigToolStripMenuItem.Name = "parserConfigToolStripMenuItem";
-            this.parserConfigToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
+            this.parserConfigToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
             this.parserConfigToolStripMenuItem.Text = "Parser Config...";
             this.parserConfigToolStripMenuItem.Click += new System.EventHandler(this.parserConfigToolStripMenuItem_Click);
             // 
@@ -582,7 +582,7 @@ namespace oSpy
             this.toolStripMenuItem5,
             this.showMSNP2PConversationsToolStripMenuItem});
             this.analyzeToolStripMenuItem.Name = "analyzeToolStripMenuItem";
-            this.analyzeToolStripMenuItem.Size = new System.Drawing.Size(41, 20);
+            this.analyzeToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.analyzeToolStripMenuItem.Text = "&View";
             // 
             // viewInternalDebugToolStripMenuItem
@@ -591,7 +591,7 @@ namespace oSpy
             this.viewInternalDebugToolStripMenuItem.CheckOnClick = true;
             this.viewInternalDebugToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.viewInternalDebugToolStripMenuItem.Name = "viewInternalDebugToolStripMenuItem";
-            this.viewInternalDebugToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
+            this.viewInternalDebugToolStripMenuItem.Size = new System.Drawing.Size(158, 22);
             this.viewInternalDebugToolStripMenuItem.Text = "Internal debug";
             this.viewInternalDebugToolStripMenuItem.CheckedChanged += new System.EventHandler(this.viewInternalDebugToolStripMenuItem_CheckedChanged);
             // 
@@ -601,19 +601,19 @@ namespace oSpy
             this.viewWinCryptToolStripMenuItem.CheckOnClick = true;
             this.viewWinCryptToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.viewWinCryptToolStripMenuItem.Name = "viewWinCryptToolStripMenuItem";
-            this.viewWinCryptToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
+            this.viewWinCryptToolStripMenuItem.Size = new System.Drawing.Size(158, 22);
             this.viewWinCryptToolStripMenuItem.Text = "WinCrypt API";
             this.viewWinCryptToolStripMenuItem.CheckedChanged += new System.EventHandler(this.viewWinCryptToolStripMenuItem_CheckedChanged);
             // 
             // toolStripMenuItem5
             // 
             this.toolStripMenuItem5.Name = "toolStripMenuItem5";
-            this.toolStripMenuItem5.Size = new System.Drawing.Size(163, 6);
+            this.toolStripMenuItem5.Size = new System.Drawing.Size(155, 6);
             // 
             // showMSNP2PConversationsToolStripMenuItem
             // 
             this.showMSNP2PConversationsToolStripMenuItem.Name = "showMSNP2PConversationsToolStripMenuItem";
-            this.showMSNP2PConversationsToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
+            this.showMSNP2PConversationsToolStripMenuItem.Size = new System.Drawing.Size(158, 22);
             this.showMSNP2PConversationsToolStripMenuItem.Text = "&Conversations...";
             this.showMSNP2PConversationsToolStripMenuItem.Click += new System.EventHandler(this.showMSNP2PConversationsToolStripMenuItem_Click);
             // 
@@ -622,13 +622,13 @@ namespace oSpy
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.applydebugSymbolsToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
-            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
+            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
             this.toolsToolStripMenuItem.Text = "&Tools";
             // 
             // applydebugSymbolsToolStripMenuItem
             // 
             this.applydebugSymbolsToolStripMenuItem.Name = "applydebugSymbolsToolStripMenuItem";
-            this.applydebugSymbolsToolStripMenuItem.Size = new System.Drawing.Size(186, 22);
+            this.applydebugSymbolsToolStripMenuItem.Size = new System.Drawing.Size(189, 22);
             this.applydebugSymbolsToolStripMenuItem.Text = "Apply &debug symbols";
             this.applydebugSymbolsToolStripMenuItem.Click += new System.EventHandler(this.applydebugSymbolsToolStripMenuItem_Click);
             // 
@@ -639,25 +639,25 @@ namespace oSpy
             this.toolStripMenuItem2,
             this.aboutToolStripMenuItem});
             this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
-            this.helpToolStripMenuItem.Size = new System.Drawing.Size(40, 20);
+            this.helpToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.helpToolStripMenuItem.Text = "&Help";
             // 
             // debugToolStripMenuItem1
             // 
             this.debugToolStripMenuItem1.Name = "debugToolStripMenuItem1";
-            this.debugToolStripMenuItem1.Size = new System.Drawing.Size(116, 22);
+            this.debugToolStripMenuItem1.Size = new System.Drawing.Size(109, 22);
             this.debugToolStripMenuItem1.Text = "&Debug";
             this.debugToolStripMenuItem1.Click += new System.EventHandler(this.debugToolStripMenuItem_Click);
             // 
             // toolStripMenuItem2
             // 
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(113, 6);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(106, 6);
             // 
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(109, 22);
             this.aboutToolStripMenuItem.Text = "&About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
@@ -669,32 +669,32 @@ namespace oSpy
             this.toolStripMenuItem3,
             this.createSwRuleFromEntryToolStripMenuItem});
             this.dataGridContextMenuStrip.Name = "dataGridContextMenuStrip";
-            this.dataGridContextMenuStrip.Size = new System.Drawing.Size(246, 76);
+            this.dataGridContextMenuStrip.Size = new System.Drawing.Size(244, 76);
             this.dataGridContextMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.dataGridContextMenuStrip_Opening);
             // 
             // goToReturnaddressInIDAToolStripMenuItem
             // 
             this.goToReturnaddressInIDAToolStripMenuItem.Name = "goToReturnaddressInIDAToolStripMenuItem";
-            this.goToReturnaddressInIDAToolStripMenuItem.Size = new System.Drawing.Size(245, 22);
+            this.goToReturnaddressInIDAToolStripMenuItem.Size = new System.Drawing.Size(243, 22);
             this.goToReturnaddressInIDAToolStripMenuItem.Text = "&Go to return address in IDA";
             this.goToReturnaddressInIDAToolStripMenuItem.Click += new System.EventHandler(this.goToReturnaddressInIDAToolStripMenuItem_Click);
             // 
             // showbacktraceToolStripMenuItem
             // 
             this.showbacktraceToolStripMenuItem.Name = "showbacktraceToolStripMenuItem";
-            this.showbacktraceToolStripMenuItem.Size = new System.Drawing.Size(245, 22);
+            this.showbacktraceToolStripMenuItem.Size = new System.Drawing.Size(243, 22);
             this.showbacktraceToolStripMenuItem.Text = "Show &backtrace...";
             this.showbacktraceToolStripMenuItem.Click += new System.EventHandler(this.showbacktraceToolStripMenuItem_Click);
             // 
             // toolStripMenuItem3
             // 
             this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-            this.toolStripMenuItem3.Size = new System.Drawing.Size(242, 6);
+            this.toolStripMenuItem3.Size = new System.Drawing.Size(240, 6);
             // 
             // createSwRuleFromEntryToolStripMenuItem
             // 
             this.createSwRuleFromEntryToolStripMenuItem.Name = "createSwRuleFromEntryToolStripMenuItem";
-            this.createSwRuleFromEntryToolStripMenuItem.Size = new System.Drawing.Size(245, 22);
+            this.createSwRuleFromEntryToolStripMenuItem.Size = new System.Drawing.Size(243, 22);
             this.createSwRuleFromEntryToolStripMenuItem.Text = "&Create softwall rule from entry...";
             this.createSwRuleFromEntryToolStripMenuItem.Click += new System.EventHandler(this.createSwRuleFromEntryToolStripMenuItem_Click);
             // 
@@ -714,13 +714,13 @@ namespace oSpy
             this.toolStripMenuItem4,
             this.showAsToolStripMenuItem});
             this.dumpContextMenuStrip.Name = "dumpContextMenuStrip";
-            this.dumpContextMenuStrip.Size = new System.Drawing.Size(202, 104);
+            this.dumpContextMenuStrip.Size = new System.Drawing.Size(198, 104);
             this.dumpContextMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.dumpContextMenuStrip_Opening);
             // 
             // copyToolStripMenuItem
             // 
             this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
-            this.copyToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.copyToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
             this.copyToolStripMenuItem.Text = "&Copy";
             this.copyToolStripMenuItem.Click += new System.EventHandler(this.copyToolStripMenuItem_Click);
             // 
@@ -730,39 +730,39 @@ namespace oSpy
             this.copyRawToolStripMenuItem,
             this.selSaveToFileToolStripMenuItem});
             this.selBytesToolStripMenuItem.Name = "selBytesToolStripMenuItem";
-            this.selBytesToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.selBytesToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
             this.selBytesToolStripMenuItem.Text = "Selected &bytes";
             // 
             // copyRawToolStripMenuItem
             // 
             this.copyRawToolStripMenuItem.Name = "copyRawToolStripMenuItem";
-            this.copyRawToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.copyRawToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
             this.copyRawToolStripMenuItem.Text = "&Copy";
             this.copyRawToolStripMenuItem.Click += new System.EventHandler(this.copyRawToolStripMenuItem_Click);
             // 
             // selSaveToFileToolStripMenuItem
             // 
             this.selSaveToFileToolStripMenuItem.Name = "selSaveToFileToolStripMenuItem";
-            this.selSaveToFileToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.selSaveToFileToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
             this.selSaveToFileToolStripMenuItem.Text = "Save to &file...";
             this.selSaveToFileToolStripMenuItem.Click += new System.EventHandler(this.selSaveToFileToolStripMenuItem_Click);
             // 
             // toolStripMenuItem6
             // 
             this.toolStripMenuItem6.Name = "toolStripMenuItem6";
-            this.toolStripMenuItem6.Size = new System.Drawing.Size(198, 6);
+            this.toolStripMenuItem6.Size = new System.Drawing.Size(194, 6);
             // 
             // saveRawDumpToFileToolStripMenuItem
             // 
             this.saveRawDumpToFileToolStripMenuItem.Name = "saveRawDumpToFileToolStripMenuItem";
-            this.saveRawDumpToFileToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.saveRawDumpToFileToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
             this.saveRawDumpToFileToolStripMenuItem.Text = "Save raw dump to &file...";
             this.saveRawDumpToFileToolStripMenuItem.Click += new System.EventHandler(this.saveRawDumpToFileToolStripMenuItem_Click);
             // 
             // toolStripMenuItem4
             // 
             this.toolStripMenuItem4.Name = "toolStripMenuItem4";
-            this.toolStripMenuItem4.Size = new System.Drawing.Size(198, 6);
+            this.toolStripMenuItem4.Size = new System.Drawing.Size(194, 6);
             // 
             // showAsToolStripMenuItem
             // 
@@ -770,13 +770,13 @@ namespace oSpy
             this.aSCIIToolStripMenuItem,
             this.hexToolStripMenuItem});
             this.showAsToolStripMenuItem.Name = "showAsToolStripMenuItem";
-            this.showAsToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.showAsToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
             this.showAsToolStripMenuItem.Text = "&View as";
             // 
             // aSCIIToolStripMenuItem
             // 
             this.aSCIIToolStripMenuItem.Name = "aSCIIToolStripMenuItem";
-            this.aSCIIToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
+            this.aSCIIToolStripMenuItem.Size = new System.Drawing.Size(102, 22);
             this.aSCIIToolStripMenuItem.Text = "&ASCII";
             this.aSCIIToolStripMenuItem.Click += new System.EventHandler(this.aSCIIToolStripMenuItem_Click);
             // 
@@ -785,7 +785,7 @@ namespace oSpy
             this.hexToolStripMenuItem.Checked = true;
             this.hexToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.hexToolStripMenuItem.Name = "hexToolStripMenuItem";
-            this.hexToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
+            this.hexToolStripMenuItem.Size = new System.Drawing.Size(102, 22);
             this.hexToolStripMenuItem.Text = "&Hex";
             this.hexToolStripMenuItem.Click += new System.EventHandler(this.hexToolStripMenuItem_Click);
             // 
@@ -797,26 +797,26 @@ namespace oSpy
             this.toolStripMenuItem1,
             this.autoHighlightMenuItem});
             this.propertyGridContextMenuStrip.Name = "contextMenuStrip1";
-            this.propertyGridContextMenuStrip.Size = new System.Drawing.Size(191, 76);
+            this.propertyGridContextMenuStrip.Size = new System.Drawing.Size(199, 76);
             // 
             // expandAllToolStripMenuItem
             // 
             this.expandAllToolStripMenuItem.Name = "expandAllToolStripMenuItem";
-            this.expandAllToolStripMenuItem.Size = new System.Drawing.Size(190, 22);
+            this.expandAllToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
             this.expandAllToolStripMenuItem.Text = "&Expand all";
             this.expandAllToolStripMenuItem.Click += new System.EventHandler(this.expandAllToolStripMenuItem_Click);
             // 
             // collapseAllToolStripMenuItem
             // 
             this.collapseAllToolStripMenuItem.Name = "collapseAllToolStripMenuItem";
-            this.collapseAllToolStripMenuItem.Size = new System.Drawing.Size(190, 22);
+            this.collapseAllToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
             this.collapseAllToolStripMenuItem.Text = "&Collapse all";
             this.collapseAllToolStripMenuItem.Click += new System.EventHandler(this.collapseAllToolStripMenuItem_Click);
             // 
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(187, 6);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(195, 6);
             // 
             // autoHighlightMenuItem
             // 
@@ -824,13 +824,13 @@ namespace oSpy
             this.autoHighlightMenuItem.CheckOnClick = true;
             this.autoHighlightMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.autoHighlightMenuItem.Name = "autoHighlightMenuItem";
-            this.autoHighlightMenuItem.Size = new System.Drawing.Size(190, 22);
+            this.autoHighlightMenuItem.Size = new System.Drawing.Size(198, 22);
             this.autoHighlightMenuItem.Text = "&Automatic highlighting";
             this.autoHighlightMenuItem.CheckedChanged += new System.EventHandler(this.autoHighlightMenuItem_CheckedChanged);
             // 
             // mainSplitContainer
             // 
-            this.mainSplitContainer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            this.mainSplitContainer.Anchor = ((System.Windows.Forms.AnchorStyles) ((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.mainSplitContainer.Location = new System.Drawing.Point(0, 52);
@@ -896,9 +896,9 @@ namespace oSpy
             this.dataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dataGridView.Size = new System.Drawing.Size(828, 233);
             this.dataGridView.TabIndex = 2;
+            this.dataGridView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.dataGridView_MouseDoubleClick);
             this.dataGridView.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.dataGridView_CellFormatting);
             this.dataGridView.SelectionChanged += new System.EventHandler(this.dataGridView_SelectionChanged);
-            this.dataGridView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.dataGridView_MouseDoubleClick);
             // 
             // indexDataGridViewTextBoxColumn
             // 
@@ -921,9 +921,9 @@ namespace oSpy
             // 
             this.timestampDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
             this.timestampDataGridViewTextBoxColumn.DataPropertyName = "Timestamp";
-            dataGridViewCellStyle3.Format = "T";
-            dataGridViewCellStyle3.NullValue = null;
-            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle1.Format = "T";
+            dataGridViewCellStyle1.NullValue = null;
+            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle1;
             this.timestampDataGridViewTextBoxColumn.HeaderText = "Timestamp";
             this.timestampDataGridViewTextBoxColumn.Name = "timestampDataGridViewTextBoxColumn";
             this.timestampDataGridViewTextBoxColumn.ReadOnly = true;
@@ -971,9 +971,9 @@ namespace oSpy
             // returnAddressDataGridViewTextBoxColumn
             // 
             this.returnAddressDataGridViewTextBoxColumn.DataPropertyName = "ReturnAddress";
-            dataGridViewCellStyle4.Format = "x";
-            dataGridViewCellStyle4.NullValue = null;
-            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle2.Format = "x";
+            dataGridViewCellStyle2.NullValue = null;
+            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle2;
             this.returnAddressDataGridViewTextBoxColumn.HeaderText = "ReturnAddress";
             this.returnAddressDataGridViewTextBoxColumn.Name = "returnAddressDataGridViewTextBoxColumn";
             this.returnAddressDataGridViewTextBoxColumn.ReadOnly = true;
@@ -1151,7 +1151,7 @@ namespace oSpy
             this.richTextBox.ContextMenuStrip = this.dumpContextMenuStrip;
             this.richTextBox.Cursor = System.Windows.Forms.Cursors.Arrow;
             this.richTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.richTextBox.Font = new System.Drawing.Font("Lucida Console", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.richTextBox.Font = new System.Drawing.Font("Lucida Console", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte) (0)));
             this.richTextBox.ForeColor = System.Drawing.Color.Black;
             this.richTextBox.Location = new System.Drawing.Point(0, 0);
             this.richTextBox.Name = "richTextBox";
@@ -1197,7 +1197,7 @@ namespace oSpy
             // toolStripLabel1
             // 
             this.toolStripLabel1.Name = "toolStripLabel1";
-            this.toolStripLabel1.Size = new System.Drawing.Size(35, 22);
+            this.toolStripLabel1.Size = new System.Drawing.Size(36, 22);
             this.toolStripLabel1.Text = "Filter:";
             // 
             // filterComboBox
@@ -1213,8 +1213,8 @@ namespace oSpy
             "PeerAddress = \'10.0.0.15\'"});
             this.filterComboBox.Name = "filterComboBox";
             this.filterComboBox.Size = new System.Drawing.Size(300, 25);
-            this.filterComboBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.filterComboBox_KeyDown);
             this.filterComboBox.SelectedIndexChanged += new System.EventHandler(this.filterComboBox_SelectedIndexChanged);
+            this.filterComboBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.filterComboBox_KeyDown);
             // 
             // toolStripSeparator3
             // 
@@ -1224,7 +1224,7 @@ namespace oSpy
             // toolStripLabel2
             // 
             this.toolStripLabel2.Name = "toolStripLabel2";
-            this.toolStripLabel2.Size = new System.Drawing.Size(31, 22);
+            this.toolStripLabel2.Size = new System.Drawing.Size(33, 22);
             this.toolStripLabel2.Text = "Find:";
             // 
             // findTypeComboBox
@@ -1237,16 +1237,16 @@ namespace oSpy
             "UTF16 LE string, case-insensitive",
             "HEX byte sequence"});
             this.findTypeComboBox.Name = "findTypeComboBox";
-            this.findTypeComboBox.Size = new System.Drawing.Size(180, 21);
+            this.findTypeComboBox.Size = new System.Drawing.Size(180, 23);
             this.findTypeComboBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.findTypeComboBox_KeyDown);
             // 
             // findComboBox
             // 
             this.findComboBox.AutoSize = false;
             this.findComboBox.Name = "findComboBox";
-            this.findComboBox.Size = new System.Drawing.Size(200, 21);
-            this.findComboBox.Leave += new System.EventHandler(this.findComboBox_Leave);
+            this.findComboBox.Size = new System.Drawing.Size(200, 23);
             this.findComboBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.findComboBox_KeyDown);
+            this.findComboBox.Leave += new System.EventHandler(this.findComboBox_Leave);
             // 
             // toolStripSeparator4
             // 
@@ -1256,10 +1256,10 @@ namespace oSpy
             // nextPacketBtn
             // 
             this.nextPacketBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.nextPacketBtn.Image = ((System.Drawing.Image)(resources.GetObject("nextPacketBtn.Image")));
+            this.nextPacketBtn.Image = ((System.Drawing.Image) (resources.GetObject("nextPacketBtn.Image")));
             this.nextPacketBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.nextPacketBtn.Name = "nextPacketBtn";
-            this.nextPacketBtn.Size = new System.Drawing.Size(25, 22);
+            this.nextPacketBtn.Size = new System.Drawing.Size(26, 22);
             this.nextPacketBtn.Text = ">P";
             this.nextPacketBtn.ToolTipText = "Go to the next packet row";
             this.nextPacketBtn.Click += new System.EventHandler(this.nextPacketBtn_Click);
@@ -1267,10 +1267,10 @@ namespace oSpy
             // nextTransactionBtn
             // 
             this.nextTransactionBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.nextTransactionBtn.Image = ((System.Drawing.Image)(resources.GetObject("nextTransactionBtn.Image")));
+            this.nextTransactionBtn.Image = ((System.Drawing.Image) (resources.GetObject("nextTransactionBtn.Image")));
             this.nextTransactionBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.nextTransactionBtn.Name = "nextTransactionBtn";
-            this.nextTransactionBtn.Size = new System.Drawing.Size(25, 22);
+            this.nextTransactionBtn.Size = new System.Drawing.Size(26, 19);
             this.nextTransactionBtn.Text = ">T";
             this.nextTransactionBtn.ToolTipText = "Go to the next row belonging to a transaction";
             this.nextTransactionBtn.Click += new System.EventHandler(this.nextTransactionBtn_Click);
@@ -1302,22 +1302,23 @@ namespace oSpy
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.mainSplitContainer);
             this.Controls.Add(this.menuStrip);
+            this.Icon = ((System.Drawing.Icon) (resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
             this.Text = "oSpy";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
-            ((System.ComponentModel.ISupportInitialize)(this.dataSet)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).EndInit();
+            ((System.ComponentModel.ISupportInitialize) (this.dataSet)).EndInit();
+            ((System.ComponentModel.ISupportInitialize) (this.messageTbl)).EndInit();
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
             this.dataGridContextMenuStrip.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.bindingSource)).EndInit();
+            ((System.ComponentModel.ISupportInitialize) (this.bindingSource)).EndInit();
             this.dumpContextMenuStrip.ResumeLayout(false);
             this.propertyGridContextMenuStrip.ResumeLayout(false);
             this.mainSplitContainer.Panel1.ResumeLayout(false);
             this.mainSplitContainer.Panel2.ResumeLayout(false);
             this.mainSplitContainer.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).EndInit();
+            ((System.ComponentModel.ISupportInitialize) (this.dataGridView)).EndInit();
             this.lowerSplitContainer.Panel1.ResumeLayout(false);
             this.lowerSplitContainer.Panel2.ResumeLayout(false);
             this.lowerSplitContainer.ResumeLayout(false);
