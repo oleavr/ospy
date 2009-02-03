@@ -559,7 +559,7 @@ namespace oSpy
 
         private const int sectionSpacing = 5;
 
-        private const int ctxSquareWidth = 10;
+        private const int ctxSquareWidth = 6;
 
         private const int boxesTopBottomSpacing = 5;
         private const int boxesLeftRightSpacing = 5;
@@ -809,30 +809,30 @@ namespace oSpy
             Pen pen = new Pen(frameColor, framePenWidth);
 
             //
+            // Draw a round outer frame
+            //
+            eg.DrawRoundRectangle(pen, 0, 0, Width - framePenWidth, Height - framePenWidth, 4.0f);
+
+            //
             // Context
             //
             if (contextID != null)
             {
-                int ctxSquareX = Width - framePenWidth - 2 - ctxSquareWidth;
-                int ctxSquareY = framePenWidth + 2;
+                int ctxSquareX = Width - ctxSquareWidth;
+                int ctxSquareY = 0;
 
                 Color c1, c2;
                 colorPool.GetColorsForId(contextID, out c1, out c2);
 
                 eg.DrawRoundRectangle(new Pen(c2, framePenWidth),
                     ctxSquareX, ctxSquareY,
-                    ctxSquareWidth, ctxSquareWidth, 2);
+                    ctxSquareWidth, ctxSquareWidth, 1);
 
                 g.FillRectangle(new SolidBrush(c1),
                     ctxSquareX + framePenWidth, ctxSquareY + framePenWidth,
                     ctxSquareWidth - framePenWidth,
                     ctxSquareWidth - framePenWidth);
             }
-
-            //
-            // Draw a round outer frame
-            //
-            eg.DrawRoundRectangle(pen, 0, 0, Width - framePenWidth, Height - framePenWidth, 4.0f);
         }
 
         [DllImport("gdi32.dll")]
