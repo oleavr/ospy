@@ -29,6 +29,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <ApplicationIcon>oSpy.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -335,6 +336,7 @@
     <None Include="Web References\oSpyRepository\Repository.wsdl" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="oSpy.ico" />
     <Content Include="README.txt" />
   </ItemGroup>
   <ItemGroup>

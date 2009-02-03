@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("oSpy")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Ravnås Consulting")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("oSpy")]
-[assembly: AssemblyCopyright("Copyright © 2006 Ole André Vadla Ravnås <oleavr@gmail.com>")]
+[assembly: AssemblyCopyright("Copyright © 2006-2009 Ole André Vadla Ravnås <oleavr@gmail.com>")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.9.6.0")]
-[assembly: AssemblyFileVersion("1.9.6.0")]
+[assembly: AssemblyVersion("1.9.7.0")]
+[assembly: AssemblyFileVersion("1.9.7.0")]
