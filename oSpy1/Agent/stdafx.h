@@ -54,6 +54,7 @@ char *sspy_strdup(const char *str);
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <tchar.h>
 #include <winsock2.h>
 
 #pragma warning(disable: 4311 4312 4996)

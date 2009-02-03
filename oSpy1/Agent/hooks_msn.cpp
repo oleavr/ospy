@@ -193,6 +193,61 @@ msnmsgr_debug(DWORD domain,
 typedef const char *(__stdcall *GetChallengeSecretFunc) (const char **ret, int which_one);
 typedef const LPWSTR (__stdcall *ContactPropertyIdToNameFunc) (int property_id);
 
+#define ZONE_LOGGING_ENABLED_ARGS_SIZE (2 * 4)
+#define LOG_OUTPUT_ARGS_SIZE (5 * 4)
+
+static bool __cdecl
+ZoneLoggingEnabled_called(BOOL carry_on,
+						  DWORD ret_addr,
+						  LPCSTR zone_name,
+						  int zone_flags)
+{
+	carry_on = FALSE;
+	return true;
+}
+
+static bool __stdcall
+ZoneLoggingEnabled_done(bool retval,
+                        LPCSTR zone_name,
+						int zone_flags)
+{
+	return retval;
+}
+
+static void __cdecl
+LogOutput_called(BOOL carry_on,
+                 DWORD ret_addr,
+                 LPCSTR zone,
+				 int flags,
+				 int level,
+				 LPWSTR format,
+				 va_list args)
+{
+	void *bt_address = (char *) &carry_on + 8 + LOG_OUTPUT_ARGS_SIZE;
+	char buf[256];
+
+	carry_on = FALSE;
+
+	strcpy_s(buf, sizeof(buf), "wldlog");
+	strcat_s(buf, sizeof(buf), "_");
+	strcat_s(buf, sizeof(buf), zone);
+
+	log_debug_w(buf, bt_address, format, args, flags, level);
+}
+
+static void __stdcall
+LogOutput_done(int retval,
+			   LPCSTR zone,
+			   int flags,
+			   int level,
+			   LPWSTR format,
+			   va_list args)
+{
+}
+
+HOOK_GLUE_INTERRUPTIBLE(ZoneLoggingEnabled, ZONE_LOGGING_ENABLED_ARGS_SIZE);
+HOOK_GLUE_INTERRUPTIBLE(LogOutput,          LOG_OUTPUT_ARGS_SIZE);
+
 void
 hook_msn()
 {
@@ -229,7 +284,18 @@ hook_msn()
 	if (!override_function_by_signature(&msn_signatures[SIGNATURE_MSNMSGR_DEBUG],
 									    msnmsgr_debug, NULL, &error))
 	{
-		LOG_OVERRIDE_ERROR(error);
+		HMODULE logMod = GetModuleHandle(_T("wldlog.dll"));
+		if (logMod != NULL)
+		{
+			HOOK_FUNCTION(logMod, ZoneLoggingEnabled);
+			HOOK_FUNCTION(logMod, LogOutput);
+
+			sspy_free(error);
+		}
+		else
+		{
+			LOG_OVERRIDE_ERROR(error);
+		}
 	}
 
 	ContactPropertyIdToNameFunc contact_property_id_to_name;
