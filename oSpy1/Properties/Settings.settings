@@ -1,9 +1,5 @@
 ﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="oSpy.Properties" GeneratedClassName="Settings">
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)">
   <Profiles />
-  <Settings>
-    <Setting Name="oSpy_repository_RepositoryService" Type="(Web Service URL)" Scope="Application">
-      <Value Profile="(Default)">http://projects.collabora.co.uk/~oleavr/oSpy/repository/api.php</Value>
-    </Setting>
-  </Settings>
+  <Settings />
 </SettingsFile>

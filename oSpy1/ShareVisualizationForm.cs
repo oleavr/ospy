@@ -42,6 +42,7 @@ namespace oSpy
             bzStream.Close();
             memStream.Close();
 
+#if false
             try
             {
                 oSpyRepository.RepositoryService svc = new oSpy.oSpyRepository.RepositoryService();
@@ -57,6 +58,7 @@ namespace oSpy
                 MessageBox.Show(String.Format("Failed to submit visualization: {0}", ex.Message),
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+#endif
         }
 
         private void cancelBtn_Click(object sender, EventArgs e)
