@@ -472,7 +472,7 @@ log_debug_w(const char *source,
     WideCharToMultiByte(CP_ACP, 0, wide_buf, -1, buf, sizeof(buf), NULL, NULL);
 
     message_logger_log_full(source, bt_address, 0, MESSAGE_TYPE_MESSAGE,
-        MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL, NULL,
+        MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL,
         buf, strlen(buf), buf, domain, severity);
 }
 
