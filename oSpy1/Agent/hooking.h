@@ -316,7 +316,7 @@ typedef struct {
       \
       /* Continue */ \
 	  __asm push [name##_start] \
-	  __asm add [esp], 5 \
+	  __asm add dword ptr [esp], 5 \
 	  __asm ret \
     } \
   }
