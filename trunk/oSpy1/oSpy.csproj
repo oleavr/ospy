@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{32EB5641-50CC-4A6B-A913-E814EEE3B34D}</ProjectGuid>
     <OutputType>WinExe</OutputType>
@@ -295,11 +295,6 @@
     <Compile Include="TextView.Designer.cs">
       <DependentUpon>TextView.cs</DependentUpon>
     </Compile>
-    <Compile Include="Web References\oSpyRepository\Reference.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Reference.map</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Images\incoming.png" />
@@ -329,11 +324,6 @@
     <None Include="app.config" />
     <None Include="Images\activesync.png" />
     <None Include="Images\listening.png" />
-    <None Include="Web References\oSpyRepository\Reference.map">
-      <Generator>MSDiscoCodeGenerator</Generator>
-      <LastGenOutput>Reference.cs</LastGenOutput>
-    </None>
-    <None Include="Web References\oSpyRepository\Repository.wsdl" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="oSpy.ico" />
@@ -341,19 +331,6 @@
   </ItemGroup>
   <ItemGroup>
     <WebReferences Include="Web References\" />
-  </ItemGroup>
-  <ItemGroup>
-    <WebReferenceUrl Include="http://projects.collabora.co.uk/~oleavr/oSpy/repository/api.php%3fwsdl">
-      <UrlBehavior>Dynamic</UrlBehavior>
-      <RelPath>Web References\oSpyRepository\</RelPath>
-      <UpdateFromURL>http://projects.collabora.co.uk/~oleavr/oSpy/repository/api.php%3fwsdl</UpdateFromURL>
-      <ServiceLocationURL>
-      </ServiceLocationURL>
-      <CachedDynamicPropName>
-      </CachedDynamicPropName>
-      <CachedAppSettingsObjectName>Settings</CachedAppSettingsObjectName>
-      <CachedSettingsPropName>oSpy_repository_RepositoryService</CachedSettingsPropName>
-    </WebReferenceUrl>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

@@ -163,8 +163,15 @@ namespace oSpy
 
         private void submitToRepositoryToolStripMenuItem_Click(object sender, EventArgs e)
         {
+#if false
             ShareVisualizationForm frm = new ShareVisualizationForm(this);
             frm.ShowDialog(this);
+#endif
+
+            MessageBox.Show ("This feature is no longer available as oSpy is in need of a hosting provider. " +
+                "Please contact oleavr@gmail.com if you're able to help out.",
+                "Sorry",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         public XmlDocument ExportToXml()
