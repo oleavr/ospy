@@ -466,18 +466,14 @@ log_debug_w(const char *source,
 {
     WCHAR wide_buf[LOG_BUFFER_SIZE];
     char buf[LOG_BUFFER_SIZE];
-    WCHAR full_wide_buf[STRSAFE_MAX_CCH * sizeof(TCHAR)];
-    WCHAR full_buf[STRSAFE_MAX_CCH * sizeof(TCHAR)];
 
     StringCbVPrintfW(wide_buf, sizeof(wide_buf), format, args);
-    StringCbVPrintfW(full_wide_buf, sizeof(full_wide_buf), format, args);
 
     WideCharToMultiByte(CP_ACP, 0, wide_buf, -1, buf, sizeof(buf), NULL, NULL);
-    WideCharToMultiByte(CP_ACP, 0, full_wide_buf, -1, full_buf, sizeof(full_buf), NULL, NULL);
 
-	message_logger_log_full(source, bt_address, 0, MESSAGE_TYPE_MESSAGE,
-		MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL,NULL,
-		full_buf, strlen(full_buf), buf, domain, severity);
+    message_logger_log_full(source, bt_address, 0, MESSAGE_TYPE_MESSAGE,
+        MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL, NULL,
+        buf, strlen(buf), buf, domain, severity);
 }
 
 void
