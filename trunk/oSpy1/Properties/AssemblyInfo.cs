@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("oSpy")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription ("Advanced reverse-engineering tool for spying on Windows software")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany ("Ravnås Consulting")]
 [assembly: AssemblyProduct("oSpy")]
 [assembly: AssemblyCopyright("Copyright © 2006-2009 Ole André Vadla Ravnås <oleavr@gmail.com>")]
 [assembly: AssemblyTrademark("")]
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.9.7.0")]
-[assembly: AssemblyFileVersion("1.9.7.0")]
+[assembly: AssemblyVersion ("1.9.7.1")]
+[assembly: AssemblyFileVersion ("1.9.7.1")]
