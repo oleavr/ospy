@@ -69,7 +69,11 @@ namespace oSpy
         {
             get
             {
-                return Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                Version version = Assembly.GetExecutingAssembly ().GetName ().Version;
+                if (version.Revision == 0)
+                    return version.ToString (3);
+                else
+                    return version.ToString ();
             }
         }
 

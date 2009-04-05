@@ -103,11 +103,11 @@
             // versionLabel
             // 
             this.versionLabel.AutoSize = true;
-            this.versionLabel.Location = new System.Drawing.Point (292, 170);
+            this.versionLabel.Location = new System.Drawing.Point (285, 170);
             this.versionLabel.Name = "versionLabel";
-            this.versionLabel.Size = new System.Drawing.Size (31, 13);
+            this.versionLabel.Size = new System.Drawing.Size (69, 13);
             this.versionLabel.TabIndex = 15;
-            this.versionLabel.Text = "1.6.0";
+            this.versionLabel.Text = "Version 1.6.0";
             // 
             // copyrightLabel
             // 
