@@ -149,6 +149,7 @@
     <Compile Include="ShareVisualizationForm.Designer.cs">
       <DependentUpon>ShareVisualizationForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Util\SoftwareRelease.cs" />
     <Compile Include="TimelineNavigatorForm.cs">
       <SubType>Form</SubType>
     </Compile>

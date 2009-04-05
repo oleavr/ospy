@@ -118,6 +118,41 @@ namespace oSpy
             ClearState();
             LoadSettings();
             ApplyFilters();
+
+            Thread versionCheckThread = new Thread (CheckForNewerVersion);
+            versionCheckThread.Start ();
+        }
+
+        private void CheckForNewerVersion ()
+        {
+            SoftwareRelease latest = SoftwareRelease.GetLatest ();
+            if (latest == null)
+                return;
+
+            Version currentVersion = System.Reflection.Assembly.GetExecutingAssembly ().GetName ().Version;
+
+            if (latest.Version > currentVersion)
+                NotifyNewRelease (latest);
+        }
+
+        private delegate void NotifyNewReleaseHandler (SoftwareRelease latest);
+
+        private void NotifyNewRelease (SoftwareRelease latest)
+        {
+            if (InvokeRequired)
+            {
+                Invoke (new NotifyNewReleaseHandler (NotifyNewRelease), latest);
+                return;
+            }
+
+            swReleaseStatusLabel.Tag = latest.Url;
+            swReleaseStatusLabel.Text = String.Format ("New version {0} available", latest.Version);
+            swReleaseStatusLabel.Enabled = true;
+        }
+
+        private void swReleaseStatusLabel_Click (object sender, EventArgs e)
+        {
+            Help.ShowHelp (this, swReleaseStatusLabel.Tag as string);
         }
 
         protected void ClearState()
