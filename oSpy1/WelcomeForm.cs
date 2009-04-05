@@ -16,6 +16,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+using System;
 using System.Windows.Forms;
 using System.Reflection;
 
@@ -27,7 +28,7 @@ namespace oSpy
         {
             InitializeComponent ();
 
-            versionLabel.Text = AssemblyVersion;
+            versionLabel.Text = String.Format ("Version {0}", AssemblyVersion);
             copyrightLabel.Text = AssemblyCopyright;
         }
 
@@ -41,7 +42,11 @@ namespace oSpy
         {
             get
             {
-                return Assembly.GetExecutingAssembly ().GetName ().Version.ToString ();
+                Version version = Assembly.GetExecutingAssembly ().GetName ().Version;
+                if (version.Revision == 0)
+                    return version.ToString (3);
+                else
+                    return version.ToString ();
             }
         }
 
