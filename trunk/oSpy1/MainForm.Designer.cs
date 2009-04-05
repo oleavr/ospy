@@ -166,6 +166,7 @@ namespace oSpy
             this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel ();
             this.swReleaseStatusLabel = new System.Windows.Forms.ToolStripStatusLabel ();
             this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog ();
+            this.welcomeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem ();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit ();
             ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).BeginInit ();
             this.menuStrip.SuspendLayout ();
@@ -638,6 +639,7 @@ namespace oSpy
             this.helpToolStripMenuItem.DropDownItems.AddRange (new System.Windows.Forms.ToolStripItem[] {
             this.debugToolStripMenuItem1,
             this.toolStripMenuItem2,
+            this.welcomeToolStripMenuItem,
             this.aboutToolStripMenuItem});
             this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
             this.helpToolStripMenuItem.Size = new System.Drawing.Size (40, 20);
@@ -646,19 +648,19 @@ namespace oSpy
             // debugToolStripMenuItem1
             // 
             this.debugToolStripMenuItem1.Name = "debugToolStripMenuItem1";
-            this.debugToolStripMenuItem1.Size = new System.Drawing.Size (116, 22);
+            this.debugToolStripMenuItem1.Size = new System.Drawing.Size (152, 22);
             this.debugToolStripMenuItem1.Text = "&Debug";
             this.debugToolStripMenuItem1.Click += new System.EventHandler (this.debugToolStripMenuItem_Click);
             // 
             // toolStripMenuItem2
             // 
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size (113, 6);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size (149, 6);
             // 
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size (116, 22);
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size (152, 22);
             this.aboutToolStripMenuItem.Text = "&About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler (this.aboutToolStripMenuItem_Click);
             // 
@@ -1297,7 +1299,7 @@ namespace oSpy
             this.swReleaseStatusLabel.Enabled = false;
             this.swReleaseStatusLabel.IsLink = true;
             this.swReleaseStatusLabel.Name = "swReleaseStatusLabel";
-            this.swReleaseStatusLabel.Size = new System.Drawing.Size (782, 17);
+            this.swReleaseStatusLabel.Size = new System.Drawing.Size (813, 17);
             this.swReleaseStatusLabel.Spring = true;
             this.swReleaseStatusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.swReleaseStatusLabel.Click += new System.EventHandler (this.swReleaseStatusLabel_Click);
@@ -1306,6 +1308,13 @@ namespace oSpy
             // 
             this.dumpSaveFileDialog.DefaultExt = "bin";
             this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
+            // 
+            // welcomeToolStripMenuItem
+            // 
+            this.welcomeToolStripMenuItem.Name = "welcomeToolStripMenuItem";
+            this.welcomeToolStripMenuItem.Size = new System.Drawing.Size (152, 22);
+            this.welcomeToolStripMenuItem.Text = "&Welcome";
+            this.welcomeToolStripMenuItem.Click += new System.EventHandler (this.welcomeToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -1318,6 +1327,7 @@ namespace oSpy
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
             this.Text = "oSpy";
+            this.Shown += new System.EventHandler (this.MainForm_Shown);
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler (this.MainForm_FormClosed);
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).EndInit ();
             ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).EndInit ();
@@ -1479,6 +1489,7 @@ namespace oSpy
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem6;
         private System.Windows.Forms.ToolStripMenuItem copyToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel swReleaseStatusLabel;
+        private System.Windows.Forms.ToolStripMenuItem welcomeToolStripMenuItem;
     }
 }
 

@@ -16,23 +16,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-using System.Windows.Forms;
-using System.Data;
-using System.Collections.Generic;
 using System;
-using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using System.Data;
 using System.Drawing;
-using System.Text;
 using System.IO;
+using System.Text;
+using System.Threading;
+using System.Windows.Forms;
 using ICSharpCode.SharpZipLib.BZip2;
-using System.Text.RegularExpressions;
 using oSpy.Configuration;
 using oSpy.Event;
+using oSpy.Net;
 using oSpy.Parser;
 using oSpy.Util;
-using oSpy.Net;
-using System.Threading;
-using System.Xml;
 
 namespace oSpy
 {
@@ -71,7 +68,8 @@ namespace oSpy
                 UpdateDumpView();
             }
         }
-        
+
+        private WelcomeForm welcomeForm;
         private DebugForm debugForm;
         private InjectForm injectForm;
         private SoftwallForm swForm;
@@ -104,6 +102,7 @@ namespace oSpy
 
             tblMessages = dataSet.Tables["messages"];
 
+            welcomeForm = new WelcomeForm ();
             debugForm = new DebugForm();
             injectForm = new InjectForm();
             swForm = new SoftwallForm();
@@ -176,7 +175,10 @@ namespace oSpy
 
         protected void LoadSettings()
         {
-            if (config.HasSetting("Location"))
+            if (config.HasSetting ("ShowWelcomeOnStartupChecked"))
+                welcomeForm.ShowOnStartupChecked = (bool)config["ShowWelcomeOnStartupChecked"];
+
+            if (config.HasSetting ("Location"))
                 Location = (Point) config["Location"];
             if (config.HasSetting("Size"))
                 Size = (Size) config["Size"];
@@ -213,6 +215,8 @@ namespace oSpy
 
         protected void SaveSettings()
         {
+            config["ShowWelcomeOnStartupChecked"] = welcomeForm.ShowOnStartupChecked;
+
             config["Location"] = Location;
             config["Size"] = Size;
 
@@ -2125,6 +2129,19 @@ namespace oSpy
         private void dumpContextMenuStrip_Opening(object sender, System.ComponentModel.CancelEventArgs e)
         {
             selBytesToolStripMenuItem.Enabled = (curSelBytes.Length > 0);
+        }
+
+        private void MainForm_Shown (object sender, EventArgs e)
+        {
+            if (welcomeForm.ShowOnStartupChecked)
+            {
+                welcomeForm.ShowDialog (this);
+            }
+        }
+
+        private void welcomeToolStripMenuItem_Click (object sender, EventArgs e)
+        {
+            welcomeForm.ShowDialog (this);
         }
     }
 
