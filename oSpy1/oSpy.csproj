@@ -267,6 +267,10 @@
       <SubType>Designer</SubType>
       <DependentUpon>VisualTransaction.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="WelcomeForm.resx">
+      <DependentUpon>WelcomeForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
@@ -295,6 +299,12 @@
     </Compile>
     <Compile Include="TextView.Designer.cs">
       <DependentUpon>TextView.cs</DependentUpon>
+    </Compile>
+    <Compile Include="WelcomeForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="WelcomeForm.Designer.cs">
+      <DependentUpon>WelcomeForm.cs</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -327,6 +337,7 @@
     <None Include="Images\listening.png" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Images\donate.gif" />
     <Content Include="oSpy.ico" />
     <Content Include="README.txt" />
   </ItemGroup>
