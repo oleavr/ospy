@@ -53,7 +53,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="psapi.lib shlwapi.lib"
+				AdditionalDependencies="comsuppwd.lib psapi.lib shlwapi.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -115,7 +115,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="psapi.lib shlwapi.lib"
+				AdditionalDependencies="comsuppw.lib psapi.lib shlwapi.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -206,6 +206,9 @@
 		<ProjectReference
 			ReferencedProjectIdentifier="{CC5862D8-900F-4738-BDE0-8C2D6164A688}"
 			CopyLocal="false"
+			CopyLocalDependencies="false"
+			CopyLocalSatelliteAssemblies="false"
+			RelativePathToProject=".\udis86\libudis86.vcproj"
 		/>
 	</References>
 	<Files>

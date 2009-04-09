@@ -13,6 +13,7 @@ namespace oSpy.SharpDumpLib.Tests
     [TestFixture]
     public class AnalysisTests
     {
+#if false
         [Test]
         public void TestKsIoCtl ()
         {
@@ -38,6 +39,7 @@ namespace oSpy.SharpDumpLib.Tests
             Assert.AreEqual ("38 00 00 00 03 00 00 00 05 AD 94 69 EF 93 D0 11 A3 CC 00 A0 C9 22 31 96 3D 77 E8 65 56 8F D0 11 A3 B9 00 A0 C9 22 31 96 8A 42 6C FB 53 03 D1 11 90 5F 00 00 C0 CC 16 BA",
                 outputNode["Contents"]);
         }
+#endif
 
         //[Test]
         public void TestFooBar ()

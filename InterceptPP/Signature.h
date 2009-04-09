@@ -19,6 +19,9 @@
 
 namespace InterceptPP {
 
+#pragma warning (push)
+#pragma warning (disable: 4251)
+
 typedef struct {
     char *moduleName;
     int startOffset;
@@ -31,7 +34,7 @@ typedef enum {
     TOKEN_TYPE_IGNORE = 2,
 } SignatureTokenType;
 
-class SignatureToken : public BaseObject
+class INTERCEPTPP_API SignatureToken : public BaseObject
 {
 public:
     SignatureToken(SignatureTokenType type=TOKEN_TYPE_UNKNOWN, int length=0)
@@ -60,7 +63,7 @@ protected:
     OString m_data;
 };
 
-class Signature : public BaseObject
+class INTERCEPTPP_API Signature : public BaseObject
 {
 public:
     Signature(const OString &spec);
@@ -87,7 +90,7 @@ protected:
     void ParseSpec(const OString &spec);
 };
 
-class SignatureMatcher : public BaseObject
+class INTERCEPTPP_API SignatureMatcher : public BaseObject
 {
 public:
     static SignatureMatcher *Instance()
@@ -103,5 +106,7 @@ public:
 protected:
     bool MatchesSignature(const Signature &sig, void *base);
 };
+
+#pragma warning (pop)
 
 } // namespace InterceptPP
