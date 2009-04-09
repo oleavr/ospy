@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <InterceptPP/InterceptPP.h>
+#include <InterceptPP/Core.h>
 #include <InterceptPP/ConsoleLogger.h>
 #include <udis86.h>
 #include <iostream>
