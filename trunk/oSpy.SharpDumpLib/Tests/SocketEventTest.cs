@@ -57,6 +57,30 @@ namespace oSpy.SharpDumpLib.Tests
         }
 
         [Test ()]
+        public void CloseEvent ()
+        {
+            const string xml =
+                 "<event id=\"140\" processId=\"2684\" processName=\"msnmsgr.exe\" threadId=\"544\" timestamp=\"128837553527062400\" type=\"FunctionCall\">\n"
+                +"    <name>\n"
+                +"        WS2_32.dll::closesocket\n"
+                +"    </name>\n"
+                +"    <arguments direction=\"in\">\n"
+                +"        <argument name=\"s\">\n"
+                +"            <value type=\"UInt32\" value=\"0x8ac\"/>\n"
+                +"        </argument>\n"
+                +"    </arguments>\n"
+                +"    <returnValue>\n"
+                +"        <value type=\"Int32\" value=\"0\"/>\n"
+                +"    </returnValue>\n"
+                +"    <lastError value=\"0\"/>\n"
+                +"</event>\n";
+            Socket.CloseEvent ev = EventFactory.CreateFromXml (xml) as Socket.CloseEvent;
+            Assert.IsNotNull (ev);
+            Assert.AreEqual (0x8ac, ev.Socket);
+            Assert.AreEqual (0, ev.Result);
+        }
+
+        [Test ()]
         public void ConnectEvent ()
         {
             const string xml =

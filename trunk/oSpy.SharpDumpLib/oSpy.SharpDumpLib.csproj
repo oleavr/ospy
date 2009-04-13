@@ -58,6 +58,7 @@
     <Compile Include="Socket\ConnectEvent.cs" />
     <Compile Include="Socket\SendEvent.cs" />
     <Compile Include="Socket\ReceiveEvent.cs" />
+    <Compile Include="Socket\CloseEvent.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
