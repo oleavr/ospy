@@ -16,15 +16,42 @@
 //
 
 using System;
+using System.Net;
 using System.Net.Sockets;
+using System.Xml;
 
 namespace oSpy.SharpDumpLib.Socket
 {
+    public enum ConnectResult
+    {
+        Success,
+        WouldBlock,
+        Error
+    }
+
     public class ConnectEvent : Event
     {
-        public ConnectEvent (EventInformation eventInformation)
+        private uint socket;
+        public uint Socket {
+            get { return socket; }
+        }
+
+        private EndPoint remote_end_point;
+        public EndPoint RemoteEndPoint {
+            get { return remote_end_point; }
+        }
+
+        private ConnectResult result;
+        public ConnectResult Result {
+            get { return result; }
+        }
+
+        public ConnectEvent (EventInformation eventInformation, uint socket, EndPoint remoteEP, ConnectResult result)
             : base (eventInformation)
         {
+            this.socket = socket;
+            this.remote_end_point = remoteEP;
+            this.result = result;
         }
     }
 
@@ -33,7 +60,30 @@ namespace oSpy.SharpDumpLib.Socket
     {
         public Event CreateEvent (EventInformation eventInformation, System.Xml.XmlElement eventData)
         {
-            return new ConnectEvent (eventInformation);
+            FunctionCallDataElement el = new FunctionCallDataElement (eventData);
+
+            uint socket = el.GetSimpleArgumentValueAsUInt (1);
+
+            EndPoint ep = null;
+            XmlNode sa_node = eventData.SelectSingleNode ("/data/arguments[@direction='in']/argument[2]/value/value");
+            string family = sa_node.SelectSingleNode ("field[@name='sin_family']/value/@value").Value;
+            if (family == "AF_INET") {
+                string addr = sa_node.SelectSingleNode ("field[@name='sin_addr']/value/@value").Value;
+                int port = Convert.ToInt32 (sa_node.SelectSingleNode ("field[@name='sin_port']/value/@value").Value);
+                ep = new IPEndPoint (IPAddress.Parse (addr), port);
+            }
+
+            ConnectResult result;
+            if (el.ReturnValueAsInt == 0) {
+                result = ConnectResult.Success;
+            } else {
+                if (el.LastError == 10035)
+                    result = ConnectResult.WouldBlock;
+                else
+                    result = ConnectResult.Error;
+            }
+
+            return new ConnectEvent (eventInformation, socket, ep, result);
         }
     }
 }

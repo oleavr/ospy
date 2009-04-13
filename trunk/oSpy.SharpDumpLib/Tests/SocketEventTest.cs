@@ -16,6 +16,7 @@
 //
 
 using System;
+using System.Text;
 using NUnit.Framework;
 
 namespace oSpy.SharpDumpLib.Tests
@@ -49,7 +50,6 @@ namespace oSpy.SharpDumpLib.Tests
                 +"</event>";
             Socket.CreateEvent ev = EventFactory.CreateFromXml (xml) as Socket.CreateEvent;
             Assert.IsNotNull (ev);
-
             Assert.AreEqual (System.Net.Sockets.AddressFamily.InterNetwork, ev.AddressFamily);
             Assert.AreEqual (System.Net.Sockets.SocketType.Stream, ev.SocketType);
             Assert.AreEqual (System.Net.Sockets.ProtocolType.IP, ev.ProtocolType);
@@ -94,6 +94,94 @@ namespace oSpy.SharpDumpLib.Tests
                 +"</event>\n";
             Socket.ConnectEvent ev = EventFactory.CreateFromXml (xml) as Socket.ConnectEvent;
             Assert.IsNotNull (ev);
+            Assert.AreEqual (0x8ac, ev.Socket);
+            System.Net.IPEndPoint expectedEndpoint = new System.Net.IPEndPoint (System.Net.IPAddress.Parse ("65.54.239.20"), 1863);
+            Assert.AreEqual (expectedEndpoint, ev.RemoteEndPoint);
+            Assert.AreEqual (Socket.ConnectResult.WouldBlock, ev.Result);
+        }
+
+        [Test ()]
+        public void SendEvent ()
+        {
+            const string xml =
+                 "<event id=\"96\" processId=\"2684\" processName=\"msnmsgr.exe\" threadId=\"544\" timestamp=\"128837553523557360\" type=\"FunctionCall\">\n"
+                +"    <name>\n"
+                +"        WS2_32.dll::send\n"
+                +"    </name>\n"
+                +"    <arguments direction=\"in\">\n"
+                +"        <argument name=\"s\">\n"
+                +"            <value type=\"UInt32\" value=\"0x8ac\"/>\n"
+                +"        </argument>\n"
+                +"        <argument name=\"buf\">\n"
+                +"            <value type=\"Pointer\" value=\"0x020DCD38\">\n"
+                +"                <value size=\"26\" type=\"ByteArray\">\n"
+                +"                    VkVSIDEgTVNOUDE4IE1TTlAxNyBDVlIwDQo=\n"
+                +"                </value>\n"
+                +"            </value>\n"
+                +"        </argument>\n"
+                +"        <argument name=\"len\">\n"
+                +"            <value type=\"Int32\" value=\"26\"/>\n"
+                +"        </argument>\n"
+                +"        <argument name=\"flags\">\n"
+                +"            <value type=\"Int32\" value=\"0\"/>\n"
+                +"        </argument>\n"
+                +"    </arguments>\n"
+                +"    <returnValue>\n"
+                +"        <value type=\"Int32\" value=\"26\"/>\n"
+                +"    </returnValue>\n"
+                +"    <lastError value=\"0\"/>\n"
+                +"</event>\n";
+            Socket.SendEvent ev = EventFactory.CreateFromXml (xml) as Socket.SendEvent;
+            Assert.IsNotNull (ev);
+            Assert.AreEqual (0x8ac, ev.Socket);
+            Assert.AreEqual (Encoding.UTF8.GetBytes ("VER 1 MSNP18 MSNP17 CVR0\r\n"), ev.Buffer);
+            Assert.AreEqual (0, ev.Flags);
+            Assert.AreEqual (26, ev.Result);
+        }
+
+        [Test ()]
+        public void ReceiveEvent ()
+        {
+            const string xml =
+                 "<event id=\"130\" processId=\"2684\" processName=\"msnmsgr.exe\" threadId=\"544\" timestamp=\"128837553525259808\" type=\"FunctionCall\">\n"
+                +"    <name>\n"
+                +"        WSOCK32.dll::recv\n"
+                +"    </name>\n"
+                +"    <arguments direction=\"in\">\n"
+                +"        <argument name=\"s\">\n"
+                +"            <value type=\"UInt32\" value=\"0x8ac\"/>\n"
+                +"        </argument>\n"
+                +"        <argument name=\"buf\">\n"
+                +"            <value type=\"Pointer\" value=\"0x00C08230\"/>\n"
+                +"        </argument>\n"
+                +"        <argument name=\"len\">\n"
+                +"            <value type=\"Int32\" value=\"512\"/>\n"
+                +"        </argument>\n"
+                +"        <argument name=\"flags\">\n"
+                +"            <value type=\"Int32\" value=\"0\"/>\n"
+                +"        </argument>\n"
+                +"    </arguments>\n"
+                +"    <arguments direction=\"out\">\n"
+                +"        <argument name=\"buf\">\n"
+                +"            <value type=\"Pointer\" value=\"0x00C08230\">\n"
+                +"                <value size=\"14\" type=\"ByteArray\">\n"
+                +"                    VkVSIDEgTVNOUDE4DQo=\n"
+                +"                </value>\n"
+                +"            </value>\n"
+                +"        </argument>\n"
+                +"    </arguments>\n"
+                +"    <returnValue>\n"
+                +"        <value type=\"Int32\" value=\"14\"/>\n"
+                +"    </returnValue>\n"
+                +"    <lastError value=\"0\"/>\n"
+                +"</event>\n";
+            Socket.ReceiveEvent ev = EventFactory.CreateFromXml (xml) as Socket.ReceiveEvent;
+            Assert.IsNotNull (ev);
+            Assert.AreEqual (0x8ac, ev.Socket);
+            Assert.AreEqual (Encoding.UTF8.GetBytes ("VER 1 MSNP18\r\n"), ev.Buffer);
+            Assert.AreEqual (512, ev.BufferSize);
+            Assert.AreEqual (0, ev.Flags);
+            Assert.AreEqual (14, ev.Result);
         }
     }
 }

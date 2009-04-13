@@ -20,35 +20,76 @@ using System.Xml;
 
 namespace oSpy.SharpDumpLib
 {
-    public class FunctionCallDataElement
+    internal class FunctionCallDataElement
     {
         private XmlElement data_element;
 
         public string FirstArgument {
-            get { return data_element.SelectSingleNode ("/data/arguments[@direction='in']/argument[1]/value/@value").InnerText; }
+            get { return GetSimpleArgumentValueAsString (1); }
         }
 
         public string SecondArgument {
-            get { return data_element.SelectSingleNode ("/data/arguments[@direction='in']/argument[2]/value/@value").InnerText; }
+            get { return GetSimpleArgumentValueAsString (2); }
         }
 
         public string ThirdArgument {
-            get { return data_element.SelectSingleNode ("/data/arguments[@direction='in']/argument[3]/value/@value").InnerText; }
+            get { return GetSimpleArgumentValueAsString (3); }
+        }
+
+        public string ReturnValue {
+            get { return data_element.SelectSingleNode ("/data/returnValue/value/@value").InnerText.Trim (); }
+        }
+
+        public int ReturnValueAsInt {
+            get {
+                return ConvertStringToInt (ReturnValue);
+            }
         }
 
         public uint ReturnValueAsUInt {
             get {
-                string str = data_element.SelectSingleNode ("/data/returnValue/value/@value").InnerText;
-                if (str.StartsWith ("0x"))
-                    return Convert.ToUInt32 (str, 16);
-                else
-                    return Convert.ToUInt32 (str);
+                return ConvertStringToUInt (ReturnValue);
             }
         }
 
-        public FunctionCallDataElement(XmlElement dataElement)
+        public int LastError {
+            get { return Convert.ToInt32 (data_element.SelectSingleNode ("/data/lastError/@value").Value); }
+        }
+
+        public FunctionCallDataElement (XmlElement dataElement)
         {
             this.data_element = dataElement;
+        }
+
+        public string GetSimpleArgumentValueAsString (uint n)
+        {
+            return data_element.SelectSingleNode ("/data/arguments[@direction='in']/argument[" + n + "]/value/@value").InnerText.Trim ();
+        }
+
+        public int GetSimpleArgumentValueAsInt (uint n)
+        {
+            return ConvertStringToInt (GetSimpleArgumentValueAsString (n));
+        }
+
+        public uint GetSimpleArgumentValueAsUInt (uint n)
+        {
+            return ConvertStringToUInt (GetSimpleArgumentValueAsString (n));
+        }
+
+        private int ConvertStringToInt (string str)
+        {
+            if (str.StartsWith ("0x"))
+                return Convert.ToInt32 (str, 16);
+            else
+                return Convert.ToInt32 (str);            
+        }
+
+        private uint ConvertStringToUInt (string str)
+        {
+            if (str.StartsWith ("0x"))
+                return Convert.ToUInt32 (str, 16);
+            else
+                return Convert.ToUInt32 (str);            
         }
     }
 }
