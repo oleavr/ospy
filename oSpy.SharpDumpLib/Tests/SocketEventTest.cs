@@ -18,10 +18,11 @@
 using System;
 using System.Text;
 using NUnit.Framework;
+using NUnit.Framework.SyntaxHelpers;
 
 namespace oSpy.SharpDumpLib.Tests
 {
-    [TestFixture()]
+    [TestFixture ()]
     public class SocketEventTest
     {
         [Test ()]
@@ -49,11 +50,11 @@ namespace oSpy.SharpDumpLib.Tests
                 +"    <lastError value=\"0\"/>\n"
                 +"</event>";
             Socket.CreateEvent ev = EventFactory.CreateFromXml (xml) as Socket.CreateEvent;
-            Assert.IsNotNull (ev);
-            Assert.AreEqual (System.Net.Sockets.AddressFamily.InterNetwork, ev.AddressFamily);
-            Assert.AreEqual (System.Net.Sockets.SocketType.Stream, ev.SocketType);
-            Assert.AreEqual (System.Net.Sockets.ProtocolType.IP, ev.ProtocolType);
-            Assert.AreEqual (0x8ac, ev.Result);
+            Assert.That (ev, Is.Not.Null);
+            Assert.That (ev.AddressFamily, Is.EqualTo (System.Net.Sockets.AddressFamily.InterNetwork));
+            Assert.That (ev.SocketType, Is.EqualTo (System.Net.Sockets.SocketType.Stream));
+            Assert.That (ev.ProtocolType, Is.EqualTo (System.Net.Sockets.ProtocolType.IP));
+            Assert.That (ev.Result, Is.EqualTo (0x8ac));
         }
 
         [Test ()]
@@ -75,9 +76,9 @@ namespace oSpy.SharpDumpLib.Tests
                 +"    <lastError value=\"0\"/>\n"
                 +"</event>\n";
             Socket.CloseEvent ev = EventFactory.CreateFromXml (xml) as Socket.CloseEvent;
-            Assert.IsNotNull (ev);
-            Assert.AreEqual (0x8ac, ev.Socket);
-            Assert.AreEqual (0, ev.Result);
+            Assert.That (ev, Is.Not.Null);
+            Assert.That (ev.Socket, Is.EqualTo (0x8ac));
+            Assert.That (ev.Result, Is.EqualTo (0));
         }
 
         [Test ()]
@@ -117,11 +118,11 @@ namespace oSpy.SharpDumpLib.Tests
                 +"    <lastError value=\"10035\"/>\n"
                 +"</event>\n";
             Socket.ConnectEvent ev = EventFactory.CreateFromXml (xml) as Socket.ConnectEvent;
-            Assert.IsNotNull (ev);
-            Assert.AreEqual (0x8ac, ev.Socket);
+            Assert.That (ev, Is.Not.Null);
+            Assert.That (ev.Socket, Is.EqualTo (0x8ac));
             System.Net.IPEndPoint expectedEndpoint = new System.Net.IPEndPoint (System.Net.IPAddress.Parse ("65.54.239.20"), 1863);
-            Assert.AreEqual (expectedEndpoint, ev.RemoteEndPoint);
-            Assert.AreEqual (Socket.ConnectResult.WouldBlock, ev.Result);
+            Assert.That (ev.RemoteEndPoint, Is.EqualTo (expectedEndpoint));
+            Assert.That (ev.Result, Is.EqualTo (Socket.ConnectResult.WouldBlock));
         }
 
         [Test ()]
@@ -156,11 +157,11 @@ namespace oSpy.SharpDumpLib.Tests
                 +"    <lastError value=\"0\"/>\n"
                 +"</event>\n";
             Socket.SendEvent ev = EventFactory.CreateFromXml (xml) as Socket.SendEvent;
-            Assert.IsNotNull (ev);
-            Assert.AreEqual (0x8ac, ev.Socket);
-            Assert.AreEqual (Encoding.UTF8.GetBytes ("VER 1 MSNP18 MSNP17 CVR0\r\n"), ev.Buffer);
-            Assert.AreEqual (0, ev.Flags);
-            Assert.AreEqual (26, ev.Result);
+            Assert.That (ev, Is.Not.Null);
+            Assert.That (ev.Socket, Is.EqualTo (0x8ac));
+            Assert.That (ev.Buffer, Is.EqualTo (Encoding.UTF8.GetBytes ("VER 1 MSNP18 MSNP17 CVR0\r\n")));
+            Assert.That (ev.Flags, Is.EqualTo (0));
+            Assert.That (ev.Result, Is.EqualTo (26));
         }
 
         [Test ()]
@@ -200,12 +201,12 @@ namespace oSpy.SharpDumpLib.Tests
                 +"    <lastError value=\"0\"/>\n"
                 +"</event>\n";
             Socket.ReceiveEvent ev = EventFactory.CreateFromXml (xml) as Socket.ReceiveEvent;
-            Assert.IsNotNull (ev);
-            Assert.AreEqual (0x8ac, ev.Socket);
-            Assert.AreEqual (Encoding.UTF8.GetBytes ("VER 1 MSNP18\r\n"), ev.Buffer);
-            Assert.AreEqual (512, ev.BufferSize);
-            Assert.AreEqual (0, ev.Flags);
-            Assert.AreEqual (14, ev.Result);
+            Assert.That (ev, Is.Not.Null);
+            Assert.That (ev.Socket, Is.EqualTo (0x8ac));
+            Assert.That (ev.Buffer, Is.EqualTo (Encoding.UTF8.GetBytes ("VER 1 MSNP18\r\n")));
+            Assert.That (ev.BufferSize, Is.EqualTo (512));
+            Assert.That (ev.Flags, Is.EqualTo (0));
+            Assert.That (ev.Result, Is.EqualTo (14));
         }
     }
 }
