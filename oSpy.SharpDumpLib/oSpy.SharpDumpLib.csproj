@@ -48,6 +48,7 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="ICSharpCode.SharpZipLib" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -59,6 +60,9 @@
     <Compile Include="Socket\SendEvent.cs" />
     <Compile Include="Socket\ReceiveEvent.cs" />
     <Compile Include="Socket\CloseEvent.cs" />
+    <Compile Include="Dump.cs" />
+    <Compile Include="DumpLoader.cs" />
+    <Compile Include="AsyncWorker.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
