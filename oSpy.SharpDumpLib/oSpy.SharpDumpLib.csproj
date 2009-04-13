@@ -1,8 +1,9 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.50727</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{4888CEE7-9E21-4558-89EB-7D2D2838B48B}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -14,6 +15,9 @@
     <OldToolsVersion>2.0</OldToolsVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkSubset>
+    </TargetFrameworkSubset>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -46,35 +50,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AsyncWorker.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="BulkStorage.cs" />
-    <Compile Include="CryptoResource.cs" />
-    <Compile Include="DataStream.cs" />
-    <Compile Include="DataTransfer.cs" />
-    <Compile Include="Dump.cs" />
-    <Compile Include="DumpAnalyzer.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="DumpBuilder.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="DumpLoader.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="DumpSaver.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="IMetadata.cs" />
-    <Compile Include="Process.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Protocol.cs" />
-    <Compile Include="Resource.cs" />
-    <Compile Include="DumpParser.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="SocketResource.cs" />
+    <Compile Include="Event.cs" />
+    <Compile Include="Socket\CreateEvent.cs" />
+    <Compile Include="EventFactory.cs" />
+    <Compile Include="Xml\FunctionCallDataElement.cs" />
+    <Compile Include="Socket\ConnectEvent.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -84,4 +65,8 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <Folder Include="Socket\" />
+    <Folder Include="Xml\" />
+  </ItemGroup>
 </Project>
