@@ -19,10 +19,11 @@ using System;
 using System.Text;
 using System.Xml;
 using NUnit.Framework;
+using NUnit.Framework.SyntaxHelpers;
 
 namespace oSpy.SharpDumpLib.Tests
 {
-    [TestFixture()]
+    [TestFixture ()]
     public class GenericEventTest
     {
         private const string error_event_xml =
@@ -36,19 +37,18 @@ namespace oSpy.SharpDumpLib.Tests
         public void FromXml ()
         {
             Event ev = EventFactory.CreateFromXml (error_event_xml);
-            Assert.IsNotNull (ev);
-            Assert.AreEqual (typeof (Event), ev.GetType ());
+            Assert.That (ev, Is.Not.Null & Is.TypeOf (typeof (Event)));
 
-            Assert.AreEqual (1, ev.Id);
-            Assert.AreEqual (EventType.Error, ev.Type);
-            Assert.AreEqual (2684, ev.ProcessId);
-            Assert.AreEqual ("msnmsgr.exe", ev.ProcessName);
-            Assert.AreEqual (1128, ev.ThreadId);
-            Assert.AreEqual (DateTime.FromFileTimeUtc (128837553502326832), ev.Timestamp);
+            Assert.That (ev.Id, Is.EqualTo (1));
+            Assert.That (ev.Type, Is.EqualTo (EventType.Error));
+            Assert.That (ev.ProcessId, Is.EqualTo (2684));
+            Assert.That (ev.ProcessName, Is.EqualTo ("msnmsgr.exe"));
+            Assert.That (ev.ThreadId, Is.EqualTo (1128));
+            Assert.That (ev.Timestamp, Is.EqualTo (DateTime.FromFileTimeUtc (128837553502326832)));
 
             string expected_body = CanonicalizeEventBodyXml ("<data>" + error_event_body + "</data>");
             string actual_body = CanonicalizeEventBodyXml (ev.Data);
-            Assert.AreEqual (expected_body, actual_body);
+            Assert.That (actual_body, Is.EqualTo (expected_body));
         }
 
         private string CanonicalizeEventBodyXml (string xml)
