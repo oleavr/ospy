@@ -1,12 +1,12 @@
 //
 // Copyright (c) 2009 Ole André Vadla Ravnås <oleavr@gmail.com>
 //
-// This program is free software: you can redistribute it and/or modify
+// This library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// This program is distributed in the hope that it will be useful,
+// This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
@@ -41,6 +41,36 @@ namespace oSpy.SharpDumpLib
             }
         }
 
+        public Event CreateEvent (string xml)
+        {
+            XmlDocument doc = new XmlDocument ();
+            doc.LoadXml (xml);
+            return CreateEvent (doc.DocumentElement);
+        }
+
+        public Event CreateEvent (XmlReader reader)
+        {
+            XmlDocument doc = new XmlDocument ();
+            doc.Load (reader);
+            return CreateEvent (doc.DocumentElement);
+        }
+
+        public Event CreateEvent (XmlElement element)
+        {
+            XmlAttributeCollection attrs = element.Attributes;
+
+            EventInformation event_information = new EventInformation ();
+            event_information.Id = Convert.ToUInt32 (attrs["id"].Value);
+            event_information.Type = (EventType) Enum.Parse (typeof (EventType), attrs["type"].Value);
+            event_information.Timestamp = DateTime.FromFileTimeUtc (Convert.ToInt64 (attrs["timestamp"].Value));
+            event_information.ProcessName = attrs["processName"].Value;
+            event_information.ProcessId = Convert.ToUInt32 (attrs["processId"].Value);
+            event_information.ThreadId = Convert.ToUInt32 (attrs["threadId"].Value);
+            event_information.Data = "<data>" + element.InnerXml + "</data>";
+
+            return CreateEvent (event_information);
+        }
+
         public Event CreateEvent (EventInformation eventInformation)
         {
             SpecificEventFactory sf = null;
@@ -63,27 +93,9 @@ namespace oSpy.SharpDumpLib
         }
         
         public static Event CreateFromXml (string xml)
-        {            
-            XmlReader reader = new XmlTextReader (new StringReader (xml));
-            reader.Read ();
-            reader = reader.ReadSubtree ();
-            XmlDocument doc = new XmlDocument ();
-            doc.Load (reader);
-
-            XmlElement el = doc.DocumentElement;
-            XmlAttributeCollection attrs = el.Attributes;
-
-            EventInformation event_information = new EventInformation ();
-            event_information.Id = Convert.ToUInt32 (attrs["id"].Value);
-            event_information.Type = (EventType) Enum.Parse (typeof (EventType), attrs["type"].Value);
-            event_information.Timestamp = DateTime.FromFileTimeUtc (Convert.ToInt64 (attrs["timestamp"].Value));
-            event_information.ProcessName = attrs["processName"].Value;
-            event_information.ProcessId = Convert.ToUInt32 (attrs["processId"].Value);
-            event_information.ThreadId = Convert.ToUInt32 (attrs["threadId"].Value);
-            event_information.Data = "<data>" + el.InnerXml + "</data>";
-
+        {
             EventFactory factory = new EventFactory ();
-            return factory.CreateEvent (event_information);
+            return factory.CreateEvent (xml);
         }
     }
 
