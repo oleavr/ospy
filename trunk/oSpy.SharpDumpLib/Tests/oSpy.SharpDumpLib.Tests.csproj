@@ -57,6 +57,8 @@
     <Compile Include="GenericEventTest.cs" />
     <Compile Include="SocketEventTest.cs" />
     <Compile Include="DumpLoaderTest.cs" />
+    <Compile Include="TestOsdStream.cs" />
+    <Compile Include="TestEventXml.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\oSpy.SharpDumpLib.csproj">
