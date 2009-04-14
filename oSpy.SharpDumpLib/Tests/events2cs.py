@@ -27,10 +27,17 @@ while True:
             convertedline = line
             if convertedline[0] == '\t':
                     convertedline = convertedline[1:]
-            prefix = '            '
+            prefix = '                      '
             if result: prefix += '+'
             else: prefix += ' '
-            convertedline = prefix + '"%s\\n"' % convertedline.replace('"', '\\"').replace('\t', '    ')
+            indentspaces = ''
+            for c in convertedline:
+                if c == '\t':
+                    indentspaces += '    '
+                else:
+                    break
+            content = convertedline.replace('"', '\\"').replace('\t', '')
+            convertedline = prefix + '%s"%s"' % (indentspaces, content)
             result.append(convertedline)
 
         result[-1] += ';'
