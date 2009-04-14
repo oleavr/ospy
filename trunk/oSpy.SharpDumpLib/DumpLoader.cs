@@ -157,8 +157,8 @@ namespace oSpy.SharpDumpLib
             else if (is_compressed != 0 && is_compressed != 1)
                 throw new InvalidDataException ("invalid value for is_compressed");
 
-            //if (is_compressed == 1)
-            //    stream = new BZip2InputStream (stream);
+            if (is_compressed == 1)
+                stream = new BZip2InputStream (stream);
 
             XmlTextReader xml_reader = new XmlTextReader (stream);
 

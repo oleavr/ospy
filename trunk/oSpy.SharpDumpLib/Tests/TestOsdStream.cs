@@ -18,42 +18,66 @@
 using System;
 using System.IO;
 using System.Text;
+using ICSharpCode.SharpZipLib.BZip2;
 
 namespace oSpy.SharpDumpLib.Tests
 {
-    public class TestOsdStream : MemoryStream
+    public class TestOsdStream
     {
-        private TestOsdStream (byte[] buffer)
-            : base (buffer)
+        public static Stream GenerateUncompressedFrom (params string[] xmlEvents)
         {
+            return GenerateFrom (false, xmlEvents);
         }
-        
-        public static TestOsdStream GenerateFromXmlEvents (params string[] xmlEvents)
+
+        public static Stream GenerateCompressedFrom (params string[] xmlEvents)
         {
-            byte[] buffer;
-            
-            using (MemoryStream stream = new MemoryStream ()) {
-                using (BinaryWriter bw = new BinaryWriter (stream, Encoding.ASCII)) {
+            return GenerateFrom (true, xmlEvents);
+        }
+
+        private static Stream GenerateFrom (bool compressed, params string[] xmlEvents)
+        {
+            byte[] header;
+            byte[] body;
+
+            using (MemoryStream header_stream = new MemoryStream ()) {
+                using (BinaryWriter header_writer = new BinaryWriter (header_stream, Encoding.ASCII)) {
                     byte[] magic = Encoding.ASCII.GetBytes ("oSpy");
                     const uint version = 2;
-                    const uint is_compressed = 0;
+                    uint is_compressed = (compressed) ? 1U : 0U;
                     uint num_events = (uint) xmlEvents.Length;
 
-                    bw.Write (magic);
-                    bw.Write (version);
-                    bw.Write (is_compressed);
-                    bw.Write (num_events);
-
-                    bw.Write (Encoding.UTF8.GetBytes ("<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><events>"));
-                    foreach (string xml in xmlEvents)
-                        bw.Write (Encoding.UTF8.GetBytes (xml));
-                    bw.Write (Encoding.UTF8.GetBytes ("</events>"));
+                    header_writer.Write (magic);
+                    header_writer.Write (version);
+                    header_writer.Write (is_compressed);
+                    header_writer.Write (num_events);
                 }
 
-                buffer = stream.ToArray ();
+                header = header_stream.ToArray ();
             }
 
-            return new TestOsdStream (buffer);
+            using (MemoryStream raw_body_stream = new MemoryStream ()) {
+                Stream body_stream;
+
+                if (compressed)
+                    body_stream = new BZip2OutputStream (raw_body_stream);
+                else
+                    body_stream = raw_body_stream;
+
+                using (BinaryWriter body_writer = new BinaryWriter (body_stream, Encoding.UTF8)) {
+                    body_writer.Write (Encoding.UTF8.GetBytes ("<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><events>"));
+                    foreach (string xml in xmlEvents)
+                        body_writer.Write (Encoding.UTF8.GetBytes (xml));
+                    body_writer.Write (Encoding.UTF8.GetBytes ("</events>"));
+                }
+
+                body_stream.Flush ();
+                body = raw_body_stream.ToArray ();
+            }
+
+            byte[] result = new byte[header.Length + body.Length];
+            header.CopyTo (result, 0);
+            body.CopyTo (result, header.Length);
+            return new MemoryStream (result);
         }
     }
 }
