@@ -30,7 +30,20 @@ namespace oSpy.SharpDumpLib.Tests
         public void LoadUncompressed ()
         {
             DumpLoader loader = new DumpLoader ();
-            Stream stream = TestOsdStream.GenerateFromXmlEvents (TestEventXml.E001_Error, TestEventXml.E083_CreateSocket, TestEventXml.E140_CloseSocket);
+            Stream stream = TestOsdStream.GenerateUncompressedFrom (TestEventXml.E001_Error, TestEventXml.E083_CreateSocket, TestEventXml.E140_CloseSocket);
+            Dump dump = loader.Load (stream);
+            Assert.That (dump.Events.Count, Is.EqualTo (3));
+            Assert.That (dump.Events.Keys, Is.EquivalentTo (new uint[] { 1, 83, 140 }));
+            Assert.That (dump.Events[1].Id, Is.EqualTo (1));
+            Assert.That (dump.Events[83].Id, Is.EqualTo (83));
+            Assert.That (dump.Events[140].Id, Is.EqualTo (140));
+        }
+
+        [Test ()]
+        public void LoadCompressed ()
+        {
+            DumpLoader loader = new DumpLoader ();
+            Stream stream = TestOsdStream.GenerateCompressedFrom (TestEventXml.E001_Error, TestEventXml.E083_CreateSocket, TestEventXml.E140_CloseSocket);
             Dump dump = loader.Load (stream);
             Assert.That (dump.Events.Count, Is.EqualTo (3));
             Assert.That (dump.Events.Keys, Is.EquivalentTo (new uint[] { 1, 83, 140 }));
