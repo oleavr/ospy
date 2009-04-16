@@ -58,8 +58,8 @@ namespace oSpy.SharpDumpLib
             get { return event_information.ThreadId; }
         }
 
-        public string Data {
-            get { return event_information.Data; }
+        public string RawData {
+            get { return event_information.RawData; }
         }
 
         public Event (EventInformation eventInformation)
@@ -76,6 +76,6 @@ namespace oSpy.SharpDumpLib
         public string ProcessName;
         public uint ProcessId;
         public uint ThreadId;
-        public string Data;
+        public string RawData;
     }
 }

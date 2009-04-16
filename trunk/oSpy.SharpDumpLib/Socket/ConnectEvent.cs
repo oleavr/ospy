@@ -65,7 +65,7 @@ namespace oSpy.SharpDumpLib.Socket
             uint socket = el.GetSimpleArgumentValueAsUInt (1);
 
             EndPoint ep = null;
-            XmlNode sa_node = eventData.SelectSingleNode ("/data/arguments[@direction='in']/argument[2]/value/value");
+            XmlNode sa_node = eventData.SelectSingleNode ("/event/arguments[@direction='in']/argument[2]/value/value");
             string family = sa_node.SelectSingleNode ("field[@name='sin_family']/value/@value").Value;
             if (family == "AF_INET") {
                 string addr = sa_node.SelectSingleNode ("field[@name='sin_addr']/value/@value").Value;
