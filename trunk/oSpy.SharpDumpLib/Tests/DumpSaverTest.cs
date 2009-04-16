@@ -16,8 +16,10 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Xml;
+using ICSharpCode.SharpZipLib.BZip2;
 using NUnit.Framework;
 using NUnit.Framework.SyntaxHelpers;
 
@@ -29,29 +31,65 @@ namespace oSpy.SharpDumpLib.Tests
         [Test ()]
         public void SaveUncompressed ()
         {
-            DumpSaver saver = new DumpSaver ();
-            Dump dump = new Dump ();
-            dump.AddEvent (EventFactory.CreateFromXml (TestEventXml.E001_Error));
-            dump.AddEvent (EventFactory.CreateFromXml (TestEventXml.E083_CreateSocket));
-            dump.AddEvent (EventFactory.CreateFromXml (TestEventXml.E084_Connect));
-            MemoryStream stream = new MemoryStream ();
-            saver.Save (dump, stream);
+            SaveAndVerifyOutput (DumpFormat.Uncompressed);
+        }
 
-            stream.Seek (0, SeekOrigin.Begin);
+        [Test ()]
+        public void SaveCompressed ()
+        {
+            SaveAndVerifyOutput (DumpFormat.Compressed);
+        }
+
+        [Test ()]
+        public void SaveFullCycleUncompressed ()
+        {
+            SaveAndLoadFullCycle (DumpFormat.Uncompressed);
+        }
+
+        [Test ()]
+        public void SaveFullCycleCompressed ()
+        {
+            SaveAndLoadFullCycle (DumpFormat.Compressed);
+        }
+
+        private void SaveAndVerifyOutput (DumpFormat dumpFormat)
+        {
+            DumpSaver saver = new DumpSaver ();
+            MemoryStream outstream = new MemoryStream ();
+            Dump dump = GenerateTestDump ();
+            saver.Save (dump, dumpFormat, outstream);
+            byte[] buffer = outstream.ToArray ();
+
+            Stream stream = new MemoryStream (buffer);
             BinaryReader reader = new BinaryReader (stream);
 
-            // Header
+            ReadAndVerifyHeader (reader, dumpFormat);
+            ReadAndVerifyBody (stream, dumpFormat);
+
+            Assert.That (stream.Position, Is.EqualTo (stream.Length),
+                         "Should not be any trailing data");
+        }
+
+        private void ReadAndVerifyHeader (BinaryReader reader, DumpFormat dumpFormat)
+        {
             string magic = new string (reader.ReadChars (4));
             uint version = reader.ReadUInt32 ();
             uint is_compressed = reader.ReadUInt32 ();
             uint num_events = reader.ReadUInt32 ();
             Assert.That (magic, Is.EqualTo ("oSpy"));
             Assert.That (version, Is.EqualTo (2));
-            Assert.That (is_compressed, Is.EqualTo (0));
+            if (dumpFormat == DumpFormat.Compressed)
+                Assert.That (is_compressed, Is.EqualTo (1));
+            else
+                Assert.That (is_compressed, Is.EqualTo (0));
             Assert.That (num_events, Is.EqualTo (3));
+        }
 
-            // Body
+        private void ReadAndVerifyBody (Stream stream, DumpFormat dumpFormat)
+        {
             XmlDocument doc = new XmlDocument ();
+            if (dumpFormat == DumpFormat.Compressed)
+                stream = new ICSharpCode.SharpZipLib.BZip2.BZip2InputStream (stream);
             doc.Load (stream);
             Assert.That (doc.DocumentElement.ChildNodes.Count, Is.EqualTo (3));
             Assert.That (doc.DocumentElement.ChildNodes.Item (0).OuterXml,
@@ -60,9 +98,30 @@ namespace oSpy.SharpDumpLib.Tests
                          Is.EqualTo (XmlString.Canonicalize (TestEventXml.E083_CreateSocket)));
             Assert.That (doc.DocumentElement.ChildNodes.Item (2).OuterXml,
                          Is.EqualTo (XmlString.Canonicalize (TestEventXml.E084_Connect)));
+        }
 
-            Assert.That (stream.Position, Is.EqualTo (stream.Length),
-                         "Should not be any trailing data");
+        private void SaveAndLoadFullCycle (DumpFormat dumpFormat)
+        {
+            DumpSaver saver = new DumpSaver ();
+            MemoryStream outstream = new MemoryStream ();
+            Dump canonicalDump = GenerateTestDump ();
+            saver.Save (canonicalDump, dumpFormat, outstream);
+
+            DumpLoader loader = new DumpLoader ();
+            Dump loadedDump = loader.Load (new MemoryStream (outstream.ToArray ()));
+            foreach (KeyValuePair<uint, Event> entry in loadedDump.Events)
+            {
+                Assert.That (entry.Value.RawData, Is.EqualTo (canonicalDump.Events[entry.Key].RawData));
+            }
+        }
+
+        private Dump GenerateTestDump ()
+        {
+            Dump dump = new Dump ();
+            dump.AddEvent (EventFactory.CreateFromXml (TestEventXml.E001_Error));
+            dump.AddEvent (EventFactory.CreateFromXml (TestEventXml.E083_CreateSocket));
+            dump.AddEvent (EventFactory.CreateFromXml (TestEventXml.E084_Connect));
+            return dump;
         }
     }
 }
