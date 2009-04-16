@@ -21,37 +21,42 @@ namespace oSpy.SharpDumpLib.Socket
 {
     public class CloseEvent : Event
     {
-        private uint socket;
-        public uint Socket {
-            get { return socket; }
-        }
+        private uint m_socket;
+        private int m_result;
 
-        private int result;
-        public int Result {
-            get { return result; }
-        }
-
-        public CloseEvent (EventInformation eventInformation, uint socket,
-                           int result)
-            : base (eventInformation)
+        public uint Socket
         {
-            this.socket = socket;
-            this.result = result;
+            get
+            {
+                return m_socket;
+            }
+        }
+
+        public int Result
+        {
+            get
+            {
+                return m_result;
+            }
+        }
+
+        public CloseEvent(EventInformation eventInformation, uint socket, int result)
+            : base(eventInformation)
+        {
+            m_socket = socket;
+            m_result = result;
         }
     }
 
-    [FunctionCallEventFactory ("closesocket")]
-    public class CloseEventFactory : SpecificEventFactory
+    [FunctionCallEventFactory("closesocket")]
+    public class CloseEventFactory : ISpecificEventFactory
     {
-        public Event CreateEvent (EventInformation eventInformation, System.Xml.XmlElement eventData)
+        public Event CreateEvent(EventInformation eventInformation, System.Xml.XmlElement eventData)
         {
-            FunctionCallDataElement el = new FunctionCallDataElement (eventData);
-
-            uint socket = el.GetSimpleArgumentValueAsUInt (1);
-
+            FunctionCallDataElement el = new FunctionCallDataElement(eventData);
+            uint socket = el.GetSimpleArgumentValueAsUInt(1);
             int result = el.ReturnValueAsInt;
-
-            return new CloseEvent (eventInformation, socket, result);
+            return new CloseEvent(eventInformation, socket, result);
         }
     }
 }

@@ -22,16 +22,21 @@ namespace oSpy.SharpDumpLib
 {
     public class Dump
     {
-        private SortedDictionary<uint, Event> events = new SortedDictionary<uint, Event> ();
-        public SortedDictionary<uint, Event> Events {
-            get { return events; }
+        private SortedDictionary<uint, Event> m_events = new SortedDictionary<uint, Event>();
+
+        public SortedDictionary<uint, Event> Events
+        {
+            get
+            {
+                return m_events;
+            }
         }
 
-        public void AddEvent (Event e)
+        public void AddEvent(Event ev)
         {
-            if (events.ContainsKey (e.Id))
-                throw new System.IO.InvalidDataException (String.Format ("id {0} is already in the dump", e.Id));
-            events[e.Id] = e;
+            if (m_events.ContainsKey(ev.Id))
+                throw new System.IO.InvalidDataException(String.Format("id {0} is already in the dump", ev.Id));
+            m_events[ev.Id] = ev;
         }
     }
 }

@@ -17,7 +17,6 @@
 
 using System;
 using System.Net;
-using System.Net.Sockets;
 using System.Xml;
 
 namespace oSpy.SharpDumpLib.Socket
@@ -31,59 +30,76 @@ namespace oSpy.SharpDumpLib.Socket
 
     public class ConnectEvent : Event
     {
-        private uint socket;
-        public uint Socket {
-            get { return socket; }
-        }
+        private uint m_socket;
+        private EndPoint m_remoteEndPoint;
+        private ConnectResult m_result;
 
-        private EndPoint remote_end_point;
-        public EndPoint RemoteEndPoint {
-            get { return remote_end_point; }
-        }
-
-        private ConnectResult result;
-        public ConnectResult Result {
-            get { return result; }
-        }
-
-        public ConnectEvent (EventInformation eventInformation, uint socket, EndPoint remoteEP, ConnectResult result)
-            : base (eventInformation)
+        public uint Socket
         {
-            this.socket = socket;
-            this.remote_end_point = remoteEP;
-            this.result = result;
+            get
+            {
+                return m_socket;
+            }
+        }
+
+        public EndPoint RemoteEndPoint
+        {
+            get
+            {
+                return m_remoteEndPoint;
+            }
+        }
+
+        public ConnectResult Result
+        {
+            get
+            {
+                return m_result;
+            }
+        }
+
+        public ConnectEvent(EventInformation eventInformation, uint socket, EndPoint remoteEP, ConnectResult result)
+            : base(eventInformation)
+        {
+            m_socket = socket;
+            m_remoteEndPoint = remoteEP;
+            m_result = result;
         }
     }
 
-    [FunctionCallEventFactory ("connect")]
-    public class ConnectEventFactory : SpecificEventFactory
+    [FunctionCallEventFactory("connect")]
+    public class ConnectEventFactory : ISpecificEventFactory
     {
-        public Event CreateEvent (EventInformation eventInformation, System.Xml.XmlElement eventData)
+        public Event CreateEvent(EventInformation eventInformation, System.Xml.XmlElement eventData)
         {
-            FunctionCallDataElement el = new FunctionCallDataElement (eventData);
+            FunctionCallDataElement el = new FunctionCallDataElement(eventData);
 
-            uint socket = el.GetSimpleArgumentValueAsUInt (1);
+            uint socket = el.GetSimpleArgumentValueAsUInt(1);
 
             EndPoint ep = null;
-            XmlNode sa_node = eventData.SelectSingleNode ("/event/arguments[@direction='in']/argument[2]/value/value");
-            string family = sa_node.SelectSingleNode ("field[@name='sin_family']/value/@value").Value;
-            if (family == "AF_INET") {
-                string addr = sa_node.SelectSingleNode ("field[@name='sin_addr']/value/@value").Value;
-                int port = Convert.ToInt32 (sa_node.SelectSingleNode ("field[@name='sin_port']/value/@value").Value);
-                ep = new IPEndPoint (IPAddress.Parse (addr), port);
+            XmlNode saNode = eventData.SelectSingleNode("/event/arguments[@direction='in']/argument[2]/value/value");
+            string family = saNode.SelectSingleNode("field[@name='sin_family']/value/@value").Value;
+            if (family == "AF_INET")
+            {
+                string addr = saNode.SelectSingleNode("field[@name='sin_addr']/value/@value").Value;
+                int port = Convert.ToInt32(saNode.SelectSingleNode("field[@name='sin_port']/value/@value").Value);
+                ep = new IPEndPoint(IPAddress.Parse(addr), port);
             }
 
             ConnectResult result;
-            if (el.ReturnValueAsInt == 0) {
+            if (el.ReturnValueAsInt == 0)
+            {
                 result = ConnectResult.Success;
-            } else {
+            }
+            else
+            {
                 if (el.LastError == 10035)
                     result = ConnectResult.WouldBlock;
                 else
                     result = ConnectResult.Error;
             }
 
-            return new ConnectEvent (eventInformation, socket, ep, result);
+            return new ConnectEvent(eventInformation, socket, ep, result);
         }
     }
 }

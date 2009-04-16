@@ -32,39 +32,67 @@ namespace oSpy.SharpDumpLib
 
     public class Event
     {
-        protected EventInformation event_information;
+        protected EventInformation m_info;
 
-        public uint Id {
-            get { return event_information.Id; }
-        }
-
-        public EventType Type {
-            get { return event_information.Type; }
-        }
-
-        public DateTime Timestamp {
-            get { return event_information.Timestamp; }
-        }
-
-        public string ProcessName {
-            get { return event_information.ProcessName; }
-        }
-
-        public uint ProcessId {
-            get { return event_information.ProcessId; }
-        }
-
-        public uint ThreadId {
-            get { return event_information.ThreadId; }
-        }
-
-        public string RawData {
-            get { return event_information.RawData; }
-        }
-
-        public Event (EventInformation eventInformation)
+        public uint Id
         {
-            this.event_information = eventInformation;
+            get
+            {
+                return m_info.Id;
+            }
+        }
+
+        public EventType Type
+        {
+            get
+            {
+                return m_info.Type;
+            }
+        }
+
+        public DateTime Timestamp
+        {
+            get
+            {
+                return m_info.Timestamp;
+            }
+        }
+
+        public string ProcessName
+        {
+            get
+            {
+                return m_info.ProcessName;
+            }
+        }
+
+        public uint ProcessId
+        {
+            get
+            {
+                return m_info.ProcessId;
+            }
+        }
+
+        public uint ThreadId
+        {
+            get
+            {
+                return m_info.ThreadId;
+            }
+        }
+
+        public string RawData
+        {
+            get
+            {
+                return m_info.RawData;
+            }
+        }
+
+        public Event(EventInformation eventInformation)
+        {
+            m_info = eventInformation;
         }
     }
 

@@ -24,10 +24,19 @@ using ICSharpCode.SharpZipLib.BZip2;
 
 namespace oSpy.SharpDumpLib
 {
-    public delegate void LoadCompletedEventHandler (object sender, LoadCompletedEventArgs e);
+    public delegate void LoadCompletedEventHandler(object sender, LoadCompletedEventArgs e);
 
     public class DumpLoader : AsyncWorker
     {
+        #region Internal members
+
+        private WorkerEventHandler m_workerDelegate;
+        private EventFactory m_eventFactory = new EventFactory();
+
+        private delegate void WorkerEventHandler(Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate);
+
+        #endregion // Internal members
+
         #region Events
 
         public event ProgressChangedEventHandler LoadProgressChanged;
@@ -35,24 +44,15 @@ namespace oSpy.SharpDumpLib
 
         #endregion // Events
 
-        #region Internal members
-
-        private delegate void WorkerEventHandler (Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate);
-        private WorkerEventHandler worker_delegate;
-
-        private EventFactory event_factory = new EventFactory ();
-
-        #endregion // Internal members
-
         #region Construction and destruction
 
-        public DumpLoader ()
-            : base ()
+        public DumpLoader()
+            : base()
         {
         }
 
-        public DumpLoader (IContainer container)
-            : base (container)
+        public DumpLoader(IContainer container)
+            : base(container)
         {
         }
 
@@ -60,128 +60,139 @@ namespace oSpy.SharpDumpLib
 
         #region Public interface
 
-        public virtual Dump Load (Stream stream)
+        public virtual Dump Load(Stream stream)
         {
-            return DoLoad (stream, null);
+            return DoLoad(stream, null);
         }
 
-        public virtual void LoadAsync (Stream stream, object taskId)
+        public virtual void LoadAsync(Stream stream, object taskId)
         {
-            AsyncOperation async_op = CreateOperation (taskId);
+            AsyncOperation asyncOp = CreateOperation(taskId);
 
-            worker_delegate = new WorkerEventHandler (LoadWorker);
-            worker_delegate.BeginInvoke (stream, async_op, completion_method_delegate, null, null);
+            m_workerDelegate = new WorkerEventHandler(LoadWorker);
+            m_workerDelegate.BeginInvoke(stream, asyncOp, m_completionMethodDelegate, null, null);
         }
 
-        public virtual void LoadAsyncCancel (object taskId)
+        public virtual void LoadAsyncCancel(object taskId)
         {
-            CancelOperation (taskId);
+            CancelOperation(taskId);
         }
 
         #endregion // Public interface
 
         #region Async glue
 
-        private void LoadWorker (Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
+        private void LoadWorker(Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
         {
             Dump dump = null;
-            Exception e = null;
+            Exception exception = null;
 
-            try {
-                dump = DoLoad (stream, asyncOp);
-            } catch (Exception ex) {
-                e = ex;
+            try
+            {
+                dump = DoLoad(stream, asyncOp);
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
             }
 
-            LoadState loadState = new LoadState (dump, e, asyncOp);
+            LoadState loadState = new LoadState(dump, exception, asyncOp);
 
-            try { completionMethodDelegate (loadState); }
-            catch (InvalidOperationException) { }
+            try
+            {
+                completionMethodDelegate(loadState);
+            }
+            catch (InvalidOperationException)
+            {
+            }
         }
 
-        protected override object CreateCancelEventArgs (object userSuppliedState)
+        protected override object CreateCancelEventArgs(object userSuppliedState)
         {
-            return new LoadCompletedEventArgs (null, null, true, userSuppliedState);
+            return new LoadCompletedEventArgs(null, null, true, userSuppliedState);
         }
 
         protected override void ReportProgress(object e)
         {
-            OnLoadProgressChanged (e as ProgressChangedEventArgs);
+            OnLoadProgressChanged(e as ProgressChangedEventArgs);
         }
 
-        protected virtual void OnLoadProgressChanged (ProgressChangedEventArgs e)
+        protected virtual void OnLoadProgressChanged(ProgressChangedEventArgs e)
         {
             if (LoadProgressChanged != null)
-                LoadProgressChanged (this, e);
+                LoadProgressChanged(this, e);
         }
 
-        protected override void ReportCompletion (object e)
+        protected override void ReportCompletion(object e)
         {
-            OnLoadCompleted (e as LoadCompletedEventArgs);
+            OnLoadCompleted(e as LoadCompletedEventArgs);
         }
 
-        protected virtual void OnLoadCompleted (LoadCompletedEventArgs e)
+        protected virtual void OnLoadCompleted(LoadCompletedEventArgs e)
         {
             if (LoadCompleted != null)
-                LoadCompleted (this, e);
+                LoadCompleted(this, e);
         }
 
-        protected override void CompletionMethod (object state)
+        protected override void CompletionMethod(object state)
         {
-            LoadState load_state = state as LoadState;
+            LoadState loadState = state as LoadState;
 
-            AsyncOperation async_op = load_state.async_op;
-            LoadCompletedEventArgs e = new LoadCompletedEventArgs (load_state.dump, load_state.ex, false, async_op.UserSuppliedState);
-            FinalizeOperation (async_op, e);
+            AsyncOperation asyncOp = loadState.m_asyncOperation;
+            LoadCompletedEventArgs e = new LoadCompletedEventArgs(loadState.m_dump, loadState.m_exception, false, asyncOp.UserSuppliedState);
+            FinalizeOperation(asyncOp, e);
         }
 
         #endregion // Async glue
 
         #region Core implementation
 
-        private Dump DoLoad (Stream stream, AsyncOperation asyncOp)
+        private Dump DoLoad(Stream stream, AsyncOperation asyncOp)
         {
-            Dump dump = new Dump ();
+            Dump dump = new Dump();
 
-            BinaryReader reader = new BinaryReader (stream, System.Text.Encoding.ASCII);
+            BinaryReader reader = new BinaryReader(stream, System.Text.Encoding.ASCII);
 
-            string magic = new string (reader.ReadChars (4));
-            uint version = reader.ReadUInt32 ();
-            uint is_compressed = reader.ReadUInt32 ();
-            uint num_events = reader.ReadUInt32 ();
+            string magic = new string(reader.ReadChars(4));
+            uint version = reader.ReadUInt32();
+            uint isCompressed = reader.ReadUInt32();
+            uint numEvents = reader.ReadUInt32();
 
             if (magic != "oSpy")
-                throw new InvalidDataException ("invalid signature '" + magic + "'");
+                throw new InvalidDataException("invalid signature '" + magic + "'");
             else if (version != 2)
-                throw new InvalidDataException ("unsupported version " + version);
-            else if (is_compressed != 0 && is_compressed != 1)
-                throw new InvalidDataException ("invalid value for is_compressed");
+                throw new InvalidDataException("unsupported version " + version);
+            else if (isCompressed != 0 && isCompressed != 1)
+                throw new InvalidDataException("invalid value for is_compressed");
 
-            if (is_compressed == 1)
-                stream = new BZip2InputStream (stream);
+            if (isCompressed == 1)
+                stream = new BZip2InputStream(stream);
 
-            XmlTextReader xml_reader = new XmlTextReader (stream);
+            XmlTextReader xmlReader = new XmlTextReader(stream);
 
-            uint n;
+            uint eventCount;
 
-            for (n = 0; xml_reader.Read () && n < num_events;) {
-                if (asyncOp != null) {
-                    int pct_complete = (int) (((float) (n + 1) / (float) num_events) * 100.0f);
-                    ProgressChangedEventArgs e = new ProgressChangedEventArgs (pct_complete, asyncOp.UserSuppliedState);
-                    asyncOp.Post (on_progress_report_delegate, e);
+            for (eventCount = 0; xmlReader.Read() && eventCount < numEvents; )
+            {
+                if (asyncOp != null)
+                {
+                    int percentComplete = (int)(((float)(eventCount + 1) / (float)numEvents) * 100.0f);
+                    ProgressChangedEventArgs e = new ProgressChangedEventArgs(percentComplete, asyncOp.UserSuppliedState);
+                    asyncOp.Post(m_onProgressReportDelegate, e);
                 }
 
-                if (xml_reader.NodeType == XmlNodeType.Element && xml_reader.Name == "event") {
-                    XmlReader rdr = xml_reader.ReadSubtree ();
-                    Event ev = event_factory.CreateEvent (rdr);
-                    dump.AddEvent (ev);
+                if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "event")
+                {
+                    XmlReader rdr = xmlReader.ReadSubtree();
+                    Event ev = m_eventFactory.CreateEvent(rdr);
+                    dump.AddEvent(ev);
 
-                    n++;
+                    eventCount++;
                 }
             }
 
-            if (n != num_events)
-                throw new InvalidDataException (String.Format ("expected {0} events, read {1}", num_events, n));
+            if (eventCount != numEvents)
+                throw new InvalidDataException(String.Format("expected {0} events, read {1}", numEvents, eventCount));
 
             return dump;
         }
@@ -193,33 +204,35 @@ namespace oSpy.SharpDumpLib
 
     internal class LoadState
     {
-        public Dump dump;
-        public Exception ex;
-        public AsyncOperation async_op;
+        public Dump m_dump;
+        public Exception m_exception;
+        public AsyncOperation m_asyncOperation;
 
-        public LoadState (Dump dump, Exception ex, AsyncOperation asyncOp)
+        public LoadState(Dump dump, Exception ex, AsyncOperation asyncOp)
         {
-            this.dump = dump;
-            this.ex = ex;
-            this.async_op = asyncOp;
+            m_dump = dump;
+            m_exception = ex;
+            m_asyncOperation = asyncOp;
         }
     }
 
     public class LoadCompletedEventArgs : AsyncCompletedEventArgs
     {
-        private Dump dump;
-        public Dump Dump {
-            get {
-                RaiseExceptionIfNecessary ();
-                return dump;
+        private Dump m_dump;
+
+        public Dump Dump
+        {
+            get
+            {
+                RaiseExceptionIfNecessary();
+                return m_dump;
             }
         }
 
-        public LoadCompletedEventArgs (Dump dump, Exception e, bool cancelled,
-                                       object state)
-            : base (e, cancelled, state)
+        public LoadCompletedEventArgs(Dump dump, Exception e, bool cancelled, object state)
+            : base(e, cancelled, state)
         {
-            this.dump = dump;
+            m_dump = dump;
         }
     }
 

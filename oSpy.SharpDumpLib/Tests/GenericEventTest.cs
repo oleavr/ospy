@@ -16,32 +16,30 @@
 //
 
 using System;
-using System.Text;
-using System.Xml;
 using NUnit.Framework;
 using NUnit.Framework.SyntaxHelpers;
 
 namespace oSpy.SharpDumpLib.Tests
 {
-    [TestFixture ()]
+    [TestFixture()]
     public class GenericEventTest
     {
-        [Test ()]
-        public void FromXml ()
+        [Test()]
+        public void FromXml()
         {
-            Event ev = EventFactory.CreateFromXml (TestEventXml.E001_Error);
-            Assert.That (ev, Is.Not.Null & Is.TypeOf (typeof (Event)));
+            Event ev = EventFactory.CreateFromXml(TestEventXml.E001_Error);
+            Assert.That(ev, Is.Not.Null & Is.TypeOf(typeof(Event)));
 
-            Assert.That (ev.Id, Is.EqualTo (1));
-            Assert.That (ev.Type, Is.EqualTo (EventType.Error));
-            Assert.That (ev.ProcessId, Is.EqualTo (2684));
-            Assert.That (ev.ProcessName, Is.EqualTo ("msnmsgr.exe"));
-            Assert.That (ev.ThreadId, Is.EqualTo (1128));
-            Assert.That (ev.Timestamp, Is.EqualTo (DateTime.FromFileTimeUtc (128837553502326832)));
+            Assert.That(ev.Id, Is.EqualTo(1));
+            Assert.That(ev.Type, Is.EqualTo(EventType.Error));
+            Assert.That(ev.ProcessId, Is.EqualTo(2684));
+            Assert.That(ev.ProcessName, Is.EqualTo("msnmsgr.exe"));
+            Assert.That(ev.ThreadId, Is.EqualTo(1128));
+            Assert.That(ev.Timestamp, Is.EqualTo(DateTime.FromFileTimeUtc(128837553502326832)));
 
-            string expected_body = XmlString.Canonicalize (TestEventXml.E001_Error);
-            string actual_body = ev.RawData;
-            Assert.That (actual_body, Is.EqualTo (expected_body));
+            string expectedBody = XmlString.Canonicalize(TestEventXml.E001_Error);
+            string actualBody = ev.RawData;
+            Assert.That(actualBody, Is.EqualTo(expectedBody));
         }
     }
 }

@@ -15,14 +15,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-using System;
-
 namespace oSpy.SharpDumpLib.Tests
 {
     public class TestEventXml
     {        
-        public static string E001_Error {
-            get {
+        public static string E001_Error
+        {
+            get
+            {
                 return "<event id=\"1\" type=\"Error\" timestamp=\"128837553502326832\" processName=\"msnmsgr.exe\" processId=\"2684\" threadId=\"1128\">"
                       +    "<message>"
                       +        "signature 'RTCDebug' specified for function not found: No matches found"
@@ -31,8 +31,10 @@ namespace oSpy.SharpDumpLib.Tests
             }
         }
 
-        public static string E083_CreateSocket {
-            get {
+        public static string E083_CreateSocket
+        {
+            get
+            {
                 return "<event id=\"83\" processId=\"2684\" processName=\"msnmsgr.exe\" threadId=\"544\" timestamp=\"128837553521454336\" type=\"FunctionCall\">"
                       +    "<name>"
                       +        "WS2_32.dll::socket"
@@ -56,8 +58,10 @@ namespace oSpy.SharpDumpLib.Tests
             }
         }
 
-        public static string E084_Connect {
-            get {
+        public static string E084_Connect
+        {
+            get
+            {
                 return "<event id=\"84\" processId=\"2684\" processName=\"msnmsgr.exe\" threadId=\"544\" timestamp=\"128837553521454336\" type=\"FunctionCall\">"
                       +    "<name>"
                       +        "WS2_32.dll::connect"
@@ -93,8 +97,10 @@ namespace oSpy.SharpDumpLib.Tests
             }
         }
 
-        public static string E096_Send {
-            get {
+        public static string E096_Send
+        {
+            get
+            {
                 return "<event id=\"96\" processId=\"2684\" processName=\"msnmsgr.exe\" threadId=\"544\" timestamp=\"128837553523557360\" type=\"FunctionCall\">"
                       +    "<name>"
                       +        "WS2_32.dll::send"
@@ -125,8 +131,10 @@ namespace oSpy.SharpDumpLib.Tests
             }
         }
 
-        public static string E130_Receive {
-            get {
+        public static string E130_Receive
+        {
+            get
+            {
                 return "<event id=\"130\" processId=\"2684\" processName=\"msnmsgr.exe\" threadId=\"544\" timestamp=\"128837553525259808\" type=\"FunctionCall\">"
                       +    "<name>"
                       +        "WSOCK32.dll::recv"
@@ -162,8 +170,10 @@ namespace oSpy.SharpDumpLib.Tests
             }
         }
 
-        public static string E140_CloseSocket {
-            get {
+        public static string E140_CloseSocket
+        {
+            get
+            {
                 return "<event id=\"140\" processId=\"2684\" processName=\"msnmsgr.exe\" threadId=\"544\" timestamp=\"128837553527062400\" type=\"FunctionCall\">"
                       +    "<name>"
                       +        "WS2_32.dll::closesocket"

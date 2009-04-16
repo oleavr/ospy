@@ -15,18 +15,17 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-using System;
 using System.Xml;
 
 namespace oSpy.SharpDumpLib.Tests
 {
     public class XmlString
     {
-        public static string Canonicalize (string xml)
+        public static string Canonicalize(string xml)
         {
-            XmlDocument doc = new XmlDocument ();
-            doc.LoadXml (xml);
-            doc.Normalize ();
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(xml);
+            doc.Normalize();
             return doc.DocumentElement.OuterXml;
         }
     }
