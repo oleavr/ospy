@@ -25,96 +25,103 @@ namespace oSpy.SharpDumpLib
 {
     public class EventFactory
     {
-        private Dictionary<string, SpecificEventFactory> function_call_event_factories = new Dictionary<string, SpecificEventFactory> ();
+        private Dictionary<string, ISpecificEventFactory> m_funcCallFactories = new Dictionary<string, ISpecificEventFactory>();
 
-        public EventFactory ()
+        public EventFactory()
         {
-            Assembly asm = Assembly.GetCallingAssembly ();
-            foreach (Type t in asm.GetTypes ()) {
-                object[] attrs = t.GetCustomAttributes (typeof (FunctionCallEventFactoryAttribute), true);
+            Assembly asm = Assembly.GetCallingAssembly();
+            foreach (Type t in asm.GetTypes())
+            {
+                object[] attrs = t.GetCustomAttributes(typeof(FunctionCallEventFactoryAttribute), true);
                 if (attrs.Length == 0)
                     continue;
                 FunctionCallEventFactoryAttribute attr = attrs[0] as FunctionCallEventFactoryAttribute;
-                ConstructorInfo[] ctors = t.GetConstructors ();
-                SpecificEventFactory eventFactory = ctors[0].Invoke (new object[] {}) as SpecificEventFactory;
-                function_call_event_factories[attr.FunctionName] = eventFactory;
+                ConstructorInfo[] ctors = t.GetConstructors();
+                ISpecificEventFactory eventFactory = ctors[0].Invoke(new object[] { }) as ISpecificEventFactory;
+                m_funcCallFactories[attr.FunctionName] = eventFactory;
             }
         }
 
-        public Event CreateEvent (string xml)
+        public Event CreateEvent(string xml)
         {
-            XmlDocument doc = new XmlDocument ();
-            doc.LoadXml (xml);
-            return CreateEvent (doc.DocumentElement);
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(xml);
+            return CreateEvent(doc.DocumentElement);
         }
 
-        public Event CreateEvent (XmlReader reader)
+        public Event CreateEvent(XmlReader reader)
         {
-            XmlDocument doc = new XmlDocument ();
-            doc.Load (reader);
-            return CreateEvent (doc.DocumentElement);
+            XmlDocument doc = new XmlDocument();
+            doc.Load(reader);
+            return CreateEvent(doc.DocumentElement);
         }
 
-        public Event CreateEvent (XmlElement element)
+        public Event CreateEvent(XmlElement element)
         {
             XmlAttributeCollection attrs = element.Attributes;
 
-            EventInformation event_information = new EventInformation ();
-            event_information.Id = Convert.ToUInt32 (attrs["id"].Value);
-            event_information.Type = (EventType) Enum.Parse (typeof (EventType), attrs["type"].Value);
-            event_information.Timestamp = DateTime.FromFileTimeUtc (Convert.ToInt64 (attrs["timestamp"].Value));
-            event_information.ProcessName = attrs["processName"].Value;
-            event_information.ProcessId = Convert.ToUInt32 (attrs["processId"].Value);
-            event_information.ThreadId = Convert.ToUInt32 (attrs["threadId"].Value);
-            event_information.RawData = element.OuterXml;
+            EventInformation info = new EventInformation();
+            info.Id = Convert.ToUInt32(attrs["id"].Value);
+            info.Type = (EventType)Enum.Parse(typeof(EventType), attrs["type"].Value);
+            info.Timestamp = DateTime.FromFileTimeUtc(Convert.ToInt64(attrs["timestamp"].Value));
+            info.ProcessName = attrs["processName"].Value;
+            info.ProcessId = Convert.ToUInt32(attrs["processId"].Value);
+            info.ThreadId = Convert.ToUInt32(attrs["threadId"].Value);
+            info.RawData = element.OuterXml;
 
-            return CreateEvent (event_information);
+            return CreateEvent(info);
         }
 
-        public Event CreateEvent (EventInformation eventInformation)
+        public Event CreateEvent(EventInformation eventInfo)
         {
-            SpecificEventFactory sf = null;
+            ISpecificEventFactory specificFactory = null;
             XmlElement eventData = null;
-            
-            if (eventInformation.Type == EventType.FunctionCall) {
-                XmlDocument doc = new XmlDocument ();
-                doc.LoadXml (eventInformation.RawData);
+
+            if (eventInfo.Type == EventType.FunctionCall)
+            {
+                XmlDocument doc = new XmlDocument();
+                doc.LoadXml(eventInfo.RawData);
                 eventData = doc.DocumentElement;
 
-                string fullFunctionName = eventData.SelectSingleNode ("/event/name").InnerText.Trim ();
-                string functionName = fullFunctionName.Split (new string[] { "::" }, StringSplitOptions.None)[1];
-                function_call_event_factories.TryGetValue (functionName, out sf);
+                string fullFunctionName = eventData.SelectSingleNode("/event/name").InnerText.Trim();
+                string functionName = fullFunctionName.Split(new string[] { "::" }, StringSplitOptions.None)[1];
+                m_funcCallFactories.TryGetValue(functionName, out specificFactory);
             }
 
-            if (sf != null)
-                return sf.CreateEvent (eventInformation, eventData);
+            if (specificFactory != null)
+                return specificFactory.CreateEvent(eventInfo, eventData);
             else
-                return new Event (eventInformation);
+                return new Event(eventInfo);
         }
-        
-        public static Event CreateFromXml (string xml)
+
+        public static Event CreateFromXml(string xml)
         {
-            EventFactory factory = new EventFactory ();
-            return factory.CreateEvent (xml);
+            EventFactory factory = new EventFactory();
+            return factory.CreateEvent(xml);
         }
     }
 
-    public interface SpecificEventFactory
+    public interface ISpecificEventFactory
     {
-        Event CreateEvent (EventInformation eventInformation, XmlElement eventData);
+        Event CreateEvent(EventInformation eventInformation, XmlElement eventData);
     }
 
-    [AttributeUsage (AttributeTargets.Class)]
+    [AttributeUsage(AttributeTargets.Class)]
     public class FunctionCallEventFactoryAttribute : Attribute
     {
-        private string functionName;
-        public string FunctionName {
-            get { return functionName; }
+        private string m_functionName;
+
+        public string FunctionName
+        {
+            get
+            {
+                return m_functionName;
+            }
         }
 
-        public FunctionCallEventFactoryAttribute (string functionName)
+        public FunctionCallEventFactoryAttribute(string functionName)
         {
-            this.functionName = functionName;
+            m_functionName = functionName;
         }
     }
 }

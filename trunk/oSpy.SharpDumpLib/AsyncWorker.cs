@@ -26,90 +26,95 @@ namespace oSpy.SharpDumpLib
     {
         #region Internal members
 
-        private Container components = null;
+        private Container m_components = null;
 
-        protected SendOrPostCallback on_progress_report_delegate;
-        protected SendOrPostCallback on_completed_delegate;
-        protected SendOrPostCallback completion_method_delegate;
+        protected SendOrPostCallback m_onProgressReportDelegate;
+        protected SendOrPostCallback m_onCompletedDelegate;
+        protected SendOrPostCallback m_completionMethodDelegate;
 
-        private HybridDictionary user_state_to_lifetime = new HybridDictionary ();
+        private HybridDictionary m_userStateToLifetime = new HybridDictionary();
 
         #endregion
 
         #region Construction and destruction
 
-        public AsyncWorker (IContainer container)
+        public AsyncWorker(IContainer container)
         {
-            container.Add (this);
-            InitializeComponent ();
-            InitializeDelegates ();
+            container.Add(this);
+            InitializeComponent();
+            InitializeDelegates();
         }
 
-        public AsyncWorker ()
+        public AsyncWorker()
         {
-            InitializeComponent ();
-            InitializeDelegates ();
+            InitializeComponent();
+            InitializeDelegates();
         }
 
-        private void InitializeComponent ()
+        private void InitializeComponent()
         {
-            components = new Container ();
+            m_components = new Container();
         }
 
-        protected void InitializeDelegates ()
+        protected void InitializeDelegates()
         {
-            on_progress_report_delegate = new SendOrPostCallback (ReportProgress);
-            on_completed_delegate = new SendOrPostCallback (ReportCompletion);
-            completion_method_delegate = new SendOrPostCallback (CompletionMethod);
+            m_onProgressReportDelegate = new SendOrPostCallback(ReportProgress);
+            m_onCompletedDelegate = new SendOrPostCallback(ReportCompletion);
+            m_completionMethodDelegate = new SendOrPostCallback(CompletionMethod);
         }
 
-        protected override void Dispose (bool disposing)
+        protected override void Dispose(bool disposing)
         {
-            if (disposing) {
-                if (components != null)
-                    components.Dispose ();
+            if (disposing)
+            {
+                if (m_components != null)
+                    m_components.Dispose();
             }
 
-            base.Dispose (disposing);
+            base.Dispose(disposing);
         }
 
         #endregion // Construction and destruction
 
         #region Internal API
 
-        protected AsyncOperation CreateOperation (object taskId)
+        protected AsyncOperation CreateOperation(object taskId)
         {
-            AsyncOperation async_op = AsyncOperationManager.CreateOperation (taskId);
+            AsyncOperation asyncOp = AsyncOperationManager.CreateOperation(taskId);
 
-            lock (user_state_to_lifetime.SyncRoot) {
-                if (user_state_to_lifetime.Contains (taskId))
-                    throw new ArgumentException ("Task ID parameter must be unique", "taskId");
+            lock (m_userStateToLifetime.SyncRoot)
+            {
+                if (m_userStateToLifetime.Contains(taskId))
+                    throw new ArgumentException("Task ID parameter must be unique", "taskId");
 
-                user_state_to_lifetime[taskId] = async_op;
+                m_userStateToLifetime[taskId] = asyncOp;
             }
 
-            return async_op;
+            return asyncOp;
         }
 
         protected void CancelOperation(object taskId)
         {
-            lock (user_state_to_lifetime.SyncRoot) {
-                object obj = user_state_to_lifetime[taskId];
-                if (obj != null) {
-                    AsyncOperation async_op = obj as AsyncOperation;
-                    object e = CreateCancelEventArgs (async_op.UserSuppliedState);
-                    async_op.PostOperationCompleted (on_completed_delegate, e);
+            lock (m_userStateToLifetime.SyncRoot)
+            {
+                object obj = m_userStateToLifetime[taskId];
+                if (obj != null)
+                {
+                    AsyncOperation asyncOp = obj as AsyncOperation;
+                    object e = CreateCancelEventArgs(asyncOp.UserSuppliedState);
+                    asyncOp.PostOperationCompleted(m_onCompletedDelegate, e);
                 }
             }
         }
 
         protected void FinalizeOperation(AsyncOperation asyncOp, AsyncCompletedEventArgs e)
         {
-            lock (user_state_to_lifetime.SyncRoot) {
-                user_state_to_lifetime.Remove (asyncOp.UserSuppliedState);
+            lock (m_userStateToLifetime.SyncRoot)
+            {
+                m_userStateToLifetime.Remove(asyncOp.UserSuppliedState);
             }
 
-            asyncOp.PostOperationCompleted (on_completed_delegate, e);
+            asyncOp.PostOperationCompleted(m_onCompletedDelegate, e);
         }
 
         #endregion // Internal API

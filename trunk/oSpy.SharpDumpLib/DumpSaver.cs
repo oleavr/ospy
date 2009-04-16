@@ -16,8 +16,8 @@
 //
 
 using System;
-using System.IO;
 using System.ComponentModel;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Xml;
@@ -25,10 +25,18 @@ using ICSharpCode.SharpZipLib.BZip2;
 
 namespace oSpy.SharpDumpLib
 {
-    public delegate void SaveCompletedEventHandler (object sender, SaveCompletedEventArgs e);
+    public delegate void SaveCompletedEventHandler(object sender, SaveCompletedEventArgs e);
 
     public class DumpSaver : AsyncWorker
     {
+        #region Internal members
+
+        private WorkerEventHandler m_workerDelegate;
+
+        private delegate void WorkerEventHandler(SaveInfo info, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate);
+
+        #endregion // Internal members
+
         #region Events
 
         public event ProgressChangedEventHandler SaveProgressChanged;
@@ -36,22 +44,15 @@ namespace oSpy.SharpDumpLib
 
         #endregion // Events
 
-        #region Internal members
-
-        private delegate void WorkerEventHandler (SaveInfo info, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate);
-        private WorkerEventHandler worker_delegate;
-
-        #endregion // Internal members
-
         #region Construction and destruction
 
-        public DumpSaver ()
-            : base ()
+        public DumpSaver()
+            : base()
         {
         }
 
-        public DumpSaver (IContainer container)
-            : base (container)
+        public DumpSaver(IContainer container)
+            : base(container)
         {
         }
 
@@ -59,132 +60,136 @@ namespace oSpy.SharpDumpLib
 
         #region Public interface
 
-        public virtual void Save (Dump dump, DumpFormat format, Stream stream)
+        public virtual void Save(Dump dump, DumpFormat format, Stream stream)
         {
-            SaveInfo info = new SaveInfo (dump, format, stream);
-            DoSave (info, null);
+            SaveInfo info = new SaveInfo(dump, format, stream);
+            DoSave(info, null);
         }
 
-        public virtual void SaveAsync (Dump dump, DumpFormat format, Stream stream, object taskId)
+        public virtual void SaveAsync(Dump dump, DumpFormat format, Stream stream, object taskId)
         {
-            SaveInfo info = new SaveInfo (dump, format, stream);
+            SaveInfo info = new SaveInfo(dump, format, stream);
 
-            AsyncOperation async_op = CreateOperation (taskId);
+            AsyncOperation asyncOp = CreateOperation(taskId);
 
-            worker_delegate = new WorkerEventHandler (SaveWorker);
-            worker_delegate.BeginInvoke (info, async_op, completion_method_delegate, null, null);
+            m_workerDelegate = new WorkerEventHandler(SaveWorker);
+            m_workerDelegate.BeginInvoke(info, asyncOp, m_completionMethodDelegate, null, null);
         }
 
-        public virtual void SaveAsyncCancel (object taskId)
+        public virtual void SaveAsyncCancel(object taskId)
         {
-            CancelOperation (taskId);
+            CancelOperation(taskId);
         }
 
         #endregion // Public interface
 
         #region Async glue
 
-        private void SaveWorker (SaveInfo info, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
+        private void SaveWorker(SaveInfo info, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate)
         {
-            Exception e = null;
+            Exception exception = null;
 
             try
             {
-                DoSave (info, asyncOp);
+                DoSave(info, asyncOp);
             }
             catch (Exception ex)
             {
-                e = ex;
+                exception = ex;
             }
 
-            SaveState save_state = new SaveState (info, e, asyncOp);
+            SaveState saveState = new SaveState(info, exception, asyncOp);
 
-            try { completionMethodDelegate (save_state); }
-            catch (InvalidOperationException) { }
+            try
+            {
+                completionMethodDelegate(saveState);
+            }
+            catch (InvalidOperationException)
+            {
+            }
         }
 
-        protected override object CreateCancelEventArgs (object userSuppliedState)
+        protected override object CreateCancelEventArgs(object userSuppliedState)
         {
-            return new SaveCompletedEventArgs (null, null, true, userSuppliedState);
+            return new SaveCompletedEventArgs(null, null, true, userSuppliedState);
         }
 
-        protected override void ReportProgress (object e)
+        protected override void ReportProgress(object e)
         {
-            OnSaveProgressChanged (e as ProgressChangedEventArgs);
+            OnSaveProgressChanged(e as ProgressChangedEventArgs);
         }
 
-        protected virtual void OnSaveProgressChanged (ProgressChangedEventArgs e)
+        protected virtual void OnSaveProgressChanged(ProgressChangedEventArgs e)
         {
             if (SaveProgressChanged != null)
-                SaveProgressChanged (this, e);
+                SaveProgressChanged(this, e);
         }
 
-        protected override void ReportCompletion (object e)
+        protected override void ReportCompletion(object e)
         {
-            OnSaveCompleted (e as SaveCompletedEventArgs);
+            OnSaveCompleted(e as SaveCompletedEventArgs);
         }
 
-        protected virtual void OnSaveCompleted (SaveCompletedEventArgs e)
+        protected virtual void OnSaveCompleted(SaveCompletedEventArgs e)
         {
             if (SaveCompleted != null)
-                SaveCompleted (this, e);
+                SaveCompleted(this, e);
         }
 
-        protected override void CompletionMethod (object state)
+        protected override void CompletionMethod(object state)
         {
-            SaveState save_state = state as SaveState;
+            SaveState saveState = state as SaveState;
 
-            AsyncOperation async_op = save_state.async_op;
-            SaveCompletedEventArgs e = new SaveCompletedEventArgs (save_state.info, save_state.ex, false, async_op.UserSuppliedState);
-            FinalizeOperation (async_op, e);
+            AsyncOperation asyncOp = saveState.m_asyncOperation;
+            SaveCompletedEventArgs e = new SaveCompletedEventArgs(saveState.m_saveInfo, saveState.m_exception, false, asyncOp.UserSuppliedState);
+            FinalizeOperation(asyncOp, e);
         }
 
         #endregion // Async glue
 
         #region Core implementation
 
-        private void DoSave (SaveInfo info, AsyncOperation asyncOp)
+        private void DoSave(SaveInfo info, AsyncOperation asyncOp)
         {
-            BinaryWriter binWriter = new BinaryWriter (info.stream, Encoding.ASCII);
+            BinaryWriter binWriter = new BinaryWriter(info.m_stream, Encoding.ASCII);
 
-            char[] magic = "oSpy".ToCharArray ();
+            char[] magic = "oSpy".ToCharArray();
             uint version = 2;
-            uint is_compressed = (info.format == DumpFormat.Compressed) ? 1U : 0U;
-            uint num_events = (uint) info.dump.Events.Count;
+            uint isCompressed = (info.m_format == DumpFormat.Compressed) ? 1U : 0U;
+            uint numEvents = (uint)info.m_dump.Events.Count;
 
-            binWriter.Write (magic);
-            binWriter.Write (version);
-            binWriter.Write (is_compressed);
-            binWriter.Write (num_events);
-            binWriter.Flush ();
+            binWriter.Write(magic);
+            binWriter.Write(version);
+            binWriter.Write(isCompressed);
+            binWriter.Write(numEvents);
+            binWriter.Flush();
             binWriter = null;
 
-            Stream stream = info.stream;
-            if (info.format == DumpFormat.Compressed)
-                stream = new BZip2OutputStream (stream);
-            XmlTextWriter xmlWriter = new XmlTextWriter (stream, Encoding.UTF8);
-            xmlWriter.WriteStartDocument (true);
-            xmlWriter.WriteStartElement ("events");
+            Stream stream = info.m_stream;
+            if (info.m_format == DumpFormat.Compressed)
+                stream = new BZip2OutputStream(stream);
+            XmlTextWriter xmlWriter = new XmlTextWriter(stream, Encoding.UTF8);
+            xmlWriter.WriteStartDocument(true);
+            xmlWriter.WriteStartElement("events");
 
-            int n = 0;
-            int numEvents = info.dump.Events.Count;
-            foreach (Event ev in info.dump.Events.Values)
+            int eventCount = 0;
+            foreach (Event ev in info.m_dump.Events.Values)
             {
                 if (asyncOp != null)
                 {
-                    int pctComplete = (int)(((float)(n + 1) / (float)numEvents) * 100.0f);
-                    ProgressChangedEventArgs e = new ProgressChangedEventArgs (pctComplete, asyncOp.UserSuppliedState);
-                    asyncOp.Post (on_progress_report_delegate, e);
+                    int pctComplete = (int)(((float)(eventCount + 1) / (float)numEvents) * 100.0f);
+                    ProgressChangedEventArgs e = new ProgressChangedEventArgs(pctComplete, asyncOp.UserSuppliedState);
+                    asyncOp.Post(m_onProgressReportDelegate, e);
                 }
 
-                xmlWriter.WriteRaw (ev.RawData);
+                xmlWriter.WriteRaw(ev.RawData);
 
-                n++;
+                eventCount++;
             }
 
-            xmlWriter.WriteEndElement ();
-            xmlWriter.Flush ();
-            stream.Close ();
+            xmlWriter.WriteEndElement();
+            xmlWriter.Flush();
+            stream.Close();
         }
 
         #endregion // Core implementation
@@ -195,55 +200,54 @@ namespace oSpy.SharpDumpLib
         Uncompressed,
         Compressed
     }
-    
+
     #region Helper classes
 
     internal class SaveInfo
     {
-        public Dump dump;
-        public DumpFormat format;
-        public Stream stream;
+        public Dump m_dump;
+        public DumpFormat m_format;
+        public Stream m_stream;
 
-        public SaveInfo (Dump dump, DumpFormat format, Stream stream)
+        public SaveInfo(Dump dump, DumpFormat format, Stream stream)
         {
-            this.dump = dump;
-            this.format = format;
-            this.stream = stream;
+            m_dump = dump;
+            m_format = format;
+            m_stream = stream;
         }
     }
 
     internal class SaveState
     {
-        public SaveInfo info;
+        public SaveInfo m_saveInfo;
+        public Exception m_exception;
+        public AsyncOperation m_asyncOperation;
 
-        public Exception ex;
-        public AsyncOperation async_op;
-
-        public SaveState (SaveInfo info, Exception ex, AsyncOperation asyncOp)
+        public SaveState(SaveInfo info, Exception ex, AsyncOperation asyncOp)
         {
-            this.info = info;
+            m_saveInfo = info;
 
-            this.ex = ex;
-            this.async_op = asyncOp;
+            m_exception = ex;
+            m_asyncOperation = asyncOp;
         }
     }
 
     public class SaveCompletedEventArgs : AsyncCompletedEventArgs
     {
-        private SaveInfo info;
+        private SaveInfo m_saveInfo;
 
-        internal SaveCompletedEventArgs (SaveInfo info, Exception e, bool cancelled, object state)
-            : base (e, cancelled, state)
+        internal SaveCompletedEventArgs(SaveInfo info, Exception e, bool cancelled, object state)
+            : base(e, cancelled, state)
         {
-            this.info = info;
+            m_saveInfo = info;
         }
 
         public Dump Dump
         {
             get
             {
-                RaiseExceptionIfNecessary ();
-                return info.dump;
+                RaiseExceptionIfNecessary();
+                return m_saveInfo.m_dump;
             }
         }
 
@@ -251,8 +255,8 @@ namespace oSpy.SharpDumpLib
         {
             get
             {
-                RaiseExceptionIfNecessary ();
-                return info.stream;
+                RaiseExceptionIfNecessary();
+                return m_saveInfo.m_stream;
             }
         }
     }

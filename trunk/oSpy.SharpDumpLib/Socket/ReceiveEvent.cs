@@ -21,63 +21,83 @@ namespace oSpy.SharpDumpLib.Socket
 {
     public class ReceiveEvent : Event
     {
-        private uint socket;
-        public uint Socket {
-            get { return socket; }
-        }
+        private uint m_socket;
+        private byte[] m_buffer;
+        private int m_bufferSize;
+        private int m_flags;
+        private int m_result;
 
-        private byte[] buffer;
-        public byte[] Buffer {
-            get { return buffer; }
-        }
-
-        private int buffer_size;
-        public int BufferSize {
-            get { return buffer_size; }
-        }
-
-        private int flags;
-        public int Flags {
-            get { return flags; }
-        }
-
-        private int result;
-        public int Result {
-            get { return result; }
-        }
-
-        public ReceiveEvent (EventInformation eventInformation, uint socket,
-                             byte[] buffer, int buffer_size, int flags,
-                             int result)
-            : base (eventInformation)
+        public uint Socket
         {
-            this.socket = socket;
-            this.buffer = buffer;
-            this.buffer_size = buffer_size;
-            this.flags = flags;
-            this.result = result;
+            get
+            {
+                return m_socket;
+            }
+        }
+
+        public byte[] Buffer
+        {
+            get
+            {
+                return m_buffer;
+            }
+        }
+
+        public int BufferSize
+        {
+            get
+            {
+                return m_bufferSize;
+            }
+        }
+
+        public int Flags
+        {
+            get
+            {
+                return m_flags;
+            }
+        }
+
+        public int Result
+        {
+            get
+            {
+                return m_result;
+            }
+        }
+
+        public ReceiveEvent(EventInformation eventInformation, uint socket, byte[] buffer, int bufferSize, int flags,
+                            int result)
+            : base(eventInformation)
+        {
+            m_socket = socket;
+            m_buffer = buffer;
+            m_bufferSize = bufferSize;
+            m_flags = flags;
+            m_result = result;
         }
     }
 
-    [FunctionCallEventFactory ("recv")]
-    public class ReceiveEventFactory : SpecificEventFactory
+    [FunctionCallEventFactory("recv")]
+    public class ReceiveEventFactory : ISpecificEventFactory
     {
-        public Event CreateEvent (EventInformation eventInformation, System.Xml.XmlElement eventData)
+        public Event CreateEvent(EventInformation eventInformation, System.Xml.XmlElement eventData)
         {
-            FunctionCallDataElement el = new FunctionCallDataElement (eventData);
+            FunctionCallDataElement el = new FunctionCallDataElement(eventData);
 
-            uint socket = el.GetSimpleArgumentValueAsUInt (1);
+            uint socket = el.GetSimpleArgumentValueAsUInt(1);
 
-            string buffer_base64 = eventData.SelectSingleNode ("/event/arguments[@direction='out']/argument[1]/value/value").InnerText.Trim ();
-            byte[] buffer = Convert.FromBase64String (buffer_base64);
+            string encodedBuffer = eventData.SelectSingleNode("/event/arguments[@direction='out']/argument[1]/value/value").InnerText.Trim();
+            byte[] buffer = Convert.FromBase64String(encodedBuffer);
 
-            int buffer_size = el.GetSimpleArgumentValueAsInt (3);
+            int bufferSize = el.GetSimpleArgumentValueAsInt(3);
 
-            int flags = el.GetSimpleArgumentValueAsInt (4);
+            int flags = el.GetSimpleArgumentValueAsInt(4);
 
             int result = el.ReturnValueAsInt;
 
-            return new ReceiveEvent (eventInformation, socket, buffer, buffer_size, flags, result);
+            return new ReceiveEvent(eventInformation, socket, buffer, bufferSize, flags, result);
         }
     }
 }

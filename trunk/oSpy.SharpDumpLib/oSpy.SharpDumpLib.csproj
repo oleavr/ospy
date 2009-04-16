@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -48,7 +48,10 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="ICSharpCode.SharpZipLib" />
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\SharpZipLib\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -61,9 +64,15 @@
     <Compile Include="Socket\ReceiveEvent.cs" />
     <Compile Include="Socket\CloseEvent.cs" />
     <Compile Include="Dump.cs" />
-    <Compile Include="DumpLoader.cs" />
-    <Compile Include="AsyncWorker.cs" />
-    <Compile Include="DumpSaver.cs" />
+    <Compile Include="DumpLoader.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="AsyncWorker.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="DumpSaver.cs">
+      <SubType>Component</SubType>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -73,8 +82,4 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <ItemGroup>
-    <Folder Include="Socket\" />
-    <Folder Include="Xml\" />
-  </ItemGroup>
 </Project>

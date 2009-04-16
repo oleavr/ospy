@@ -22,67 +22,83 @@ namespace oSpy.SharpDumpLib.Socket
 {
     public class CreateEvent : Event
     {
-        private AddressFamily address_family;
-        public AddressFamily AddressFamily {
-            get { return address_family; }
-        }
+        private AddressFamily m_addressFamily;
+        private SocketType m_socketType;
+        private ProtocolType m_protocolType;
+        private uint m_result;
 
-        private SocketType socket_type;
-        public SocketType SocketType {
-            get { return socket_type; }
-        }
-
-        private ProtocolType protocol_type;
-        public ProtocolType ProtocolType {
-            get { return protocol_type; }
-        }
-
-        private uint result;
-        public uint Result {
-            get { return result; }
-        }
-
-        public CreateEvent (EventInformation eventInformation,
-                            AddressFamily af, SocketType socketType,
-                            ProtocolType protocolType, uint result)
-            : base (eventInformation)
+        public AddressFamily AddressFamily
         {
-            this.address_family = af;
-            this.socket_type = socketType;
-            this.protocol_type = protocolType;
-            this.result = result;
+            get
+            {
+                return m_addressFamily;
+            }
+        }
+
+        public SocketType SocketType
+        {
+            get
+            {
+                return m_socketType;
+            }
+        }
+
+        public ProtocolType ProtocolType
+        {
+            get
+            {
+                return m_protocolType;
+            }
+        }
+
+        public uint Result
+        {
+            get
+            {
+                return m_result;
+            }
+        }
+
+        public CreateEvent(EventInformation eventInformation, AddressFamily addressFamily, SocketType socketType,
+                           ProtocolType protocolType, uint result)
+            : base(eventInformation)
+        {
+            m_addressFamily = addressFamily;
+            m_socketType = socketType;
+            m_protocolType = protocolType;
+            m_result = result;
         }
     }
 
-    [FunctionCallEventFactory ("socket")]
-    public class CreateEventFactory : SpecificEventFactory
+    [FunctionCallEventFactory("socket")]
+    public class CreateEventFactory : ISpecificEventFactory
     {
-        public Event CreateEvent (EventInformation eventInformation, System.Xml.XmlElement eventData)
+        public Event CreateEvent(EventInformation eventInformation, System.Xml.XmlElement eventData)
         {
-            FunctionCallDataElement el = new FunctionCallDataElement (eventData);
+            FunctionCallDataElement el = new FunctionCallDataElement(eventData);
 
-            string family_str = el.FirstArgument;
-            AddressFamily af = AddressFamily.Unknown;
-            if (family_str == "AF_INET")
-                af = AddressFamily.InterNetwork;
-            else if (family_str == "AF_INET6")
-                af = AddressFamily.InterNetworkV6;
+            string familyStr = el.FirstArgument;
+            AddressFamily family = AddressFamily.Unknown;
+            if (familyStr == "AF_INET")
+                family = AddressFamily.InterNetwork;
+            else if (familyStr == "AF_INET6")
+                family = AddressFamily.InterNetworkV6;
 
-            string socket_type_str = el.SecondArgument;
-            SocketType socket_type = SocketType.Unknown;
-            if (socket_type_str == "SOCK_STREAM")
-                socket_type = SocketType.Stream;
-            else if (socket_type_str == "SOCK_DGRAM")
-                socket_type = SocketType.Dgram;
+            string typeStr = el.SecondArgument;
+            SocketType type = SocketType.Unknown;
+            if (typeStr == "SOCK_STREAM")
+                type = SocketType.Stream;
+            else if (typeStr == "SOCK_DGRAM")
+                type = SocketType.Dgram;
 
-            string protocol_type_str = el.ThirdArgument;
-            ProtocolType protocol_type = ProtocolType.Unknown;
-            if (protocol_type_str == "IPPROTO_IP")
-                protocol_type = ProtocolType.IP;
+            string protocolStr = el.ThirdArgument;
+            ProtocolType protocol = ProtocolType.Unknown;
+            if (protocolStr == "IPPROTO_IP")
+                protocol = ProtocolType.IP;
 
             uint result = el.ReturnValueAsUInt;
 
-            return new CreateEvent (eventInformation, af, socket_type, protocol_type, result);
+            return new CreateEvent(eventInformation, family, type, protocol, result);
         }
     }
 }

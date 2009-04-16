@@ -22,74 +22,98 @@ namespace oSpy.SharpDumpLib
 {
     internal class FunctionCallDataElement
     {
-        private XmlElement data_element;
+        private XmlElement m_dataElement;
 
-        public string FirstArgument {
-            get { return GetSimpleArgumentValueAsString (1); }
-        }
-
-        public string SecondArgument {
-            get { return GetSimpleArgumentValueAsString (2); }
-        }
-
-        public string ThirdArgument {
-            get { return GetSimpleArgumentValueAsString (3); }
-        }
-
-        public string ReturnValue {
-            get { return data_element.SelectSingleNode ("/event/returnValue/value/@value").InnerText.Trim (); }
-        }
-
-        public int ReturnValueAsInt {
-            get {
-                return ConvertStringToInt (ReturnValue);
+        public string FirstArgument
+        {
+            get
+            {
+                return GetSimpleArgumentValueAsString(1);
             }
         }
 
-        public uint ReturnValueAsUInt {
-            get {
-                return ConvertStringToUInt (ReturnValue);
+        public string SecondArgument
+        {
+            get
+            {
+                return GetSimpleArgumentValueAsString(2);
             }
         }
 
-        public int LastError {
-            get { return Convert.ToInt32 (data_element.SelectSingleNode ("/event/lastError/@value").Value); }
+        public string ThirdArgument
+        {
+            get
+            {
+                return GetSimpleArgumentValueAsString(3);
+            }
         }
 
-        public FunctionCallDataElement (XmlElement dataElement)
+        public string ReturnValue
         {
-            this.data_element = dataElement;
+            get
+            {
+                return m_dataElement.SelectSingleNode("/event/returnValue/value/@value").InnerText.Trim();
+            }
         }
 
-        public string GetSimpleArgumentValueAsString (uint n)
+        public int ReturnValueAsInt
         {
-            return data_element.SelectSingleNode ("/event/arguments[@direction='in']/argument[" + n + "]/value/@value").InnerText.Trim ();
+            get
+            {
+                return ConvertStringToInt(ReturnValue);
+            }
         }
 
-        public int GetSimpleArgumentValueAsInt (uint n)
+        public uint ReturnValueAsUInt
         {
-            return ConvertStringToInt (GetSimpleArgumentValueAsString (n));
+            get
+            {
+                return ConvertStringToUInt(ReturnValue);
+            }
         }
 
-        public uint GetSimpleArgumentValueAsUInt (uint n)
+        public int LastError
         {
-            return ConvertStringToUInt (GetSimpleArgumentValueAsString (n));
+            get
+            {
+                return Convert.ToInt32(m_dataElement.SelectSingleNode("/event/lastError/@value").Value);
+            }
         }
 
-        private int ConvertStringToInt (string str)
+        public FunctionCallDataElement(XmlElement dataElement)
         {
-            if (str.StartsWith ("0x"))
-                return Convert.ToInt32 (str, 16);
+            m_dataElement = dataElement;
+        }
+
+        public string GetSimpleArgumentValueAsString(uint n)
+        {
+            return m_dataElement.SelectSingleNode("/event/arguments[@direction='in']/argument[" + n + "]/value/@value").InnerText.Trim();
+        }
+
+        public int GetSimpleArgumentValueAsInt(uint n)
+        {
+            return ConvertStringToInt(GetSimpleArgumentValueAsString(n));
+        }
+
+        public uint GetSimpleArgumentValueAsUInt(uint n)
+        {
+            return ConvertStringToUInt(GetSimpleArgumentValueAsString(n));
+        }
+
+        private int ConvertStringToInt(string str)
+        {
+            if (str.StartsWith("0x"))
+                return Convert.ToInt32(str, 16);
             else
-                return Convert.ToInt32 (str);            
+                return Convert.ToInt32(str);
         }
 
-        private uint ConvertStringToUInt (string str)
+        private uint ConvertStringToUInt(string str)
         {
-            if (str.StartsWith ("0x"))
-                return Convert.ToUInt32 (str, 16);
+            if (str.StartsWith("0x"))
+                return Convert.ToUInt32(str, 16);
             else
-                return Convert.ToUInt32 (str);            
+                return Convert.ToUInt32(str);
         }
     }
 }

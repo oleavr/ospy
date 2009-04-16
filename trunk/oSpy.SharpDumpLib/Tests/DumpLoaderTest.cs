@@ -15,40 +15,38 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-using System;
 using System.IO;
 using NUnit.Framework;
 using NUnit.Framework.SyntaxHelpers;
 
 namespace oSpy.SharpDumpLib.Tests
 {
-    [TestFixture ()]
+    [TestFixture()]
     public class DumpLoaderTest
     {
-        [Test ()]
-        public void LoadUncompressed ()
+        [Test()]
+        public void LoadUncompressed()
         {
-            DumpLoader loader = new DumpLoader ();
-            Stream stream = TestOsdStream.GenerateUncompressedFrom (TestEventXml.E001_Error, TestEventXml.E083_CreateSocket, TestEventXml.E140_CloseSocket);
-            Dump dump = loader.Load (stream);
-            Assert.That (dump.Events.Count, Is.EqualTo (3));
-            Assert.That (dump.Events.Keys, Is.EquivalentTo (new uint[] { 1, 83, 140 }));
-            Assert.That (dump.Events[1].Id, Is.EqualTo (1));
-            Assert.That (dump.Events[83].Id, Is.EqualTo (83));
-            Assert.That (dump.Events[140].Id, Is.EqualTo (140));
+            Stream stream = TestOsdStream.GenerateUncompressedFrom(TestEventXml.E001_Error, TestEventXml.E083_CreateSocket, TestEventXml.E140_CloseSocket);
+            LoadAndVerifyEvents(stream);
         }
 
-        [Test ()]
-        public void LoadCompressed ()
+        [Test()]
+        public void LoadCompressed()
         {
-            DumpLoader loader = new DumpLoader ();
-            Stream stream = TestOsdStream.GenerateCompressedFrom (TestEventXml.E001_Error, TestEventXml.E083_CreateSocket, TestEventXml.E140_CloseSocket);
-            Dump dump = loader.Load (stream);
-            Assert.That (dump.Events.Count, Is.EqualTo (3));
-            Assert.That (dump.Events.Keys, Is.EquivalentTo (new uint[] { 1, 83, 140 }));
-            Assert.That (dump.Events[1].Id, Is.EqualTo (1));
-            Assert.That (dump.Events[83].Id, Is.EqualTo (83));
-            Assert.That (dump.Events[140].Id, Is.EqualTo (140));
+            Stream stream = TestOsdStream.GenerateCompressedFrom(TestEventXml.E001_Error, TestEventXml.E083_CreateSocket, TestEventXml.E140_CloseSocket);
+            LoadAndVerifyEvents(stream);
+        }
+
+        private static void LoadAndVerifyEvents(Stream stream)
+        {
+            DumpLoader loader = new DumpLoader();
+            Dump dump = loader.Load(stream);
+            Assert.That(dump.Events.Count, Is.EqualTo(3));
+            Assert.That(dump.Events.Keys, Is.EquivalentTo(new uint[] { 1, 83, 140 }));
+            Assert.That(dump.Events[1].Id, Is.EqualTo(1));
+            Assert.That(dump.Events[83].Id, Is.EqualTo(83));
+            Assert.That(dump.Events[140].Id, Is.EqualTo(140));
         }
     }
 }

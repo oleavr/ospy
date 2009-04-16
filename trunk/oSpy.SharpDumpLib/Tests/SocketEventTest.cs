@@ -15,68 +15,67 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-using System;
 using System.Text;
 using NUnit.Framework;
 using NUnit.Framework.SyntaxHelpers;
 
 namespace oSpy.SharpDumpLib.Tests
 {
-    [TestFixture ()]
+    [TestFixture()]
     public class SocketEventTest
     {
-        [Test ()]
+        [Test()]
         public void CreateEvent()
         {
-            Socket.CreateEvent ev = EventFactory.CreateFromXml (TestEventXml.E083_CreateSocket) as Socket.CreateEvent;
-            Assert.That (ev, Is.Not.Null);
-            Assert.That (ev.AddressFamily, Is.EqualTo (System.Net.Sockets.AddressFamily.InterNetwork));
-            Assert.That (ev.SocketType, Is.EqualTo (System.Net.Sockets.SocketType.Stream));
-            Assert.That (ev.ProtocolType, Is.EqualTo (System.Net.Sockets.ProtocolType.IP));
-            Assert.That (ev.Result, Is.EqualTo (0x8ac));
+            Socket.CreateEvent ev = EventFactory.CreateFromXml(TestEventXml.E083_CreateSocket) as Socket.CreateEvent;
+            Assert.That(ev, Is.Not.Null);
+            Assert.That(ev.AddressFamily, Is.EqualTo(System.Net.Sockets.AddressFamily.InterNetwork));
+            Assert.That(ev.SocketType, Is.EqualTo(System.Net.Sockets.SocketType.Stream));
+            Assert.That(ev.ProtocolType, Is.EqualTo(System.Net.Sockets.ProtocolType.IP));
+            Assert.That(ev.Result, Is.EqualTo(0x8ac));
         }
 
-        [Test ()]
-        public void CloseEvent ()
+        [Test()]
+        public void CloseEvent()
         {
-            Socket.CloseEvent ev = EventFactory.CreateFromXml (TestEventXml.E140_CloseSocket) as Socket.CloseEvent;
-            Assert.That (ev, Is.Not.Null);
-            Assert.That (ev.Socket, Is.EqualTo (0x8ac));
-            Assert.That (ev.Result, Is.EqualTo (0));
+            Socket.CloseEvent ev = EventFactory.CreateFromXml(TestEventXml.E140_CloseSocket) as Socket.CloseEvent;
+            Assert.That(ev, Is.Not.Null);
+            Assert.That(ev.Socket, Is.EqualTo(0x8ac));
+            Assert.That(ev.Result, Is.EqualTo(0));
         }
 
-        [Test ()]
-        public void ConnectEvent ()
+        [Test()]
+        public void ConnectEvent()
         {
-            Socket.ConnectEvent ev = EventFactory.CreateFromXml (TestEventXml.E084_Connect) as Socket.ConnectEvent;
-            Assert.That (ev, Is.Not.Null);
-            Assert.That (ev.Socket, Is.EqualTo (0x8ac));
-            System.Net.IPEndPoint expectedEndpoint = new System.Net.IPEndPoint (System.Net.IPAddress.Parse ("65.54.239.20"), 1863);
-            Assert.That (ev.RemoteEndPoint, Is.EqualTo (expectedEndpoint));
-            Assert.That (ev.Result, Is.EqualTo (Socket.ConnectResult.WouldBlock));
+            Socket.ConnectEvent ev = EventFactory.CreateFromXml(TestEventXml.E084_Connect) as Socket.ConnectEvent;
+            Assert.That(ev, Is.Not.Null);
+            Assert.That(ev.Socket, Is.EqualTo(0x8ac));
+            System.Net.IPEndPoint expectedEndpoint = new System.Net.IPEndPoint(System.Net.IPAddress.Parse("65.54.239.20"), 1863);
+            Assert.That(ev.RemoteEndPoint, Is.EqualTo(expectedEndpoint));
+            Assert.That(ev.Result, Is.EqualTo(Socket.ConnectResult.WouldBlock));
         }
 
-        [Test ()]
-        public void SendEvent ()
+        [Test()]
+        public void SendEvent()
         {
-            Socket.SendEvent ev = EventFactory.CreateFromXml (TestEventXml.E096_Send) as Socket.SendEvent;
-            Assert.That (ev, Is.Not.Null);
-            Assert.That (ev.Socket, Is.EqualTo (0x8ac));
-            Assert.That (ev.Buffer, Is.EqualTo (Encoding.UTF8.GetBytes ("VER 1 MSNP18 MSNP17 CVR0\r\n")));
-            Assert.That (ev.Flags, Is.EqualTo (0));
-            Assert.That (ev.Result, Is.EqualTo (26));
+            Socket.SendEvent ev = EventFactory.CreateFromXml(TestEventXml.E096_Send) as Socket.SendEvent;
+            Assert.That(ev, Is.Not.Null);
+            Assert.That(ev.Socket, Is.EqualTo(0x8ac));
+            Assert.That(ev.Buffer, Is.EqualTo(Encoding.UTF8.GetBytes("VER 1 MSNP18 MSNP17 CVR0\r\n")));
+            Assert.That(ev.Flags, Is.EqualTo(0));
+            Assert.That(ev.Result, Is.EqualTo(26));
         }
 
-        [Test ()]
-        public void ReceiveEvent ()
+        [Test()]
+        public void ReceiveEvent()
         {
-            Socket.ReceiveEvent ev = EventFactory.CreateFromXml (TestEventXml.E130_Receive) as Socket.ReceiveEvent;
-            Assert.That (ev, Is.Not.Null);
-            Assert.That (ev.Socket, Is.EqualTo (0x8ac));
-            Assert.That (ev.Buffer, Is.EqualTo (Encoding.UTF8.GetBytes ("VER 1 MSNP18\r\n")));
-            Assert.That (ev.BufferSize, Is.EqualTo (512));
-            Assert.That (ev.Flags, Is.EqualTo (0));
-            Assert.That (ev.Result, Is.EqualTo (14));
+            Socket.ReceiveEvent ev = EventFactory.CreateFromXml(TestEventXml.E130_Receive) as Socket.ReceiveEvent;
+            Assert.That(ev, Is.Not.Null);
+            Assert.That(ev.Socket, Is.EqualTo(0x8ac));
+            Assert.That(ev.Buffer, Is.EqualTo(Encoding.UTF8.GetBytes("VER 1 MSNP18\r\n")));
+            Assert.That(ev.BufferSize, Is.EqualTo(512));
+            Assert.That(ev.Flags, Is.EqualTo(0));
+            Assert.That(ev.Result, Is.EqualTo(14));
         }
     }
 }

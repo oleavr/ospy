@@ -21,54 +21,70 @@ namespace oSpy.SharpDumpLib.Socket
 {
     public class SendEvent : Event
     {
-        private uint socket;
-        public uint Socket {
-            get { return socket; }
-        }
+        private uint m_socket;
+        private byte[] m_buffer;
+        private int m_flags;
+        private int m_result;
 
-        private byte[] buffer;
-        public byte[] Buffer {
-            get { return buffer; }
-        }
-
-        private int flags;
-        public int Flags {
-            get { return flags; }
-        }
-
-        private int result;
-        public int Result {
-            get { return result; }
-        }
-
-        public SendEvent (EventInformation eventInformation, uint socket,
-                          byte[] buffer, int flags, int result)
-            : base (eventInformation)
+        public uint Socket
         {
-            this.socket = socket;
-            this.buffer = buffer;
-            this.flags = flags;
-            this.result = result;
+            get
+            {
+                return m_socket;
+            }
+        }
+
+        public byte[] Buffer
+        {
+            get
+            {
+                return m_buffer;
+            }
+        }
+
+        public int Flags
+        {
+            get
+            {
+                return m_flags;
+            }
+        }
+
+        public int Result
+        {
+            get
+            {
+                return m_result;
+            }
+        }
+
+        public SendEvent(EventInformation eventInformation, uint socket, byte[] buffer, int flags, int result)
+            : base(eventInformation)
+        {
+            m_socket = socket;
+            m_buffer = buffer;
+            m_flags = flags;
+            m_result = result;
         }
     }
 
-    [FunctionCallEventFactory ("send")]
-    public class SendEventFactory : SpecificEventFactory
+    [FunctionCallEventFactory("send")]
+    public class SendEventFactory : ISpecificEventFactory
     {
-        public Event CreateEvent (EventInformation eventInformation, System.Xml.XmlElement eventData)
+        public Event CreateEvent(EventInformation eventInformation, System.Xml.XmlElement eventData)
         {
-            FunctionCallDataElement el = new FunctionCallDataElement (eventData);
+            FunctionCallDataElement el = new FunctionCallDataElement(eventData);
 
-            uint socket = el.GetSimpleArgumentValueAsUInt (1);
+            uint socket = el.GetSimpleArgumentValueAsUInt(1);
 
-            string buffer_base64 = eventData.SelectSingleNode ("/event/arguments[@direction='in']/argument[2]/value/value").InnerText.Trim ();
-            byte[] buffer = Convert.FromBase64String (buffer_base64);
+            string encodedBuffer = eventData.SelectSingleNode("/event/arguments[@direction='in']/argument[2]/value/value").InnerText.Trim();
+            byte[] buffer = Convert.FromBase64String(encodedBuffer);
 
-            int flags = el.GetSimpleArgumentValueAsInt (4);
+            int flags = el.GetSimpleArgumentValueAsInt(4);
 
             int result = el.ReturnValueAsInt;
 
-            return new SendEvent (eventInformation, socket, buffer, flags, result);
+            return new SendEvent(eventInformation, socket, buffer, flags, result);
         }
     }
 }
