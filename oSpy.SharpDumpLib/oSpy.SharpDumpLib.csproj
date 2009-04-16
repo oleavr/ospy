@@ -63,6 +63,7 @@
     <Compile Include="Dump.cs" />
     <Compile Include="DumpLoader.cs" />
     <Compile Include="AsyncWorker.cs" />
+    <Compile Include="DumpSaver.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

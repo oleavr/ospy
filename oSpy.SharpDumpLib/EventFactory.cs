@@ -66,7 +66,7 @@ namespace oSpy.SharpDumpLib
             event_information.ProcessName = attrs["processName"].Value;
             event_information.ProcessId = Convert.ToUInt32 (attrs["processId"].Value);
             event_information.ThreadId = Convert.ToUInt32 (attrs["threadId"].Value);
-            event_information.Data = "<data>" + element.InnerXml + "</data>";
+            event_information.RawData = element.OuterXml;
 
             return CreateEvent (event_information);
         }
@@ -78,10 +78,10 @@ namespace oSpy.SharpDumpLib
             
             if (eventInformation.Type == EventType.FunctionCall) {
                 XmlDocument doc = new XmlDocument ();
-                doc.LoadXml (eventInformation.Data);
+                doc.LoadXml (eventInformation.RawData);
                 eventData = doc.DocumentElement;
 
-                string fullFunctionName = eventData.SelectSingleNode ("/data/name").InnerText.Trim ();
+                string fullFunctionName = eventData.SelectSingleNode ("/event/name").InnerText.Trim ();
                 string functionName = fullFunctionName.Split (new string[] { "::" }, StringSplitOptions.None)[1];
                 function_call_event_factories.TryGetValue (functionName, out sf);
             }

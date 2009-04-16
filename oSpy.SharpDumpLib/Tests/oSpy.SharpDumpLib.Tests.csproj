@@ -59,6 +59,8 @@
     <Compile Include="DumpLoaderTest.cs" />
     <Compile Include="TestOsdStream.cs" />
     <Compile Include="TestEventXml.cs" />
+    <Compile Include="DumpSaverTest.cs" />
+    <Compile Include="XmlString.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\oSpy.SharpDumpLib.csproj">

@@ -26,7 +26,7 @@ namespace oSpy.SharpDumpLib.Tests
     public class SocketEventTest
     {
         [Test ()]
-        public void CreateEvent ()
+        public void CreateEvent()
         {
             Socket.CreateEvent ev = EventFactory.CreateFromXml (TestEventXml.E083_CreateSocket) as Socket.CreateEvent;
             Assert.That (ev, Is.Not.Null);

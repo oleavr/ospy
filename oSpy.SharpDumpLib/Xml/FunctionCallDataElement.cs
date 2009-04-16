@@ -37,7 +37,7 @@ namespace oSpy.SharpDumpLib
         }
 
         public string ReturnValue {
-            get { return data_element.SelectSingleNode ("/data/returnValue/value/@value").InnerText.Trim (); }
+            get { return data_element.SelectSingleNode ("/event/returnValue/value/@value").InnerText.Trim (); }
         }
 
         public int ReturnValueAsInt {
@@ -53,7 +53,7 @@ namespace oSpy.SharpDumpLib
         }
 
         public int LastError {
-            get { return Convert.ToInt32 (data_element.SelectSingleNode ("/data/lastError/@value").Value); }
+            get { return Convert.ToInt32 (data_element.SelectSingleNode ("/event/lastError/@value").Value); }
         }
 
         public FunctionCallDataElement (XmlElement dataElement)
@@ -63,7 +63,7 @@ namespace oSpy.SharpDumpLib
 
         public string GetSimpleArgumentValueAsString (uint n)
         {
-            return data_element.SelectSingleNode ("/data/arguments[@direction='in']/argument[" + n + "]/value/@value").InnerText.Trim ();
+            return data_element.SelectSingleNode ("/event/arguments[@direction='in']/argument[" + n + "]/value/@value").InnerText.Trim ();
         }
 
         public int GetSimpleArgumentValueAsInt (uint n)

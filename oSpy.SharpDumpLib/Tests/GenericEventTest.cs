@@ -26,17 +26,10 @@ namespace oSpy.SharpDumpLib.Tests
     [TestFixture ()]
     public class GenericEventTest
     {
-        private const string error_event_xml =
-             "<event id=\"1\" type=\"Error\" timestamp=\"128837553502326832\" processName=\"msnmsgr.exe\" processId=\"2684\" threadId=\"1128\">\n"
-            + error_event_body
-            +"</event>";
-        private const string error_event_body =
-            "    <message>signature 'RTCDebug' specified for function not found: No matches found</message>\n";
-
         [Test ()]
         public void FromXml ()
         {
-            Event ev = EventFactory.CreateFromXml (error_event_xml);
+            Event ev = EventFactory.CreateFromXml (TestEventXml.E001_Error);
             Assert.That (ev, Is.Not.Null & Is.TypeOf (typeof (Event)));
 
             Assert.That (ev.Id, Is.EqualTo (1));
@@ -46,22 +39,9 @@ namespace oSpy.SharpDumpLib.Tests
             Assert.That (ev.ThreadId, Is.EqualTo (1128));
             Assert.That (ev.Timestamp, Is.EqualTo (DateTime.FromFileTimeUtc (128837553502326832)));
 
-            string expected_body = CanonicalizeEventBodyXml ("<data>" + error_event_body + "</data>");
-            string actual_body = CanonicalizeEventBodyXml (ev.Data);
+            string expected_body = XmlString.Canonicalize (TestEventXml.E001_Error);
+            string actual_body = ev.RawData;
             Assert.That (actual_body, Is.EqualTo (expected_body));
-        }
-
-        private string CanonicalizeEventBodyXml (string xml)
-        {
-            XmlDocument doc = new XmlDocument ();
-            doc.LoadXml (xml);
-            doc.Normalize ();
-            StringBuilder sb = new StringBuilder ();
-            XmlWriter writer = XmlTextWriter.Create (sb);
-            doc.WriteTo (writer);
-            writer.Flush ();
-            writer.Close ();
-            return sb.ToString ();
         }
     }
 }

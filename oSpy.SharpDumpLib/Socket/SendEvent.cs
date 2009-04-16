@@ -61,7 +61,7 @@ namespace oSpy.SharpDumpLib.Socket
 
             uint socket = el.GetSimpleArgumentValueAsUInt (1);
 
-            string buffer_base64 = eventData.SelectSingleNode ("/data/arguments[@direction='in']/argument[2]/value/value").InnerText.Trim ();
+            string buffer_base64 = eventData.SelectSingleNode ("/event/arguments[@direction='in']/argument[2]/value/value").InnerText.Trim ();
             byte[] buffer = Convert.FromBase64String (buffer_base64);
 
             int flags = el.GetSimpleArgumentValueAsInt (4);
