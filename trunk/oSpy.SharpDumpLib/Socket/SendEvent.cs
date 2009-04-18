@@ -19,7 +19,7 @@ using System;
 
 namespace oSpy.SharpDumpLib.Socket
 {
-    public class SendEvent : Event
+    public class SendEvent : Event, IDataTransfer
     {
         private uint m_socket;
         private byte[] m_buffer;
@@ -55,6 +55,30 @@ namespace oSpy.SharpDumpLib.Socket
             get
             {
                 return m_result;
+            }
+        }
+
+        public DataTransferDirection Direction
+        {
+            get
+            {
+                return DataTransferDirection.Outgoing;
+            }
+        }
+
+        public byte[] IncomingData
+        {
+            get
+            {
+                throw new NotSupportedException();
+            }
+        }
+
+        public byte[] OutgoingData
+        {
+            get
+            {
+                return m_buffer;
             }
         }
 
