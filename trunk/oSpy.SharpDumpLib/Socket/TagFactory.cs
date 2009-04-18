@@ -21,7 +21,10 @@ using System.Collections.Generic;
 namespace oSpy.SharpDumpLib.Socket
 {
     [TagFactoryFor(typeof(CreateEvent))]
+    [TagFactoryFor(typeof(CloseEvent))]
     [TagFactoryFor(typeof(ConnectEvent))]
+    [TagFactoryFor(typeof(SendEvent))]
+    [TagFactoryFor(typeof(ReceiveEvent))]
     public class TagFactory : ResourceTagFactory
     {
         protected override uint GetResourceHandleFromEvent(Event ev)
@@ -31,10 +34,25 @@ namespace oSpy.SharpDumpLib.Socket
                 CreateEvent createEvent = ev as CreateEvent;
                 return createEvent.Result;
             }
+            else if (ev is CloseEvent)
+            {
+                CloseEvent closeEvent = ev as CloseEvent;
+                return closeEvent.Socket;
+            }
             else if (ev is ConnectEvent)
             {
                 ConnectEvent connEvent = ev as ConnectEvent;
                 return connEvent.Socket;
+            }
+            else if (ev is SendEvent)
+            {
+                SendEvent sendEvent = ev as SendEvent;
+                return sendEvent.Socket;
+            }
+            else if (ev is ReceiveEvent)
+            {
+                ReceiveEvent recvEvent = ev as ReceiveEvent;
+                return recvEvent.Socket;
             }
             else
             {

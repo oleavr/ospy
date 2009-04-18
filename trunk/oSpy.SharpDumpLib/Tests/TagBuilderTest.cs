@@ -25,7 +25,7 @@ namespace oSpy.SharpDumpLib.Tests
     public class TagBuilderTest
     {
         [Test()]
-        public void TestNoTags()
+        public void NoTags()
         {
             TagBuilder builder = new TagBuilder();
             Event ev = EventFactory.CreateFromXml(TestEventXml.E001_Error);
@@ -34,42 +34,65 @@ namespace oSpy.SharpDumpLib.Tests
         }
 
         [Test()]
-        public void TestCreateSocket()
+        public void CreateSocket()
         {
-            TagBuilder builder = new TagBuilder();
-            Event ev = EventFactory.CreateFromXml(TestEventXml.E083_CreateSocket);
-            builder.Process(ev);
-            Assert.That(ev.Tags.Count, Is.EqualTo(1));
-            Assert.That(ev.Tags[0].Name, Is.EqualTo("Socket"));
-            ResourceTag resTag = ev.Tags[0] as ResourceTag;
-            Assert.That(resTag, Is.Not.Null);
-            Assert.That(resTag.ResourceHandle, Is.EqualTo(0x8ac));
+            BuildAndVerifySocketTag(TestEventXml.E083_CreateSocket, 0x8ac);
         }
 
         [Test()]
-        public void TestConnectSocket()
+        public void CloseSocket()
         {
-            TagBuilder builder = new TagBuilder();
-            Event ev = EventFactory.CreateFromXml(TestEventXml.E084_Connect);
-            builder.Process(ev);
-            Assert.That(ev.Tags.Count, Is.EqualTo(1));
-            Assert.That(ev.Tags[0].Name, Is.EqualTo("Socket"));
-            ResourceTag resTag = ev.Tags[0] as ResourceTag;
-            Assert.That(resTag, Is.Not.Null);
-            Assert.That(resTag.ResourceHandle, Is.EqualTo(0x8ac));
+            BuildAndVerifySocketTag(TestEventXml.E140_CloseSocket, 0x8ac);
         }
 
         [Test()]
-        public void TestSameSocketTag()
+        public void ConnectSocket()
+        {
+            BuildAndVerifySocketTag(TestEventXml.E084_Connect, 0x8ac);
+        }
+
+        [Test()]
+        public void SendSocket()
+        {
+            BuildAndVerifySocketTag(TestEventXml.E096_Send, 0x8ac);
+        }
+
+        [Test()]
+        public void ReceiveSocket()
+        {
+            BuildAndVerifySocketTag(TestEventXml.E130_Receive, 0x8ac);
+        }
+        
+        private void BuildAndVerifySocketTag(string xml, uint expectedHandle)
+        {
+            TagBuilder builder = new TagBuilder();
+            Event ev = EventFactory.CreateFromXml(xml);
+            builder.Process(ev);
+            Assert.That(ev.Tags.Count, Is.EqualTo(1));
+            Assert.That(ev.Tags[0], Is.InstanceOfType(typeof(Socket.SocketResourceTag)));
+            Assert.That(ev.Tags[0].Name, Is.EqualTo("Socket"));
+            ResourceTag resTag = ev.Tags[0] as ResourceTag;
+            Assert.That(resTag.ResourceHandle, Is.EqualTo(expectedHandle));
+        }
+
+        [Test()]
+        public void SameSocketTag()
         {
             TagBuilder builder = new TagBuilder();
 
-            Event createEvent = EventFactory.CreateFromXml(TestEventXml.E083_CreateSocket);
-            builder.Process(createEvent);
-            Event connEvent = EventFactory.CreateFromXml(TestEventXml.E084_Connect);
-            builder.Process(connEvent);
+            Event firstCreateEvent = EventFactory.CreateFromXml(TestEventXml.E083_CreateSocket);
+            builder.Process(firstCreateEvent);
+            Event firstConnEvent = EventFactory.CreateFromXml(TestEventXml.E084_Connect);
+            builder.Process(firstConnEvent);
 
-            Assert.That(createEvent.Tags[0], Is.SameAs(connEvent.Tags[0]));
+            Event secondCreateEvent = EventFactory.CreateFromXml(TestEventXml.E141_CreateSocket);
+            builder.Process(secondCreateEvent);
+            Event secondConnEvent = EventFactory.CreateFromXml(TestEventXml.E142_Connect);
+            builder.Process(secondConnEvent);
+
+            Assert.That(firstCreateEvent.Tags[0], Is.SameAs(firstConnEvent.Tags[0]));
+            Assert.That(secondCreateEvent.Tags[0], Is.SameAs(secondConnEvent.Tags[0]));
+            Assert.That(firstCreateEvent.Tags[0], Is.Not.SameAs(secondCreateEvent.Tags[0]));
         }
     }
 }

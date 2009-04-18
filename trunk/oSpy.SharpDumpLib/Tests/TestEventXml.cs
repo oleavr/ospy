@@ -190,5 +190,71 @@ namespace oSpy.SharpDumpLib.Tests
                       +"</event>";
             }
         }
+
+        public static string E141_CreateSocket
+        {
+            get
+            {
+                return "<event id=\"141\" processId=\"2684\" processName=\"msnmsgr.exe\" threadId=\"544\" timestamp=\"128837553527462976\" type=\"FunctionCall\">"
+                      +    "<name>"
+                      +        "WS2_32.dll::socket"
+                      +    "</name>"
+                      +    "<arguments direction=\"in\">"
+                      +        "<argument name=\"af\">"
+                      +            "<value subType=\"SockAddrFamily\" type=\"Enum\" value=\"AF_INET\"/>"
+                      +        "</argument>"
+                      +        "<argument name=\"type\">"
+                      +            "<value subType=\"SockType\" type=\"Enum\" value=\"SOCK_STREAM\"/>"
+                      +        "</argument>"
+                      +        "<argument name=\"protocol\">"
+                      +            "<value subType=\"AF_INET_Protocol\" type=\"Dynamic\" value=\"IPPROTO_IP\"/>"
+                      +        "</argument>"
+                      +    "</arguments>"
+                      +    "<returnValue>"
+                      +        "<value type=\"UInt32\" value=\"0x8ac\"/>"
+                      +    "</returnValue>"
+                      +    "<lastError value=\"0\"/>"
+                      +"</event>";
+            }
+        }
+
+        public static string E142_Connect
+        {
+            get
+            {
+                return "<event id=\"142\" processId=\"2684\" processName=\"msnmsgr.exe\" threadId=\"544\" timestamp=\"128837553527462976\" type=\"FunctionCall\">"
+                      +    "<name>"
+                      +        "WS2_32.dll::connect"
+                      +    "</name>"
+                      +    "<arguments direction=\"in\">"
+                      +        "<argument name=\"s\">"
+                      +            "<value type=\"UInt32\" value=\"0x8ac\"/>"
+                      +        "</argument>"
+                      +        "<argument name=\"name\">"
+                      +            "<value type=\"Ipv4SockaddrPtr\" value=\"0x0006FC64\">"
+                      +                "<value subType=\"Ipv4Sockaddr\" type=\"Struct\">"
+                      +                    "<field name=\"sin_family\">"
+                      +                        "<value subType=\"SockAddrFamily\" type=\"Enum\" value=\"AF_INET\"/>"
+                      +                    "</field>"
+                      +                    "<field name=\"sin_port\">"
+                      +                        "<value type=\"UInt16\" value=\"1863\"/>"
+                      +                    "</field>"
+                      +                    "<field name=\"sin_addr\">"
+                      +                        "<value type=\"Ipv4InAddr\" value=\"207.46.107.103\"/>"
+                      +                    "</field>"
+                      +                "</value>"
+                      +            "</value>"
+                      +        "</argument>"
+                      +        "<argument name=\"namelen\">"
+                      +            "<value type=\"Int32\" value=\"16\"/>"
+                      +        "</argument>"
+                      +    "</arguments>"
+                      +    "<returnValue>"
+                      +        "<value type=\"Int32\" value=\"-1\"/>"
+                      +    "</returnValue>"
+                      +    "<lastError value=\"10035\"/>"
+                      +"</event>";
+            }
+        }
     }
 }
