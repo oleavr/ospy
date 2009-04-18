@@ -174,15 +174,15 @@ namespace oSpy.SharpDumpLib
 
             for (eventCount = 0; xmlReader.Read() && eventCount < numEvents; )
             {
-                if (asyncOp != null)
-                {
-                    int percentComplete = (int)(((float)(eventCount + 1) / (float)numEvents) * 100.0f);
-                    ProgressChangedEventArgs e = new ProgressChangedEventArgs(percentComplete, asyncOp.UserSuppliedState);
-                    asyncOp.Post(m_onProgressReportDelegate, e);
-                }
-
                 if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "event")
                 {
+                    if (asyncOp != null)
+                    {
+                        int percentComplete = (int)(((float)(eventCount + 1) / (float)numEvents) * 100.0f);
+                        ProgressChangedEventArgs e = new ProgressChangedEventArgs(percentComplete, asyncOp.UserSuppliedState);
+                        asyncOp.Post(m_onProgressReportDelegate, e);
+                    }
+
                     XmlReader rdr = xmlReader.ReadSubtree();
                     Event ev = m_eventFactory.CreateEvent(rdr);
                     dump.AddEvent(ev);
