@@ -29,7 +29,7 @@ namespace oSpy.SharpDumpLib
 
         public EventFactory()
         {
-            Assembly asm = Assembly.GetCallingAssembly();
+            Assembly asm = Assembly.GetExecutingAssembly();
             foreach (Type t in asm.GetTypes())
             {
                 object[] attrs = t.GetCustomAttributes(typeof(FunctionCallEventFactoryAttribute), true);

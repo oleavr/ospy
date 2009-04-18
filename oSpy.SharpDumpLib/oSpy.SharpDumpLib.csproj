@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -48,7 +48,7 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="ICSharpCode.SharpZipLib">
+    <Reference Include="ICSharpCode.SharpZipLib, Version=0.85.4.369, Culture=neutral, PublicKeyToken=1b03e6acf1164f73">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\SharpZipLib\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
@@ -73,6 +73,13 @@
     <Compile Include="DumpSaver.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="TagBuilder.cs" />
+    <Compile Include="ITag.cs" />
+    <Compile Include="ResourceTag.cs" />
+    <Compile Include="ITagFactory.cs" />
+    <Compile Include="Socket\TagFactory.cs" />
+    <Compile Include="Socket\ResourceTag.cs" />
+    <Compile Include="ResourceTagFactory.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

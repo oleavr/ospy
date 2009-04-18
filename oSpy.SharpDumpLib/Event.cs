@@ -16,6 +16,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 
 namespace oSpy.SharpDumpLib
 {
@@ -33,6 +34,7 @@ namespace oSpy.SharpDumpLib
     public class Event
     {
         protected EventInformation m_info;
+        protected List<ITag> m_tags = new List<ITag>();
 
         public uint Id
         {
@@ -87,6 +89,14 @@ namespace oSpy.SharpDumpLib
             get
             {
                 return m_info.RawData;
+            }
+        }
+
+        public List<ITag> Tags
+        {
+            get
+            {
+                return m_tags;
             }
         }
 
