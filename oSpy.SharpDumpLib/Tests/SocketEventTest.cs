@@ -61,9 +61,15 @@ namespace oSpy.SharpDumpLib.Tests
             Socket.SendEvent ev = EventFactory.CreateFromXml(TestEventXml.E096_Send) as Socket.SendEvent;
             Assert.That(ev, Is.Not.Null);
             Assert.That(ev.Socket, Is.EqualTo(0x8ac));
-            Assert.That(ev.Buffer, Is.EqualTo(Encoding.UTF8.GetBytes("VER 1 MSNP18 MSNP17 CVR0\r\n")));
+            byte[] expectedBufferContents = Encoding.UTF8.GetBytes("VER 1 MSNP18 MSNP17 CVR0\r\n");
+            Assert.That(ev.Buffer, Is.EqualTo(expectedBufferContents));
             Assert.That(ev.Flags, Is.EqualTo(0));
             Assert.That(ev.Result, Is.EqualTo(26));
+
+            IDataTransfer xfer = ev as IDataTransfer;
+            Assert.That(xfer, Is.Not.Null);
+            Assert.That(xfer.Direction, Is.EqualTo(DataTransferDirection.Outgoing));
+            Assert.That(xfer.OutgoingData, Is.EqualTo(expectedBufferContents));
         }
 
         [Test()]
@@ -72,10 +78,16 @@ namespace oSpy.SharpDumpLib.Tests
             Socket.ReceiveEvent ev = EventFactory.CreateFromXml(TestEventXml.E130_Receive) as Socket.ReceiveEvent;
             Assert.That(ev, Is.Not.Null);
             Assert.That(ev.Socket, Is.EqualTo(0x8ac));
-            Assert.That(ev.Buffer, Is.EqualTo(Encoding.UTF8.GetBytes("VER 1 MSNP18\r\n")));
+            byte[] expectedBufferContents = Encoding.UTF8.GetBytes("VER 1 MSNP18\r\n");
+            Assert.That(ev.Buffer, Is.EqualTo(expectedBufferContents));
             Assert.That(ev.BufferSize, Is.EqualTo(512));
             Assert.That(ev.Flags, Is.EqualTo(0));
             Assert.That(ev.Result, Is.EqualTo(14));
+
+            IDataTransfer xfer = ev as IDataTransfer;
+            Assert.That(xfer, Is.Not.Null);
+            Assert.That(xfer.Direction, Is.EqualTo(DataTransferDirection.Incoming));
+            Assert.That(xfer.IncomingData, Is.EqualTo(expectedBufferContents));
         }
     }
 }

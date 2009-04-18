@@ -80,6 +80,7 @@
     <Compile Include="Socket\TagFactory.cs" />
     <Compile Include="Socket\ResourceTag.cs" />
     <Compile Include="ResourceTagFactory.cs" />
+    <Compile Include="IDataTransfer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
