@@ -71,6 +71,15 @@ namespace oSpy.SharpDumpLib.Tests
             Assert.That(progressEvents[2].ProgressPercentage, Is.EqualTo(100));
         }
 
+        [Test()]
+        public void LoadTags()
+        {
+            Stream stream = TestOsdStream.GenerateUncompressedFrom(TestEventXml.E083_CreateSocket);
+            DumpLoader loader = new DumpLoader();
+            Dump dump = loader.Load(stream);
+            Assert.That(dump.Events[83].Tags.Count, Is.AtLeast(1));
+        }
+
         private void LoadAndVerifyEvents(Stream stream)
         {
             DumpLoader loader = new DumpLoader();

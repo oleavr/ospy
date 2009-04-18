@@ -32,6 +32,7 @@ namespace oSpy.SharpDumpLib
 
         private WorkerEventHandler m_workerDelegate;
         private EventFactory m_eventFactory = new EventFactory();
+        private TagBuilder m_tagBuilder = new TagBuilder();
 
         private delegate void WorkerEventHandler(Stream stream, AsyncOperation asyncOp, SendOrPostCallback completionMethodDelegate);
 
@@ -185,6 +186,7 @@ namespace oSpy.SharpDumpLib
 
                     XmlReader rdr = xmlReader.ReadSubtree();
                     Event ev = m_eventFactory.CreateEvent(rdr);
+                    m_tagBuilder.Process(ev);
                     dump.AddEvent(ev);
 
                     eventCount++;
