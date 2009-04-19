@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2009 Ole André Vadla Ravnås <oleavr@gmail.com>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -19,31 +21,6 @@ using System.Threading;
 
 namespace oSpyStudio
 {
-    internal class PendingSendOrPost
-    {
-        private SendOrPostCallback cb;
-        private System.Object state;
-        private ManualResetEvent ev;
-        
-        public PendingSendOrPost(SendOrPostCallback cb, System.Object state)
-        {
-            this.cb = cb;
-            this.state = state;
-            this.ev = new ManualResetEvent(false);
-        }
-        
-        public void Invoke()
-        {
-            cb(state);
-            ev.Set();
-        }
-        
-        public void Wait()
-        {
-            ev.WaitOne();
-        }
-    }
-
     public class GLibSynchronizationContext : SynchronizationContext
     {
         private Queue pendingEvents = new Queue();
@@ -94,6 +71,31 @@ namespace oSpyStudio
                 
                 ev.Invoke();
             }
+        }
+    }
+
+    internal class PendingSendOrPost
+    {
+        private SendOrPostCallback cb;
+        private System.Object state;
+        private ManualResetEvent ev;
+        
+        public PendingSendOrPost(SendOrPostCallback cb, System.Object state)
+        {
+            this.cb = cb;
+            this.state = state;
+            this.ev = new ManualResetEvent(false);
+        }
+        
+        public void Invoke()
+        {
+            cb(state);
+            ev.Set();
+        }
+        
+        public void Wait()
+        {
+            ev.WaitOne();
         }
     }
 }

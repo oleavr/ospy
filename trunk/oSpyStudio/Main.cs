@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2009 Ole André Vadla Ravnås <oleavr@gmail.com>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -20,13 +22,15 @@ namespace oSpyStudio
 {
     class MainClass
     {
-        public static void Main (string[] args)
+        public static void Main(string[] args)
         {
-            Application.Init ();
-            System.ComponentModel.AsyncOperationManager.SynchronizationContext = new GLibSynchronizationContext ();
-            
-            MainWindow win = new MainWindow ();
-            Application.Run ();
+            Application.Init();
+            System.ComponentModel.AsyncOperationManager.SynchronizationContext = new GLibSynchronizationContext();
+
+            MainWindow win = new MainWindow();
+            win.Show();
+
+            Application.Run();
         }
     }
 }
