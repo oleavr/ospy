@@ -38,7 +38,7 @@ def remove_xmlelements_named(xml, name):
 result = '<events>'
 
 f = open(inputfile)
-f.seek(8)
+f.seek(16)
 buf = ''
 while True:
     startidx = buf.find('<event ')
