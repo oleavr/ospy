@@ -164,7 +164,7 @@ namespace oSpy.SharpDumpLib
             else if (version != 2)
                 throw new InvalidDataException("unsupported version " + version);
             else if (isCompressed != 0 && isCompressed != 1)
-                throw new InvalidDataException("invalid value for is_compressed");
+                throw new InvalidDataException("invalid value for isCompressed");
 
             if (isCompressed == 1)
                 stream = new BZip2InputStream(stream);
@@ -172,6 +172,7 @@ namespace oSpy.SharpDumpLib
             XmlTextReader xmlReader = new XmlTextReader(stream);
 
             uint eventCount;
+            uint prevId = 0;
 
             for (eventCount = 0; xmlReader.Read() && eventCount < numEvents; )
             {
@@ -184,12 +185,23 @@ namespace oSpy.SharpDumpLib
                         asyncOp.Post(m_onProgressReportDelegate, e);
                     }
 
-                    XmlReader rdr = xmlReader.ReadSubtree();
-                    Event ev = m_eventFactory.CreateEvent(rdr);
-                    m_tagBuilder.Process(ev);
-                    dump.AddEvent(ev);
+                    Event ev;
+
+                    try
+                    {
+                        XmlReader rdr = xmlReader.ReadSubtree();
+                        ev = m_eventFactory.CreateEvent(rdr);
+                        m_tagBuilder.Process(ev);
+                        dump.AddEvent(ev);
+                    }
+                    catch (Exception ex)
+                    {
+                        Exception outerEx = new Exception("Error processing event following id " + prevId, ex);
+                        throw outerEx;
+                    }
 
                     eventCount++;
+                    prevId = ev.Id;
                 }
             }
 
