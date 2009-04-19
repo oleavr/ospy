@@ -9,11 +9,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "oSpyStudio", "oSpyStudio\oS
 EndProject
 Project("{9344bdbb-3e7f-41fc-a0dd-8665d75ee146}") = "oSpyStudioTranslation", "oSpyStudioTranslation\oSpyStudioTranslation.mdproj", "{854E4B7B-C330-4FD2-901A-88E880E3D8AB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "oSpyStudio.Widgets", "oSpyStudio\Widgets\oSpyStudio.Widgets.csproj", "{88BBD467-3DFF-4311-86C8-A24FF7DFE72D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "oSpyStudio.Widgets.Tests", "oSpyStudio\Widgets\Tests\oSpyStudio.Widgets.Tests.csproj", "{BA808903-8D8A-43D8-8E16-10FF7A781C02}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 		ReleaseWdkCrt|Any CPU = ReleaseWdkCrt|Any CPU
+		Default|Any CPU = Default|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{4888CEE7-9E21-4558-89EB-7D2D2838B48B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -28,12 +33,26 @@ Global
 		{854E4B7B-C330-4FD2-901A-88E880E3D8AB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{854E4B7B-C330-4FD2-901A-88E880E3D8AB}.ReleaseWdkCrt|Any CPU.ActiveCfg = ReleaseWdkCrt|Any CPU
 		{854E4B7B-C330-4FD2-901A-88E880E3D8AB}.ReleaseWdkCrt|Any CPU.Build.0 = ReleaseWdkCrt|Any CPU
+		{88BBD467-3DFF-4311-86C8-A24FF7DFE72D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88BBD467-3DFF-4311-86C8-A24FF7DFE72D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88BBD467-3DFF-4311-86C8-A24FF7DFE72D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88BBD467-3DFF-4311-86C8-A24FF7DFE72D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88BBD467-3DFF-4311-86C8-A24FF7DFE72D}.ReleaseWdkCrt|Any CPU.ActiveCfg = ReleaseWdkCrt|Any CPU
+		{88BBD467-3DFF-4311-86C8-A24FF7DFE72D}.ReleaseWdkCrt|Any CPU.Build.0 = ReleaseWdkCrt|Any CPU
 		{A604A8C5-559A-416E-9030-6AE0C0DCBAF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A604A8C5-559A-416E-9030-6AE0C0DCBAF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A604A8C5-559A-416E-9030-6AE0C0DCBAF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A604A8C5-559A-416E-9030-6AE0C0DCBAF6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A604A8C5-559A-416E-9030-6AE0C0DCBAF6}.ReleaseWdkCrt|Any CPU.ActiveCfg = ReleaseWdkCrt|Any CPU
 		{A604A8C5-559A-416E-9030-6AE0C0DCBAF6}.ReleaseWdkCrt|Any CPU.Build.0 = ReleaseWdkCrt|Any CPU
+		{BA808903-8D8A-43D8-8E16-10FF7A781C02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA808903-8D8A-43D8-8E16-10FF7A781C02}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA808903-8D8A-43D8-8E16-10FF7A781C02}.Default|Any CPU.ActiveCfg = Default|Any CPU
+		{BA808903-8D8A-43D8-8E16-10FF7A781C02}.Default|Any CPU.Build.0 = Default|Any CPU
+		{BA808903-8D8A-43D8-8E16-10FF7A781C02}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA808903-8D8A-43D8-8E16-10FF7A781C02}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA808903-8D8A-43D8-8E16-10FF7A781C02}.ReleaseWdkCrt|Any CPU.ActiveCfg = ReleaseWdkCrt|Any CPU
+		{BA808903-8D8A-43D8-8E16-10FF7A781C02}.ReleaseWdkCrt|Any CPU.Build.0 = ReleaseWdkCrt|Any CPU
 		{D177CBE0-9CAF-40B4-A909-61387512C0CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D177CBE0-9CAF-40B4-A909-61387512C0CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D177CBE0-9CAF-40B4-A909-61387512C0CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -45,18 +64,18 @@ Global
 		version = 0.1
 		StartupItem = oSpyStudio\oSpyStudio.csproj
 		Policies = $0
-		$0.StandardHeader = $1
-		$1.Text = 
-		$1.inheritsSet = MITX11License
-		$0.DotNetNamingPolicy = $2
-		$2.DirectoryNamespaceAssociation = None
-		$2.ResourceNamePolicy = FileFormatDefault
-		$0.TextStylePolicy = $3
-		$3.FileWidth = 120
-		$3.TabWidth = 4
-		$3.TabsToSpaces = True
-		$3.NoTabsAfterNonTabs = True
-		$3.RemoveTrailingWhitespace = True
-		$3.EolMarker = Native
+		$0.TextStylePolicy = $1
+		$1.FileWidth = 120
+		$1.TabWidth = 4
+		$1.TabsToSpaces = True
+		$1.NoTabsAfterNonTabs = True
+		$1.RemoveTrailingWhitespace = True
+		$1.EolMarker = Native
+		$0.StandardHeader = $2
+		$2.Text = 
+		$2.inheritsSet = MITX11License
+		$0.DotNetNamingPolicy = $3
+		$3.DirectoryNamespaceAssociation = None
+		$3.ResourceNamePolicy = FileFormatDefault
 	EndGlobalSection
 EndGlobal

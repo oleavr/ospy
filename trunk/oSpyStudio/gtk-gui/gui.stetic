@@ -6,7 +6,7 @@
   </configuration>
   <import>
     <widget-library name="glade-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
-    <widget-library name="../bin/Debug/oSpyStudio.exe" internal="true" />
+    <widget-library name="../../bin/Release/oSpyStudio.exe" internal="true" />
   </import>
   <widget class="Gtk.Window" id="MainWindow" design-size="612 333">
     <action-group name="Default">

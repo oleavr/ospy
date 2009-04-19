@@ -11,5 +11,6 @@
       </translations>
     </translations>
     <outputType>RelativeToOutput</outputType>
+    <packageName />
   </PropertyGroup>
 </Project>
