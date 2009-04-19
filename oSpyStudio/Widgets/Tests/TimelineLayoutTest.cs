@@ -71,6 +71,8 @@ namespace oSpyStudio.Widgets.Tests
             Assert.That(layout.Nodes[1], Is.SameAs(ctx2node));
             Assert.That(layout.Nodes[2], Is.SameAs(ctx1nodeB));
 
+            Assert.That(layout.RowCount, Is.EqualTo(2));
+
             Assert.That(ctx1nodeA.Position, Is.EqualTo(new Point(layout.XMargin, layout.YMargin)));
             Assert.That(ctx1nodeB.Position, Is.EqualTo(new Point(layout.XMargin + 80 + layout.XPadding, layout.YMargin)));
 
