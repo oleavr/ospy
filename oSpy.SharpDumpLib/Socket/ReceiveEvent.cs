@@ -16,6 +16,7 @@
 //
 
 using System;
+using System.Xml;
 
 namespace oSpy.SharpDumpLib.Socket
 {
@@ -106,14 +107,18 @@ namespace oSpy.SharpDumpLib.Socket
     [FunctionCallEventFactory("recv")]
     public class ReceiveEventFactory : ISpecificEventFactory
     {
-        public Event CreateEvent(EventInformation eventInformation, System.Xml.XmlElement eventData)
+        public Event CreateEvent(EventInformation eventInformation, XmlElement eventData)
         {
             FunctionCallDataElement el = new FunctionCallDataElement(eventData);
 
             uint socket = el.GetSimpleArgumentValueAsUInt(1);
 
-            string encodedBuffer = eventData.SelectSingleNode("/event/arguments[@direction='out']/argument[1]/value/value").InnerText.Trim();
-            byte[] buffer = Convert.FromBase64String(encodedBuffer);
+            byte[] buffer = null;
+            XmlNode bufferNode = eventData.SelectSingleNode("/event/arguments[@direction='out']/argument[1]/value/value");
+            if (bufferNode != null)
+            {
+                buffer = Convert.FromBase64String(bufferNode.InnerText.Trim());
+            }
 
             int bufferSize = el.GetSimpleArgumentValueAsInt(3);
 

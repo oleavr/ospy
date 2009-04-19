@@ -89,5 +89,17 @@ namespace oSpy.SharpDumpLib.Tests
             Assert.That(xfer.Direction, Is.EqualTo(DataTransferDirection.Incoming));
             Assert.That(xfer.IncomingData, Is.EqualTo(expectedBufferContents));
         }
+
+        [Test()]
+        public void FailingReceiveEvent()
+        {
+            Socket.ReceiveEvent ev = EventFactory.CreateFromXml(TestEventXml.E136_Receive) as Socket.ReceiveEvent;
+            Assert.That(ev, Is.Not.Null);
+            Assert.That(ev.Socket, Is.EqualTo(0x99c));
+            Assert.That(ev.Buffer, Is.Null);
+            Assert.That(ev.BufferSize, Is.EqualTo(1024));
+            Assert.That(ev.Flags, Is.EqualTo(0));
+            Assert.That(ev.Result, Is.EqualTo(-1));
+        }
     }
 }
