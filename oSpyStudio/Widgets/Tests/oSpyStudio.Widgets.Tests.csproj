@@ -41,6 +41,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="TimelineLayoutTest.cs" />
+    <Compile Include="TestNode.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <ProjectReference Include="..\oSpyStudio.Widgets.csproj">
+      <Project>{88BBD467-3DFF-4311-86C8-A24FF7DFE72D}</Project>
+      <Name>oSpyStudio.Widgets</Name>
+    </ProjectReference>
+  </ItemGroup>
 </Project>
