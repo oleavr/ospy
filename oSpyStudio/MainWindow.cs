@@ -83,7 +83,8 @@ public partial class MainWindow: Gtk.Window
 
     private void dumpLoader_LoadCompleted(object sender, LoadCompletedEventArgs e)
     {
-        m_curTask.Completed();
+        if (m_curTask != null)
+            m_curTask.Completed();
 
         if (e.Cancelled)
             return;
@@ -94,13 +95,14 @@ public partial class MainWindow: Gtk.Window
         }
         catch (Exception ex)
         {
-            ShowErrorMessage("Error opening dump: " + ex.InnerException.Message + "\n" + ex.InnerException.StackTrace);
+            ShowErrorMessage("Error opening dump. Please file a bug.\n\nDetails:\n" + ex.ToString());
         }
     }
 
     private void dumpLoader_LoadProgressChanged(object sender, ProgressChangedEventArgs e)
     {
-        m_curTask.SetProgress(e.ProgressPercentage);
+        if (m_curTask != null)
+            m_curTask.SetProgress(e.ProgressPercentage);
     }
 
     private void ShowInfoMessage(string message)
@@ -128,6 +130,11 @@ public partial class MainWindow: Gtk.Window
 
         m_curTask = new Task(this, description, started, cancelled);
         m_curTask.Start();
+    }
+
+    private void cancelButton_Clicked(object sender, EventArgs e)
+    {
+        m_curTask.Cancel();
     }
 
     private class Task
@@ -183,7 +190,7 @@ public partial class MainWindow: Gtk.Window
         {
             Cancelled(this, EventArgs.Empty);
 
-            m_window.m_curTask = null;
+            Completed();
         }
     }
 }

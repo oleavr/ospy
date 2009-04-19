@@ -111,5 +111,6 @@ public partial class MainWindow {
         this.DeleteEvent += new Gtk.DeleteEventHandler(this.OnDeleteEvent);
         this.OpenAction.Activated += new System.EventHandler(this.OpenAction_Activated);
         this.QuitAction.Activated += new System.EventHandler(this.QuitAction_Activated);
+        this.cancelButton.Clicked += new System.EventHandler(this.cancelButton_Clicked);
     }
 }
