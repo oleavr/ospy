@@ -24,6 +24,8 @@ namespace oSpyStudio.Widgets
     {
         protected readonly uint m_xmargin = 5;
         protected readonly uint m_ymargin = 10;
+        protected readonly uint m_xpadding = 3;
+        protected readonly uint m_ypadding = 6;
         protected List<ITimelineNode> m_nodes = new List<ITimelineNode>();
 
         public uint XMargin
@@ -39,6 +41,22 @@ namespace oSpyStudio.Widgets
             get
             {
                 return m_ymargin;
+            }
+        }
+
+        public uint XPadding
+        {
+            get
+            {
+                return m_xpadding;
+            }
+        }
+
+        public uint YPadding
+        {
+            get
+            {
+                return m_ypadding;
             }
         }
 
@@ -66,7 +84,7 @@ namespace oSpyStudio.Widgets
             {
                 node.Position = new Point(x, y);
 
-                x += node.Allocation.Width + m_xmargin;
+                x += node.Allocation.Width + m_xpadding;
             }
         }
     }
