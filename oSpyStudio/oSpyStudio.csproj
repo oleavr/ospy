@@ -5,11 +5,10 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{B4EC49D9-3059-441A-A444-33FB4F2CD848}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <ProjectGuid>{D177CBE0-9CAF-40B4-A909-61387512C0CA}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AssemblyName>oSpyStudio</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <StartupObject>oSpyStudio.MainClass</StartupObject>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -18,7 +17,7 @@
     <OutputPath>bin\Debug</OutputPath>
     <DefineConstants>DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>3</WarningLevel>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -58,11 +57,15 @@
     <Compile Include="Main.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="GLibSynchronizationContext.cs" />
-    <Compile Include="widgets\DataView.cs" />
-    <Compile Include="widgets\ProgressDialog.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="app.desktop" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <ProjectReference Include="..\oSpy.SharpDumpLib\oSpy.SharpDumpLib.csproj">
+      <Project>{4888CEE7-9E21-4558-89EB-7D2D2838B48B}</Project>
+      <Name>oSpy.SharpDumpLib</Name>
+    </ProjectReference>
+  </ItemGroup>
 </Project>
