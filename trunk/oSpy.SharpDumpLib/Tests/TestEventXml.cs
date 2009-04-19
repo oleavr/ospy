@@ -170,6 +170,41 @@ namespace oSpy.SharpDumpLib.Tests
             }
         }
 
+        public static string E136_Receive
+        {
+            get
+            {
+                return "<event id=\"136\" processId=\"2684\" processName=\"msnmsgr.exe\" threadId=\"2760\" timestamp=\"128837553526761968\" type=\"FunctionCall\">"
+                      +    "<name>"
+                      +        "WS2_32.dll::recv"
+                      +    "</name>"
+                      +    "<arguments direction=\"in\">"
+                      +        "<argument name=\"s\">"
+                      +            "<value type=\"UInt32\" value=\"0x99c\"/>"
+                      +        "</argument>"
+                      +        "<argument name=\"buf\">"
+                      +            "<value type=\"Pointer\" value=\"0x03CCF468\"/>"
+                      +        "</argument>"
+                      +        "<argument name=\"len\">"
+                      +            "<value type=\"Int32\" value=\"1024\"/>"
+                      +        "</argument>"
+                      +        "<argument name=\"flags\">"
+                      +            "<value type=\"Int32\" value=\"0\"/>"
+                      +        "</argument>"
+                      +    "</arguments>"
+                      +    "<arguments direction=\"out\">"
+                      +        "<argument name=\"buf\">"
+                      +            "<value type=\"Pointer\" value=\"0x03CCF468\"/>"
+                      +        "</argument>"
+                      +    "</arguments>"
+                      +    "<returnValue>"
+                      +        "<value type=\"Int32\" value=\"-1\"/>"
+                      +    "</returnValue>"
+                      +    "<lastError value=\"10035\"/>"
+                      +"</event>";
+            }
+        }
+
         public static string E140_CloseSocket
         {
             get
