@@ -27,7 +27,7 @@ namespace oSpyStudio.Widgets
         protected readonly uint m_xpadding = 3;
         protected readonly uint m_ypadding = 6;
 
-        protected List<ITimelineNode> m_nodes = new List<ITimelineNode>();
+        protected NodeList m_nodes = new NodeList();
         protected uint m_rowCount;
 
         public uint XMargin
@@ -81,44 +81,307 @@ namespace oSpyStudio.Widgets
         public void Add(ITimelineNode node)
         {
             m_nodes.Add(node);
-            DoLayout();
         }
 
-        private void DoLayout()
+        public void Update()
         {
             m_nodes.Sort(new TimelineNodeTimestampComparer());
 
-            NodeList remainingNodes = new NodeList(m_nodes);
-            RangeList allocatedRanges = new RangeList();
-            RowList rows = new RowList();
-
-            while (remainingNodes.Count > 0)
+            Road road = new Road(m_xmargin, m_ymargin, m_xpadding, m_ypadding);
+            for (int nodeIndex = 0; nodeIndex < m_nodes.Count; nodeIndex++)
             {
-                NodeList relatedNodes = remainingNodes.PopFirstRangeOfRelatedNodes();
-                uint startTime = relatedNodes[0].Timestamp;
-                uint endTime = relatedNodes[relatedNodes.Count - 1].Timestamp; // FIXME: need Duration
-                Range range = new Range(startTime, endTime, relatedNodes);
+                ITimelineNode node = m_nodes[nodeIndex];
 
-                int rowIndex = allocatedRanges.GetNumberOfIntersectingRanges(range);
-                allocatedRanges.Add(range);
+                Lane lane = road.FindExistingLaneFor(node);
+                if (lane == null)
+                {
+                    ITimelineNode lastNodeInLane = m_nodes.FindLastNodeWithSameContextAs(node, nodeIndex + 1);
+                    lane = road.ReserveLaneUntil(lastNodeInLane);
+                }
 
-                if (rowIndex >= rows.Count)
-                    rows.Add(new Row());
-                Row row = rows[rowIndex];
-                row.AddRange(range);
+                lane.Append(node);
             }
 
-            uint x = m_xmargin;
-            uint y = m_ymargin;
-            foreach (Row row in rows)
+            road.UpdateLaneOffsets();
+
+            foreach (Lane lane in road.Lanes)
             {
-                
+                foreach (Car car in lane.Cars)
+                {
+                    ITimelineNode node = car.Driver;
+
+                    node.Position = new Point(car.Offset, lane.StartOffset);
+                }
             }
 
-            m_rowCount = (uint) rows.Count;
+            m_rowCount = (uint) road.Lanes.Count;
         }
 
-        internal class NodeList : List<ITimelineNode>
+        internal class Road
+        {
+            private readonly uint m_startMargin;
+            private readonly uint m_shoulderMargin;
+            private readonly uint m_markerDistance;
+            private readonly uint m_laneDistance;
+            private uint m_curOffset;
+
+            private List<Marker> m_markers = new List<Marker>();
+            private List<Lane> m_lanes = new List<Lane>();
+
+            public List<Lane> Lanes
+            {
+                get
+                {
+                    return m_lanes;
+                }
+            }
+
+            public Road(uint startMargin, uint shoulderMargin, uint markerDistance, uint laneDistance)
+            {
+                m_startMargin = startMargin;
+                m_shoulderMargin = shoulderMargin;
+                m_markerDistance = markerDistance;
+                m_laneDistance = laneDistance;
+
+                m_curOffset = m_startMargin;
+            }
+
+            public Lane FindExistingLaneFor(ITimelineNode node)
+            {
+                foreach (Lane curLane in m_lanes)
+                {
+                    if (curLane.ReservationContext == node.Context)
+                        return curLane;
+                }
+
+                return null;
+            }
+
+            public Lane ReserveLaneUntil(ITimelineNode lastNode)
+            {
+                Lane availableLane = null;
+
+                foreach (Lane curLane in m_lanes)
+                {
+                    if (curLane.IsAvailable)
+                    {
+                        availableLane = curLane;
+                        break;
+                    }
+                }
+
+                if (availableLane == null)
+                {
+                    availableLane = new Lane(this);
+                    m_lanes.Add(availableLane);
+                }
+
+                availableLane.ReserveUntil(lastNode);
+
+                return availableLane;
+            }
+
+            public uint PlaceMarkerStartingAt(uint timestamp, Size size)
+            {
+                Marker curMarker = null;
+
+                if (m_markers.Count > 0)
+                {
+                    Marker lastMarker = m_markers[m_markers.Count - 1];
+                    if (lastMarker.Timestamp == timestamp)
+                    {
+                        curMarker = lastMarker;
+                    }
+                    else
+                    {
+                        m_curOffset += lastMarker.Length + m_markerDistance;
+                    }
+                }
+
+                if (curMarker == null)
+                {
+                    curMarker = new Marker(m_curOffset, timestamp);
+                    m_markers.Add(curMarker);
+                }
+
+                curMarker.MaybeExpandToFitLength(size.Width);
+
+                return m_curOffset;
+            }
+
+            public void UpdateLaneOffsets()
+            {
+                uint offset = m_shoulderMargin;
+
+                foreach (Lane lane in m_lanes)
+                {
+                    lane.StartOffset = offset;
+                    
+                    offset += lane.Width + m_laneDistance;
+                }
+            }
+        }
+
+        internal class Marker
+        {
+            private readonly uint m_startOffset;
+            private readonly uint m_timestamp;
+            private uint m_length;
+
+            public uint StartOffset
+            {
+                get
+                {
+                    return m_startOffset;
+                }
+            }
+
+            public uint Timestamp
+            {
+                get
+                {
+                    return m_timestamp;
+                }
+            }
+
+            public uint Length
+            {
+                get
+                {
+                    return m_length;
+                }
+            }
+
+            public Marker(uint startOffset, uint timestamp)
+            {
+                m_startOffset = startOffset;
+                m_timestamp = timestamp;
+            }
+
+            public void MaybeExpandToFitLength(uint length)
+            {
+                if (length > m_length)
+                    m_length = length;
+            }
+        }
+
+        internal class Lane
+        {
+            private Road m_road;
+
+            private uint m_startOffset;
+            private ITimelineNode m_lastNodeInReservation;
+
+            private List<Car> m_cars = new List<Car>();
+            private uint m_width;
+
+            public uint StartOffset
+            {
+                get
+                {
+                    return m_startOffset;
+                }
+
+                set
+                {
+                    m_startOffset = value;
+                }
+            }
+
+            public object ReservationContext
+            {
+                get
+                {
+                    if (m_lastNodeInReservation != null)
+                        return m_lastNodeInReservation.Context;
+                    else
+                        return null;
+                }
+            }
+
+            public bool IsAvailable
+            {
+                get
+                {
+                    return (m_lastNodeInReservation == null);
+                }
+            }
+
+            public List<Car> Cars
+            {
+                get
+                {
+                    return m_cars;
+                }
+            }
+
+            public uint Width
+            {
+                get
+                {
+                    return m_width;
+                }
+            }
+
+            public Lane(Road road)
+            {
+                m_road = road;
+            }
+
+            public void ReserveUntil(ITimelineNode lastNode)
+            {
+                m_lastNodeInReservation = lastNode;
+            }
+
+            public void Append(ITimelineNode node)
+            {
+                uint offset = m_road.PlaceMarkerStartingAt(node.Timestamp, node.Allocation);
+
+                Car car = new Car(offset, node);
+                m_cars.Add(car);
+
+                if (node.Allocation.Height > m_width)
+                    m_width = node.Allocation.Height;
+
+                if (node == m_lastNodeInReservation)
+                    MakeAvailable();
+            }
+
+            private void MakeAvailable()
+            {
+                m_lastNodeInReservation = null;
+            }
+        }
+
+        internal class Car
+        {
+            private uint m_offset;
+            private ITimelineNode m_driver;
+
+            public uint Offset
+            {
+                get
+                {
+                    return m_offset;
+                }
+            }
+
+            public ITimelineNode Driver
+            {
+                get
+                {
+                    return m_driver;
+                }
+            }
+
+            public Car(uint offset, ITimelineNode driver)
+            {
+                m_offset = offset;
+                m_driver = driver;
+            }
+        }
+
+        protected class NodeList : List<ITimelineNode>
         {
             public NodeList()
                 : base()
@@ -130,72 +393,20 @@ namespace oSpyStudio.Widgets
             {
             }
 
-            public NodeList PopFirstRangeOfRelatedNodes()
+            public ITimelineNode FindLastNodeWithSameContextAs(ITimelineNode node, int startIndex)
             {
-                NodeList relatedNodes = new NodeList();
+                ITimelineNode lastNode = node;
 
-                ITimelineNode firstNode = this[0];
-                relatedNodes.Add(firstNode);
-                RemoveAt(0);
-
-                foreach (ITimelineNode node in this)
+                object context = node.Context;
+                for (int nodeIndex = startIndex; nodeIndex < Count; nodeIndex++)
                 {
-                    if (node.Context == firstNode.Context)
-                        relatedNodes.Add(node);
+                    ITimelineNode curNode = this[nodeIndex];
+                    if (curNode.Context == context)
+                        lastNode = curNode;
                 }
 
-                for (int i = 1; i < relatedNodes.Count; i++)
-                    Remove(relatedNodes[i]);
-
-                return relatedNodes;
+                return lastNode;
             }
-        }
-
-        internal class Range
-        {
-            public readonly uint Start;
-            public readonly uint End;
-            public readonly NodeList Nodes;
-
-            public Range(uint start, uint end, NodeList nodes)
-            {
-                Start = start;
-                End = end;
-                Nodes = nodes;
-            }
-        }
-
-        internal class RangeList : List<Range>
-        {
-            public int GetNumberOfIntersectingRanges(Range range)
-            {
-                int numIntersections = 0;
-
-                foreach (Range curRange in this)
-                {
-                    if ((curRange.Start >= range.Start && curRange.Start <= range.End) ||
-                        (curRange.End >= range.Start && curRange.End <= range.End))
-                    {
-                        numIntersections++;
-                    }
-                }
-
-                return numIntersections;
-            }
-        }
-
-        internal class Row
-        {
-            public RangeList Ranges = new RangeList();
-
-            public void AddRange(Range range)
-            {
-                Ranges.Add(range);
-            }
-        }
-
-        internal class RowList : List<Row>
-        {
         }
     }
 
