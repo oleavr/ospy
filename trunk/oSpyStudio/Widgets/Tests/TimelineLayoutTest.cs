@@ -31,6 +31,7 @@ namespace oSpyStudio.Widgets.Tests
             ITimelineNode node = new TestNode(10, context, new Size(100, 50));
             TimelineLayoutManager layout = new TimelineLayoutManager();
             layout.Add(node);
+            layout.Update();
             Assert.That(layout.Nodes.Count, Is.EqualTo(1));
             Assert.That(layout.Nodes[0], Is.SameAs(node));
             Assert.That(node.Position, Is.EqualTo(new Point(layout.XMargin, layout.YMargin)));
@@ -45,11 +46,41 @@ namespace oSpyStudio.Widgets.Tests
             TimelineLayoutManager layout = new TimelineLayoutManager();
             layout.Add(nodeB);
             layout.Add(nodeA);
+            layout.Update();
             Assert.That(layout.Nodes.Count, Is.EqualTo(2));
             Assert.That(layout.Nodes[0], Is.SameAs(nodeA));
             Assert.That(layout.Nodes[1], Is.SameAs(nodeB));
             Assert.That(nodeA.Position, Is.EqualTo(new Point(layout.XMargin, layout.YMargin)));
-            Assert.That(nodeB.Position, Is.EqualTo(new Point(layout.XMargin + 80 + layout.XPadding, layout.YMargin)));
+            Assert.That(nodeB.Position, Is.EqualTo(new Point(layout.XMargin + nodeA.Allocation.Width + layout.XPadding, layout.YMargin)));
+        }
+
+        [Test()]
+        public void TwoContextsInSequence()
+        {
+            string context1 = "Context1";
+            ITimelineNode ctx1nodeA = new TestNode(10, context1, new Size(80, 50));
+            ITimelineNode ctx1nodeB = new TestNode(20, context1, new Size(100, 40));
+            string context2 = "Context2";
+            ITimelineNode ctx2node = new TestNode(30, context2, new Size(50, 30));
+
+            TimelineLayoutManager layout = new TimelineLayoutManager();
+            layout.Add(ctx2node);
+            layout.Add(ctx1nodeB);
+            layout.Add(ctx1nodeA);
+            layout.Update();
+
+            Assert.That(layout.Nodes.Count, Is.EqualTo(3));
+            Assert.That(layout.Nodes[0], Is.SameAs(ctx1nodeA));
+            Assert.That(layout.Nodes[1], Is.SameAs(ctx1nodeB));
+            Assert.That(layout.Nodes[2], Is.SameAs(ctx2node));
+
+            Assert.That(layout.RowCount, Is.EqualTo(1));
+
+            Assert.That(ctx1nodeA.Position, Is.EqualTo(new Point(layout.XMargin, layout.YMargin)));
+            Assert.That(ctx1nodeB.Position.X, Is.EqualTo(ctx1nodeA.Position.X + ctx1nodeA.Allocation.Width + layout.XPadding));
+            Assert.That(ctx1nodeB.Position.Y, Is.EqualTo(layout.YMargin));
+            Assert.That(ctx2node.Position.X, Is.EqualTo(ctx1nodeB.Position.X + ctx1nodeB.Allocation.Width + layout.XPadding));
+            Assert.That(ctx2node.Position.Y, Is.EqualTo(layout.YMargin));
         }
 
         [Test()]
@@ -65,6 +96,7 @@ namespace oSpyStudio.Widgets.Tests
             layout.Add(ctx2node);
             layout.Add(ctx1nodeB);
             layout.Add(ctx1nodeA);
+            layout.Update();
 
             Assert.That(layout.Nodes.Count, Is.EqualTo(3));
             Assert.That(layout.Nodes[0], Is.SameAs(ctx1nodeA));
@@ -74,10 +106,11 @@ namespace oSpyStudio.Widgets.Tests
             Assert.That(layout.RowCount, Is.EqualTo(2));
 
             Assert.That(ctx1nodeA.Position, Is.EqualTo(new Point(layout.XMargin, layout.YMargin)));
-            Assert.That(ctx1nodeB.Position, Is.EqualTo(new Point(layout.XMargin + 80 + layout.XPadding, layout.YMargin)));
+            Assert.That(ctx1nodeB.Position.X, Is.EqualTo(layout.XMargin + ctx1nodeA.Allocation.Width + layout.XPadding + ctx2node.Allocation.Width + layout.XPadding));
+            Assert.That(ctx1nodeB.Position.Y, Is.EqualTo(layout.YMargin));
 
-            Assert.That(ctx2node.Position.X, Is.EqualTo(ctx1nodeA.Position.X + (ctx1nodeA.Allocation.Width + layout.XPadding + ctx1nodeB.Allocation.Width) / 2));
-            Assert.That(ctx2node.Position.Y, Is.EqualTo(layout.YMargin + 50 + layout.YMargin));
+            Assert.That(ctx2node.Position.X, Is.EqualTo(ctx1nodeA.Position.X + ctx1nodeA.Allocation.Width + layout.XPadding));
+            Assert.That(ctx2node.Position.Y, Is.EqualTo(layout.YMargin + 50 + layout.YPadding));
         }
     }
 }
