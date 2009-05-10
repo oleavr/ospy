@@ -28,12 +28,10 @@ namespace oSpyStudio.Widgets.Tests
         public void OneContextOneNode()
         {
             string context = "Context1";
-            ITimelineNode node = new TestNode(10, context, new Size(100, 50));
-            TimelineLayoutManager layout = new TimelineLayoutManager();
-            layout.Add(node);
+            TestModel model = new TestModel();
+            ITimelineNode node = model.CreateAddNode(10, context, new Size(100, 50));
+            TimelineLayoutManager layout = new TimelineLayoutManager(model);
             layout.Update();
-            Assert.That(layout.Nodes.Count, Is.EqualTo(1));
-            Assert.That(layout.Nodes[0], Is.SameAs(node));
             Assert.That(node.Position, Is.EqualTo(new Point(layout.XMargin, layout.YMargin)));
         }
 
@@ -41,15 +39,11 @@ namespace oSpyStudio.Widgets.Tests
         public void OneContextTwoNodes()
         {
             string context = "Context1";
-            ITimelineNode nodeA = new TestNode(10, context, new Size(80, 50));
-            ITimelineNode nodeB = new TestNode(20, context, new Size(100, 40));
-            TimelineLayoutManager layout = new TimelineLayoutManager();
-            layout.Add(nodeB);
-            layout.Add(nodeA);
+            TestModel model = new TestModel();
+            ITimelineNode nodeA = model.CreateAddNode(10, context, new Size(80, 50));
+            ITimelineNode nodeB = model.CreateAddNode(20, context, new Size(100, 40));
+            TimelineLayoutManager layout = new TimelineLayoutManager(model);
             layout.Update();
-            Assert.That(layout.Nodes.Count, Is.EqualTo(2));
-            Assert.That(layout.Nodes[0], Is.SameAs(nodeA));
-            Assert.That(layout.Nodes[1], Is.SameAs(nodeB));
             Assert.That(nodeA.Position, Is.EqualTo(new Point(layout.XMargin, layout.YMargin)));
             Assert.That(nodeB.Position, Is.EqualTo(new Point(layout.XMargin + nodeA.Allocation.Width + layout.XPadding, layout.YMargin)));
         }
@@ -57,22 +51,15 @@ namespace oSpyStudio.Widgets.Tests
         [Test()]
         public void TwoContextsInSequence()
         {
+            TestModel model = new TestModel();
             string context1 = "Context1";
-            ITimelineNode ctx1nodeA = new TestNode(10, context1, new Size(80, 50));
-            ITimelineNode ctx1nodeB = new TestNode(20, context1, new Size(100, 40));
+            ITimelineNode ctx1nodeA = model.CreateAddNode(10, context1, new Size(80, 50));
+            ITimelineNode ctx1nodeB = model.CreateAddNode(20, context1, new Size(100, 40));
             string context2 = "Context2";
-            ITimelineNode ctx2node = new TestNode(30, context2, new Size(50, 30));
+            ITimelineNode ctx2node = model.CreateAddNode(30, context2, new Size(50, 30));
 
-            TimelineLayoutManager layout = new TimelineLayoutManager();
-            layout.Add(ctx2node);
-            layout.Add(ctx1nodeB);
-            layout.Add(ctx1nodeA);
+            TimelineLayoutManager layout = new TimelineLayoutManager(model);
             layout.Update();
-
-            Assert.That(layout.Nodes.Count, Is.EqualTo(3));
-            Assert.That(layout.Nodes[0], Is.SameAs(ctx1nodeA));
-            Assert.That(layout.Nodes[1], Is.SameAs(ctx1nodeB));
-            Assert.That(layout.Nodes[2], Is.SameAs(ctx2node));
 
             Assert.That(layout.RowCount, Is.EqualTo(1));
 
@@ -86,22 +73,15 @@ namespace oSpyStudio.Widgets.Tests
         [Test()]
         public void TwoContextsOverlappingNodes()
         {
+            TestModel model = new TestModel();
             string context1 = "Context1";
-            ITimelineNode ctx1nodeA = new TestNode(10, context1, new Size(80, 50));
-            ITimelineNode ctx1nodeB = new TestNode(20, context1, new Size(100, 40));
+            ITimelineNode ctx1nodeA = model.CreateAddNode(10, context1, new Size(80, 50));
+            ITimelineNode ctx1nodeB = model.CreateAddNode(20, context1, new Size(100, 40));
             string context2 = "Context2";
-            ITimelineNode ctx2node = new TestNode(15, context2, new Size(50, 50));
+            ITimelineNode ctx2node = model.CreateAddNode(15, context2, new Size(50, 50));
 
-            TimelineLayoutManager layout = new TimelineLayoutManager();
-            layout.Add(ctx2node);
-            layout.Add(ctx1nodeB);
-            layout.Add(ctx1nodeA);
+            TimelineLayoutManager layout = new TimelineLayoutManager(model);
             layout.Update();
-
-            Assert.That(layout.Nodes.Count, Is.EqualTo(3));
-            Assert.That(layout.Nodes[0], Is.SameAs(ctx1nodeA));
-            Assert.That(layout.Nodes[1], Is.SameAs(ctx2node));
-            Assert.That(layout.Nodes[2], Is.SameAs(ctx1nodeB));
 
             Assert.That(layout.RowCount, Is.EqualTo(2));
 

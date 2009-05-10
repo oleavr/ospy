@@ -27,7 +27,7 @@ namespace oSpyStudio.Widgets
         protected readonly uint m_xpadding = 3;
         protected readonly uint m_ypadding = 6;
 
-        protected NodeList m_nodes = new NodeList();
+        protected ITimelineModel m_model;
         protected uint m_rowCount;
 
         public uint XMargin
@@ -62,11 +62,11 @@ namespace oSpyStudio.Widgets
             }
         }
 
-        public List<ITimelineNode> Nodes
+        public ITimelineModel Model
         {
             get
             {
-                return m_nodes;
+                return m_model;
             }
         }
 
@@ -78,24 +78,20 @@ namespace oSpyStudio.Widgets
             }
         }
 
-        public void Add(ITimelineNode node)
+        public TimelineLayoutManager(ITimelineModel model)
         {
-            m_nodes.Add(node);
+            m_model = model;
         }
 
         public void Update()
         {
-            m_nodes.Sort(new TimelineNodeTimestampComparer());
-
             Road road = new Road(m_xmargin, m_ymargin, m_xpadding, m_ypadding);
-            for (int nodeIndex = 0; nodeIndex < m_nodes.Count; nodeIndex++)
+            foreach (ITimelineNode node in m_model.Nodes)
             {
-                ITimelineNode node = m_nodes[nodeIndex];
-
                 Lane lane = road.FindExistingLaneFor(node);
                 if (lane == null)
                 {
-                    ITimelineNode lastNodeInLane = m_nodes.FindLastNodeWithSameContextAs(node, nodeIndex + 1);
+                    ITimelineNode lastNodeInLane = FindLastNodeWithContext(node.Context);
                     lane = road.ReserveLaneUntil(lastNodeInLane);
                 }
 
@@ -115,6 +111,17 @@ namespace oSpyStudio.Widgets
             }
 
             m_rowCount = (uint) road.Lanes.Count;
+        }
+
+        private ITimelineNode FindLastNodeWithContext(object context)
+        {
+            foreach (ITimelineNode node in m_model.NodesReverse)
+            {
+                if (node.Context == context)
+                    return node;
+            }
+
+            throw new NotSupportedException("Should not get here");
         }
 
         internal class Road
@@ -407,19 +414,6 @@ namespace oSpyStudio.Widgets
 
                 return lastNode;
             }
-        }
-    }
-
-    internal class TimelineNodeTimestampComparer : IComparer<ITimelineNode>
-    {
-        public int Compare(ITimelineNode a, ITimelineNode b)
-        {
-            if (a.Timestamp > b.Timestamp)
-                return 1;
-            else if (a.Timestamp < b.Timestamp)
-                return -1;
-            else
-                return 0;
         }
     }
 }

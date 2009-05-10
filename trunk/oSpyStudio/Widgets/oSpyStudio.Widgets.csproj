@@ -38,6 +38,8 @@
     <Compile Include="ITimelineNode.cs" />
     <Compile Include="Point.cs" />
     <Compile Include="Size.cs" />
+    <Compile Include="TimelineView.cs" />
+    <Compile Include="TimelineModel.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

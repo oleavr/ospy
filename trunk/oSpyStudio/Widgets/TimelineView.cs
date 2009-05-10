@@ -19,27 +19,7 @@ using System;
 
 namespace oSpyStudio.Widgets
 {
-    public interface ITimelineNode
+    public class TimelineView : Clutter.Group
     {
-        uint Timestamp
-        {
-            get;
-        }
-
-        object Context
-        {
-            get;
-        }
-
-        Size Allocation
-        {
-            get;
-        }
-
-        Point Position
-        {
-            get;
-            set;
-        }
     }
 }
