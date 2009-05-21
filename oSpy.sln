@@ -67,15 +67,15 @@ Global
 		$0.StandardHeader = $1
 		$1.Text = 
 		$1.inheritsSet = MITX11License
-		$0.TextStylePolicy = $2
-		$2.FileWidth = 120
-		$2.TabWidth = 4
-		$2.TabsToSpaces = True
-		$2.NoTabsAfterNonTabs = True
-		$2.RemoveTrailingWhitespace = True
-		$2.EolMarker = Native
-		$0.DotNetNamingPolicy = $3
-		$3.DirectoryNamespaceAssociation = None
-		$3.ResourceNamePolicy = FileFormatDefault
+		$0.DotNetNamingPolicy = $2
+		$2.DirectoryNamespaceAssociation = None
+		$2.ResourceNamePolicy = FileFormatDefault
+		$0.TextStylePolicy = $3
+		$3.FileWidth = 120
+		$3.TabWidth = 4
+		$3.TabsToSpaces = True
+		$3.NoTabsAfterNonTabs = True
+		$3.RemoveTrailingWhitespace = True
+		$3.EolMarker = Native
 	EndGlobalSection
 EndGlobal
