@@ -19,7 +19,7 @@ using System;
 
 namespace oSpyStudio.Widgets
 {
-    public class TimelineView : Clutter.Group
+    public class TimelineView
     {
     }
 }

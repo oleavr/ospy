@@ -21,7 +21,7 @@ using System.IO;
 using Gtk;
 using oSpy.SharpDumpLib;
 
-public partial class MainWindow: Gtk.Window
+public partial class MainWindow : Gtk.Window
 {
     private DumpLoader m_dumpLoader = new DumpLoader();
 
@@ -91,7 +91,11 @@ public partial class MainWindow: Gtk.Window
 
         try
         {
-            m_curDump = e.Dump;
+            Dump newDump = e.Dump;
+
+            if (m_curDump != null)
+                m_curDump = null; // Dummy placeholder, switch dump here
+            m_curDump = newDump;
         }
         catch (Exception ex)
         {
@@ -105,10 +109,12 @@ public partial class MainWindow: Gtk.Window
             m_curTask.SetProgress(e.ProgressPercentage);
     }
 
+    /*
     private void ShowInfoMessage(string message)
     {
         ShowMessage(message, MessageType.Info);
     }
+    */
 
     private void ShowErrorMessage(string message)
     {
