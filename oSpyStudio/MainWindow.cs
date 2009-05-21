@@ -20,9 +20,14 @@ using System.ComponentModel;
 using System.IO;
 using Gtk;
 using oSpy.SharpDumpLib;
+using oSpyStudio.Widgets;
 
 public partial class MainWindow : Gtk.Window
 {
+    private EventTimelineModel m_model;
+    private TimelineLayoutManager m_layout;
+    private TimelineView m_timeline;
+
     private DumpLoader m_dumpLoader = new DumpLoader();
 
     private Task m_curTask = null;
@@ -32,6 +37,18 @@ public partial class MainWindow : Gtk.Window
         : base(Gtk.WindowType.Toplevel)
     {
         Build();
+
+        Dump testDump = m_dumpLoader.Load(File.OpenRead("/home/oleavr/teststream.osd"));
+        m_model = new EventTimelineModel(testDump);
+
+        m_layout = new TimelineLayoutManager(m_model);
+        m_layout.Update();
+
+        EventNodeRenderer renderer = new EventNodeRenderer();
+
+        m_timeline = new TimelineView(m_model, renderer);
+        m_timeline.Show();
+        scrolledwindow.AddWithViewport(m_timeline);
 
         m_dumpLoader.LoadCompleted += dumpLoader_LoadCompleted;
         m_dumpLoader.LoadProgressChanged += dumpLoader_LoadProgressChanged;

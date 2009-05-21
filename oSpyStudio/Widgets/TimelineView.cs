@@ -16,10 +16,29 @@
 //
 
 using System;
+using Gtk;
 
 namespace oSpyStudio.Widgets
 {
-    public class TimelineView
+    public class TimelineView : Fixed
     {
+        private ITimelineModel m_model;
+        private INodeRenderer m_renderer;
+
+        public TimelineView(ITimelineModel model, INodeRenderer renderer)
+        {
+            m_model = model;
+            m_renderer = renderer;
+
+            foreach (INode node in m_model.Nodes)
+            {
+                Widget widget = m_renderer.Render(node);
+                if (widget == null)
+                    throw new NotImplementedException("Renderer returned null");
+                widget.Show();
+                Console.WriteLine("{0}, {1}", node.Position.X, node.Position.Y);
+                Put(widget, (int) node.Position.X, (int) node.Position.Y);
+            }
+        }
     }
 }

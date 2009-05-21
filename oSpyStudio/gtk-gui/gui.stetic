@@ -6,6 +6,7 @@
   </configuration>
   <import>
     <widget-library name="glade-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
+    <widget-library name="../../bin/Debug/oSpyStudio.Widgets.dll" />
     <widget-library name="../../bin/Debug/oSpyStudio.exe" internal="true" />
   </import>
   <widget class="Gtk.Window" id="MainWindow" design-size="612 333">
@@ -57,13 +58,23 @@
           </packing>
         </child>
         <child>
-          <widget class="Gtk.Label" id="dummyLabel">
+          <widget class="Gtk.ScrolledWindow" id="scrolledwindow">
             <property name="MemberName" />
+            <property name="CanFocus">True</property>
+            <property name="ShadowType">In</property>
+            <child>
+              <widget class="Gtk.Viewport" id="GtkViewport">
+                <property name="MemberName" />
+                <property name="ShadowType">None</property>
+                <child>
+                  <placeholder />
+                </child>
+              </widget>
+            </child>
           </widget>
           <packing>
             <property name="Position">1</property>
-            <property name="AutoSize">False</property>
-            <property name="Fill">False</property>
+            <property name="AutoSize">True</property>
           </packing>
         </child>
         <child>

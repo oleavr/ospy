@@ -19,7 +19,7 @@ using System;
 
 namespace oSpyStudio.Widgets.Tests
 {
-    public class TestNode : ITimelineNode
+    public class TestNode : INode
     {
         private uint m_timestamp;
         private object m_context;

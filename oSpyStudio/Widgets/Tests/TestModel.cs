@@ -23,9 +23,9 @@ namespace oSpyStudio.Widgets.Tests
 {
     public class TestModel : ITimelineModel
     {
-        private List<ITimelineNode> m_nodes = new List<ITimelineNode>();
+        private List<INode> m_nodes = new List<INode>();
 
-        public IEnumerable<ITimelineNode> Nodes
+        public IEnumerable<INode> Nodes
         {
             get
             {
@@ -33,7 +33,7 @@ namespace oSpyStudio.Widgets.Tests
             }
         }
 
-        public IEnumerable<ITimelineNode> NodesReverse
+        public IEnumerable<INode> NodesReverse
         {
             get
             {
@@ -53,9 +53,9 @@ namespace oSpyStudio.Widgets.Tests
         }
     }
 
-    internal class TimelineNodeTimestampComparer : IComparer<ITimelineNode>
+    internal class TimelineNodeTimestampComparer : IComparer<INode>
     {
-        public int Compare(ITimelineNode a, ITimelineNode b)
+        public int Compare(INode a, INode b)
         {
             if (a.Timestamp > b.Timestamp)
                 return 1;
