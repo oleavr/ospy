@@ -30,7 +30,7 @@ namespace oSpyStudio.Widgets
             Y = y;
         }
 
-        public override string ToString ()
+        public override string ToString()
         {
             return string.Format("[Point ({0}, {1})]", X, Y);
         }

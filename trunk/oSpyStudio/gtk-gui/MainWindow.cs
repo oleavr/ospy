@@ -24,7 +24,7 @@ public partial class MainWindow {
     
     private Gtk.MenuBar menubar;
     
-    private Gtk.Label dummyLabel;
+    private Gtk.ScrolledWindow scrolledwindow;
     
     private Gtk.Statusbar statusbar;
     
@@ -65,12 +65,13 @@ public partial class MainWindow {
         w2.Expand = false;
         w2.Fill = false;
         // Container child rootBox.Gtk.Box+BoxChild
-        this.dummyLabel = new Gtk.Label();
-        this.dummyLabel.Name = "dummyLabel";
-        this.rootBox.Add(this.dummyLabel);
-        Gtk.Box.BoxChild w3 = ((Gtk.Box.BoxChild)(this.rootBox[this.dummyLabel]));
+        this.scrolledwindow = new Gtk.ScrolledWindow();
+        this.scrolledwindow.CanFocus = true;
+        this.scrolledwindow.Name = "scrolledwindow";
+        this.scrolledwindow.ShadowType = ((Gtk.ShadowType)(1));
+        this.rootBox.Add(this.scrolledwindow);
+        Gtk.Box.BoxChild w3 = ((Gtk.Box.BoxChild)(this.rootBox[this.scrolledwindow]));
         w3.Position = 1;
-        w3.Fill = false;
         // Container child rootBox.Gtk.Box+BoxChild
         this.statusbar = new Gtk.Statusbar();
         this.statusbar.Name = "statusbar";

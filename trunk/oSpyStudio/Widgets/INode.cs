@@ -16,20 +16,30 @@
 //
 
 using System;
-using System.Collections.Generic;
 
 namespace oSpyStudio.Widgets
 {
-    public interface ITimelineModel
+    public interface INode
     {
-        IEnumerable<INode> Nodes
+        uint Timestamp
         {
             get;
         }
 
-        IEnumerable<INode> NodesReverse
+        object Context
         {
             get;
+        }
+
+        Size Allocation
+        {
+            get;
+        }
+
+        Point Position
+        {
+            get;
+            set;
         }
     }
 }

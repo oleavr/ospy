@@ -29,7 +29,7 @@ namespace oSpyStudio.Widgets.Tests
         {
             string context = "Context1";
             TestModel model = new TestModel();
-            ITimelineNode node = model.CreateAddNode(10, context, new Size(100, 50));
+            INode node = model.CreateAddNode(10, context, new Size(100, 50));
             TimelineLayoutManager layout = new TimelineLayoutManager(model);
             layout.Update();
             Assert.That(node.Position, Is.EqualTo(new Point(layout.XMargin, layout.YMargin)));
@@ -40,8 +40,8 @@ namespace oSpyStudio.Widgets.Tests
         {
             string context = "Context1";
             TestModel model = new TestModel();
-            ITimelineNode nodeA = model.CreateAddNode(10, context, new Size(80, 50));
-            ITimelineNode nodeB = model.CreateAddNode(20, context, new Size(100, 40));
+            INode nodeA = model.CreateAddNode(10, context, new Size(80, 50));
+            INode nodeB = model.CreateAddNode(20, context, new Size(100, 40));
             TimelineLayoutManager layout = new TimelineLayoutManager(model);
             layout.Update();
             Assert.That(nodeA.Position, Is.EqualTo(new Point(layout.XMargin, layout.YMargin)));
@@ -53,10 +53,10 @@ namespace oSpyStudio.Widgets.Tests
         {
             TestModel model = new TestModel();
             string context1 = "Context1";
-            ITimelineNode ctx1nodeA = model.CreateAddNode(10, context1, new Size(80, 50));
-            ITimelineNode ctx1nodeB = model.CreateAddNode(20, context1, new Size(100, 40));
+            INode ctx1nodeA = model.CreateAddNode(10, context1, new Size(80, 50));
+            INode ctx1nodeB = model.CreateAddNode(20, context1, new Size(100, 40));
             string context2 = "Context2";
-            ITimelineNode ctx2node = model.CreateAddNode(30, context2, new Size(50, 30));
+            INode ctx2node = model.CreateAddNode(30, context2, new Size(50, 30));
 
             TimelineLayoutManager layout = new TimelineLayoutManager(model);
             layout.Update();
@@ -75,10 +75,10 @@ namespace oSpyStudio.Widgets.Tests
         {
             TestModel model = new TestModel();
             string context1 = "Context1";
-            ITimelineNode ctx1nodeA = model.CreateAddNode(10, context1, new Size(80, 50));
-            ITimelineNode ctx1nodeB = model.CreateAddNode(20, context1, new Size(100, 40));
+            INode ctx1nodeA = model.CreateAddNode(10, context1, new Size(80, 50));
+            INode ctx1nodeB = model.CreateAddNode(20, context1, new Size(100, 40));
             string context2 = "Context2";
-            ITimelineNode ctx2node = model.CreateAddNode(15, context2, new Size(50, 50));
+            INode ctx2node = model.CreateAddNode(15, context2, new Size(50, 50));
 
             TimelineLayoutManager layout = new TimelineLayoutManager(model);
             layout.Update();

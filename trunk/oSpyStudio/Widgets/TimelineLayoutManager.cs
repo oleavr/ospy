@@ -86,12 +86,12 @@ namespace oSpyStudio.Widgets
         public void Update()
         {
             Road road = new Road(m_xmargin, m_ymargin, m_xpadding, m_ypadding);
-            foreach (ITimelineNode node in m_model.Nodes)
+            foreach (INode node in m_model.Nodes)
             {
                 Lane lane = road.FindExistingLaneFor(node);
                 if (lane == null)
                 {
-                    ITimelineNode lastNodeInLane = FindLastNodeWithContext(node.Context);
+                    INode lastNodeInLane = FindLastNodeWithContext(node.Context);
                     lane = road.ReserveLaneUntil(lastNodeInLane);
                 }
 
@@ -104,7 +104,7 @@ namespace oSpyStudio.Widgets
             {
                 foreach (Car car in lane.Cars)
                 {
-                    ITimelineNode node = car.Driver;
+                    INode node = car.Driver;
 
                     node.Position = new Point(car.Offset, lane.StartOffset);
                 }
@@ -113,9 +113,9 @@ namespace oSpyStudio.Widgets
             m_rowCount = (uint) road.Lanes.Count;
         }
 
-        private ITimelineNode FindLastNodeWithContext(object context)
+        private INode FindLastNodeWithContext(object context)
         {
-            foreach (ITimelineNode node in m_model.NodesReverse)
+            foreach (INode node in m_model.NodesReverse)
             {
                 if (node.Context == context)
                     return node;
@@ -153,7 +153,7 @@ namespace oSpyStudio.Widgets
                 m_curOffset = m_startMargin;
             }
 
-            public Lane FindExistingLaneFor(ITimelineNode node)
+            public Lane FindExistingLaneFor(INode node)
             {
                 foreach (Lane curLane in m_lanes)
                 {
@@ -164,7 +164,7 @@ namespace oSpyStudio.Widgets
                 return null;
             }
 
-            public Lane ReserveLaneUntil(ITimelineNode lastNode)
+            public Lane ReserveLaneUntil(INode lastNode)
             {
                 Lane availableLane = null;
 
@@ -277,7 +277,7 @@ namespace oSpyStudio.Widgets
             private Road m_road;
 
             private uint m_startOffset;
-            private ITimelineNode m_lastNodeInReservation;
+            private INode m_lastNodeInReservation;
 
             private List<Car> m_cars = new List<Car>();
             private uint m_width;
@@ -335,12 +335,12 @@ namespace oSpyStudio.Widgets
                 m_road = road;
             }
 
-            public void ReserveUntil(ITimelineNode lastNode)
+            public void ReserveUntil(INode lastNode)
             {
                 m_lastNodeInReservation = lastNode;
             }
 
-            public void Append(ITimelineNode node)
+            public void Append(INode node)
             {
                 uint offset = m_road.PlaceMarkerStartingAt(node.Timestamp, node.Allocation);
 
@@ -363,7 +363,7 @@ namespace oSpyStudio.Widgets
         internal class Car
         {
             private uint m_offset;
-            private ITimelineNode m_driver;
+            private INode m_driver;
 
             public uint Offset
             {
@@ -373,7 +373,7 @@ namespace oSpyStudio.Widgets
                 }
             }
 
-            public ITimelineNode Driver
+            public INode Driver
             {
                 get
                 {
@@ -381,33 +381,33 @@ namespace oSpyStudio.Widgets
                 }
             }
 
-            public Car(uint offset, ITimelineNode driver)
+            public Car(uint offset, INode driver)
             {
                 m_offset = offset;
                 m_driver = driver;
             }
         }
 
-        protected class NodeList : List<ITimelineNode>
+        protected class NodeList : List<INode>
         {
             public NodeList()
                 : base()
             {
             }
 
-            public NodeList(IEnumerable<ITimelineNode> collection)
+            public NodeList(IEnumerable<INode> collection)
                 : base(collection)
             {
             }
 
-            public ITimelineNode FindLastNodeWithSameContextAs(ITimelineNode node, int startIndex)
+            public INode FindLastNodeWithSameContextAs(INode node, int startIndex)
             {
-                ITimelineNode lastNode = node;
+                INode lastNode = node;
 
                 object context = node.Context;
                 for (int nodeIndex = startIndex; nodeIndex < Count; nodeIndex++)
                 {
-                    ITimelineNode curNode = this[nodeIndex];
+                    INode curNode = this[nodeIndex];
                     if (curNode.Context == context)
                         lastNode = curNode;
                 }

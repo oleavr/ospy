@@ -44,6 +44,7 @@
       <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="Mono.Posix" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="gtk-gui\gui.stetic">
@@ -57,6 +58,9 @@
     <Compile Include="Main.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="GLibSynchronizationContext.cs" />
+    <Compile Include="EventTimelineModel.cs" />
+    <Compile Include="EventNode.cs" />
+    <Compile Include="EventNodeRenderer.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="app.desktop" />
@@ -66,6 +70,10 @@
     <ProjectReference Include="..\oSpy.SharpDumpLib\oSpy.SharpDumpLib.csproj">
       <Project>{4888CEE7-9E21-4558-89EB-7D2D2838B48B}</Project>
       <Name>oSpy.SharpDumpLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="Widgets\oSpyStudio.Widgets.csproj">
+      <Project>{88BBD467-3DFF-4311-86C8-A24FF7DFE72D}</Project>
+      <Name>oSpyStudio.Widgets</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

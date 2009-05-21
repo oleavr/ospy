@@ -16,20 +16,11 @@
 //
 
 using System;
-using System.Collections.Generic;
 
 namespace oSpyStudio.Widgets
 {
-    public interface ITimelineModel
+    public interface INodeRenderer
     {
-        IEnumerable<INode> Nodes
-        {
-            get;
-        }
-
-        IEnumerable<INode> NodesReverse
-        {
-            get;
-        }
+        Gtk.Widget Render(INode node);
     }
 }
