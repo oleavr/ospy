@@ -24,40 +24,35 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 
-namespace oSpy
+namespace oSpy.Capture
 {
-    public partial class CaptureForm : Form
+    public partial class ProgressForm : Form
     {
-        private AgentListener listener;
-
         private uint msgCount, msgBytes;
         private uint pktCount, pktBytes;
 
-        private AgentListener.ElementsReceivedHandler receivedHandler;
+        private Manager.ElementsReceivedHandler recvHandler;
 
-        public CaptureForm(AgentListener listener, AgentListener.SoftwallRule[] rules)
+        public ProgressForm(Manager manager)
         {
             InitializeComponent();
 
-            this.listener = listener;
             msgCount = msgBytes = 0;
             pktCount = pktBytes = 0;
 
-            receivedHandler = new AgentListener.ElementsReceivedHandler(listener_MessageElementsReceived);
-            listener.MessageElementsReceived += receivedHandler;
-
-            listener.Start(rules);
+            recvHandler = manager_MessageElementsReceived;
+            manager.MessageElementsReceived += recvHandler;
         }
 
-        private void listener_MessageElementsReceived(AgentListener.MessageQueueElement[] elements)
+        private void manager_MessageElementsReceived(Manager.MessageQueueElement[] elements)
         {
             if (InvokeRequired)
             {
-                Invoke(receivedHandler, new object[] { elements });
+                Invoke(recvHandler, new object[] { elements });
                 return;
             }
 
-            foreach (AgentListener.MessageQueueElement el in elements)
+            foreach (Manager.MessageQueueElement el in elements)
             {
                 if (el.msg_type == MessageType.MESSAGE_TYPE_MESSAGE)
                 {
@@ -79,8 +74,6 @@ namespace oSpy
 
         private void stopButton_Click(object sender, EventArgs e)
         {
-            listener.Stop();
-
             DialogResult = DialogResult.OK;
         }
     }

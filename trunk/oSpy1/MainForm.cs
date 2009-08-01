@@ -36,7 +36,8 @@ namespace oSpy
     public partial class MainForm : Form
     {
         private ConfigContext config;
-        private AgentListener listener;
+        private Capture.Manager captureMgr;
+        private Capture.Manager.ElementsReceivedHandler recvHandler;
 
         private DataTable tblMessages;
         private PacketParser packetParser;
@@ -83,9 +84,6 @@ namespace oSpy
         private string subStatusLabel;
         private string wizStatusLabel;
 
-        private AgentListener.ElementsReceivedHandler receivedHandler;
-        private AgentListener.StoppedHandler stoppedHandler;
-
         public MainForm()
         {
             InitializeComponent();
@@ -94,11 +92,9 @@ namespace oSpy
 
             colorPool = new ColorPool();
 
-            listener = new AgentListener();
-            receivedHandler = new AgentListener.ElementsReceivedHandler(listener_ElementsReceived);
-            listener.MessageElementsReceived += receivedHandler;
-            stoppedHandler = new AgentListener.StoppedHandler(listener_Stopped);
-            listener.Stopped += stoppedHandler;
+            captureMgr = new Capture.Manager();
+            recvHandler = listener_ElementsReceived;
+            captureMgr.MessageElementsReceived += recvHandler;
 
             tblMessages = dataSet.Tables["messages"];
 
@@ -257,11 +253,11 @@ namespace oSpy
             }
         }
 
-        private void listener_ElementsReceived(AgentListener.MessageQueueElement[] elements)
+        private void listener_ElementsReceived(Capture.Manager.MessageQueueElement[] elements)
         {
             if (InvokeRequired)
             {
-                Invoke(receivedHandler, new object[] { elements });
+                Invoke(recvHandler, new object[] { elements });
                 return;
             }
 
@@ -269,7 +265,7 @@ namespace oSpy
             dataGridView.DataSource = null;
             dataSet.Tables[0].BeginLoadData();
 
-            foreach (AgentListener.MessageQueueElement msg in elements)
+            foreach (Capture.Manager.MessageQueueElement msg in elements)
             {
                 DataTable tbl = dataSet.Tables["messages"];
 
@@ -354,20 +350,54 @@ namespace oSpy
             dataGridView.DataSource = source;
         }
 
-        void listener_Stopped()
-        {
-            if (InvokeRequired)
-            {
-                Invoke(stoppedHandler);
-                return;
-            }
-
-            captureStartMenuItem.Enabled = true;
-        }
-
         private void exitMenuItem_Click(object sender, EventArgs e)
         {
             Close();
+        }
+
+        private void newCaptureMenuItem_Click(object sender, EventArgs e)
+        {
+            Capture.ChooseForm frm = new Capture.ChooseForm();
+
+            System.Diagnostics.Process[] processes;
+            if (!frm.GetSelection(out processes))
+                return;
+
+            tmpEventList.Clear();
+            tmpPacketList.Clear();
+
+            object source = dataGridView.DataSource;
+            dataGridView.DataSource = null;
+
+            ProgressForm progFrm = new ProgressForm("Starting capture");
+            captureMgr.StartCapture(processes, swForm.GetRules(), progFrm);
+
+            if (progFrm.ShowDialog(this) != DialogResult.OK)
+            {
+                MessageBox.Show(String.Format("Failed to start capture: {0}", progFrm.GetOperationErrorMessage()),
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            Capture.ProgressForm capProgFrm = new Capture.ProgressForm(captureMgr);
+            capProgFrm.ShowDialog();
+
+            progFrm = new ProgressForm("Stopping capture");
+            captureMgr.StopCapture(progFrm);
+
+            if (progFrm.ShowDialog(this) != DialogResult.OK)
+            {
+                MessageBox.Show(String.Format("Failed to stop capture: {0}", progFrm.GetOperationErrorMessage()),
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            progFrm = new ProgressForm("Analyzing data");
+
+            Thread th = new Thread(new ParameterizedThreadStart(DoPostAnalysis));
+            th.Start(progFrm);
+
+            progFrm.ShowDialog(this);
         }
 
         private void openMenuItem_Click(object sender, EventArgs e)
@@ -499,29 +529,6 @@ namespace oSpy
             }
         }
 
-        private void captureStartMenuItem_Click(object sender, EventArgs e)
-        {
-            tmpEventList.Clear();
-            tmpPacketList.Clear();
-
-            captureStartMenuItem.Enabled = false;
-
-            object source = dataGridView.DataSource;
-            dataGridView.DataSource = null;
-
-            CaptureForm frm = new CaptureForm(listener, swForm.GetRules());
-            frm.ShowDialog(this);
-
-            dataGridView.DataSource = null;
-
-            ProgressForm progFrm = new ProgressForm("Analyzing data");
-
-            Thread th = new Thread(new ParameterizedThreadStart(DoPostAnalysis));
-            th.Start(progFrm);
-
-            progFrm.ShowDialog(this);
-        }
-
         private void DoPostAnalysis(object param)
         {
             IProgressFeedback progress = param as IProgressFeedback;
@@ -538,7 +545,6 @@ namespace oSpy
         {
             SaveSettings();
             ConfigManager.Save();
-            listener.Stop();
         }
 
         private void injectToolStripMenuItem_Click(object sender, EventArgs e)
