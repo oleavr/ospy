@@ -25,6 +25,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.IO;
 using System.Net;
+using oSpy.Capture;
 
 namespace oSpy
 {
@@ -283,63 +284,63 @@ namespace oSpy
             ruleListView.SelectedIndices.Add(ruleListView.Items.Count - 1);
         }
 
-        public AgentListener.SoftwallRule[] GetRules()
+        public Manager.SoftwallRule[] GetRules()
         {
             DataRowCollection rows = softwallDataSet.Tables[0].Rows;
 
-            List<AgentListener.SoftwallRule> rules = new List<AgentListener.SoftwallRule>(rows.Count);
+            List<Manager.SoftwallRule> rules = new List<Manager.SoftwallRule>(rows.Count);
             foreach (DataRow row in rows)
             {
-                AgentListener.SoftwallRule rule = new AgentListener.SoftwallRule();
+                Manager.SoftwallRule rule = new Manager.SoftwallRule();
 
                 rule.conditions = 0;
 
                 object obj = row["ProcessName"];
                 if (!(obj is DBNull))
                 {
-                    rule.conditions |= AgentListener.SOFTWALL_CONDITION_PROCESS_NAME;
+                    rule.conditions |= Manager.SOFTWALL_CONDITION_PROCESS_NAME;
                     rule.process_name = obj as string;
                 }
 
                 obj = row["FunctionName"];
                 if (!(obj is DBNull))
                 {
-                    rule.conditions |= AgentListener.SOFTWALL_CONDITION_FUNCTION_NAME;
+                    rule.conditions |= Manager.SOFTWALL_CONDITION_FUNCTION_NAME;
                     rule.function_name = obj as string;
                 }
 
                 obj = row["ReturnAddress"];
                 if (!(obj is DBNull))
                 {
-                    rule.conditions |= AgentListener.SOFTWALL_CONDITION_RETURN_ADDRESS;
+                    rule.conditions |= Manager.SOFTWALL_CONDITION_RETURN_ADDRESS;
                     rule.return_address = (UInt32) obj;
                 }
 
                 obj = row["LocalAddress"];
                 if (!(obj is DBNull))
                 {
-                    rule.conditions |= AgentListener.SOFTWALL_CONDITION_LOCAL_ADDRESS;
+                    rule.conditions |= Manager.SOFTWALL_CONDITION_LOCAL_ADDRESS;
                     rule.local_address = IPAddrFromStr(obj as string);
                 }
 
                 obj = row["LocalPort"];
                 if (!(obj is DBNull))
                 {
-                    rule.conditions |= AgentListener.SOFTWALL_CONDITION_LOCAL_PORT;
+                    rule.conditions |= Manager.SOFTWALL_CONDITION_LOCAL_PORT;
                     rule.local_port = PortToBigEndian((UInt16) obj);
                 }
 
                 obj = row["RemoteAddress"];
                 if (!(obj is DBNull))
                 {
-                    rule.conditions |= AgentListener.SOFTWALL_CONDITION_REMOTE_ADDRESS;
+                    rule.conditions |= Manager.SOFTWALL_CONDITION_REMOTE_ADDRESS;
                     rule.remote_address = IPAddrFromStr(obj as string);
                 }
 
                 obj = row["RemotePort"];
                 if (!(obj is DBNull))
                 {
-                    rule.conditions |= AgentListener.SOFTWALL_CONDITION_REMOTE_PORT;
+                    rule.conditions |= Manager.SOFTWALL_CONDITION_REMOTE_PORT;
                     rule.remote_port = PortToBigEndian((UInt16) obj);
                 }
 
