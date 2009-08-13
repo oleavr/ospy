@@ -16,14 +16,12 @@
 //
 
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Runtime.InteropServices;
-using System.IO;
-using System.Threading;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
-using Microsoft.Win32.SafeHandles;
+using System.Runtime.InteropServices;
+using System.Threading;
+using EasyHook;
 
 namespace oSpy.Capture
 {
@@ -140,7 +138,6 @@ namespace oSpy.Capture
         private Process[] processes = null;
         private SoftwallRule[] softwallRules = null;
 
-        private UIntPtr[] handles = null;
         private IProgressFeedback progress = null;
 
         private Thread workerThread;
@@ -174,10 +171,8 @@ namespace oSpy.Capture
 
                 DoCapture(processes, softwallRules);
             }
-            catch (Error e)
+            catch (Exception e)
             {
-                // TODO: roll back
-
                 progress.OperationFailed(e.Message);
                 return;
             }
@@ -312,219 +307,29 @@ namespace oSpy.Capture
 
         private void DoInjection()
         {
-            handles = new UIntPtr[processes.Length];
-
-            try
+            for (int i = 0; i < processes.Length; i++)
             {
-                // Inject into the desired process IDs
-                for (int i = 0; i < processes.Length; i++)
-                {
-                    int percentComplete = (int)(((float)(i + 1) / (float)processes.Length) * 100.0f);
-                    progress.ProgressUpdate("Injecting logging agents", percentComplete);
-                    handles[i] = InjectDll(processes[i].Id);
-                }
-            }
-            catch
-            {
-                // Roll back if needed
-                for (int i = 0; i < handles.Length; i++)
-                {
-                    if (handles[i] != UIntPtr.Zero)
-                    {
-                        try
-                        {
-                            UnInjectDll(processes[i].Id, handles[i]);
-                        }
-                        catch
-                        {
-                        }
-                    }
-                }
-
-                throw;
+                int percentComplete = (int)(((float)(i + 1) / (float)processes.Length) * 100.0f);
+                progress.ProgressUpdate("Injecting logging agents", percentComplete);
+                InjectDll(processes[i].Id);
             }
         }
 
-        private UIntPtr InjectDll(int processId)
+        private void InjectDll(int processId)
         {
-            string agentDLLPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) + "\\oSpyAgent.dll";
-            if (!File.Exists(agentDLLPath))
-                throw new Error(agentDLLPath + " not found");
-
-            return InjectDll(processId, agentDLLPath);
+            InjectDll(processId, "oSpyAgent.dll");
         }
 
-        private UIntPtr InjectDll(int processId, string dllPath)
+        private void InjectDll(int processId, string filename)
         {
-            IntPtr kernelMod = WinApi.GetModuleHandle("kernel32.dll");
-            if (kernelMod == IntPtr.Zero)
-                throw new Error("GetModuleHandle of kernel32.dll failed");
-
-            IntPtr proc = WinApi.OpenProcess(WinApi.PROCESS_ALL_ACCESS, true, (uint)processId);
-            if (proc == IntPtr.Zero)
-                throw new Error("OpenProcess failed");
-
-            // Temporarily show errors, add the directory to the search path, and load the DLL.
-            try
-            {
-                uint oldErrorMode = CallRemoteFunction(proc, kernelMod, "SetErrorMode", 0);
-
-                try
-                {
-                    string dllDir = Path.GetDirectoryName(dllPath);
-                    CallRemoteFunction(proc, kernelMod, "SetDllDirectoryW", dllDir);
-                    UIntPtr dllHandle = (UIntPtr) CallRemoteFunction(proc, kernelMod, "LoadLibraryW", dllPath);
-                    if (dllHandle == UIntPtr.Zero)
-                        throw new Error("LoadLibrary in remote process failed");
-                    return dllHandle;
-                }
-                finally
-                {
-                    CallRemoteFunction(proc, kernelMod, "SetErrorMode", oldErrorMode);
-                }
-            }
-            finally
-            {
-                WinApi.CloseHandle(proc);
-            }
+            string binDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            RemoteHooking.Inject(processId, filename, filename, binDir);
         }
 
         private bool UnInjectDll(int processId, UIntPtr handle)
         {
             // FIXME: need to handle this in the agent
-#if false
-            IntPtr kernelMod = WinApi.GetModuleHandle("kernel32.dll");
-            if (kernelMod == IntPtr.Zero)
-                throw new Error("GetModuleHandle of kernel32.dll failed");
-
-            IntPtr proc = WinApi.OpenProcess(WinApi.PROCESS_ALL_ACCESS, true, (uint)processId);
-            if (proc == IntPtr.Zero)
-                throw new Error("OpenProcess failed");
-
-            try
-            {
-                return CallRemoteFunction(proc, kernelMod, "FreeLibrary", handle) != 0;
-            }
-            finally
-            {
-                WinApi.CloseHandle(proc);
-            }
-#endif
             return true;
-        }
-
-        private uint CallRemoteFunction(IntPtr proc, IntPtr kernelMod, string funcName, uint argument)
-        {
-            return CallRemoteFunction(proc, kernelMod, funcName, (UIntPtr)argument);
-        }
-
-        private uint CallRemoteFunction(IntPtr proc, IntPtr kernelMod, string funcName, string argument)
-        {
-            UIntPtr remoteArg = AllocateRemoteString(proc, argument);
-
-            try
-            {
-                return CallRemoteFunction(proc, kernelMod, funcName, remoteArg);
-            }
-            finally
-            {
-                // TODO: free the remote string here
-            }
-        }
-
-        private uint CallRemoteFunction(IntPtr proc, IntPtr kernelMod, string funcName, UIntPtr argument)
-        {
-            IntPtr funcAddr = WinApi.GetProcAddress(kernelMod, funcName);
-            if (funcAddr == IntPtr.Zero)
-                throw new Error(String.Format("GetProcAddress of {0} failed", funcName));
-
-            IntPtr remoteThreadHandle = WinApi.CreateRemoteThread(proc, IntPtr.Zero, 0, funcAddr, argument, 0, IntPtr.Zero);
-            if (remoteThreadHandle == IntPtr.Zero)
-                throw new Error("CreateRemoteThread failed");
-
-            return GetThreadExitCode(remoteThreadHandle);
-        }
-
-        private uint GetThreadExitCode(IntPtr handle)
-        {
-            while (true)
-            {
-                uint exitCode;
-                if (!WinApi.GetExitCodeThread(handle, out exitCode))
-                    throw new Error("GetExitCodeThread failed");
-
-                if (exitCode != WinApi.STILL_ACTIVE)
-                    return exitCode;
-                else
-                    Thread.Sleep(100);
-            }
-        }
-
-        private UIntPtr[] GetThreadExitCodes(IntPtr[] handles, string progressMsg)
-        {
-            Dictionary<IntPtr, UIntPtr> exitCodes = new Dictionary<IntPtr, UIntPtr>(handles.Length);
-            List<IntPtr> pendingHandles = new List<IntPtr>(handles);
-            List<IntPtr> completedHandles = new List<IntPtr>(handles.Length);
-
-            while (pendingHandles.Count > 0)
-            {
-                int completionCount = processes.Length - pendingHandles.Count + 1;
-                int percentComplete = (int)(((float)completionCount / (float)processes.Length) * 100.0f);
-
-                progress.ProgressUpdate(progressMsg, percentComplete);
-
-                completedHandles.Clear();
-
-                for (int i = 0; i < pendingHandles.Count; i++)
-                {
-                    uint exitCode;
-                    if (!WinApi.GetExitCodeThread(pendingHandles[i], out exitCode))
-                        throw new Error("GetExitCodeThread failed");
-
-                    if (exitCode != WinApi.STILL_ACTIVE)
-                    {
-                        exitCodes[pendingHandles[i]] = (UIntPtr)exitCode;
-                        completedHandles.Add(pendingHandles[i]);
-                    }
-                }
-
-                foreach (IntPtr handle in completedHandles)
-                {
-                    pendingHandles.Remove(handle);
-                }
-
-                Thread.Sleep(200);
-            }
-
-            UIntPtr[] result = new UIntPtr[handles.Length];
-            for (int i = 0; i < handles.Length; i++)
-            {
-                result[i] = exitCodes[handles[i]];
-            }
-            return result;
-        }
-
-        private UIntPtr AllocateRemoteString(IntPtr proc, string str)
-        {
-            // Create a unicode (UTF-16) C-string
-            byte[] rawStr = Encoding.Unicode.GetBytes(str);
-            byte[] termStr = new byte[rawStr.Length + 2];
-            rawStr.CopyTo(termStr, 0);
-            termStr[termStr.Length - 2] = 0;
-            termStr[termStr.Length - 1] = 0;
-
-            // Allocate memory for the string in the target process
-            UIntPtr remoteStr = WinApi.VirtualAllocEx(proc, IntPtr.Zero,
-                (uint)termStr.Length, WinApi.MEM_COMMIT, WinApi.PAGE_READWRITE);
-            if (remoteStr == UIntPtr.Zero)
-                throw new Error("VirtualAllocEx failed");
-
-            // Write the string to the allocated buffer
-            IntPtr bytesWritten;
-            if (!WinApi.WriteProcessMemory(proc, remoteStr, termStr, (uint)termStr.Length, out bytesWritten))
-                throw new Error("WriteProcessMemory failed");
-
-            return remoteStr;
         }
     }
 }
