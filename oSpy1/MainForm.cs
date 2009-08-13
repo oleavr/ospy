@@ -38,6 +38,7 @@ namespace oSpy
         private ConfigContext config;
         private Capture.Manager captureMgr;
         private Capture.Manager.ElementsReceivedHandler recvHandler;
+        private bool hasRegistered = false;
 
         private DataTable tblMessages;
         private PacketParser packetParser;
@@ -357,6 +358,22 @@ namespace oSpy
 
         private void newCaptureMenuItem_Click(object sender, EventArgs e)
         {
+            if (!hasRegistered)
+            {
+                try
+                {
+                    EasyHook.Config.Register("oSpy", "EasyHook.dll", "oSpy.exe", "oSpyAgent.dll");
+                }
+                catch (ApplicationException)
+                {
+                    MessageBox.Show("You need to run oSpy with administrative privileges in order to do this.",
+                                    "Permission Denied", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                hasRegistered = true;
+            }
+
             Capture.ChooseForm frm = new Capture.ChooseForm();
 
             System.Diagnostics.Process[] processes;

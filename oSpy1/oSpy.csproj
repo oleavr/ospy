@@ -14,6 +14,10 @@
     <OldToolsVersion>2.0</OldToolsVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <ApplicationIcon>oSpy.ico</ApplicationIcon>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>oSpy.pfx</AssemblyOriginatorKeyFile>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -26,10 +30,8 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <ApplicationIcon>oSpy.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -49,6 +51,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EasyHook, Version=2.5.0.0, Culture=neutral, PublicKeyToken=4b580fca19d0b0c5, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\EasyHook\EasyHook.dll</HintPath>
+    </Reference>
     <Reference Include="ICSharpCode.SharpZipLib, Version=0.85.4.369, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\SharpZipLib\ICSharpCode.SharpZipLib.dll</HintPath>
@@ -350,6 +356,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Images\donate.gif" />
+    <None Include="oSpy.pfx" />
     <Content Include="oSpy.ico" />
     <Content Include="README.txt" />
   </ItemGroup>
@@ -391,4 +398,11 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <PropertyGroup>
+    <PostBuildEvent>copy /B /Y "$(SolutionDir)..\EasyHook\EasyHook32.dll" "$(TargetDir)"
+copy /B /Y "$(SolutionDir)..\EasyHook\EasyHook64.dll" "$(TargetDir)"
+copy /B /Y "$(SolutionDir)..\EasyHook\EasyHook32Svc.exe" "$(TargetDir)"
+copy /B /Y "$(SolutionDir)..\EasyHook\EasyHook64Svc.exe" "$(TargetDir)"
+</PostBuildEvent>
+  </PropertyGroup>
 </Project>
