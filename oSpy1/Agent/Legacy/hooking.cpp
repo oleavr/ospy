@@ -21,6 +21,8 @@
 #include "util.h"
 #include "logging.h"
 
+#pragma managed(push, off)
+
 bool
 CHookContext::ShouldLog(void *returnAddress, CpuContext *ctx, ...)
 {
@@ -478,3 +480,5 @@ override_function_by_signature_in_module(const FunctionSignature *sig,
 
     return true;
 }
+
+#pragma managed(pop)

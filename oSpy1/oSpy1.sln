@@ -5,9 +5,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "oSpy", "oSpy.csproj", "{32E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestPacketStream", "Tests\PacketStream\TestPacketStream.csproj", "{2986256A-383B-42E4-81C3-3C53A4DAB5D6}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oSpyAgent32", "Agent\oSpyAgent32.vcproj", "{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "oSpyAgent", "Agent\oSpyAgent.csproj", "{8FCF0CD8-C727-4D73-887E-48245BC6291F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oSpyAgent", "Agent\oSpyAgent.vcproj", "{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,16 +47,6 @@ Global
 		{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}.Release|Win32.ActiveCfg = Release|Win32
 		{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}.Release|Win32.Build.0 = Release|Win32
-		{8FCF0CD8-C727-4D73-887E-48245BC6291F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8FCF0CD8-C727-4D73-887E-48245BC6291F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8FCF0CD8-C727-4D73-887E-48245BC6291F}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{8FCF0CD8-C727-4D73-887E-48245BC6291F}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{8FCF0CD8-C727-4D73-887E-48245BC6291F}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{8FCF0CD8-C727-4D73-887E-48245BC6291F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8FCF0CD8-C727-4D73-887E-48245BC6291F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8FCF0CD8-C727-4D73-887E-48245BC6291F}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{8FCF0CD8-C727-4D73-887E-48245BC6291F}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{8FCF0CD8-C727-4D73-887E-48245BC6291F}.Release|Win32.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

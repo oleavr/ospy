@@ -22,6 +22,8 @@
 #include "httpapi_util.h"
 #include <psapi.h>
 
+#pragma managed(push, off)
+
 //
 // Signatures
 //
@@ -785,3 +787,5 @@ DONE:
         RegCloseKey(key);
     }
 }
+
+#pragma managed(pop)

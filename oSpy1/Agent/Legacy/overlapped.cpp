@@ -19,6 +19,8 @@
 #include "stdafx.h"
 #include "overlapped.h"
 
+#pragma managed(push, off)
+
 #define ENTER_OPS() EnterCriticalSection(&m_opsCriticalSection)
 #define LEAVE_OPS() LeaveCriticalSection(&m_opsCriticalSection)
 
@@ -132,3 +134,5 @@ COverlappedOperation::HandleCompletion()
 		m_handler(this);
 	}
 }
+
+#pragma managed(pop)

@@ -21,6 +21,8 @@
 #include "logging.h"
 #include "util.h"
 
+#pragma managed(push, off)
+
 static const char *HTTP_VERB_STRINGS[] =
 {
     "Unparsed",
@@ -387,3 +389,5 @@ log_http_response(HANDLE queue_handle,
 
     byte_buffer_free(buf);
 }
+
+#pragma managed(pop)

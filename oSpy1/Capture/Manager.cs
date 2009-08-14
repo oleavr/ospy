@@ -38,7 +38,7 @@ namespace oSpy.Capture
         }
     }
 
-    public class Manager
+    public class Manager : MarshalByRefObject
     {
         public delegate void ElementsReceivedHandler(MessageQueueElement[] elements);
         public event ElementsReceivedHandler MessageElementsReceived;

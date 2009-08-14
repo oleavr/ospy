@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="oSpyAgent32"
+	Name="oSpyAgent"
 	ProjectGUID="{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}"
 	RootNamespace="oSpy"
 	Keyword="Win32Proj"
@@ -23,6 +23,7 @@
 			ConfigurationType="2"
 			UseOfMFC="0"
 			CharacterSet="0"
+			ManagedExtensions="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -43,13 +44,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_WIN32_WINNT=0x0501;WINVER=0x0501;_USRDLL;_SCL_SECURE_NO_WARNINGS"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				WarnAsError="true"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
+				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -62,14 +62,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/NODEFAULTLIB:MSVCRTD"
 				AdditionalDependencies="psapi.lib ws2_32.lib"
 				LinkIncremental="2"
-				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
+				AssemblyDebug="1"
 				SubSystem="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -102,6 +99,7 @@
 			ConfigurationType="2"
 			UseOfMFC="0"
 			CharacterSet="0"
+			ManagedExtensions="1"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -122,11 +120,12 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_WIN32_WINNT=0x0501;WINVER=0x0501;_USRDLL;NDEBUG;_SCL_SECURE_NO_WARNINGS"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				WarnAsError="true"
 				DebugInformationFormat="3"
+				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -145,8 +144,6 @@
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -182,67 +179,71 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\agent.cpp"
+				RelativePath=".\Legacy\agent.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\byte_buffer.cpp"
+				RelativePath=".\AssemblyInfo.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\hooking.cpp"
+				RelativePath=".\Legacy\byte_buffer.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\hooks_activesync.cpp"
+				RelativePath=".\Legacy\hooking.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\hooks_crypt.cpp"
+				RelativePath=".\Legacy\hooks_activesync.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\hooks_httpapi.cpp"
+				RelativePath=".\Legacy\hooks_crypt.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\hooks_kernel32.cpp"
+				RelativePath=".\Legacy\hooks_httpapi.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\hooks_msn.cpp"
+				RelativePath=".\Legacy\hooks_kernel32.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\hooks_secur32.cpp"
+				RelativePath=".\Legacy\hooks_msn.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\hooks_wininet.cpp"
+				RelativePath=".\Legacy\hooks_secur32.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\hooks_winsock.cpp"
+				RelativePath=".\Legacy\hooks_wininet.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\httpapi_util.cpp"
+				RelativePath=".\Legacy\hooks_winsock.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\logging.cpp"
+				RelativePath=".\Legacy\httpapi_util.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\overlapped.cpp"
+				RelativePath=".\Legacy\logging.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\softwall.cpp"
+				RelativePath=".\Legacy\overlapped.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\stdafx.cpp"
+				RelativePath=".\Legacy\softwall.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Stdafx.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -262,7 +263,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\util.cpp"
+				RelativePath=".\Legacy\util.cpp"
 				>
 			</File>
 		</Filter>
@@ -272,43 +273,43 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\alloc.h"
+				RelativePath=".\Legacy\alloc.h"
 				>
 			</File>
 			<File
-				RelativePath=".\byte_buffer.h"
+				RelativePath=".\Legacy\byte_buffer.h"
 				>
 			</File>
 			<File
-				RelativePath=".\hooking.h"
+				RelativePath=".\Legacy\hooking.h"
 				>
 			</File>
 			<File
-				RelativePath=".\hooks.h"
+				RelativePath=".\Legacy\hooks.h"
 				>
 			</File>
 			<File
-				RelativePath=".\httpapi_util.h"
+				RelativePath=".\Legacy\httpapi_util.h"
 				>
 			</File>
 			<File
-				RelativePath=".\logging.h"
+				RelativePath=".\Legacy\logging.h"
 				>
 			</File>
 			<File
-				RelativePath=".\overlapped.h"
+				RelativePath=".\Legacy\overlapped.h"
 				>
 			</File>
 			<File
-				RelativePath=".\softwall.h"
+				RelativePath=".\Legacy\softwall.h"
 				>
 			</File>
 			<File
-				RelativePath=".\stdafx.h"
+				RelativePath=".\Stdafx.h"
 				>
 			</File>
 			<File
-				RelativePath=".\util.h"
+				RelativePath=".\Legacy\util.h"
 				>
 			</File>
 		</Filter>
@@ -319,11 +320,7 @@
 			>
 		</Filter>
 		<File
-			RelativePath=".\hookgenerator.pyw"
-			>
-		</File>
-		<File
-			RelativePath=".\ReadMe.txt"
+			RelativePath=".\Legacy\hookgenerator.pyw"
 			>
 		</File>
 	</Files>

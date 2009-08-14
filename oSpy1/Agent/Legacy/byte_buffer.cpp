@@ -20,6 +20,8 @@
 #include "byte_buffer.h"
 #include "logging.h"
 
+#pragma managed(push, off)
+
 ByteBuffer *
 byte_buffer_sized_new(size_t size)
 {
@@ -78,3 +80,5 @@ byte_buffer_append_printf(ByteBuffer *buf, const char *fmt, ...)
 
     byte_buffer_append(buf, tmp, strlen(tmp));
 }
+
+#pragma managed(pop)

@@ -20,6 +20,8 @@
 #include "logging.h"
 #include "util.h"
 
+#pragma managed(push, off)
+
 extern MessageQueue *queue;
 extern HANDLE queue_mutex;
 
@@ -183,3 +185,5 @@ softwall_decide_from_socket_and_remote_address(const char *function_name,
                                           &local_address, remote_address,
                                           carry_on);
 }
+
+#pragma managed(pop)
