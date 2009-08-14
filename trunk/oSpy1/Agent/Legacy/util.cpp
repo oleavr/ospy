@@ -22,6 +22,8 @@
 #include "util.h"
 #include <psapi.h>
 
+#pragma managed(push, off)
+
 static bool initialized = FALSE;
 static char cur_process_name[_MAX_PATH];
 
@@ -444,3 +446,5 @@ CUtil::GetModuleInfoForAddress(DWORD address)
 
 	return NULL;
 }
+
+#pragma managed(pop)

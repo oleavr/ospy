@@ -2,6 +2,8 @@
 #include "hooking.h"
 #include "logging.h"
 
+#pragma managed(push, off)
+
 #define DEVICEIOCONTROL_ARGS_SIZE (8 * 4)
 
 static BOOL __cdecl
@@ -59,3 +61,5 @@ hook_kernel32()
 	
 	HOOK_FUNCTION_SPECIAL(h, DeviceIoControl);
 }
+
+#pragma managed(pop)

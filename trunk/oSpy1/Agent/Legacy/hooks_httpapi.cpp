@@ -22,6 +22,7 @@
 #include "httpapi_util.h"
 #include <http.h>
 
+#pragma managed(push, off)
 
 /*
  * Strategy:
@@ -260,3 +261,5 @@ hook_httpapi()
     HOOK_FUNCTION(h, HttpReceiveHttpRequest);
     HOOK_FUNCTION(h, HttpReceiveRequestEntityBody);
 }
+
+#pragma managed(pop)

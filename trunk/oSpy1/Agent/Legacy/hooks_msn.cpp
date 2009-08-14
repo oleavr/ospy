@@ -20,6 +20,8 @@
 #include "hooking.h"
 #include "logging.h"
 
+#pragma managed(push, off)
+
 //
 // Signatures
 //
@@ -359,3 +361,5 @@ hook_msn()
     }
     */
 }
+
+#pragma managed(pop)

@@ -23,6 +23,8 @@
 #include <Ws2tcpip.h>
 #include <psapi.h>
 
+#pragma managed(push, off)
+
 static MODULEINFO wsock32_info;
 
 #define CLOSESOCKET_ARGS_SIZE (1 * 4)
@@ -976,3 +978,5 @@ hook_winsock()
 
     HOOK_FUNCTION_BY_ALIAS(h, recv, wsock32_recv);
 }
+
+#pragma managed(pop)

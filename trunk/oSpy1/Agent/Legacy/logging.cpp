@@ -22,6 +22,8 @@
 #include <stdio.h>
 #include <strsafe.h>
 
+#pragma managed(push, off)
+
 #pragma warning( disable : 4996 )
 
 #define LOG_FILENAME "C:\\oSpyAgent_log.txt"
@@ -492,3 +494,5 @@ log_debug(const char *source,
 		MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL, NULL, 0, buf,
 		domain, severity);
 }
+
+#pragma managed(pop)

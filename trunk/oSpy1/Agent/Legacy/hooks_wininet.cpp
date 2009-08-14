@@ -21,6 +21,8 @@
 #include "logging.h"
 #include "hooks.h"
 
+#pragma managed(push, off)
+
 typedef enum {
 	SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET = 0,
 	SIGNATURE_ICSOCKET_RECEIVE_CONTINUE_RECV,
@@ -528,3 +530,5 @@ hook_wininet()
 		LOG_OVERRIDE_ERROR("SIGNATURE_ICASYNCTHREAD_CONNECT", error);
 	}
 }
+
+#pragma managed(pop)

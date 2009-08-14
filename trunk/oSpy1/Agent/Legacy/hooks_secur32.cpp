@@ -23,6 +23,8 @@
 #include <security.h>
 #include <psapi.h>
 
+#pragma managed(push, off)
+
 static MODULEINFO rpcrt4_info;
 
 static BOOL
@@ -193,3 +195,5 @@ hook_secur32()
     HOOK_FUNCTION(h, EncryptMessage);
     HOOK_FUNCTION(h, DecryptMessage);
 }
+
+#pragma managed(pop)

@@ -32,6 +32,8 @@
 #include <psapi.h>
 #include <map>
 
+#pragma managed(push, off)
+
 static MODULEINFO schannel_info;
 static MODULEINFO crypt32_info;
 
@@ -1021,3 +1023,5 @@ hook_crypt()
     HOOK_FUNCTION_SPECIAL(h, CryptGetHashParam);
     HOOK_FUNCTION_SPECIAL(h, CryptSetHashParam);
 }
+
+#pragma managed(pop)

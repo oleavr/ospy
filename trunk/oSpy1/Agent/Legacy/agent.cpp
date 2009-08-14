@@ -22,9 +22,7 @@
 #include "util.h"
 #include "overlapped.h"
 
-#ifdef _MANAGED
 #pragma managed(push, off)
-#endif
 
 void *
 sspy_malloc(size_t size)
@@ -55,7 +53,6 @@ sspy_strdup(const char *str)
 
     return s;
 }
-
 
 BOOL APIENTRY
 DllMain(HMODULE hModule,
@@ -89,6 +86,4 @@ DllMain(HMODULE hModule,
     return TRUE;
 }
 
-#ifdef _MANAGED
 #pragma managed(pop)
-#endif
