@@ -22,8 +22,17 @@
 
 #pragma managed(push, off)
 
-extern MessageQueue *queue;
-extern HANDLE queue_mutex;
+static SoftwallRule *g_rules;
+static unsigned int g_num_rules;
+
+void
+softwall_init(const SoftwallRule *rules, unsigned int num_rules)
+{
+    unsigned int size = num_rules * sizeof(SoftwallRule);
+    g_rules = (SoftwallRule *) malloc(size);
+    memcpy(g_rules, rules, size);
+    g_num_rules = num_rules;
+}
 
 static BOOL
 softwall_find_rule(const char *function_name,
@@ -33,78 +42,68 @@ softwall_find_rule(const char *function_name,
                    int *rule_retval,
                    DWORD *rule_last_error)
 {
-    if (WaitForSingleObject(queue_mutex, INFINITE) != WAIT_OBJECT_0)
-        return FALSE;
-
-    __try
+    for (unsigned int i = 0; i < g_num_rules; i++)
     {
-        for (int i = 0; i < queue->num_softwall_rules; i++)
+        SoftwallRule *rule = &g_rules[i];
+
+        if ((rule->conditions & SOFTWALL_CONDITION_PROCESS_NAME) != 0)
         {
-            SoftwallRule *rule = &queue->rules[i];
-
-            if ((rule->conditions & SOFTWALL_CONDITION_PROCESS_NAME) != 0)
-            {
-                if (!cur_process_is(rule->process_name))
-                    continue;
-            }
-
-            if ((rule->conditions & SOFTWALL_CONDITION_FUNCTION_NAME) != 0)
-            {
-                if (strcmp(function_name, rule->function_name) != 0)
-                    continue;
-            }
-
-            if ((rule->conditions & SOFTWALL_CONDITION_RETURN_ADDRESS) != 0)
-            {
-                if (return_address != rule->return_address)
-                    continue;
-            }
-            
-            if ((rule->conditions & SOFTWALL_CONDITION_LOCAL_ADDRESS) != 0)
-            {
-                if (local_address == NULL ||
-                    memcmp(&local_address->sin_addr, &rule->local_address, sizeof(in_addr)) != 0)
-                {
-                    continue;
-                }
-            }
-
-            if ((rule->conditions & SOFTWALL_CONDITION_LOCAL_PORT) != 0)
-            {
-                if (local_address == NULL ||
-                    local_address->sin_port != rule->local_port)
-                {
-                    continue;
-                }
-            }
-
-            if ((rule->conditions & SOFTWALL_CONDITION_REMOTE_ADDRESS) != 0)
-            {
-                if (remote_address == NULL ||
-                    memcmp(&remote_address->sin_addr, &rule->remote_address, sizeof(in_addr)) != 0)
-                {
-                    continue;
-                }
-            }
-
-            if ((rule->conditions & SOFTWALL_CONDITION_REMOTE_PORT) != 0)
-            {
-                if (remote_address == NULL ||
-                    remote_address->sin_port != rule->remote_port)
-                {
-                    continue;
-                }
-            }
-
-            *rule_retval = rule->retval;
-            *rule_last_error = rule->last_error;
-
-            return TRUE;
+            if (!cur_process_is(rule->process_name))
+                continue;
         }
-    }
-    __finally
-    {
-        ReleaseMutex(queue_mutex);
+
+        if ((rule->conditions & SOFTWALL_CONDITION_FUNCTION_NAME) != 0)
+        {
+            if (strcmp(function_name, rule->function_name) != 0)
+                continue;
+        }
+
+        if ((rule->conditions & SOFTWALL_CONDITION_RETURN_ADDRESS) != 0)
+        {
+            if (return_address != rule->return_address)
+                continue;
+        }
+        
+        if ((rule->conditions & SOFTWALL_CONDITION_LOCAL_ADDRESS) != 0)
+        {
+            if (local_address == NULL ||
+                memcmp(&local_address->sin_addr, &rule->local_address, sizeof(in_addr)) != 0)
+            {
+                continue;
+            }
+        }
+
+        if ((rule->conditions & SOFTWALL_CONDITION_LOCAL_PORT) != 0)
+        {
+            if (local_address == NULL ||
+                local_address->sin_port != rule->local_port)
+            {
+                continue;
+            }
+        }
+
+        if ((rule->conditions & SOFTWALL_CONDITION_REMOTE_ADDRESS) != 0)
+        {
+            if (remote_address == NULL ||
+                memcmp(&remote_address->sin_addr, &rule->remote_address, sizeof(in_addr)) != 0)
+            {
+                continue;
+            }
+        }
+
+        if ((rule->conditions & SOFTWALL_CONDITION_REMOTE_PORT) != 0)
+        {
+            if (remote_address == NULL ||
+                remote_address->sin_port != rule->remote_port)
+            {
+                continue;
+            }
+        }
+
+        *rule_retval = rule->retval;
+        *rule_last_error = rule->last_error;
+
+        return TRUE;
     }
 
     return FALSE;

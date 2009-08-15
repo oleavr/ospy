@@ -95,7 +95,9 @@ typedef struct {
     MessageQueueElement elements[MAX_ELEMENTS];
 } MessageQueue;
 
-void message_logger_init();
+typedef void (*MessageLoggerSubmitFunc)(const MessageQueueElement *el);
+
+void message_logger_init(MessageLoggerSubmitFunc submit_func);
 void message_logger_get_queue(MessageQueue **queue, HANDLE *queue_mutex);
 
 void message_logger_log_full(const char *function_name, void *bt_address, DWORD resource_id, MessageType msg_type, MessageContext context, PacketDirection direction, const sockaddr_in *local_addr, const sockaddr_in *peer_addr, const char *buf, int len, const char *message, DWORD domain, DWORD severity);

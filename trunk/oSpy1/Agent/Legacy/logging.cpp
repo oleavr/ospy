@@ -26,50 +26,12 @@
 
 #pragma warning( disable : 4996 )
 
-#define LOG_FILENAME "C:\\oSpyAgent_log.txt"
-
-MessageQueue *queue = NULL;
-HANDLE queue_mutex = INVALID_HANDLE_VALUE;
-
-static HANDLE ready_event = INVALID_HANDLE_VALUE;
+static MessageLoggerSubmitFunc message_logger_submit = NULL;
 
 void
-message_logger_init()
+message_logger_init(MessageLoggerSubmitFunc submit_func)
 {
-    HANDLE map;
-    BOOL exists;
-
-    map = CreateFileMapping(INVALID_HANDLE_VALUE, NULL,
-                            PAGE_READWRITE, 0, sizeof(MessageQueue),
-                            "BadgerPacketQueue");
-    exists = (GetLastError() == ERROR_ALREADY_EXISTS);
-
-    if (exists)
-    {
-        map = OpenFileMapping(FILE_MAP_WRITE, FALSE, "BadgerPacketQueue");
-    }
-
-    queue = (MessageQueue *) MapViewOfFile(map, FILE_MAP_WRITE, 0, 0, sizeof(MessageQueue));
-
-    if (!exists)
-    {
-        queue->num_softwall_rules = 0;
-        queue->num_elements = 0;
-    }
-
-    queue_mutex = CreateMutex(NULL, FALSE, "BadgerQueueMutex");
-
-    ready_event = CreateEvent(NULL,
-                              FALSE, /* bManualReset */
-                              FALSE, /* bInitialState */
-                              "BadgerPacketReady");
-}
-
-void
-message_logger_get_queue(MessageQueue **ret_queue, HANDLE *ret_queue_mutex)
-{
-    *ret_queue = queue;
-    *ret_queue_mutex = queue_mutex;
+    message_logger_submit = submit_func;
 }
 
 static void
@@ -108,28 +70,6 @@ message_element_init(MessageQueueElement *el,
 
     /* message type */
     el->type = msg_type;
-}
-
-static
-void message_queue_add(MessageQueueElement *element)
-{
-    if (WaitForSingleObject(queue_mutex, INFINITE) == WAIT_OBJECT_0)
-    {
-        __try
-        {
-            if (queue->num_elements == MAX_ELEMENTS)
-                return;
-
-            queue->elements[queue->num_elements++] = *element;
-        }
-        __finally
-        {
-            ReleaseMutex(queue_mutex);
-        }
-
-        /* notify logger thread */
-        SetEvent(ready_event);
-    }
 }
 
 // FIXME: this should be dynamically allocated instead
@@ -240,7 +180,7 @@ message_logger_log_full(const char *function_name,
 	}
 
     /* submit the message */
-    message_queue_add(&el);
+    message_logger_submit(&el);
 }
 
 void
