@@ -54,36 +54,4 @@ sspy_strdup(const char *str)
     return s;
 }
 
-BOOL APIENTRY
-DllMain(HMODULE hModule,
-        DWORD  ul_reason_for_call,
-        LPVOID lpReserved)
-{
-    if (ul_reason_for_call == DLL_PROCESS_ATTACH)
-    {
-		// Just to make sure that floating point support is dynamically loaded...
-		float dummy_float = 1.0f;
-
-		// And to make sure that the compiler doesn't optimize the previous statement out.
-		if (dummy_float > 0.0f)
-		{
-			// Initialize SHM logger
-			message_logger_init();
-			CUtil::Init();
-			//COverlappedManager::Init();
-
-			//hook_kernel32();
-			hook_winsock();
-			hook_secur32();
-			hook_crypt();
-			hook_wininet();
-			//hook_httpapi();
-			hook_activesync();
-			hook_msn();
-		}
-    }
-
-    return TRUE;
-}
-
 #pragma managed(pop)

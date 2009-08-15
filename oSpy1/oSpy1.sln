@@ -6,6 +6,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestPacketStream", "Tests\PacketStream\TestPacketStream.csproj", "{2986256A-383B-42E4-81C3-3C53A4DAB5D6}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oSpyAgent", "Agent\oSpyAgent.vcproj", "{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{32EB5641-50CC-4A6B-A913-E814EEE3B34D} = {32EB5641-50CC-4A6B-A913-E814EEE3B34D}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

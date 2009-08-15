@@ -254,7 +254,7 @@ namespace oSpy
             }
         }
 
-        private void listener_ElementsReceived(Capture.Manager.MessageQueueElement[] elements)
+        private void listener_ElementsReceived(Capture.MessageQueueElement[] elements)
         {
             if (InvokeRequired)
             {
@@ -266,7 +266,7 @@ namespace oSpy
             dataGridView.DataSource = null;
             dataSet.Tables[0].BeginLoadData();
 
-            foreach (Capture.Manager.MessageQueueElement msg in elements)
+            foreach (Capture.MessageQueueElement msg in elements)
             {
                 DataTable tbl = dataSet.Tables["messages"];
 

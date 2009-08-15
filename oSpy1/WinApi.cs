@@ -175,6 +175,7 @@ namespace oSpy
         [DllImport ("comctl32.dll", SetLastError = true)]
         public static extern IntPtr ImageList_GetIcon (IntPtr himl, int i, int flags);
 
+        [Serializable]
         [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
         public struct SYSTEMTIME
         {

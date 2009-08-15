@@ -284,14 +284,14 @@ namespace oSpy
             ruleListView.SelectedIndices.Add(ruleListView.Items.Count - 1);
         }
 
-        public Manager.SoftwallRule[] GetRules()
+        public SoftwallRule[] GetRules()
         {
             DataRowCollection rows = softwallDataSet.Tables[0].Rows;
 
-            List<Manager.SoftwallRule> rules = new List<Manager.SoftwallRule>(rows.Count);
+            List<SoftwallRule> rules = new List<SoftwallRule>(rows.Count);
             foreach (DataRow row in rows)
             {
-                Manager.SoftwallRule rule = new Manager.SoftwallRule();
+                SoftwallRule rule = new SoftwallRule();
 
                 rule.conditions = 0;
 

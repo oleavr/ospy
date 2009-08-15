@@ -44,6 +44,8 @@ typedef struct {
     DWORD last_error;
 } SoftwallRule;
 
+void softwall_init(const SoftwallRule *rules, unsigned int num_rules);
+
 DWORD softwall_decide_from_addresses(const char *function_name, DWORD return_address, const sockaddr_in *local_address, const sockaddr_in *remote_address, BOOL *carry_on);
 DWORD softwall_decide_from_socket(const char *function_name, DWORD return_address, SOCKET s, BOOL *carry_on);
 DWORD softwall_decide_from_socket_and_remote_address(const char *function_name, DWORD return_address, SOCKET s, const sockaddr_in *remote_address, BOOL *carry_on);

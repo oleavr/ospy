@@ -16,79 +16,101 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.Remoting;
+using System.Runtime.Remoting.Channels;
+using System.Runtime.Remoting.Channels.Ipc;
+using System.Runtime.Serialization.Formatters;
+using System.Security.AccessControl;
+using System.Security.Cryptography;
+using System.Security.Principal;
+using System.Text;
 using System.Threading;
 using EasyHook;
 
 namespace oSpy.Capture
 {
-    public class Error : Exception
+    public interface IManager
     {
-        public Error(string msg)
-            : base(msg)
-        {
-        }
-
-        public Error(string msg, params object[] args)
-            : base(String.Format(msg, args))
-        {
-        }
+        void Submit(MessageQueueElement[] elements);
+        void Ping();
     }
 
-    public class Manager : MarshalByRefObject
+    [Serializable]
+    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Ansi)]
+    public class MessageQueueElement
+    {
+        /* Common fields */
+        public WinApi.SYSTEMTIME time;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+        public string process_name;
+        public UInt32 process_id;
+        public UInt32 thread_id;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+        public string function_name;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = Manager.BACKTRACE_BUFSIZE)]
+        public string backtrace;
+
+        public UInt32 resource_id;
+
+        public MessageType msg_type;
+
+        /* MessageType.Message */
+        public MessageContext context;
+        public UInt32 domain;
+        public UInt32 severity;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
+        public string message;
+
+        /* MessageType.Packet */
+        public PacketDirection direction;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+        public string local_address;
+        public UInt32 local_port;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+        public string peer_address;
+        public UInt32 peer_port;
+
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = Manager.PACKET_BUFSIZE)]
+        public byte[] buf;
+        public UInt32 len;
+    };
+
+    [Serializable]
+    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Ansi)]
+    public class SoftwallRule
+    {
+        /* mask of conditions */
+        public Int32 conditions;
+
+        /* condition values */
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+        public string process_name;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+        public string function_name;
+        public UInt32 return_address;
+        public UInt32 local_address;
+        public UInt32 local_port;
+        public UInt32 remote_address;
+        public UInt32 remote_port;
+
+        /* return value and lasterror to set if all conditions match */
+        public Int32 retval;
+        public UInt32 last_error;
+    };
+
+    internal class Manager : MarshalByRefObject, IManager
     {
         public delegate void ElementsReceivedHandler(MessageQueueElement[] elements);
         public event ElementsReceivedHandler MessageElementsReceived;
 
-        public const int MAX_ELEMENTS = 2048;
         public const int PACKET_BUFSIZE = 65536;
-        public const int MAX_SOFTWALL_RULES = 128;
         public const int BACKTRACE_BUFSIZE = 384;
-
-        [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Ansi)]
-        public struct MessageQueueElement
-        {
-            /* Common fields */
-            public WinApi.SYSTEMTIME time;
-
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-            public string process_name;
-            public UInt32 process_id;
-            public UInt32 thread_id;
-
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-            public string function_name;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = Manager.BACKTRACE_BUFSIZE)]
-            public string backtrace;
-
-            public UInt32 resource_id;
-
-            public MessageType msg_type;
-
-            /* MessageType.Message */
-            public MessageContext context;
-            public UInt32 domain;
-            public UInt32 severity;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
-            public string message;
-
-            /* MessageType.Packet */
-            public PacketDirection direction;
-
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
-            public string local_address;
-            public UInt32 local_port;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
-            public string peer_address;
-            public UInt32 peer_port;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = Manager.PACKET_BUFSIZE)]
-            public byte[] buf;
-            public UInt32 len;
-        };
 
         public const int SOFTWALL_CONDITION_PROCESS_NAME = 1;
         public const int SOFTWALL_CONDITION_FUNCTION_NAME = 2;
@@ -101,235 +123,142 @@ namespace oSpy.Capture
         /* connect() errors */
         public const int WSAEHOSTUNREACH = 10065;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Ansi)]
-        public struct SoftwallRule
-        {
-            /* mask of conditions */
-            public Int32 conditions;
-
-            /* condition values */
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-            public string process_name;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
-            public string function_name;
-            public UInt32 return_address;
-            public UInt32 local_address;
-            public UInt32 local_port;
-            public UInt32 remote_address;
-            public UInt32 remote_port;
-
-            /* return value and lasterror to set if all conditions match */
-            public Int32 retval;
-            public UInt32 last_error;
-        };
-
-        [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Ansi)]
-        public struct MessageQueue
-        {
-            public UInt32 num_softwall_rules;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MAX_SOFTWALL_RULES)]
-            public SoftwallRule[] softwall_rules;
-
-            public UInt32 num_elements;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MAX_ELEMENTS)]
-            public MessageQueueElement[] elements;
-        };
-
-        private Process[] processes = null;
-        private SoftwallRule[] softwallRules = null;
+        private Process[] m_processes = null;
+        private SoftwallRule[] m_softwallRules = null;
 
         private IProgressFeedback progress = null;
 
-        private Thread workerThread;
+        private Thread startWorkerThread;
+        private IpcServerChannel m_channel;
+        private string m_channelName;
 
         public Manager()
         {
         }
 
+        public override object InitializeLifetimeService()
+        {
+            return null; // live forever
+        }
+
+        public void Submit(MessageQueueElement[] elements)
+        {
+            lock (MessageElementsReceived)
+            {
+                MessageElementsReceived(elements);
+            }
+        }
+
+        public void Ping()
+        {
+        }
+
         public void StartCapture(Process[] processes, SoftwallRule[] softwallRules, IProgressFeedback progress)
         {
-            this.processes = processes;
-            this.softwallRules = softwallRules;
+            this.m_processes = processes;
+            this.m_softwallRules = softwallRules;
             this.progress = progress;
 
-            workerThread = new Thread(CaptureThread);
-            workerThread.Start();
+            startWorkerThread = new Thread(DoStartCapture);
+            startWorkerThread.Start();
         }
 
         public void StopCapture(IProgressFeedback progress)
         {
             this.progress = progress;
 
-            workerThread = null;
+            startWorkerThread = null;
+            RemotingServices.Disconnect(this);
+            ChannelServices.UnregisterChannel(m_channel);
+            m_channel = null;
+            m_channelName = null;
+
+            progress.OperationComplete();
         }
 
-        private void CaptureThread()
+        private void DoStartCapture()
         {
             try
             {
+                PrepareCapture();
                 DoInjection();
-
-                DoCapture(processes, softwallRules);
+                progress.OperationComplete();
             }
             catch (Exception e)
             {
                 progress.OperationFailed(e.Message);
                 return;
             }
-
-            progress.OperationComplete();
         }
 
-        private void DoCapture(Process[] processes, SoftwallRule[] softwallRules)
+        private void PrepareCapture()
         {
-            progress.ProgressUpdate("Preparing capture", 100);
-
-            IntPtr queuePtr;
-
-            IntPtr map = WinApi.CreateFileMapping(0xFFFFFFFFu, IntPtr.Zero, WinApi.enumProtect.PAGE_READWRITE,
-                                                  0, (uint)Marshal.SizeOf(typeof(MessageQueue)),
-                                                  "BadgerPacketQueue");
-            if (Marshal.GetLastWin32Error() == WinApi.ERROR_ALREADY_EXISTS)
-            {
-                map = WinApi.OpenFileMapping(WinApi.enumFileMap.FILE_MAP_WRITE, false, "BadgerPacketQueue");
-            }
-
-            queuePtr = WinApi.MapViewOfFile(map, WinApi.enumFileMap.FILE_MAP_WRITE,
-                                            0, 0, (uint)Marshal.SizeOf(typeof(MessageQueue)));
-
-            Mutex queueMutex = new Mutex(false, "BadgerQueueMutex");
-
-            AutoResetEvent readyEvent = new AutoResetEvent(false);
-            readyEvent.SafeWaitHandle = WinApi.CreateEvent(IntPtr.Zero,
-                                                           false, // bManualReset
-                                                           false, // bInitialState
-                                                           "BadgerPacketReady");
-
-            IntPtr numElementsPtr = (IntPtr)(queuePtr.ToInt64() +
-                                             Marshal.OffsetOf(typeof(MessageQueue), "num_elements").ToInt64());
-            IntPtr elementsPtr = (IntPtr)(queuePtr.ToInt64() +
-                                          Marshal.OffsetOf(typeof(MessageQueue), "elements").ToInt64());
-
-            int elementSize = Marshal.SizeOf(typeof(MessageQueueElement));
-            IntPtr tmpElementPtr = Marshal.AllocHGlobal(elementSize);
-
-            try
-            {
-                //
-                // First off, upload softwall rules
-                //
-                if (!queueMutex.WaitOne(5000, false))
-                {
-                    progress.OperationFailed("Failed to upload softwall rules");
-                    return;
-                }
-
-                try
-                {
-                    // Empty message queue
-                    //Marshal.WriteInt32(numElementsPtr, 0);
-
-                    Marshal.WriteIntPtr(queuePtr, Marshal.OffsetOf(typeof(MessageQueue), "num_softwall_rules").ToInt32(),
-                                        (IntPtr)softwallRules.Length);
-
-                    IntPtr p = (IntPtr)(queuePtr.ToInt64() +
-                        Marshal.OffsetOf(typeof(MessageQueue), "softwall_rules").ToInt64());
-                    foreach (SoftwallRule rule in softwallRules)
-                    {
-                        Marshal.StructureToPtr(rule, p, false);
-
-                        p = (IntPtr)(p.ToInt64() + Marshal.SizeOf(typeof(SoftwallRule)));
-                    }
-                }
-                finally
-                {
-                    queueMutex.ReleaseMutex();
-                }
-
-                progress.OperationComplete();
-
-                //
-                // Then start monitoring
-                //
-                while (workerThread != null)
-                {
-                    Int32 len;
-                    byte[] bytes = null;
-
-                    Thread.Sleep(1000);
-
-                    if (readyEvent.WaitOne(500, false))
-                    {
-                        if (!queueMutex.WaitOne(5000, false))
-                        {
-                            progress.OperationFailed("Failed to acquire lock");
-                            return;
-                        }
-
-                        try
-                        {
-                            len = Marshal.ReadInt32(numElementsPtr);
-
-                            if (len > 0)
-                            {
-                                bytes = new byte[len * Marshal.SizeOf(typeof(MessageQueueElement))];
-
-                                Marshal.Copy(elementsPtr, bytes, 0, bytes.Length);
-
-                                Marshal.WriteInt32(numElementsPtr, 0);
-                            }
-                        }
-                        finally
-                        {
-                            queueMutex.ReleaseMutex();
-                        }
-
-                        if (bytes != null)
-                        {
-                            MessageQueueElement[] elements = new MessageQueueElement[len];
-
-                            for (int i = 0; i < len; i++)
-                            {
-                                Marshal.Copy(bytes, i * elementSize, tmpElementPtr, elementSize);
-                                elements[i] = (MessageQueueElement)Marshal.PtrToStructure(tmpElementPtr, typeof(MessageQueueElement));
-                            }
-
-                            MessageElementsReceived(elements);
-                        }
-                    }
-                }
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(tmpElementPtr);
-            }
+            m_channelName = GenerateChannelName();
+            m_channel = CreateServerChannel(m_channelName);
+            ChannelServices.RegisterChannel(m_channel, false);
+            RemotingServices.Marshal(this, m_channelName, typeof(IManager));
         }
 
         private void DoInjection()
         {
-            for (int i = 0; i < processes.Length; i++)
+            for (int i = 0; i < m_processes.Length; i++)
             {
-                int percentComplete = (int)(((float)(i + 1) / (float)processes.Length) * 100.0f);
+                int percentComplete = (int)(((float)(i + 1) / (float)m_processes.Length) * 100.0f);
                 progress.ProgressUpdate("Injecting logging agents", percentComplete);
-                InjectDll(processes[i].Id);
+                RemoteHooking.Inject(m_processes[i].Id, "oSpyAgent.dll", "oSpyAgent.dll", m_channelName, m_softwallRules);
             }
         }
 
-        private void InjectDll(int processId)
+        // These two are based on similar utility methods in EasyHook:
+        private static IpcServerChannel CreateServerChannel(string channelName)
         {
-            InjectDll(processId, "oSpyAgent.dll");
+            Dictionary<string, string> properties = new Dictionary<string, string>();
+            properties["name"] = channelName;
+            properties["portName"] = channelName;
+
+            DiscretionaryAcl dacl = new DiscretionaryAcl(false, false, 1);
+            dacl.AddAccess(
+                AccessControlType.Allow,
+                new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+                -1,
+                InheritanceFlags.None,
+                PropagationFlags.None);
+
+            CommonSecurityDescriptor secDesc = new CommonSecurityDescriptor(
+                false,
+                false,
+                ControlFlags.GroupDefaulted | ControlFlags.OwnerDefaulted | ControlFlags.DiscretionaryAclPresent,
+                null,
+                null,
+                null,
+                dacl);
+
+            BinaryServerFormatterSinkProvider sinkProv = new BinaryServerFormatterSinkProvider();
+            sinkProv.TypeFilterLevel = TypeFilterLevel.Full;
+
+            return new IpcServerChannel(properties, sinkProv, secDesc);
         }
 
-        private void InjectDll(int processId, string filename)
+        private static string GenerateChannelName()
         {
-            string binDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            RemoteHooking.Inject(processId, filename, filename, binDir);
-        }
+            byte[] data = new byte[30];
+            RNGCryptoServiceProvider rnd = new RNGCryptoServiceProvider();
+            rnd.GetBytes(data);
 
-        private bool UnInjectDll(int processId, UIntPtr handle)
-        {
-            // FIXME: need to handle this in the agent
-            return true;
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < 20 + data[0] % 10; i++)
+            {
+                byte b = (byte) (data[i] % 62);
+
+                if (b >= 0 && b <= 9)
+                    builder.Append((char) ('0' + b));
+                else if (b >= 10 && b <= 35)
+                    builder.Append((char) ('A' + (b - 10)));
+                else if (b >= 36 && b <= 61)
+                    builder.Append((char) ('a' + (b - 36)));
+            }
+
+            return builder.ToString();
         }
     }
 }

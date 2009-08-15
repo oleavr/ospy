@@ -26,7 +26,7 @@ using System.Windows.Forms;
 
 namespace oSpy.Capture
 {
-    public partial class ProgressForm : Form
+    internal partial class ProgressForm : Form
     {
         private uint msgCount, msgBytes;
         private uint pktCount, pktBytes;
@@ -44,7 +44,7 @@ namespace oSpy.Capture
             manager.MessageElementsReceived += recvHandler;
         }
 
-        private void manager_MessageElementsReceived(Manager.MessageQueueElement[] elements)
+        private void manager_MessageElementsReceived(MessageQueueElement[] elements)
         {
             if (InvokeRequired)
             {
@@ -52,7 +52,7 @@ namespace oSpy.Capture
                 return;
             }
 
-            foreach (Manager.MessageQueueElement el in elements)
+            foreach (MessageQueueElement el in elements)
             {
                 if (el.msg_type == MessageType.MESSAGE_TYPE_MESSAGE)
                 {
