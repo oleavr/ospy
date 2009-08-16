@@ -106,6 +106,7 @@ public:
     static OString CreateBackTrace(void *address);
 
 private:
+    static DWORD FindPreferredImageBaseOf(const WCHAR *filename);
     static OModuleInfo *GetModuleInfoForAddress(DWORD address);
 
     static CRITICAL_SECTION m_cs;

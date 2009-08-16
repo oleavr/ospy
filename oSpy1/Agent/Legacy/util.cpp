@@ -22,6 +22,9 @@
 #include "util.h"
 #include <psapi.h>
 
+#include <assert.h>
+#include <fstream>
+
 #pragma managed(push, off)
 
 static bool initialized = FALSE;
@@ -290,34 +293,53 @@ CUtil::UpdateModuleList()
 
     for (unsigned int i = 0; i < bytes_needed / sizeof(HMODULE); i++)
     {
-        char buf[128];
+        WCHAR filename[MAX_PATH + 1];
+        char basename[128];
+        MODULEINFO mi;
 
-        if (GetModuleBaseNameA(process, modules[i], buf, sizeof(buf)) != 0)
+        if (GetModuleFileNameExW(process, modules[i], filename, MAX_PATH) != 0 &&
+            GetModuleBaseNameA(process, modules[i], basename, sizeof(basename)) != 0 &&
+            GetModuleInformation(process, modules[i], &mi, sizeof(mi)) != 0)
         {
-            MODULEINFO mi;
-            if (GetModuleInformation(process, modules[i], &mi, sizeof(mi)) != 0)
-            {
-                OModuleInfo modInfo;
-                modInfo.name = buf;
+            filename[MAX_PATH] = 0;
 
-                IMAGE_DOS_HEADER *dosHeader = (IMAGE_DOS_HEADER *) modules[i];
-                IMAGE_NT_HEADERS *peHeader = (IMAGE_NT_HEADERS *) ((char *) modules[i] + dosHeader->e_lfanew);
+            OModuleInfo modInfo;
+            modInfo.name = basename;
 
-                modInfo.preferredStartAddress = peHeader->OptionalHeader.ImageBase;
-                modInfo.startAddress = (DWORD) mi.lpBaseOfDll;
-                modInfo.endAddress = (DWORD) mi.lpBaseOfDll + mi.SizeOfImage - 1;
-                m_modules[buf] = modInfo;
+            modInfo.preferredStartAddress = FindPreferredImageBaseOf(filename);
+            modInfo.startAddress = (DWORD) mi.lpBaseOfDll;
+            modInfo.endAddress = (DWORD) mi.lpBaseOfDll + mi.SizeOfImage - 1;
+            m_modules[basename] = modInfo;
 
-                if (modInfo.startAddress < m_lowestAddress)
-                    m_lowestAddress = modInfo.startAddress;
-                if (modInfo.endAddress > m_highestAddress)
-                    m_highestAddress = modInfo.endAddress;
-            }
+            if (modInfo.startAddress < m_lowestAddress)
+                m_lowestAddress = modInfo.startAddress;
+            if (modInfo.endAddress > m_highestAddress)
+                m_highestAddress = modInfo.endAddress;
         }
     }
 
 DONE:
     LeaveCriticalSection(&m_cs);
+}
+
+DWORD
+CUtil::FindPreferredImageBaseOf(const WCHAR *filename)
+{
+    std::ifstream file;
+    file.open(filename, ios::in | ios::binary);
+    assert(file.is_open());
+
+    LONG offset;
+    file.seekg(offsetof(IMAGE_DOS_HEADER, e_lfanew));
+    file.read(reinterpret_cast<char *>(&offset), sizeof(offset));
+
+    DWORD imageBase;
+    file.seekg(offset + offsetof(IMAGE_NT_HEADERS, OptionalHeader) + offsetof(IMAGE_OPTIONAL_HEADER, ImageBase));
+    file.read(reinterpret_cast<char *>(&imageBase), sizeof(imageBase));
+
+    file.close();
+
+    return imageBase;
 }
 
 OString
