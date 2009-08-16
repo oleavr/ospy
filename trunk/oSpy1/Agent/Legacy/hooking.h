@@ -425,5 +425,6 @@ void write_dword_to_addr(LPVOID lpAddr, DWORD dw);
 bool write_jmp_instruction_to_addr(LPVOID lpOrgProc, LPVOID lpNewProc);
 bool find_signature(const FunctionSignature *sig, LPVOID *address, char **error);
 bool find_signature_in_module(const FunctionSignature *sig, const char *module_name, LPVOID *address, char **error);
+bool intercept_code_matching(const FunctionSignature *sig, LPVOID replacement, LPVOID *resume_trampoline, char **error);
 bool override_function_by_signature(const FunctionSignature *sig, LPVOID replacement, LPVOID *patched_address, char **error);
 bool override_function_by_signature_in_module(const FunctionSignature *sig, const char *module_name, LPVOID replacement, LPVOID *patched_address, char **error);
