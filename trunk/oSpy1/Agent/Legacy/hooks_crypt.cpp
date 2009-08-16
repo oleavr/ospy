@@ -57,9 +57,9 @@ called_internally(DWORD ret_addr)
     }
     else if (ret_addr >= (DWORD) crypt32_info.lpBaseOfDll &&
              ret_addr < (DWORD) crypt32_info.lpBaseOfDll + crypt32_info.SizeOfImage)
-	{
-		return TRUE;
-	}
+    {
+        return TRUE;
+    }
 
     return FALSE;
 }
@@ -477,7 +477,7 @@ CryptEncrypt_called(BOOL carry_on,
 {
     if (!called_internally(ret_addr))
     {
-		void *bt_address = (char *) &carry_on + 8 + CRYPT_ENCRYPT_ARGS_SIZE;
+        void *bt_address = (char *) &carry_on + 8 + CRYPT_ENCRYPT_ARGS_SIZE;
 
         message_logger_log("CryptEncrypt", bt_address, (DWORD) hKey,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_OUTGOING,
@@ -527,7 +527,7 @@ CryptDecrypt_called(BOOL carry_on,
 {
     if (!called_internally(ret_addr))
     {
-		void *bt_address = (char *) &carry_on + 8 + CRYPT_DECRYPT_ARGS_SIZE;
+        void *bt_address = (char *) &carry_on + 8 + CRYPT_DECRYPT_ARGS_SIZE;
 
         message_logger_log("CryptDecrypt", bt_address, (DWORD) hKey,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_OUTGOING,
@@ -978,7 +978,7 @@ hook_crypt()
                                    GetLastError());
     }
 
-	h = LoadLibrary("crypt32.dll");
+    h = LoadLibrary("crypt32.dll");
     if (h == NULL)
     {
         MessageBox(0, "Failed to load 'crypt32.dll'.",
@@ -998,7 +998,7 @@ hook_crypt()
     h = LoadLibrary("advapi32.dll");
     if (h == NULL)
     {
-	    MessageBox(0, "Failed to load 'advapi32.dll'.",
+        MessageBox(0, "Failed to load 'advapi32.dll'.",
                    "oSpy", MB_ICONERROR | MB_OK);
         return;
     }

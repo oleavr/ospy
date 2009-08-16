@@ -39,8 +39,8 @@ CHookContext g_connectHookContext;
 
 static int __cdecl
 getaddrinfo_called(BOOL carry_on,
-				   CpuContext ctx_before,
-				   void *bt_addr,
+                   CpuContext ctx_before,
+                   void *bt_addr,
                    void *ret_addr,
                    const char *nodename,
                    const char *servname,
@@ -205,10 +205,10 @@ dump_addrinfo(const struct addrinfo *first_ai,
 
 static int __stdcall
 getaddrinfo_done(int retval,
-				 CpuContext ctx_after,
-				 CpuContext ctx_before,
-				 void *bt_addr,
-				 void *ret_addr,
+                 CpuContext ctx_after,
+                 CpuContext ctx_before,
+                 void *bt_addr,
+                 void *ret_addr,
                  const char *nodename,
                  const char *servname,
                  const struct addrinfo *hints,
@@ -216,67 +216,67 @@ getaddrinfo_done(int retval,
 {
     DWORD err = GetLastError();
 
-	if (g_getaddrinfoHookContext.ShouldLog(ret_addr, &ctx_before))
-	{
-		int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
-		ByteBuffer *msg = byte_buffer_sized_new(64);
-		ByteBuffer *body = byte_buffer_sized_new(256);
-		const char *nn, *sn;
+    if (g_getaddrinfoHookContext.ShouldLog(ret_addr, &ctx_before))
+    {
+        int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
+        ByteBuffer *msg = byte_buffer_sized_new(64);
+        ByteBuffer *body = byte_buffer_sized_new(256);
+        const char *nn, *sn;
 
-		nn = (nodename != NULL) ? nodename : "NULL";
-		sn = (servname != NULL) ? servname : "NULL";
+        nn = (nodename != NULL) ? nodename : "NULL";
+        sn = (servname != NULL) ? servname : "NULL";
 
-		byte_buffer_append_printf(msg, "nodename=%s, servname=%s", nn, sn);
+        byte_buffer_append_printf(msg, "nodename=%s, servname=%s", nn, sn);
 
-		byte_buffer_append_printf(body, "nodename: %s\r\nservname: %s\r\nhints:",
-			nn, sn);
+        byte_buffer_append_printf(body, "nodename: %s\r\nservname: %s\r\nhints:",
+            nn, sn);
 
-		dump_addrinfo(hints, body);
+        dump_addrinfo(hints, body);
 
-		byte_buffer_append_printf(body, "\r\nresult:");
+        byte_buffer_append_printf(body, "\r\nresult:");
 
-		if (retval == 0)
-		{
-			dump_addrinfo(*res, body);
-		}
-		else
-		{
-			char *str = NULL;
+        if (retval == 0)
+        {
+            dump_addrinfo(*res, body);
+        }
+        else
+        {
+            char *str = NULL;
 
-			switch (err)
-			{
-				case EAI_AGAIN:    str = "EAI_AGAIN";    break;
-				case EAI_BADFLAGS: str = "EAI_BADFLAGS"; break;
-				case EAI_FAIL:     str = "EAI_FAIL";     break;
-				case EAI_FAMILY:   str = "EAI_FAMILY";   break;
-				case EAI_MEMORY:   str = "EAI_MEMORY";   break;
-				//case EAI_NODATA:   str = "EAI_NODATA";   break;
-				case EAI_NONAME:   str = "EAI_NONAME";   break;
-				case EAI_SERVICE:  str = "EAI_SERVICE";  break;
-				case EAI_SOCKTYPE: str = "EAI_SOCKTYPE"; break;
-				default:                                 break;
-			}
+            switch (err)
+            {
+                case EAI_AGAIN:    str = "EAI_AGAIN";    break;
+                case EAI_BADFLAGS: str = "EAI_BADFLAGS"; break;
+                case EAI_FAIL:     str = "EAI_FAIL";     break;
+                case EAI_FAMILY:   str = "EAI_FAMILY";   break;
+                case EAI_MEMORY:   str = "EAI_MEMORY";   break;
+                //case EAI_NODATA:   str = "EAI_NODATA";   break;
+                case EAI_NONAME:   str = "EAI_NONAME";   break;
+                case EAI_SERVICE:  str = "EAI_SERVICE";  break;
+                case EAI_SOCKTYPE: str = "EAI_SOCKTYPE"; break;
+                default:                                 break;
+            }
 
-			byte_buffer_append_printf(body, "\r\n  ");
+            byte_buffer_append_printf(body, "\r\n  ");
 
-			if (str != NULL)
-			{
-				byte_buffer_append_printf(body, "%s", str);
-			}
-			else
-			{
-				byte_buffer_append_printf(body, "ERROR_0x%08x", err);
-			}
-		}
+            if (str != NULL)
+            {
+                byte_buffer_append_printf(body, "%s", str);
+            }
+            else
+            {
+                byte_buffer_append_printf(body, "ERROR_0x%08x", err);
+            }
+        }
 
-		message_logger_log("getaddrinfo", (char *) &retval - 4, 0,
-			MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
-			NULL, NULL, (const char *) body->buf, (int) body->offset,
-			(const char *) msg->buf);
+        message_logger_log("getaddrinfo", (char *) &retval - 4, 0,
+            MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
+            NULL, NULL, (const char *) body->buf, (int) body->offset,
+            (const char *) msg->buf);
 
-		byte_buffer_free(msg);
-		byte_buffer_free(body);
-	}
+        byte_buffer_free(msg);
+        byte_buffer_free(body);
+    }
 
     SetLastError(err);
     return retval;
@@ -287,7 +287,7 @@ closesocket_called(BOOL carry_on,
                    DWORD ret_addr,
                    SOCKET s)
 {
-	void *bt_address = (char *) &carry_on + 8 + CLOSESOCKET_ARGS_SIZE;
+    void *bt_address = (char *) &carry_on + 8 + CLOSESOCKET_ARGS_SIZE;
 
     log_tcp_disconnected("closesocket", bt_address, s, NULL);
     return 0;
@@ -305,32 +305,32 @@ static unsigned long localhost_addr;
 static bool
 is_stupid_rpc(SOCKET s, const char *buf, int len)
 {
-	if (len != 1)
-		return false;
+    if (len != 1)
+        return false;
 
-	if (buf[0] != '!')
-		return false;
+    if (buf[0] != '!')
+        return false;
 
     struct sockaddr_in local_addr, peer_addr;
     int sin_len;
 
     sin_len = sizeof(local_addr);
     getsockname(s, (struct sockaddr *) &local_addr, &sin_len);
-	if (local_addr.sin_addr.s_addr != localhost_addr)
-		return false;
+    if (local_addr.sin_addr.s_addr != localhost_addr)
+        return false;
 
     sin_len = sizeof(peer_addr);
     getpeername(s, (struct sockaddr *) &peer_addr, &sin_len);
-	if (peer_addr.sin_addr.s_addr != localhost_addr)
-		return false;
+    if (peer_addr.sin_addr.s_addr != localhost_addr)
+        return false;
 
-	return true;
+    return true;
 }
 
 static int __cdecl
 recv_called(BOOL carry_on,
-			CpuContext ctx_before,
-			void *bt_addr,
+            CpuContext ctx_before,
+            void *bt_addr,
             void *ret_addr,
             SOCKET s,
             char *buf,
@@ -342,10 +342,10 @@ recv_called(BOOL carry_on,
 
 static int __stdcall
 recv_done(int retval,
-		  CpuContext ctx_after,
-		  CpuContext ctx_before,
-		  void *bt_addr,
-		  void *ret_addr,
+          CpuContext ctx_after,
+          CpuContext ctx_before,
+          void *bt_addr,
+          void *ret_addr,
           SOCKET s,
           char *buf,
           int len,
@@ -353,24 +353,24 @@ recv_done(int retval,
 {
     DWORD err = GetLastError();
 
-	if (retval > 0)
-	{
-		if (g_recvHookContext.ShouldLog(ret_addr, &ctx_before) && !is_stupid_rpc(s, buf, retval))
-		{
-			log_tcp_packet("recv", bt_addr, PACKET_DIRECTION_INCOMING, s, buf, retval);
-		}
-	}
-	else if (retval == 0)
-	{
-		log_tcp_disconnected("recv", bt_addr, s, NULL);
-	}
-	else if (retval == SOCKET_ERROR)
-	{
-		if (err != WSAEWOULDBLOCK)
-		{
-			log_tcp_disconnected("recv", bt_addr, s, &err);
-		}
-	}
+    if (retval > 0)
+    {
+        if (g_recvHookContext.ShouldLog(ret_addr, &ctx_before) && !is_stupid_rpc(s, buf, retval))
+        {
+            log_tcp_packet("recv", bt_addr, PACKET_DIRECTION_INCOMING, s, buf, retval);
+        }
+    }
+    else if (retval == 0)
+    {
+        log_tcp_disconnected("recv", bt_addr, s, NULL);
+    }
+    else if (retval == SOCKET_ERROR)
+    {
+        if (err != WSAEWOULDBLOCK)
+        {
+            log_tcp_disconnected("recv", bt_addr, s, &err);
+        }
+    }
 
     SetLastError(err);
     return retval;
@@ -378,9 +378,9 @@ recv_done(int retval,
 
 static int __cdecl
 send_called(BOOL carry_on,
-			CpuContext ctx_before,
-			void *bt_addr,
-			void *ret_addr,
+            CpuContext ctx_before,
+            void *bt_addr,
+            void *ret_addr,
             SOCKET s,
             const char *buf,
             int len,
@@ -391,34 +391,34 @@ send_called(BOOL carry_on,
 
 static int __stdcall
 send_done(int retval,
-		  CpuContext ctx_after,
-		  CpuContext ctx_before,
-		  void *bt_addr,
-		  void *ret_addr,
+          CpuContext ctx_after,
+          CpuContext ctx_before,
+          void *bt_addr,
+          void *ret_addr,
           SOCKET s,
           const char *buf,
           int len,
           int flags)
 {
-	DWORD err = GetLastError();
+    DWORD err = GetLastError();
 
-	if (retval > 0)
-	{
-		if (g_sendHookContext.ShouldLog(ret_addr, &ctx_before) && !is_stupid_rpc(s, buf, retval))
-		{
-			log_tcp_packet("send", bt_addr, PACKET_DIRECTION_OUTGOING, s, buf, retval);
-		}
-	}
-	else if (retval == SOCKET_ERROR)
-	{
-		if (err != WSAEWOULDBLOCK)
-		{
-			log_tcp_disconnected("send", bt_addr, s, &err);
-		}
-	}
+    if (retval > 0)
+    {
+        if (g_sendHookContext.ShouldLog(ret_addr, &ctx_before) && !is_stupid_rpc(s, buf, retval))
+        {
+            log_tcp_packet("send", bt_addr, PACKET_DIRECTION_OUTGOING, s, buf, retval);
+        }
+    }
+    else if (retval == SOCKET_ERROR)
+    {
+        if (err != WSAEWOULDBLOCK)
+        {
+            log_tcp_disconnected("send", bt_addr, s, &err);
+        }
+    }
 
-	SetLastError(err);
-	return retval;
+    SetLastError(err);
+    return retval;
 }
 
 static int __cdecl
@@ -445,7 +445,7 @@ recvfrom_done(int retval,
 {
     DWORD err = GetLastError();
     int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
-	int overridden_retval;
+    int overridden_retval;
     BOOL carry_on;
 
     overridden_retval =
@@ -457,9 +457,9 @@ recvfrom_done(int retval,
         return overridden_retval;
 
     if (retval > 0)
-	{
+    {
         log_udp_packet("recvfrom", (char *) &retval - 4, PACKET_DIRECTION_INCOMING, s, from, buf, retval);
-	}
+    }
 
     SetLastError(err);
     return retval;
@@ -501,9 +501,9 @@ sendto_done(int retval,
         return overridden_retval;
 
     if (retval > 0)
-	{
+    {
         log_udp_packet("sendto", (char *) &retval - 4, PACKET_DIRECTION_OUTGOING, s, to, buf, retval);
-	}
+    }
 
     SetLastError(err);
     return retval;
@@ -520,10 +520,10 @@ accept_called(BOOL carry_on,
         softwall_decide_from_socket_and_remote_address("accept", ret_addr, s, NULL, &carry_on);
 
     if (carry_on)
-	{
-		void *bt_address = (char *) &carry_on + 8 + ACCEPT_ARGS_SIZE;
+    {
+        void *bt_address = (char *) &carry_on + 8 + ACCEPT_ARGS_SIZE;
         log_tcp_listening("accept", bt_address, s);
-	}
+    }
 
     return retval;
 }
@@ -556,9 +556,9 @@ accept_done(SOCKET retval,
 
 static int __cdecl
 connect_called(BOOL carry_on,
-			   CpuContext ctx_before,
-			   void *bt_addr,
-			   void *ret_addr,
+               CpuContext ctx_before,
+               void *bt_addr,
+               void *ret_addr,
                SOCKET s,
                const struct sockaddr *name,
                int namelen)
@@ -568,21 +568,21 @@ connect_called(BOOL carry_on,
                                                        (const sockaddr_in *) name,
                                                        &carry_on);
 
-	if (carry_on && g_connectHookContext.ShouldLog(ret_addr, &ctx_before))
-	{
-		void *bt_address = (char *) &carry_on + 8 + CONNECT_ARGS_SIZE;
+    if (carry_on && g_connectHookContext.ShouldLog(ret_addr, &ctx_before))
+    {
+        void *bt_address = (char *) &carry_on + 8 + CONNECT_ARGS_SIZE;
         log_tcp_connecting("connect", bt_address, s, name);
-	}
+    }
 
     return retval;
 }
 
 static int __stdcall
 connect_done(int retval,
-			 CpuContext ctx_after,
-			 CpuContext ctx_before,
-			 void *bt_addr,
-			 void *ret_addr,
+             CpuContext ctx_after,
+             CpuContext ctx_before,
+             void *bt_addr,
+             void *ret_addr,
              SOCKET s,
              const struct sockaddr *name,
              int namelen)
@@ -606,60 +606,60 @@ called_from_wsock(DWORD ret_addr)
 }
 
 typedef struct {
-	void *btAddr;
-	SOCKET sock;
-	LPWSABUF lpBuffers;
-	DWORD dwBufferCount;
-	LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine;
+    void *btAddr;
+    SOCKET sock;
+    LPWSABUF lpBuffers;
+    DWORD dwBufferCount;
+    LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine;
 } AsyncRecvContext;
 
 static void
 wsaRecvCompletedHandler(COverlappedOperation *operation)
 {
-	AsyncRecvContext *ctx = (AsyncRecvContext *) operation->GetData();
-	DWORD transferred, flags;
+    AsyncRecvContext *ctx = (AsyncRecvContext *) operation->GetData();
+    DWORD transferred, flags;
 
-	BOOL success = WSAGetOverlappedResult(ctx->sock, operation->GetRealOverlapped(), &transferred, TRUE, &flags);
-	DWORD wsaLastError = WSAGetLastError();
+    BOOL success = WSAGetOverlappedResult(ctx->sock, operation->GetRealOverlapped(), &transferred, TRUE, &flags);
+    DWORD wsaLastError = WSAGetLastError();
 
-	if (success)
-	{
-		int bytesLeft = transferred;
+    if (success)
+    {
+        int bytesLeft = transferred;
 
-		for (DWORD i = 0; i < ctx->dwBufferCount && bytesLeft > 0; i++)
+        for (DWORD i = 0; i < ctx->dwBufferCount && bytesLeft > 0; i++)
         {
-			WSABUF *buf = &ctx->lpBuffers[i];
+            WSABUF *buf = &ctx->lpBuffers[i];
 
-			ULONG n = bytesLeft;
-			if (n > buf->len)
-				n = buf->len;
+            ULONG n = bytesLeft;
+            if (n > buf->len)
+                n = buf->len;
 
-			log_tcp_packet("WSARecv", ctx->btAddr, PACKET_DIRECTION_INCOMING, ctx->sock,
-						   buf->buf, n);
+            log_tcp_packet("WSARecv", ctx->btAddr, PACKET_DIRECTION_INCOMING, ctx->sock,
+                           buf->buf, n);
 
-			bytesLeft -= n;
+            bytesLeft -= n;
         }
-	}
+    }
 
-	if (ctx->lpCompletionRoutine != NULL)
-	{
-		ctx->lpCompletionRoutine((success) ? 0 : wsaLastError, transferred, operation->GetClientOverlapped(), flags);
-	}
-	else
-	{
-		HANDLE clientEvent = operation->GetClientOverlapped()->hEvent;
-		if (clientEvent != 0 && clientEvent != INVALID_HANDLE_VALUE)
-		{
-			SetEvent(clientEvent);
-		}
-	}
+    if (ctx->lpCompletionRoutine != NULL)
+    {
+        ctx->lpCompletionRoutine((success) ? 0 : wsaLastError, transferred, operation->GetClientOverlapped(), flags);
+    }
+    else
+    {
+        HANDLE clientEvent = operation->GetClientOverlapped()->hEvent;
+        if (clientEvent != 0 && clientEvent != INVALID_HANDLE_VALUE)
+        {
+            SetEvent(clientEvent);
+        }
+    }
 }
 
 int __cdecl
 WSARecv_called(BOOL carry_on,
-			   CpuContext ctx_before,
-			   void *bt_addr,
-			   void *ret_addr,
+               CpuContext ctx_before,
+               void *bt_addr,
+               void *ret_addr,
                SOCKET s,
                LPWSABUF lpBuffers,
                DWORD dwBufferCount,
@@ -668,31 +668,31 @@ WSARecv_called(BOOL carry_on,
                LPWSAOVERLAPPED lpOverlapped,
                LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine)
 {
-	/*
-	if (lpOverlapped != NULL || lpCompletionRoutine != NULL)
-	{
-		AsyncRecvContext *ctx = (AsyncRecvContext *) sspy_malloc(sizeof(AsyncRecvContext));
-		ctx->btAddr = bt_addr;
-		ctx->sock = s;
-		ctx->lpBuffers = lpBuffers;
-		ctx->dwBufferCount = dwBufferCount;
-		ctx->lpCompletionRoutine = lpCompletionRoutine;
+    /*
+    if (lpOverlapped != NULL || lpCompletionRoutine != NULL)
+    {
+        AsyncRecvContext *ctx = (AsyncRecvContext *) sspy_malloc(sizeof(AsyncRecvContext));
+        ctx->btAddr = bt_addr;
+        ctx->sock = s;
+        ctx->lpBuffers = lpBuffers;
+        ctx->dwBufferCount = dwBufferCount;
+        ctx->lpCompletionRoutine = lpCompletionRoutine;
 
-		lpCompletionRoutine = NULL; // we'll take care of this ourselves
+        lpCompletionRoutine = NULL; // we'll take care of this ourselves
 
-		COverlappedManager::TrackOperation(&lpOverlapped, ctx, wsaRecvCompletedHandler);
-		return 0;
-	}*/
+        COverlappedManager::TrackOperation(&lpOverlapped, ctx, wsaRecvCompletedHandler);
+        return 0;
+    }*/
 
     return softwall_decide_from_socket("WSARecv", (DWORD) ret_addr, s, &carry_on);
 }
 
 static int __stdcall
 WSARecv_done(int retval,
-			 CpuContext ctx_after,
-			 CpuContext ctx_before,
-			 void *bt_addr,
-			 void *ret_addr,
+             CpuContext ctx_after,
+             CpuContext ctx_before,
+             void *bt_addr,
+             void *ret_addr,
              SOCKET s,
              LPWSABUF lpBuffers,
              DWORD dwBufferCount,
@@ -704,27 +704,27 @@ WSARecv_done(int retval,
     DWORD err = GetLastError();
     DWORD wsa_err = WSAGetLastError();
 
-	// FIXME: check the return value here in case of overlapped ops
+    // FIXME: check the return value here in case of overlapped ops
 
     if (called_from_wsock((DWORD) ret_addr))
         return retval;
 
     if (retval == 0)
     {
-		int bytes_left = *lpNumberOfBytesRecvd;
+        int bytes_left = *lpNumberOfBytesRecvd;
 
         for (DWORD i = 0; i < dwBufferCount && bytes_left > 0; i++)
         {
             WSABUF *buf = &lpBuffers[i];
 
-			ULONG n = bytes_left;
-			if (n > buf->len)
-				n = buf->len;
+            ULONG n = bytes_left;
+            if (n > buf->len)
+                n = buf->len;
 
             log_tcp_packet("WSARecv", bt_addr, PACKET_DIRECTION_INCOMING, s,
-						   buf->buf, n);
+                           buf->buf, n);
 
-			bytes_left -= n;
+            bytes_left -= n;
         }
     }
     else if (retval == SOCKET_ERROR)
@@ -732,7 +732,7 @@ WSARecv_done(int retval,
         if (wsa_err == WSAEWOULDBLOCK)
         {
             message_logger_log_message("WSARecv", bt_addr, MESSAGE_CTX_WARNING,
-						               "non-blocking mode not yet supported");
+                                       "non-blocking mode not yet supported");
         }
 
         if (wsa_err != WSAEWOULDBLOCK && wsa_err != WSA_IO_PENDING)
@@ -774,7 +774,7 @@ WSASend_done(int retval,
     DWORD err = GetLastError();
     DWORD wsa_err = WSAGetLastError();
     DWORD ret_addr = *((DWORD *) ((DWORD) &retval - 4));
-	void *bt_address = (char *) &retval - 4;
+    void *bt_address = (char *) &retval - 4;
 
     if (called_from_wsock(ret_addr))
         return retval;
@@ -787,28 +787,28 @@ WSASend_done(int retval,
 
     if (retval == 0)
     {
-		int bytes_left = *lpNumberOfBytesSent;
+        int bytes_left = *lpNumberOfBytesSent;
 
-		for (DWORD i = 0; i < dwBufferCount && bytes_left > 0; i++)
+        for (DWORD i = 0; i < dwBufferCount && bytes_left > 0; i++)
         {
             WSABUF *buf = &lpBuffers[i];
 
-			ULONG n = bytes_left;
-			if (n > buf->len)
-				n = buf->len;
+            ULONG n = bytes_left;
+            if (n > buf->len)
+                n = buf->len;
 
             log_tcp_packet("WSASend", bt_address, PACKET_DIRECTION_OUTGOING, s,
                            buf->buf, n);
 
-			bytes_left -= n;
+            bytes_left -= n;
         }
     }
     else if (retval == SOCKET_ERROR)
     {
         if (wsa_err == WSAEWOULDBLOCK)
         {
-	        message_logger_log_message("WSASend", bt_address, MESSAGE_CTX_WARNING,
-							           "non-blocking mode not yet supported");
+            message_logger_log_message("WSASend", bt_address, MESSAGE_CTX_WARNING,
+                                       "non-blocking mode not yet supported");
         }
 
         if (wsa_err != WSAEWOULDBLOCK && wsa_err != WSA_IO_PENDING)
@@ -837,7 +837,7 @@ WSAAccept_called(BOOL carry_on,
 
     if (carry_on)
     {
-		void *bt_address = (char *) &carry_on + 8 + WSA_ACCEPT_ARGS_SIZE;
+        void *bt_address = (char *) &carry_on + 8 + WSA_ACCEPT_ARGS_SIZE;
 
         /* FIXME: only issue this once for non-blocking sockets */
         log_tcp_listening("WSAAccept", bt_address, s);
@@ -940,12 +940,12 @@ hook_winsock()
     HMODULE h = LoadLibrary("ws2_32.dll");
     if (h == NULL)
     {
-	    MessageBox(0, "Failed to load 'ws2_32.dll'.",
+        MessageBox(0, "Failed to load 'ws2_32.dll'.",
                    "oSpy", MB_ICONERROR | MB_OK);
       return;
     }
 
-	localhost_addr = inet_addr("127.0.0.1");
+    localhost_addr = inet_addr("127.0.0.1");
 
     HOOK_FUNCTION(h, getaddrinfo);
 

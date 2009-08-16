@@ -64,41 +64,41 @@ DeleteSecurityContext_done(SECURITY_STATUS retval,
 
 static SECURITY_STATUS __cdecl
 EncryptMessage_called(BOOL carry_on,
-					  CpuContext ctx_before,
-					  void *bt_addr,
+                      CpuContext ctx_before,
+                      void *bt_addr,
                       void *ret_addr,
                       PCtxtHandle phContext,
                       ULONG fQOP,
                       PSecBufferDesc pMessage,
                       ULONG MessageSeqNo)
 {
-	if (g_encryptMessageHookContext.ShouldLog(ret_addr, &ctx_before)
-		&& !called_internally(ret_addr))
-	{
-		for (unsigned int i = 0; i < pMessage->cBuffers; i++)
-		{
-			SecBuffer *buffer = &pMessage->pBuffers[i];
+    if (g_encryptMessageHookContext.ShouldLog(ret_addr, &ctx_before)
+        && !called_internally(ret_addr))
+    {
+        for (unsigned int i = 0; i < pMessage->cBuffers; i++)
+        {
+            SecBuffer *buffer = &pMessage->pBuffers[i];
 
-			if (buffer->BufferType == SECBUFFER_DATA)
-			{
-				message_logger_log_packet("EncryptMessage", bt_addr,
-										  tracker.GetContextID(phContext),
-										  PACKET_DIRECTION_OUTGOING, NULL, NULL,
-										  (const char *) buffer->pvBuffer,
-										  buffer->cbBuffer);
-			}
-		}
-	}
+            if (buffer->BufferType == SECBUFFER_DATA)
+            {
+                message_logger_log_packet("EncryptMessage", bt_addr,
+                                          tracker.GetContextID(phContext),
+                                          PACKET_DIRECTION_OUTGOING, NULL, NULL,
+                                          (const char *) buffer->pvBuffer,
+                                          buffer->cbBuffer);
+            }
+        }
+    }
 
     return 0;
 }
 
 static SECURITY_STATUS __stdcall
 EncryptMessage_done(SECURITY_STATUS retval,
-					CpuContext ctx_after,
-					CpuContext ctx_before,
-					void *bt_addr,
-					void *ret_addr,
+                    CpuContext ctx_after,
+                    CpuContext ctx_before,
+                    void *bt_addr,
+                    void *ret_addr,
                     PCtxtHandle phContext,
                     ULONG fQOP,
                     PSecBufferDesc pMessage,
@@ -109,9 +109,9 @@ EncryptMessage_done(SECURITY_STATUS retval,
 
 static SECURITY_STATUS __cdecl
 DecryptMessage_called(BOOL carry_on,
-					  CpuContext ctx_before,
-					  void *bt_addr,
-					  void *ret_addr,
+                      CpuContext ctx_before,
+                      void *bt_addr,
+                      void *ret_addr,
                       PCtxtHandle phContext,
                       PSecBufferDesc pMessage,
                       ULONG MessageSeqNo,
@@ -122,10 +122,10 @@ DecryptMessage_called(BOOL carry_on,
 
 static SECURITY_STATUS __stdcall
 DecryptMessage_done(SECURITY_STATUS retval,
-					CpuContext ctx_after,
-					CpuContext ctx_before,
-					void *bt_addr,
-					void *ret_addr,
+                    CpuContext ctx_after,
+                    CpuContext ctx_before,
+                    void *bt_addr,
+                    void *ret_addr,
                     PCtxtHandle phContext,
                     PSecBufferDesc pMessage,
                     ULONG MessageSeqNo,
@@ -134,23 +134,23 @@ DecryptMessage_done(SECURITY_STATUS retval,
     DWORD err = GetLastError();
     unsigned int i;
 
-	if (g_decryptMessageHookContext.ShouldLog(ret_addr, &ctx_before)
-		&& !called_internally(ret_addr))
-	{
-		for (i = 0; i < pMessage->cBuffers; i++)
-		{
-			SecBuffer *buffer = &pMessage->pBuffers[i];
+    if (g_decryptMessageHookContext.ShouldLog(ret_addr, &ctx_before)
+        && !called_internally(ret_addr))
+    {
+        for (i = 0; i < pMessage->cBuffers; i++)
+        {
+            SecBuffer *buffer = &pMessage->pBuffers[i];
 
-			if (buffer->BufferType == SECBUFFER_DATA)
-			{
-				message_logger_log_packet("DecryptMessage", (char *) &retval - 4,
-										  tracker.GetContextID(phContext),
-										  PACKET_DIRECTION_INCOMING, NULL, NULL,
-										  (const char *) buffer->pvBuffer,
-										  buffer->cbBuffer);
-			}
-		}
-	}
+            if (buffer->BufferType == SECBUFFER_DATA)
+            {
+                message_logger_log_packet("DecryptMessage", (char *) &retval - 4,
+                                          tracker.GetContextID(phContext),
+                                          PACKET_DIRECTION_INCOMING, NULL, NULL,
+                                          (const char *) buffer->pvBuffer,
+                                          buffer->cbBuffer);
+            }
+        }
+    }
 
     SetLastError(err);
     return retval;
@@ -164,7 +164,7 @@ HOOK_GLUE_EXTENDED(DecryptMessage, (4 * 4))
 void
 hook_secur32()
 {
-	// We don't want to log calls from the RPCRT4 API
+    // We don't want to log calls from the RPCRT4 API
     HMODULE h = LoadLibrary("RPCRT4.dll");
     if (h == NULL)
     {
@@ -181,11 +181,11 @@ hook_secur32()
                                    GetLastError());
     }
 
-	// Hook the Secur32 API
+    // Hook the Secur32 API
     h = LoadLibrary("secur32.dll");
     if (h == NULL)
     {
-	    MessageBox(0, "Failed to load 'secur32.dll'.",
+        MessageBox(0, "Failed to load 'secur32.dll'.",
                    "oSpy", MB_ICONERROR | MB_OK);
         return;
     }

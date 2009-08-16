@@ -18,24 +18,17 @@
 
 #pragma once
 
-/*
- * WARNING: This code in particular isn't 64-bit compliant, but might
- *          be in the future if I get around to installing a 64-bit
- *          Windows OS (which is highly unlikely considering that I
- *          only use it for REing).  Contributions are very welcome. :-)
- */
-
 #include "util.h"
 
 typedef struct {
-	DWORD edi;
-	DWORD esi;
-	DWORD ebp;
-	DWORD esp;
-	DWORD ebx;
-	DWORD edx;
-	DWORD ecx;
-	DWORD eax;
+    DWORD edi;
+    DWORD esi;
+    DWORD ebp;
+    DWORD esp;
+    DWORD ebx;
+    DWORD edx;
+    DWORD ecx;
+    DWORD eax;
 } CpuContext;
 
 typedef bool (*HookRetAddrShouldLogFunc) (CpuContext *context, va_list args);
@@ -43,19 +36,19 @@ typedef bool (*HookRetAddrShouldLogFunc) (CpuContext *context, va_list args);
 class CHookContext
 {
 public:
-	CHookContext() {}
+    CHookContext() {}
 
-	void RegisterReturnAddress(void *address, HookRetAddrShouldLogFunc func=NULL) { m_retAddrs[address] = func; }
+    void RegisterReturnAddress(void *address, HookRetAddrShouldLogFunc func=NULL) { m_retAddrs[address] = func; }
 
-	bool ShouldLog(void *returnAddress, CpuContext *ctx, ...);
+    bool ShouldLog(void *returnAddress, CpuContext *ctx, ...);
 
 protected:
-	OMap<void *, HookRetAddrShouldLogFunc>::Type m_retAddrs;
+    OMap<void *, HookRetAddrShouldLogFunc>::Type m_retAddrs;
 };
 
 typedef struct {
     char *module_name;
-	int start_offset;
+    int start_offset;
     char *signature;
 } FunctionSignature;
 
@@ -238,11 +231,11 @@ typedef struct {
   __declspec(naked) static void name##_done_proxy() \
   { \
     __asm { \
-	  __asm pushad /* Could be useful to have a copy of the registers after return */ \
-	  \
-	  /* Place return value first for convenience */ \
-	  __asm push eax \
-	  \
+      __asm pushad /* Could be useful to have a copy of the registers after return */ \
+      \
+      /* Place return value first for convenience */ \
+      __asm push eax \
+      \
       /* Copy retaddr to the top of the stack */ \
       __asm sub esp, 4 \
       __asm push ebp \
@@ -258,17 +251,17 @@ typedef struct {
   __declspec(naked) static void name##_hook() \
   { \
     __asm { \
-	  /* The backtrace address could be useful. */ \
-	  __asm sub esp, 4 \
-	  __asm push ebp \
-	  __asm lea ebp, [esp+4+4] \
-	  __asm mov [esp+4], ebp \
-	  __asm pop ebp \
-	  \
-	  /* Marshalled as a CpuContext struct, and also very useful \
+      /* The backtrace address could be useful. */ \
+      __asm sub esp, 4 \
+      __asm push ebp \
+      __asm lea ebp, [esp+4+4] \
+      __asm mov [esp+4], ebp \
+      __asm pop ebp \
+      \
+      /* Marshalled as a CpuContext struct, and also very useful \
        * to make sure that all registers are preserved. */ \
-	  __asm pushad \
-	  \
+      __asm pushad \
+      \
       /* Push an extra argument through which the callback can signal \
        * that it doesn't want to carry on but return to caller. \
        */ \
@@ -279,34 +272,34 @@ typedef struct {
       \
       __asm pop edx \
       __asm cmp edx, FALSE \
-	  \
-	  __asm popad /* restore the registers again */ \
-	  \
+      \
+      __asm popad /* restore the registers again */ \
+      \
       __asm jnz CARRY_ON /* should we carry on or return to caller? */ \
       \
       /* Return to caller */ \
       __asm ret args_size \
       \
       __asm CARRY_ON: \
-	  __asm pushad /* store all registers to use as a CpuContext to the second callback */ \
-	  \
+      __asm pushad /* store all registers to use as a CpuContext to the second callback */ \
+      \
       /* Make a copy of retaddr + args onto the top of the stack */ \
       __asm sub esp, (args_size + 4) \
-	  __asm push ecx \
+      __asm push ecx \
       __asm push esi \
       __asm push edi \
       __asm lea edi, [12 + esp] \
       __asm mov esi, edi \
       __asm add esi, (args_size + 4 + 32 + 4) \
       __asm cld \
-	  __asm lea ecx, (ds:args_size + 4) / 4 \
+      __asm lea ecx, (ds:args_size + 4) / 4 \
       __asm rep movsd \
       __asm pop edi \
       __asm pop esi \
-	  __asm pop ecx \
-	  \
+      __asm pop ecx \
+      \
       /* Replace the return address on the copy so that we can trap the return. */ \
-	  __asm add esp, 4 \
+      __asm add esp, 4 \
       __asm push name##_done_proxy \
       \
       /* Set up stack frame (we need to do this because we've */ \
@@ -315,9 +308,9 @@ typedef struct {
       __asm mov ebp, esp \
       \
       /* Continue */ \
-	  __asm push [name##_start] \
-	  __asm add dword ptr [esp], 5 \
-	  __asm ret \
+      __asm push [name##_start] \
+      __asm add dword ptr [esp], 5 \
+      __asm ret \
     } \
   }
 
