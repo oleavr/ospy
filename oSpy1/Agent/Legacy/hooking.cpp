@@ -21,6 +21,10 @@
 #include "util.h"
 #include "logging.h"
 
+#include <udis86.h>
+
+#define OPCODE_NOP (0x90)
+
 #pragma managed(push, off)
 
 bool
@@ -445,6 +449,63 @@ DONE:
     }
 
     return result;
+}
+
+static DWORD
+round_to_next_instruction(LPVOID address, DWORD code_size)
+{
+    ud_t obj;
+    ud_init(&obj);
+    ud_set_input_buffer(&obj, static_cast<uint8_t *>(address), 4096);
+    ud_set_mode(&obj, 32);
+
+    DWORD result = 0;
+    while (result < code_size)
+    {
+        unsigned int size = ud_disassemble(&obj);
+        _ASSERT(size != 0);
+
+        result += size;
+    }
+
+    return result;
+}
+
+bool
+intercept_code_matching(const FunctionSignature *sig,
+                        LPVOID replacement,
+                        LPVOID *resume_trampoline,
+                        char **error)
+{
+    LPVOID address;
+    if (!find_signature_in_module(sig, sig->module_name, &address, error))
+        return false;
+
+    DWORD old_prot;
+    VirtualProtect(address, 16, PAGE_EXECUTE_READWRITE, &old_prot);
+
+    const DWORD bytes_needed_for_jump = 5;
+    DWORD n_bytes_to_copy = round_to_next_instruction(address, bytes_needed_for_jump);
+
+    *resume_trampoline = VirtualAlloc(NULL, n_bytes_to_copy + bytes_needed_for_jump,
+        MEM_COMMIT | MEM_RESERVE,
+        PAGE_EXECUTE_READWRITE);
+    memcpy(*resume_trampoline, address, n_bytes_to_copy);
+    write_jmp_instruction_to_addr(static_cast<char *>(*resume_trampoline) + n_bytes_to_copy,
+        static_cast<char *>(address) + n_bytes_to_copy);
+
+    write_jmp_instruction_to_addr(address, replacement);
+
+    unsigned char *pad = static_cast<unsigned char *>(address) + bytes_needed_for_jump;
+    for (DWORD remaining = n_bytes_to_copy - bytes_needed_for_jump; remaining != 0; remaining--)
+    {
+        *pad = OPCODE_NOP;
+        pad++;
+    }
+
+    VirtualProtect(address, n_bytes_to_copy, old_prot, &old_prot);
+
+    return true;
 }
 
 bool

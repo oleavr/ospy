@@ -230,6 +230,106 @@ static const FunctionSignature signatures_ie7[] = {
     },
 };
 
+static const FunctionSignature signatures_ie8[] = {
+    // SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET
+    {
+        "wininet.dll",
+        -33,
+        "81 4E 28 00 00 01 00"    // or      dword ptr [esi+28h], 10000h
+        "89 86 ?? ?? ?? ??"        // mov     [esi+0C8h], eax
+        "89 86 ?? ?? ?? ??"        // mov     [esi+0CCh], eax
+        "89 86 ?? ?? ?? ??"        // mov     [esi+0D0h], eax
+        "89 86 ?? ?? ?? ??"        // mov     [esi+0D8h], eax
+        "C7 06 ?? ?? ?? ??"        // mov     dword ptr [esi], offset ??_7ICSecureSocket@@6B@ ; const ICSecureSocket::`vftable'
+    },
+
+    // SIGNATURE_ICSOCKET_RECEIVE_CONTINUE_RECV
+    {
+        "wininet.dll",
+        -21,
+        "6A 00"                    // push    0
+        "FF B6 ?? 00 00 00"        // push    [esi+CFsm_SocketReceive.dataLen]
+        "FF B6 ?? 00 00 00"        // push    [esi+CFsm_SocketReceive.recvBuf]
+        "53"                    // push    ebx
+        "FF 15 ?? ?? ?? ??"        // call    __I_recv
+    },
+
+    // SIGNATURE_ICSOCKET_SEND_START_SEND
+    {
+        "wininet.dll",
+        -13,
+        "6A 00"                    // push    0
+        "50"                    // push    eax
+        "FF 76 78"                // push    dword ptr [esi+78h]
+        "53"                    // push    ebx
+        "FF 15 ?? ?? ?? ??"        // call    __I_send
+    },
+
+    // SIGNATURE_SECURE_RECV_DECRYPTMESSAGE_CALL
+    {
+        "wininet.dll",
+        -3,
+        "FF 50 4C"                // call    dword ptr [eax+4Ch]
+        "89 45 FC"                // mov     [ebp+var_4], eax
+        "3B C3"                    // cmp     eax, ebx
+    },
+
+    // SIGNATURE_SECURE_SEND_ENCRYPTMESSAGE_CALL
+    {
+        "wininet.dll",
+        -3,
+        "FF 50 48"                // call    dword ptr [eax+48h]
+        "85 C0"                    // test    eax, eax
+    },
+
+    // SIGNATURE_SECURE_RECV_AFTER_DECRYPT
+    {
+        "wininet.dll",
+        0,
+        "89 86 ?? 00 00 00"     // mov     [esi+0B4h], eax
+        "3D 65 32 00 00"        // cmp     eax, 3265h
+    },
+
+    // SIGNATURE_SECURE_SEND_AFTER_ENCRYPT
+    {
+        "wininet.dll",
+        0,
+        "89 45 08"                // mov     [ebp+arg_0], eax
+        "85 C0"                    // test    eax, eax
+        "75 ??"                    // jnz     short OUT
+        "8B 1B"                    // mov     ebx, [ebx]
+        "?? ??"                    // FIXME: work around a bug in the signature matcher :P
+    },
+
+    // SIGNATURE_ICASYNCTHREAD_MY_GETADDR
+    {
+        "wininet.dll",
+        0,
+        "8B F0"                    // mov     esi, eax
+        "85 F6"                    // test    esi, esi
+        "0F 85 ?? ?? ?? 00"        // jnz     loc_771FCD41
+        "8B 85 ?? ?? ?? ??"        // mov     eax, [ebp+var_88]
+        "6A 11"                    // push    11h
+    },
+
+    // SIGNATURE_MY_GETADDR_GETADDRINFO
+    {
+        "wininet.dll",
+        0,
+        "89 45 14"                // mov     [ebp+arg_C], eax
+        "A1 ?? ?? ?? ??"        // mov     eax, _WPP_GLOBAL_Control
+    },
+
+    // SIGNATURE_ICASYNCTHREAD_CONNECT
+    {
+        "wininet.dll",
+        0,
+        "3B C6"                    // cmp     eax, esi
+        "74 30"                    // jz      short loc_771CACAC
+        "8B 85 6C FF FF FF"        // mov     eax, [ebp+var_94]
+    },
+};
+
 typedef struct {
     void *vtable;
 } ICSocket_base;
@@ -259,8 +359,8 @@ static void *g_ICSecureSocketVTable = NULL;
 static unsigned int g_icsocketBaseSize = 0;
 static unsigned int g_cfsmSecureRecvBaseSize = 0;
 static unsigned int g_cfsmSecureSendBaseSize = 0;
-static char *g_secureSendAfterDecryptImpl = NULL;
-static char *g_secureSendAfterEncryptImpl = NULL;
+static void *g_secureRecvAfterDecryptReturnTrampoline = NULL;
+static void *g_secureSendAfterEncryptReturnTrampoline = NULL;
 
 static void *g_icasyncthreadMygetaddrRetAddr = NULL;
 
@@ -322,10 +422,7 @@ SecureReceiveAfterDecrypt()
 
         popad;
 
-        /* continue where the original left off */
-        mov     ecx, 3265h;
-
-        jmp        [g_secureSendAfterDecryptImpl];
+        jmp [g_secureRecvAfterDecryptReturnTrampoline];
     }
 }
 
@@ -373,11 +470,7 @@ SecureSendAfterEncrypt()
 
         popad;
 
-        /* continue where the original left off */
-        test    eax, eax;
-        mov     [ebp+8], eax;
-
-        jmp        [g_secureSendAfterEncryptImpl];
+        jmp [g_secureSendAfterEncryptReturnTrampoline];
     }
 }
 
@@ -405,19 +498,29 @@ hook_wininet()
         return;
     }
 
-    const FunctionSignature *signatures = signatures_ie7;
+    const FunctionSignature *signatures = signatures_ie8;
     g_icsocketBaseSize = 0x1c;
     g_cfsmSecureRecvBaseSize = 0x94;
     g_cfsmSecureSendBaseSize = 0x78;
 
     char *error;
+    void *tmp;
+    bool found = find_signature(&signatures[SIGNATURE_SECURE_RECV_AFTER_DECRYPT],
+                                &tmp, &error);
+    if (!found)
+    {
+        signatures = signatures_ie7;
+    }
+
     void *retAddr;
     void **vtableAddr;
 
-    bool found = find_signature(&signatures[SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET],
-                                (LPVOID *) &vtableAddr, &error);
+    found = find_signature(&signatures[SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET],
+                           (LPVOID *) &vtableAddr, &error);
     if (!found)
     {
+        sspy_free(error);
+
         signatures = signatures_ie6;
         g_icsocketBaseSize -= 4;
         g_cfsmSecureRecvBaseSize -= 4;
@@ -475,26 +578,16 @@ hook_wininet()
         LOG_OVERRIDE_ERROR("SIGNATURE_SECURE_SEND_ENCRYPTMESSAGE_CALL", error);
     }
 
-    if (override_function_by_signature(&signatures[SIGNATURE_SECURE_RECV_AFTER_DECRYPT],
-                                       SecureReceiveAfterDecrypt, (LPVOID *) &g_secureSendAfterDecryptImpl,
-                                       &error))
-    {
-        // we overwrite 5 bytes with our JMP, so our hook will continue from there
-        g_secureSendAfterDecryptImpl += 5;
-    }
-    else
+    if (!intercept_code_matching(&signatures[SIGNATURE_SECURE_RECV_AFTER_DECRYPT],
+                                 SecureReceiveAfterDecrypt, &g_secureRecvAfterDecryptReturnTrampoline,
+                                 &error))
     {
         LOG_OVERRIDE_ERROR("SIGNATURE_SECURE_RECV_AFTER_DECRYPT", error);
     }
 
-    if (override_function_by_signature(&signatures[SIGNATURE_SECURE_SEND_AFTER_ENCRYPT],
-                                       SecureSendAfterEncrypt, (LPVOID *) &g_secureSendAfterEncryptImpl,
-                                       &error))
-    {
-        // we overwrite 5 bytes with our JMP, so our hook will continue from there
-        g_secureSendAfterEncryptImpl += 5;
-    }
-    else
+    if (!intercept_code_matching(&signatures[SIGNATURE_SECURE_SEND_AFTER_ENCRYPT],
+                                 SecureSendAfterEncrypt, &g_secureSendAfterEncryptReturnTrampoline,
+                                 &error))
     {
         LOG_OVERRIDE_ERROR("SIGNATURE_SECURE_SEND_AFTER_ENCRYPT", error);
     }
