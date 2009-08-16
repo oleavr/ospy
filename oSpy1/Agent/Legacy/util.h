@@ -85,32 +85,32 @@ bool cur_process_is(const char *name);
 DWORD ospy_rand();
 
 typedef struct {
-	OICString name;
-	DWORD preferredStartAddress;
-	DWORD startAddress;
-	DWORD endAddress;
+    OICString name;
+    DWORD preferredStartAddress;
+    DWORD startAddress;
+    DWORD endAddress;
 } OModuleInfo;
 
 class CUtil
 {
 public:
-	static void Init();
-	static void UpdateModuleList();
+    static void Init();
+    static void UpdateModuleList();
 
-	static const OString &GetProcessName() { return m_processName; }
-	static OString GetModuleNameForAddress(DWORD address);
-	static OModuleInfo GetModuleInfo(const OICString &name) { return m_modules[name]; }
-	static OVector<OModuleInfo>::Type GetAllModules();
-	static bool AddressIsWithinExecutableModule(DWORD address);
+    static const OString &GetProcessName() { return m_processName; }
+    static OString GetModuleNameForAddress(DWORD address);
+    static OModuleInfo GetModuleInfo(const OICString &name) { return m_modules[name]; }
+    static OVector<OModuleInfo>::Type GetAllModules();
+    static bool AddressIsWithinExecutableModule(DWORD address);
 
-	static OString CreateBackTrace(void *address);
+    static OString CreateBackTrace(void *address);
 
 private:
-	static OModuleInfo *GetModuleInfoForAddress(DWORD address);
+    static OModuleInfo *GetModuleInfoForAddress(DWORD address);
 
-	static CRITICAL_SECTION m_cs;
-	static OString m_processName;
-	static OMap<OICString, OModuleInfo>::Type m_modules;
-	static DWORD m_lowestAddress;
-	static DWORD m_highestAddress;
+    static CRITICAL_SECTION m_cs;
+    static OString m_processName;
+    static OMap<OICString, OModuleInfo>::Type m_modules;
+    static DWORD m_lowestAddress;
+    static DWORD m_highestAddress;
 };

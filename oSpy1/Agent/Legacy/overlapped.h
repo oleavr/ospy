@@ -27,34 +27,34 @@ typedef OVector<COverlappedOperation *>::Type OverlappedOperationVector;
 class COverlappedManager
 {
 public:
-	static void Init();
-	static void TrackOperation(OVERLAPPED **overlapped, void *data, OperationCompleteHandler handler);
+    static void Init();
+    static void TrackOperation(OVERLAPPED **overlapped, void *data, OperationCompleteHandler handler);
 
 protected:
-	static DWORD __stdcall MonitorThreadFunc(void *arg);
+    static DWORD __stdcall MonitorThreadFunc(void *arg);
 
-	static HANDLE m_opsChanged;
+    static HANDLE m_opsChanged;
 
-	static CRITICAL_SECTION m_opsCriticalSection;
-	static OverlappedOperationVector m_operations;
+    static CRITICAL_SECTION m_opsCriticalSection;
+    static OverlappedOperationVector m_operations;
 };
 
 class COverlappedOperation : public BaseObject
 {
 public:
-	COverlappedOperation(OVERLAPPED *clientOverlapped, void *data, OperationCompleteHandler handler);
+    COverlappedOperation(OVERLAPPED *clientOverlapped, void *data, OperationCompleteHandler handler);
 
-	OVERLAPPED *GetClientOverlapped() { return m_clientOverlapped; }
-	OVERLAPPED *GetRealOverlapped() { return m_realOverlapped; }
-	void *GetData() { return m_data; }
-	bool HasCompleted() { return (WaitForSingleObject(m_realOverlapped, 0) == WAIT_OBJECT_0); }
-	void HandleCompletion();
-	OperationCompleteHandler GetCompletionHandler() { return m_handler; }
+    OVERLAPPED *GetClientOverlapped() { return m_clientOverlapped; }
+    OVERLAPPED *GetRealOverlapped() { return m_realOverlapped; }
+    void *GetData() { return m_data; }
+    bool HasCompleted() { return (WaitForSingleObject(m_realOverlapped, 0) == WAIT_OBJECT_0); }
+    void HandleCompletion();
+    OperationCompleteHandler GetCompletionHandler() { return m_handler; }
 
 protected:
-	OVERLAPPED *m_clientOverlapped;
-	OVERLAPPED *m_realOverlapped;
-	void *m_data;
-	bool m_completionHandled;
-	OperationCompleteHandler m_handler;
+    OVERLAPPED *m_clientOverlapped;
+    OVERLAPPED *m_realOverlapped;
+    void *m_data;
+    bool m_completionHandled;
+    OperationCompleteHandler m_handler;
 };

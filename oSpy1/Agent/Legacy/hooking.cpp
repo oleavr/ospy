@@ -26,16 +26,16 @@
 bool
 CHookContext::ShouldLog(void *returnAddress, CpuContext *ctx, ...)
 {
-	if (m_retAddrs.find(returnAddress) == m_retAddrs.end())
-		return true;
+    if (m_retAddrs.find(returnAddress) == m_retAddrs.end())
+        return true;
 
-	HookRetAddrShouldLogFunc func = m_retAddrs[returnAddress];
-	if (func == NULL)
-		return false;
+    HookRetAddrShouldLogFunc func = m_retAddrs[returnAddress];
+    if (func == NULL)
+        return false;
 
-	va_list args;
+    va_list args;
     va_start(args, ctx);
-	return func(ctx, args);
+    return func(ctx, args);
 }
 
 #define MAKEPTR(p,o) (LPVOID) ( (DWORD)p + (DWORD)o )
@@ -52,8 +52,8 @@ void
 write_byte_to_addr(LPVOID lpAddr, BYTE b)
 {
   HANDLE hProcess;
-	DWORD dwOldProtect, nWritten;
-	
+    DWORD dwOldProtect, nWritten;
+    
   hProcess = GetCurrentProcess();
 
   VirtualProtect(lpAddr, 1, PAGE_EXECUTE_WRITECOPY, &dwOldProtect);
@@ -67,8 +67,8 @@ void
 write_dword_to_addr(LPVOID lpAddr, DWORD dw)
 {
   HANDLE hProcess;
-	DWORD dwOldProtect, nWritten;
-	
+    DWORD dwOldProtect, nWritten;
+    
   hProcess = GetCurrentProcess();
 
   VirtualProtect(lpAddr, 4, PAGE_EXECUTE_WRITECOPY, &dwOldProtect);

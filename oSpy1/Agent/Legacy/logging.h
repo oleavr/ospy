@@ -24,9 +24,9 @@
 #define PACKET_BUFSIZE     65536
 #define MAX_SOFTWALL_RULES   128
 #define BACKTRACE_BUFSIZE    384 /*
-								  * (sizeof(caller_module_name) + sizeof("::") + sizeof("0x12345678") * NUM_BT_LINES + SIZE_NUL_BYTE)
-								  *	rounded up to the closest "magic" size
-								  */
+                                  * (sizeof(caller_module_name) + sizeof("::") + sizeof("0x12345678") * NUM_BT_LINES + SIZE_NUL_BYTE)
+                                  *    rounded up to the closest "magic" size
+                                  */
 
 typedef enum MessageType {
   MESSAGE_TYPE_MESSAGE = 0,

@@ -49,16 +49,16 @@ message_element_init(MessageQueueElement *el,
     el->process_id = GetCurrentProcessId();      
     el->thread_id = GetCurrentThreadId();
 
-	std::string s;
+    std::string s;
 
     /* function name and return address */
     strcpy_s(el->function_name, sizeof(el->function_name), function_name);
-	if (bt_address != NULL)
-	{
-		OString backtrace = CUtil::CreateBackTrace(bt_address);
-		strncpy(el->backtrace, backtrace.c_str(), sizeof(el->backtrace));
-		el->backtrace[sizeof(el->backtrace) - 1] = '\0';
-	}
+    if (bt_address != NULL)
+    {
+        OString backtrace = CUtil::CreateBackTrace(bt_address);
+        strncpy(el->backtrace, backtrace.c_str(), sizeof(el->backtrace));
+        el->backtrace[sizeof(el->backtrace) - 1] = '\0';
+    }
 
     /* underlying resource id */
     if (resource_id == 0)
@@ -88,9 +88,9 @@ message_logger_log_message(const char *function_name,
     va_start(args, message);
     StringCbVPrintfA(buf, sizeof(buf), message, args);
 
-	message_logger_log_full(function_name, bt_address, 0,
-		MESSAGE_TYPE_MESSAGE, context, PACKET_DIRECTION_INVALID,
-		NULL, NULL, NULL, 0, buf, 0, 0);
+    message_logger_log_full(function_name, bt_address, 0,
+        MESSAGE_TYPE_MESSAGE, context, PACKET_DIRECTION_INVALID,
+        NULL, NULL, NULL, 0, buf, 0, 0);
 }
 
 void
@@ -110,18 +110,18 @@ message_logger_log_packet(const char *function_name,
 
 void
 message_logger_log_full(const char *function_name,
-						void *bt_address,
-						DWORD resource_id,
-						MessageType msg_type,
-						MessageContext context,
-						PacketDirection direction,
-						const sockaddr_in *local_addr,
-						const sockaddr_in *peer_addr,
-						const char *buf,
-						int len,
-						const char *message,
-					    DWORD domain,
-					    DWORD severity)
+                        void *bt_address,
+                        DWORD resource_id,
+                        MessageType msg_type,
+                        MessageContext context,
+                        PacketDirection direction,
+                        const sockaddr_in *local_addr,
+                        const sockaddr_in *peer_addr,
+                        const char *buf,
+                        int len,
+                        const char *message,
+                        DWORD domain,
+                        DWORD severity)
 {
     MessageQueueElement el;
     int read_len;
@@ -131,8 +131,8 @@ message_logger_log_full(const char *function_name,
     /* fill in basic fields */
     message_element_init(&el, function_name, bt_address, resource_id, msg_type);
 
-	el.domain = domain;
-	el.severity = severity;
+    el.domain = domain;
+    el.severity = severity;
 
     /* context */
     el.context = context;
@@ -173,11 +173,11 @@ message_logger_log_full(const char *function_name,
         el.len = read_len;
     }
 
-	if (message != NULL)
-	{
-		strncpy(el.message, message, sizeof(el.message));
-		el.message[sizeof(el.message) - 1] = '\0';
-	}
+    if (message != NULL)
+    {
+        strncpy(el.message, message, sizeof(el.message));
+        el.message[sizeof(el.message) - 1] = '\0';
+    }
 
     /* submit the message */
     message_logger_submit(&el);
@@ -195,22 +195,22 @@ message_logger_log(const char *function_name,
                    const char *buf,
                    int len,
                    const char *message,
-				   ...)
+                   ...)
 {
     va_list args;
     char msg_buf[LOG_BUFFER_SIZE];
 
-	if (message != NULL)
-	{
-		va_start(args, message);
-		StringCbVPrintfA(msg_buf, sizeof(msg_buf), message, args);
+    if (message != NULL)
+    {
+        va_start(args, message);
+        StringCbVPrintfA(msg_buf, sizeof(msg_buf), message, args);
 
-		message = msg_buf;
-	}
+        message = msg_buf;
+    }
 
-	message_logger_log_full(function_name, bt_address, resource_id,
-		msg_type, context, direction, local_addr, peer_addr, buf, len,
-		message, 0, 0);
+    message_logger_log_full(function_name, bt_address, resource_id,
+        msg_type, context, direction, local_addr, peer_addr, buf, len,
+        message, 0, 0);
 }
 
 
@@ -223,8 +223,8 @@ log_tcp_listening(const char *function_name,
                   void *bt_address,
                   SOCKET server_socket)
 {
-	struct sockaddr_in sin;
-	int sin_len;
+    struct sockaddr_in sin;
+    int sin_len;
 
     /* local address */
     sin_len = sizeof(sin);
@@ -243,8 +243,8 @@ log_tcp_connecting(const char *function_name,
                    SOCKET socket,
                    const struct sockaddr *name)
 {
-	struct sockaddr_in sin;
-	int sin_len;
+    struct sockaddr_in sin;
+    int sin_len;
     const sockaddr_in *peer_addr = (const sockaddr_in *) name;
     char local_addr_str[16], peer_addr_str[16];
 
@@ -269,8 +269,8 @@ log_tcp_connected(const char *function_name,
                   SOCKET socket,
                   const struct sockaddr *name)
 {
-	struct sockaddr_in sin;
-	int sin_len;
+    struct sockaddr_in sin;
+    int sin_len;
     const sockaddr_in *peer_addr = (const sockaddr_in *) name;
     char local_addr_str[16], peer_addr_str[16];
 
@@ -378,8 +378,8 @@ log_udp_packet(const char *function_name,
                const char *buf,
                int len)
 {
-	struct sockaddr_in local_addr, peer_addr;
-	int sin_len;
+    struct sockaddr_in local_addr, peer_addr;
+    int sin_len;
 
     sin_len = sizeof(local_addr);
     getsockname(s, (struct sockaddr *) &local_addr, &sin_len);
@@ -403,8 +403,8 @@ log_debug_w(const char *source,
             void *bt_address,
             const LPWSTR format,
             va_list args,
-			DWORD domain,
-			DWORD severity)
+            DWORD domain,
+            DWORD severity)
 {
     WCHAR wide_buf[LOG_BUFFER_SIZE];
     char buf[LOG_BUFFER_SIZE];
@@ -423,16 +423,16 @@ log_debug(const char *source,
           void *bt_address,
           const char *format,
           va_list args,
-		  DWORD domain,
-		  DWORD severity)
+          DWORD domain,
+          DWORD severity)
 {
     char buf[LOG_BUFFER_SIZE];
 
     StringCbVPrintfA(buf, sizeof(buf), format, args);
 
-	message_logger_log_full(source, bt_address, 0, MESSAGE_TYPE_MESSAGE,
-		MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL, NULL, 0, buf,
-		domain, severity);
+    message_logger_log_full(source, bt_address, 0, MESSAGE_TYPE_MESSAGE,
+        MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL, NULL, 0, buf,
+        domain, severity);
 }
 
 #pragma managed(pop)

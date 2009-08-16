@@ -152,8 +152,8 @@ softwall_decide_from_socket(const char *function_name,
                             SOCKET s,
                             BOOL *carry_on)
 {
-	struct sockaddr_in local_address, remote_address;
-	int len;
+    struct sockaddr_in local_address, remote_address;
+    int len;
 
     /* get local and remote address */
     len = sizeof(local_address);
@@ -173,8 +173,8 @@ softwall_decide_from_socket_and_remote_address(const char *function_name,
                                                const sockaddr_in *remote_address,
                                                BOOL *carry_on)
 {
-	struct sockaddr_in local_address;
-	int len;
+    struct sockaddr_in local_address;
+    int len;
 
     /* get local address */
     len = sizeof(local_address);
