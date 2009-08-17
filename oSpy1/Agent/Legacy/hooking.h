@@ -272,16 +272,13 @@ typedef struct {
       \
       __asm pop edx \
       __asm cmp edx, FALSE \
-      \
-      __asm popad /* restore the registers again */ \
-      \
       __asm jnz CARRY_ON /* should we carry on or return to caller? */ \
       \
       /* Return to caller */ \
+      __asm add esp, [32 + 4] /* clear CpuContext + backtrace address */ \
       __asm ret args_size \
       \
       __asm CARRY_ON: \
-      __asm pushad /* store all registers to use as a CpuContext to the second callback */ \
       \
       /* Make a copy of retaddr + args onto the top of the stack */ \
       __asm sub esp, (args_size + 4) \
