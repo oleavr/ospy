@@ -41,14 +41,14 @@ static const FunctionSignature signatures_ie6[] = {
     {
         "wininet.dll",
         -24,
-        "80 4E 1E 01"            // or      byte ptr [esi+1Eh], 1
-        "89 46 38"                // mov     [esi+38h], eax
-        "89 46 34"                // mov     [esi+34h], eax
-        "89 46 3C"                // mov     [esi+3Ch], eax
-        "89 46 40"                // mov     [esi+40h], eax
-        "89 46 44"                // mov     [esi+44h], eax
-        "89 46 4C"                // mov     [esi+4Ch], eax
-        "C7 06 ?? ?? ?? ??"        // mov     dword ptr [esi], offset ??_7ICSecureSocket@@6B@ ; const ICSecureSocket::`vftable'
+        "80 4E 1E 01"           // or      byte ptr [esi+1Eh], 1
+        "89 46 38"              // mov     [esi+38h], eax
+        "89 46 34"              // mov     [esi+34h], eax
+        "89 46 3C"              // mov     [esi+3Ch], eax
+        "89 46 40"              // mov     [esi+40h], eax
+        "89 46 44"              // mov     [esi+44h], eax
+        "89 46 4C"              // mov     [esi+4Ch], eax
+        "C7 06 ?? ?? ?? ??"     // mov     dword ptr [esi], offset ??_7ICSecureSocket@@6B@ ; const ICSecureSocket::`vftable'
     },
 
     // SIGNATURE_ICSOCKET_RECEIVE_CONTINUE_RECV
@@ -56,38 +56,38 @@ static const FunctionSignature signatures_ie6[] = {
         "wininet.dll",
         -22,
         "53"                    // push    ebx
-        "FF B6 ?? 00 00 00"        // push    dword ptr [esi+9Ch]
-        "FF B6 ?? 00 00 00"        // push    dword ptr [esi+94h]
-        "FF 70 ??"                // push    dword ptr [eax+18h]
-        "FF 15 ?? ?? ?? ??"        // call    __I_recv
+        "FF B6 ?? 00 00 00"     // push    dword ptr [esi+9Ch]
+        "FF B6 ?? 00 00 00"     // push    dword ptr [esi+94h]
+        "FF 70 ??"              // push    dword ptr [eax+18h]
+        "FF 15 ?? ?? ?? ??"     // call    __I_recv
     },
 
     // SIGNATURE_ICSOCKET_SEND_START_SEND
     {
         "wininet.dll",
         -15,
-        "6A 00"                    // push    0
+        "6A 00"                 // push    0
         "50"                    // push    eax
-        "FF 76 ??"                // push    dword ptr [esi+74h]
-        "FF 77 ??"                // push    dword ptr [edi+18h]
-        "FF 15 ?? ?? ?? ??"        // call    __I_send
+        "FF 76 ??"              // push    dword ptr [esi+74h]
+        "FF 77 ??"              // push    dword ptr [edi+18h]
+        "FF 15 ?? ?? ?? ??"     // call    __I_send
     },
 
     // SIGNATURE_SECURE_RECV_DECRYPTMESSAGE_CALL
     {
         "wininet.dll",
         -3,
-        "FF 50 4C"                // call    dword ptr [eax+4Ch]
-        "3B C3"                    // cmp     eax, ebx
-        "89 45 FC"                // mov     [ebp+var_4], eax
+        "FF 50 4C"              // call    dword ptr [eax+4Ch]
+        "3B C3"                 // cmp     eax, ebx
+        "89 45 FC"              // mov     [ebp+var_4], eax
     },
 
     // SIGNATURE_SECURE_SEND_ENCRYPTMESSAGE_CALL
     {
         "wininet.dll",
         -3,
-        "FF 50 48"                // call    dword ptr [eax+48h]
-        "3B C7"                    // cmp     eax, edi
+        "FF 50 48"              // call    dword ptr [eax+48h]
+        "3B C7"                 // cmp     eax, edi
     },
 
     // SIGNATURE_SECURE_RECV_AFTER_DECRYPT
@@ -95,16 +95,16 @@ static const FunctionSignature signatures_ie6[] = {
         "wininet.dll",
         0,
         "3D 18 03 09 80"        // cmp     eax, 80090318h
-        "89 86 ?? ?? ?? ??"        // mov     [esi+0B0h], eax
+        "89 86 ?? ?? ?? ??"     // mov     [esi+0B0h], eax
     },
 
     // SIGNATURE_SECURE_SEND_AFTER_ENCRYPT
     {
         "wininet.dll",
         0,
-        "85 C0"                    // test    eax, eax
-        "89 45 08"                // mov     [ebp+arg_0], eax
-        "75 30"                    // jnz     short OUT
+        "85 C0"                 // test    eax, eax
+        "89 45 08"              // mov     [ebp+arg_0], eax
+        "75 30"                 // jnz     short OUT
     },
 
     // SIGNATURE_ICASYNCTHREAD_MY_GETADDR -- not in ie6
@@ -125,9 +125,9 @@ static const FunctionSignature signatures_ie6[] = {
     {
         "wininet.dll",
         0,
-        "83 F8 FF"                // cmp     eax, 0FFFFFFFFh
-        "74 16"                    // jz      short loc_771D8FFF
-        "8B 45 D8"                // mov     eax, [ebp+var_28]
+        "83 F8 FF"              // cmp     eax, 0FFFFFFFFh
+        "74 16"                 // jz      short loc_771D8FFF
+        "8B 45 D8"              // mov     eax, [ebp+var_28]
     },
 };
 
@@ -136,51 +136,51 @@ static const FunctionSignature signatures_ie7[] = {
     {
         "wininet.dll",
         -33,
-        "81 4E 28 00 00 01 00"    // or      dword ptr [esi+28h], 10000h
-        "89 86 ?? ?? ?? ??"        // mov     [esi+0C8h], eax
-        "89 86 ?? ?? ?? ??"        // mov     [esi+0CCh], eax
-        "89 86 ?? ?? ?? ??"        // mov     [esi+0D0h], eax
-        "89 86 ?? ?? ?? ??"        // mov     [esi+0D8h], eax
-        "C7 06 ?? ?? ?? ??"        // mov     dword ptr [esi], offset ??_7ICSecureSocket@@6B@ ; const ICSecureSocket::`vftable'
+        "81 4E 28 00 00 01 00"  // or      dword ptr [esi+28h], 10000h
+        "89 86 ?? ?? ?? ??"     // mov     [esi+0C8h], eax
+        "89 86 ?? ?? ?? ??"     // mov     [esi+0CCh], eax
+        "89 86 ?? ?? ?? ??"     // mov     [esi+0D0h], eax
+        "89 86 ?? ?? ?? ??"     // mov     [esi+0D8h], eax
+        "C7 06 ?? ?? ?? ??"     // mov     dword ptr [esi], offset ??_7ICSecureSocket@@6B@ ; const ICSecureSocket::`vftable'
     },
 
     // SIGNATURE_ICSOCKET_RECEIVE_CONTINUE_RECV
     {
         "wininet.dll",
         -21,
-        "6A 00"                    // push    0
-        "FF B6 ?? 00 00 00"        // push    [esi+CFsm_SocketReceive.dataLen]
-        "FF B6 ?? 00 00 00"        // push    [esi+CFsm_SocketReceive.recvBuf]
+        "6A 00"                 // push    0
+        "FF B6 ?? 00 00 00"     // push    [esi+CFsm_SocketReceive.dataLen]
+        "FF B6 ?? 00 00 00"     // push    [esi+CFsm_SocketReceive.recvBuf]
         "53"                    // push    ebx
-        "FF 15 ?? ?? ?? ??"        // call    __I_recv
+        "FF 15 ?? ?? ?? ??"     // call    __I_recv
     },
 
     // SIGNATURE_ICSOCKET_SEND_START_SEND
     {
         "wininet.dll",
         -13,
-        "6A 00"                    // push    0
+        "6A 00"                 // push    0
         "50"                    // push    eax
-        "FF 76 78"                // push    dword ptr [esi+78h]
+        "FF 76 78"              // push    dword ptr [esi+78h]
         "53"                    // push    ebx
-        "FF 15 ?? ?? ?? ??"        // call    __I_send
+        "FF 15 ?? ?? ?? ??"     // call    __I_send
     },
 
     // SIGNATURE_SECURE_RECV_DECRYPTMESSAGE_CALL
     {
         "wininet.dll",
         -3,
-        "FF 50 4C"                // call    dword ptr [eax+4Ch]
-        "3B C3"                    // cmp     eax, ebx
-        "89 45 FC"                // mov     [ebp+var_4], eax
+        "FF 50 4C"              // call    dword ptr [eax+4Ch]
+        "3B C3"                 // cmp     eax, ebx
+        "89 45 FC"              // mov     [ebp+var_4], eax
     },
 
     // SIGNATURE_SECURE_SEND_ENCRYPTMESSAGE_CALL
     {
         "wininet.dll",
         -3,
-        "FF 50 48"                // call    dword ptr [eax+48h]
-        "85 C0"                    // test    eax, eax
+        "FF 50 48"              // call    dword ptr [eax+48h]
+        "85 C0"                 // test    eax, eax
     },
 
     // SIGNATURE_SECURE_RECV_AFTER_DECRYPT
@@ -194,29 +194,29 @@ static const FunctionSignature signatures_ie7[] = {
     {
         "wininet.dll",
         0,
-        "85 C0"                    // test    eax, eax
-        "89 45 08"                // mov     [ebp+arg_0], eax
-        "75 ??"                    // jnz     short OUT
-        "8B 1B"                    // mov     ebx, [ebx]
-        "?? ??"                    // FIXME: work around a bug in the signature matcher :P
+        "85 C0"                 // test    eax, eax
+        "89 45 08"              // mov     [ebp+arg_0], eax
+        "75 ??"                 // jnz     short OUT
+        "8B 1B"                 // mov     ebx, [ebx]
+        "?? ??"                 // FIXME: work around a bug in the signature matcher :P
     },
 
     // SIGNATURE_ICASYNCTHREAD_MY_GETADDR
     {
         "wininet.dll",
         0,
-        "8B F0"                    // mov     esi, eax
-        "85 F6"                    // test    esi, esi
-        "0F 85 ?? ?? ?? 00"        // jnz     loc_771FCD41
-        "8B 85 ?? ?? ?? ??"        // mov     eax, [ebp+var_88]
-        "6A 11"                    // push    11h
+        "8B F0"                 // mov     esi, eax
+        "85 F6"                 // test    esi, esi
+        "0F 85 ?? ?? ?? 00"     // jnz     loc_771FCD41
+        "8B 85 ?? ?? ?? ??"     // mov     eax, [ebp+var_88]
+        "6A 11"                 // push    11h
     },
 
     // SIGNATURE_MY_GETADDR_GETADDRINFO
     {
         "wininet.dll",
         0,
-        "89 45 14"                // mov     [ebp+arg_C], eax
+        "89 45 14"              // mov     [ebp+arg_C], eax
         "A1 ?? ?? ?? ??"        // mov     eax, _WPP_GLOBAL_Control
     },
 
@@ -224,9 +224,9 @@ static const FunctionSignature signatures_ie7[] = {
     {
         "wininet.dll",
         0,
-        "3B C6"                    // cmp     eax, esi
-        "74 30"                    // jz      short loc_771CACAC
-        "8B 85 6C FF FF FF"        // mov     eax, [ebp+var_94]
+        "3B C6"                 // cmp     eax, esi
+        "74 30"                 // jz      short loc_771CACAC
+        "8B 85 6C FF FF FF"     // mov     eax, [ebp+var_94]
     },
 };
 
@@ -235,51 +235,51 @@ static const FunctionSignature signatures_ie8[] = {
     {
         "wininet.dll",
         -33,
-        "81 4E 28 00 00 01 00"    // or      dword ptr [esi+28h], 10000h
-        "89 86 ?? ?? ?? ??"        // mov     [esi+0C8h], eax
-        "89 86 ?? ?? ?? ??"        // mov     [esi+0CCh], eax
-        "89 86 ?? ?? ?? ??"        // mov     [esi+0D0h], eax
-        "89 86 ?? ?? ?? ??"        // mov     [esi+0D8h], eax
-        "C7 06 ?? ?? ?? ??"        // mov     dword ptr [esi], offset ??_7ICSecureSocket@@6B@ ; const ICSecureSocket::`vftable'
+        "81 4E 28 00 00 01 00"  // or      dword ptr [esi+28h], 10000h
+        "89 86 ?? ?? ?? ??"     // mov     [esi+0C8h], eax
+        "89 86 ?? ?? ?? ??"     // mov     [esi+0CCh], eax
+        "89 86 ?? ?? ?? ??"     // mov     [esi+0D0h], eax
+        "89 86 ?? ?? ?? ??"     // mov     [esi+0D8h], eax
+        "C7 06 ?? ?? ?? ??"     // mov     dword ptr [esi], offset ??_7ICSecureSocket@@6B@ ; const ICSecureSocket::`vftable'
     },
 
     // SIGNATURE_ICSOCKET_RECEIVE_CONTINUE_RECV
     {
         "wininet.dll",
         -21,
-        "6A 00"                    // push    0
-        "FF B6 ?? 00 00 00"        // push    [esi+CFsm_SocketReceive.dataLen]
-        "FF B6 ?? 00 00 00"        // push    [esi+CFsm_SocketReceive.recvBuf]
+        "6A 00"                 // push    0
+        "FF B6 ?? 00 00 00"     // push    [esi+CFsm_SocketReceive.dataLen]
+        "FF B6 ?? 00 00 00"     // push    [esi+CFsm_SocketReceive.recvBuf]
         "53"                    // push    ebx
-        "FF 15 ?? ?? ?? ??"        // call    __I_recv
+        "FF 15 ?? ?? ?? ??"     // call    __I_recv
     },
 
     // SIGNATURE_ICSOCKET_SEND_START_SEND
     {
         "wininet.dll",
         -13,
-        "6A 00"                    // push    0
+        "6A 00"                 // push    0
         "50"                    // push    eax
-        "FF 76 78"                // push    dword ptr [esi+78h]
+        "FF 76 78"              // push    dword ptr [esi+78h]
         "53"                    // push    ebx
-        "FF 15 ?? ?? ?? ??"        // call    __I_send
+        "FF 15 ?? ?? ?? ??"     // call    __I_send
     },
 
     // SIGNATURE_SECURE_RECV_DECRYPTMESSAGE_CALL
     {
         "wininet.dll",
         -3,
-        "FF 50 4C"                // call    dword ptr [eax+4Ch]
-        "89 45 FC"                // mov     [ebp+var_4], eax
-        "3B C3"                    // cmp     eax, ebx
+        "FF 50 4C"              // call    dword ptr [eax+4Ch]
+        "89 45 FC"              // mov     [ebp+var_4], eax
+        "3B C3"                 // cmp     eax, ebx
     },
 
     // SIGNATURE_SECURE_SEND_ENCRYPTMESSAGE_CALL
     {
         "wininet.dll",
         -3,
-        "FF 50 48"                // call    dword ptr [eax+48h]
-        "85 C0"                    // test    eax, eax
+        "FF 50 48"              // call    dword ptr [eax+48h]
+        "85 C0"                 // test    eax, eax
     },
 
     // SIGNATURE_SECURE_RECV_AFTER_DECRYPT
@@ -294,29 +294,29 @@ static const FunctionSignature signatures_ie8[] = {
     {
         "wininet.dll",
         0,
-        "89 45 08"                // mov     [ebp+arg_0], eax
-        "85 C0"                    // test    eax, eax
-        "75 ??"                    // jnz     short OUT
-        "8B 1B"                    // mov     ebx, [ebx]
-        "?? ??"                    // FIXME: work around a bug in the signature matcher :P
+        "89 45 08"              // mov     [ebp+arg_0], eax
+        "85 C0"                 // test    eax, eax
+        "75 ??"                 // jnz     short OUT
+        "8B 1B"                 // mov     ebx, [ebx]
+        "?? ??"                 // FIXME: work around a bug in the signature matcher :P
     },
 
     // SIGNATURE_ICASYNCTHREAD_MY_GETADDR
     {
         "wininet.dll",
         0,
-        "8B F0"                    // mov     esi, eax
-        "85 F6"                    // test    esi, esi
-        "0F 85 ?? ?? ?? 00"        // jnz     loc_771FCD41
-        "8B 85 ?? ?? ?? ??"        // mov     eax, [ebp+var_88]
-        "6A 11"                    // push    11h
+        "8B F0"                 // mov     esi, eax
+        "85 F6"                 // test    esi, esi
+        "0F 85 ?? ?? ?? 00"     // jnz     loc_771FCD41
+        "8B 85 ?? ?? ?? ??"     // mov     eax, [ebp+var_88]
+        "6A 11"                 // push    11h
     },
 
     // SIGNATURE_MY_GETADDR_GETADDRINFO
     {
         "wininet.dll",
         0,
-        "89 45 14"                // mov     [ebp+arg_C], eax
+        "89 45 14"              // mov     [ebp+arg_C], eax
         "A1 ?? ?? ?? ??"        // mov     eax, _WPP_GLOBAL_Control
     },
 
@@ -324,9 +324,9 @@ static const FunctionSignature signatures_ie8[] = {
     {
         "wininet.dll",
         0,
-        "3B C6"                    // cmp     eax, esi
-        "74 30"                    // jz      short loc_771CACAC
-        "8B 85 6C FF FF FF"        // mov     eax, [ebp+var_94]
+        "3B C6"                 // cmp     eax, esi
+        "74 30"                 // jz      short loc_771CACAC
+        "8B 85 6C FF FF FF"     // mov     eax, [ebp+var_94]
     },
 };
 
