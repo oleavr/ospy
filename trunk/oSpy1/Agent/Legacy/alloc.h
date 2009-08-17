@@ -23,20 +23,27 @@ using namespace std;
 class BaseObject
 {
 public:
+    void *operator new(std::size_t size)
+    {
+        void *ptr = sspy_malloc(size);
+        if (ptr == NULL)
+            throw bad_alloc();
+        return ptr;
+    }
+
+    void operator delete(void *ptr) throw()
+    {
+        if (ptr != NULL)
+            sspy_free(ptr);
+    }
+
     void *operator new(size_t, void *an_address)
     {
         return an_address;
     }
 
-    void *operator new(size_t size)
+    void operator delete(void *ptr, void *an_address) throw()
     {
-        return sspy_malloc(size);
-    }
-
-    void operator delete(void *an_address)
-    {
-        if (an_address)
-            sspy_free(an_address);
     }
 };
 
