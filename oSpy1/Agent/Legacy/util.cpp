@@ -97,58 +97,25 @@ get_module_name_for_address(LPVOID address,
 BOOL
 get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, char **error)
 {
-    HANDLE process;
-    HMODULE modules[256];
-    DWORD bytes_needed, num_modules;
-    unsigned int i;
-
-    process = GetCurrentProcess();
-
-    if (EnumProcessModules(process, (HMODULE *) &modules,
-                           sizeof(modules), &bytes_needed) == 0)
+    HMODULE mod = GetModuleHandle(module_name);
+    if (mod == NULL)
+        mod = LoadLibrary(module_name);
+    if (mod == NULL)
     {
-        if (error)
-            *error = sspy_strdup("EnumProcessModules failed");
+        *error = sspy_strdup("module not found");
         return FALSE;
     }
 
-    if (bytes_needed > sizeof(modules))
-        bytes_needed = sizeof(modules);
-
-    num_modules = bytes_needed / sizeof(HMODULE);
-
-    for (i = 0; i < num_modules; i++)
+    MODULEINFO mi;
+    if (GetModuleInformation(GetCurrentProcess(), mod, &mi, sizeof(mi)) == 0)
     {
-        MODULEINFO mi;
-
-        if (GetModuleInformation(process, modules[i], &mi, sizeof(mi)) != 0)
-        {
-            char buf[32];
-            LPVOID start, end;
-
-            start = mi.lpBaseOfDll;
-            end = (char *) start + mi.SizeOfImage;
-
-            if (GetModuleBaseName(process, modules[i], buf, 32) == 0)
-            {
-                if (error)
-                    *error = sspy_strdup("GetModuleBaseName failed");
-                return FALSE;
-            }
-
-            if (stricmp(buf, module_name) == 0)
-            {
-                *base = mi.lpBaseOfDll;
-                *size = mi.SizeOfImage;
-
-                return TRUE;
-            }
-        }
+        *error = sspy_strdup("GetModuleInformation failed");
+        return FALSE;
     }
 
-    if (error)
-        *error = sspy_strdup("module not found");
-    return FALSE;
+    *base = mi.lpBaseOfDll;
+    *size = mi.SizeOfImage;
+    return TRUE;
 }
 
 void get_process_name(char *name, int len)
