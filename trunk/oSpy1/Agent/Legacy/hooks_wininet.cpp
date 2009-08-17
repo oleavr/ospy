@@ -198,7 +198,6 @@ static const FunctionSignature signatures_ie7[] = {
         "89 45 08"              // mov     [ebp+arg_0], eax
         "75 ??"                 // jnz     short OUT
         "8B 1B"                 // mov     ebx, [ebx]
-        "?? ??"                 // FIXME: work around a bug in the signature matcher :P
     },
 
     // SIGNATURE_ICASYNCTHREAD_MY_GETADDR
@@ -298,7 +297,6 @@ static const FunctionSignature signatures_ie8[] = {
         "85 C0"                 // test    eax, eax
         "75 ??"                 // jnz     short OUT
         "8B 1B"                 // mov     ebx, [ebx]
-        "?? ??"                 // FIXME: work around a bug in the signature matcher :P
     },
 
     // SIGNATURE_ICASYNCTHREAD_MY_GETADDR
@@ -592,7 +590,7 @@ hook_wininet()
         LOG_OVERRIDE_ERROR("SIGNATURE_SECURE_SEND_AFTER_ENCRYPT", error);
     }
 
-    if (signatures == signatures_ie7)
+    if (signatures != signatures_ie6)
     {
         if (find_signature(&signatures[SIGNATURE_ICASYNCTHREAD_MY_GETADDR],
                            &g_icasyncthreadMygetaddrRetAddr, &error))
