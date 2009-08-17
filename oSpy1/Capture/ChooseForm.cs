@@ -133,15 +133,32 @@ namespace oSpy.Capture
 
     public class ProcessViewItemComparer : System.Collections.IComparer
     {
+        private int m_curSessionId;
+
+        public ProcessViewItemComparer()
+        {
+            m_curSessionId = Process.GetCurrentProcess().SessionId;
+        }
+
         public int Compare(object itemA, object itemB)
         {
             Process a = (itemA as ListViewItem).Tag as Process;
             Process b = (itemB as ListViewItem).Tag as Process;
 
-            if (a == b)
-                return 0;
+            if (a.SessionId != b.SessionId && ((a.SessionId == m_curSessionId) || (b.SessionId == m_curSessionId)))
+            {
+                if (a.SessionId == m_curSessionId)
+                    return -1;
+                else
+                    return 1;
+            }
             else
-                return a.ProcessName.CompareTo(b.ProcessName);
+            {
+                if (a == b)
+                    return 0;
+                else
+                    return a.ProcessName.CompareTo(b.ProcessName);
+            }
         }
     }
 
@@ -295,12 +312,12 @@ namespace oSpy.Capture
 
         protected override object[] CreateItems()
         {
-            int ourSessionId = Process.GetCurrentProcess().SessionId;
+            Process curProcess = Process.GetCurrentProcess();
 
             List<Process> result = new List<Process>();
             foreach (Process process in Process.GetProcesses())
             {
-                if (process.SessionId == ourSessionId)
+                if (process.Id != curProcess.Id)
                 {
                     result.Add(process);
                     processIcons[process] = GetProcessIcon(process);
