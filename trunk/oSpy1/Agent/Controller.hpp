@@ -47,5 +47,6 @@ namespace oSpyAgent
         List<oSpy::Capture::MessageQueueElement ^> m_events;
 
         SubmitElementHandler ^m_submitElementHandler;
+        IntPtr m_submitElementHandlerFuncPtr;
     };
 }

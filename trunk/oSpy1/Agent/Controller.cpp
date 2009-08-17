@@ -41,6 +41,7 @@ namespace oSpyAgent
         m_softwallRules = softwallRules;
 
         m_submitElementHandler = gcnew SubmitElementHandler(this, &Controller::OnSubmitElement);
+        m_submitElementHandlerFuncPtr = Marshal::GetFunctionPointerForDelegate(m_submitElementHandler);
     }
 
     void Controller::Run(RemoteHooking::IContext ^context,
@@ -95,11 +96,7 @@ namespace oSpyAgent
         softwall_init(rules, m_softwallRules->Length);
         delete[] rules;
 
-        message_logger_init(static_cast<MessageLoggerSubmitFunc>(
-            static_cast<void *>(
-                Marshal::GetFunctionPointerForDelegate(m_submitElementHandler)
-            )
-        ));
+        message_logger_init(static_cast<MessageLoggerSubmitFunc>(static_cast<void *>(m_submitElementHandlerFuncPtr)));
 
         hook_winsock();
         hook_secur32();
