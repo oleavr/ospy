@@ -858,6 +858,16 @@ namespace EasyHook
         public static Boolean IsX64System { get { return NativeAPI.RhIsX64System(); } }
 
         /// <summary>
+        /// Installs the services, which will keep running as long as the calling thread is alive.
+        /// </summary>
+        public static void InstallServices()
+        {
+            ServiceMgmt.Install();
+            if (IsX64System)
+                WOW64Bypass.Install();
+        }
+
+        /// <summary>
         /// Installs the EasyHook support driver. After this step you may use
         /// <see cref="InstallDriver"/> to install your kernel mode hooking component.
         /// </summary>
