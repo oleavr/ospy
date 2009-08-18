@@ -27,6 +27,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Management;
 using System.Threading;
+using Microsoft.Win32.SafeHandles;
 
 namespace oSpy.Capture
 {
@@ -317,6 +318,17 @@ namespace oSpy.Capture
             List<Process> result = new List<Process>();
             foreach (Process process in Process.GetProcesses())
             {
+                if (EasyHook.NativeAPI.Is64Bit)
+                {
+                    SafeHandle processHandle = new SafeFileHandle(WinApi.OpenProcess(WinApi.PROCESS_QUERY_INFORMATION, false, (uint) process.Id), true);
+                    if (!processHandle.IsInvalid)
+                    {
+                        bool processIs32Bit;
+                        if (WinApi.IsWow64Process(process.Handle, out processIs32Bit) && !processIs32Bit)
+                            continue;
+                    }
+                }
+
                 if (process.Id != curProcess.Id)
                 {
                     result.Add(process);
