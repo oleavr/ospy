@@ -1,6 +1,14 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{35DFE11F-B359-4F35-AB32-19173B9EC94D}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE = LICENSE
+		README = README
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{5C0188F2-57BE-4CB1-BA64-17A37106735E}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyHook", "EasyHook\EasyHook.csproj", "{AB53862B-3B5C-4EFC-9787-1F01199EBFBF}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasyHookDll", "EasyHookDll\EasyHookDll.vcproj", "{D087E484-DBC9-4A2E-8368-C1D0E524994D}"
@@ -12,14 +20,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyHookSvc", "EasyHookSvc\EasyHookSvc.csproj", "{B9A68E47-237F-4045-A371-D5CCEB896F7F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManagedTest", "Test\ManagedTest\ManagedTest.csproj", "{E23BE1E6-DC9D-4755-890E-443EA7B736FB}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{35DFE11F-B359-4F35-AB32-19173B9EC94D}"
-	ProjectSection(SolutionItems) = preProject
-		LICENSE = LICENSE
-		README = README
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{5C0188F2-57BE-4CB1-BA64-17A37106735E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcessMonitor", "Examples\ProcessMonitor\ProcessMonitor.csproj", "{8E795877-473B-4376-8F9C-2519464D6B18}"
 EndProject
