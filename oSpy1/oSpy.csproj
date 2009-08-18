@@ -53,7 +53,7 @@
   <ItemGroup>
     <Reference Include="EasyHook, Version=2.5.0.0, Culture=neutral, PublicKeyToken=4b580fca19d0b0c5, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\EasyHook\EasyHook.dll</HintPath>
+      <HintPath>..\EasyHook\Debug\x86\EasyHook.dll</HintPath>
     </Reference>
     <Reference Include="ICSharpCode.SharpZipLib, Version=0.85.4.369, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -400,10 +400,14 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>copy /B /Y "$(SolutionDir)..\EasyHook\EasyHook32.dll" "$(TargetDir)"
-copy /B /Y "$(SolutionDir)..\EasyHook\EasyHook64.dll" "$(TargetDir)"
-copy /B /Y "$(SolutionDir)..\EasyHook\EasyHook32Svc.exe" "$(TargetDir)"
-copy /B /Y "$(SolutionDir)..\EasyHook\EasyHook64Svc.exe" "$(TargetDir)"
+    <PostBuildEvent>copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x86\EasyHook32.dll" "$(TargetDir)"
+copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x86\EasyHook32.pdb" "$(TargetDir)"
+copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x86\EasyHook32Svc.exe" "$(TargetDir)"
+copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x86\EasyHookSvc.pdb" "$(TargetDir)EasyHook32Svc.pdb"
+copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x64\EasyHook64.dll" "$(TargetDir)"
+copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x64\EasyHook64.pdb" "$(TargetDir)"
+copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x64\EasyHook64Svc.exe" "$(TargetDir)"
+copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x64\EasyHookSvc.pdb" "$(TargetDir)EasyHook64Svc.pdb"
 </PostBuildEvent>
   </PropertyGroup>
 </Project>
