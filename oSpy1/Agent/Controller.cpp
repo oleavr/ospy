@@ -100,7 +100,7 @@ namespace oSpyAgent
 
         hook_winsock();
         hook_secur32();
-        //hook_crypt();
+        hook_crypt();
         hook_wininet();
         hook_activesync();
         hook_msn();
