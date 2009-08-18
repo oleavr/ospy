@@ -8,6 +8,10 @@ namespace oSpy
 {
     public class WinApi
     {
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = false)]
+        [return: MarshalAs(UnmanagedType.VariantBool)]
+        public static extern bool IsWow64Process(IntPtr hProcess, out bool Wow64Process);
+
         [DllImport ("advapi32.dll", SetLastError = true)]
         public static extern bool InitializeSecurityDescriptor (IntPtr pSecurityDescriptor, uint dwRevision);
 
@@ -307,6 +311,7 @@ namespace oSpy
         public const int DICS_FLAG_CONFIGSPECIFIC = 0x00000002;
 
         public const int PROCESS_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF);
+        public const int PROCESS_QUERY_INFORMATION = 0x0400;
         public const int STANDARD_RIGHTS_REQUIRED = 0xF0000;
         public const int SYNCHRONIZE = 0x100000;
 
