@@ -381,8 +381,7 @@ namespace oSpy
             if (!frm.GetSelection(out processes))
                 return;
 
-            tmpEventList.Clear();
-            tmpPacketList.Clear();
+            ClearState();
 
             object source = dataGridView.DataSource;
             dataGridView.DataSource = null;
