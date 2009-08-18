@@ -35,7 +35,7 @@ namespace EasyHook
         private static HelperServiceInterface m_Interface = null;
         private static Object ThreadSafe = new Object();
 
-        private static void Install()
+        internal static void Install()
         {
             lock (ThreadSafe)
             {
