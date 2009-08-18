@@ -72,9 +72,13 @@ namespace oSpy
         {
             ruleListView.Items.Clear();
 
+            string rulesFile = GetRulesFilePath();
+            if (!File.Exists(rulesFile))
+                return;
+
             try
             {
-                softwallDataSet.ReadXml(GetRulesFilePath());
+                softwallDataSet.ReadXml(rulesFile);
             }
             catch (FileNotFoundException)
             {
