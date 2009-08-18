@@ -363,6 +363,7 @@ namespace oSpy
                 try
                 {
                     EasyHook.Config.Register("oSpy", "EasyHook.dll", "oSpy.exe", "oSpyAgent.dll");
+                    EasyHook.RemoteHooking.InstallServices();
                 }
                 catch (ApplicationException)
                 {
