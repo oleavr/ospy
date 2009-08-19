@@ -328,6 +328,14 @@ namespace oSpy.Capture
                 if (process.Id == 0 || process.Id == 4)
                     continue;
 
+                // Skip EasyHook services
+                string processNameLower = process.ProcessName.ToLower();
+                if (processNameLower == "easyhook32svc" || processNameLower == "easyhook64svc")
+                    continue;
+                // And any oSpy instances
+                if (processNameLower == "ospy" || processNameLower == "ospy.vshost")
+                    continue;
+
                 // And also 64 bit processes on x64
                 if (EasyHook.RemoteHooking.IsX64System)
                 {
