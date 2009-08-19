@@ -68,8 +68,8 @@ namespace oSpy
             this.newRuleToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.conditionsGroupBox.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.softwallDataSet)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.rulesTable)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize) (this.softwallDataSet)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize) (this.rulesTable)).BeginInit();
             this.actionsGroupBox.SuspendLayout();
             this.ruleListMenuStrip.SuspendLayout();
             this.SuspendLayout();
@@ -128,7 +128,9 @@ namespace oSpy
             this.lastErrorCol});
             this.rulesTable.Constraints.AddRange(new System.Data.Constraint[] {
             new System.Data.UniqueConstraint("Constraint1", new string[] {
-                        "Name"}, false)});
+                        "Name"}, true)});
+            this.rulesTable.PrimaryKey = new System.Data.DataColumn[] {
+        this.nameCol};
             this.rulesTable.TableName = "Rules";
             // 
             // nameCol
@@ -399,8 +401,8 @@ namespace oSpy
             this.ruleListView.TabIndex = 9;
             this.ruleListView.UseCompatibleStateImageBehavior = false;
             this.ruleListView.View = System.Windows.Forms.View.List;
-            this.ruleListView.ItemSelectionChanged += new System.Windows.Forms.ListViewItemSelectionChangedEventHandler(this.rulesListView_ItemSelectionChanged);
             this.ruleListView.AfterLabelEdit += new System.Windows.Forms.LabelEditEventHandler(this.rulesListView_AfterLabelEdit);
+            this.ruleListView.ItemSelectionChanged += new System.Windows.Forms.ListViewItemSelectionChangedEventHandler(this.rulesListView_ItemSelectionChanged);
             // 
             // columnHeader1
             // 
@@ -413,20 +415,20 @@ namespace oSpy
             this.newRuleToolStripMenuItem,
             this.deleteToolStripMenuItem});
             this.ruleListMenuStrip.Name = "ruleListMenuStrip";
-            this.ruleListMenuStrip.Size = new System.Drawing.Size(128, 48);
+            this.ruleListMenuStrip.Size = new System.Drawing.Size(122, 48);
             this.ruleListMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.ruleListMenuStrip_Opening);
             // 
             // newRuleToolStripMenuItem
             // 
             this.newRuleToolStripMenuItem.Name = "newRuleToolStripMenuItem";
-            this.newRuleToolStripMenuItem.Size = new System.Drawing.Size(127, 22);
+            this.newRuleToolStripMenuItem.Size = new System.Drawing.Size(121, 22);
             this.newRuleToolStripMenuItem.Text = "&New rule";
             this.newRuleToolStripMenuItem.Click += new System.EventHandler(this.newRuleToolStripMenuItem_Click);
             // 
             // deleteToolStripMenuItem
             // 
             this.deleteToolStripMenuItem.Name = "deleteToolStripMenuItem";
-            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(127, 22);
+            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(121, 22);
             this.deleteToolStripMenuItem.Text = "&Delete";
             this.deleteToolStripMenuItem.Click += new System.EventHandler(this.deleteToolStripMenuItem_Click);
             // 
@@ -449,8 +451,8 @@ namespace oSpy
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.SoftwallForm_FormClosed);
             this.conditionsGroupBox.ResumeLayout(false);
             this.conditionsGroupBox.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.softwallDataSet)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.rulesTable)).EndInit();
+            ((System.ComponentModel.ISupportInitialize) (this.softwallDataSet)).EndInit();
+            ((System.ComponentModel.ISupportInitialize) (this.rulesTable)).EndInit();
             this.actionsGroupBox.ResumeLayout(false);
             this.actionsGroupBox.PerformLayout();
             this.ruleListMenuStrip.ResumeLayout(false);
