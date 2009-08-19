@@ -40,6 +40,8 @@ namespace oSpyAgent
 
     private:
         void EnableLegacyHooks();
+        void DisableLegacyHooks();
+
         void OnSubmitElement(const MessageQueueElement *el);
 
         oSpy::Capture::IManager ^m_manager;

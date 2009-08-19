@@ -21,6 +21,7 @@
 #include "Controller.hpp"
 
 #include "hooks.h"
+#include "hooking.h"
 #include "util.h"
 
 #include <msclr\lock.h>
@@ -79,10 +80,13 @@ namespace oSpyAgent
         catch (Exception ^)
         {
         }
+
+        DisableLegacyHooks();
     }
 
     void Controller::EnableLegacyHooks()
     {
+        HookManager::Init();
         CUtil::Init();
 
         SoftwallRule *rules = new SoftwallRule[m_softwallRules->Length];
@@ -104,6 +108,12 @@ namespace oSpyAgent
         hook_wininet();
         hook_activesync();
         hook_msn();
+    }
+
+    void Controller::DisableLegacyHooks()
+    {
+        HookManager::Obtain()->RevertAll();
+        HookManager::Uninit();
     }
 
     void Controller::OnSubmitElement(const MessageQueueElement *el)
