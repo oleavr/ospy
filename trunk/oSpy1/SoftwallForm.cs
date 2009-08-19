@@ -129,6 +129,13 @@ namespace oSpy
             }
         }
 
+        private void SelectLastItem()
+        {
+            ruleListView.SelectedIndices.Clear();
+            if (ruleListView.Items.Count > 0)
+                ruleListView.SelectedIndices.Add(ruleListView.Items.Count - 1);
+        }
+
         private void conditionCBox_CheckStateChanged(object sender, EventArgs e)
         {
             CheckBox box = sender as CheckBox;
@@ -175,26 +182,18 @@ namespace oSpy
             tbl.Rows.RemoveAt(index);
 
             ResetUI();
+            SelectLastItem();
         }
 
         private void rulesListView_AfterLabelEdit(object sender, LabelEditEventArgs e)
         {
             if (e.Label == null || e.Label == "")
             {
-                e.CancelEdit = true;
-
-                if (addingRow)
-                {
-                    ruleListView.Items.RemoveAt(e.Item);
-                    ResetUI();
-                    addingRow = false;
-                }
-
+                CancelAddRow(e);
                 return;
             }
 
             DataTable tbl = softwallDataSet.Tables[0];
-
 
             if (addingRow)
             {
@@ -202,7 +201,18 @@ namespace oSpy
                 newRow["Name"] = e.Label;
                 newRow["ReturnValue"] = DEFAULT_RETURN_VALUE;
                 newRow["LastError"] = DEFAULT_LAST_ERROR;
-                tbl.Rows.Add(newRow);
+
+                try
+                {
+                    tbl.Rows.Add(newRow);
+                }
+                catch (ConstraintException ce)
+                {
+                    MessageBox.Show(ce.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    newRow.Delete();
+                    CancelAddRow(e);
+                    return;
+                }
 
                 ruleListView.SelectedIndices.Clear();
                 ruleListView.SelectedIndices.Add(e.Item);
@@ -214,6 +224,21 @@ namespace oSpy
             }
 
             addingRow = false;
+        }
+
+        private void CancelAddRow(LabelEditEventArgs e)
+        {
+            e.CancelEdit = true;
+
+            if (addingRow)
+            {
+                ruleListView.Items.RemoveAt(e.Item);
+
+                ResetUI();
+                SelectLastItem();
+
+                addingRow = false;
+            }
         }
 
         private void rulesListView_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
