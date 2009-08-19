@@ -936,8 +936,9 @@ HOOK_GLUE_INTERRUPTIBLE(wsock32_recv, (4 * 4))
 void
 hook_winsock()
 {
-    // Hook the Winsock API
-    HMODULE h = LoadLibrary("ws2_32.dll");
+    HookManager *mgr = HookManager::Obtain();
+
+    HMODULE h = mgr->OpenLibrary("ws2_32.dll");
     if (h == NULL)
     {
         MessageBox(0, "Failed to load 'ws2_32.dll'.",
@@ -960,7 +961,7 @@ hook_winsock()
     HOOK_FUNCTION(h, WSASend);
     HOOK_FUNCTION(h, WSAAccept);
 
-    h = LoadLibrary("wsock32.dll");
+    h = mgr->OpenLibrary("wsock32.dll");
     if (h == NULL)
     {
         MessageBox(0, "Failed to load 'wsock32.dll'.",

@@ -97,9 +97,7 @@ get_module_name_for_address(LPVOID address,
 BOOL
 get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, char **error)
 {
-    HMODULE mod = GetModuleHandle(module_name);
-    if (mod == NULL)
-        mod = LoadLibrary(module_name);
+    HMODULE mod = HookManager::Obtain()->OpenLibrary(module_name);
     if (mod == NULL)
     {
         *error = sspy_strdup("module not found");
@@ -224,7 +222,7 @@ CUtil::Init()
         m_processName = buf;
     }
 
-    HMODULE h = LoadLibrary("kernel32.dll");
+    HMODULE h = HookManager::Obtain()->OpenLibrary("kernel32.dll");
     if (h != NULL)
     {
         HOOK_FUNCTION(h, LoadLibraryA);

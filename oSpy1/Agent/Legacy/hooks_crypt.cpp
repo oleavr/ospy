@@ -953,6 +953,8 @@ HOOK_GLUE_SPECIAL(CryptSetHashParam, (4 * 4))
 void
 hook_crypt()
 {
+    HookManager *mgr = HookManager::Obtain();
+
     // Initialize
     InitializeCriticalSection(&cs);
 
@@ -962,7 +964,7 @@ hook_crypt()
                                    "get_module_base_and_size for self failed");
     }
 
-    HMODULE h = LoadLibrary("schannel.dll");
+    HMODULE h = mgr->OpenLibrary("schannel.dll");
     if (h == NULL)
     {
         MessageBox(0, "Failed to load 'schannel.dll'.",
@@ -978,7 +980,7 @@ hook_crypt()
                                    GetLastError());
     }
 
-    h = LoadLibrary("crypt32.dll");
+    h = mgr->OpenLibrary("crypt32.dll");
     if (h == NULL)
     {
         MessageBox(0, "Failed to load 'crypt32.dll'.",
@@ -995,7 +997,7 @@ hook_crypt()
     }
 
     // Hook the Crypt API
-    h = LoadLibrary("advapi32.dll");
+    h = mgr->OpenLibrary("advapi32.dll");
     if (h == NULL)
     {
         MessageBox(0, "Failed to load 'advapi32.dll'.",

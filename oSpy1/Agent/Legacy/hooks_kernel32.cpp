@@ -51,7 +51,7 @@ HOOK_GLUE_SPECIAL(DeviceIoControl, DEVICEIOCONTROL_ARGS_SIZE)
 void
 hook_kernel32()
 {
-    HMODULE h = LoadLibrary("kernel32.dll");
+    HMODULE h = HookManager::Obtain()->OpenLibrary("kernel32.dll");
     if (h == NULL)
     {
         MessageBox(0, "Failed to load 'kernel32.dll'.",

@@ -488,7 +488,7 @@ getaddrinfoFromMyGetaddrShouldLog(CpuContext *context, va_list args)
 void
 hook_wininet()
 {
-    HMODULE h = LoadLibrary("wininet.dll");
+    HMODULE h = HookManager::Obtain()->OpenLibrary("wininet.dll");
     if (h == NULL)
     {
         MessageBox(0, "Failed to load 'wininet.dll'.",
