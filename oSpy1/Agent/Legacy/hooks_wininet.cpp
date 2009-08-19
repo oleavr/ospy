@@ -39,7 +39,7 @@ typedef enum {
 static const FunctionSignature signatures_ie6[] = {
     // SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -24,
         "80 4E 1E 01"           // or      byte ptr [esi+1Eh], 1
         "89 46 38"              // mov     [esi+38h], eax
@@ -53,7 +53,7 @@ static const FunctionSignature signatures_ie6[] = {
 
     // SIGNATURE_ICSOCKET_RECEIVE_CONTINUE_RECV
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -22,
         "53"                    // push    ebx
         "FF B6 ?? 00 00 00"     // push    dword ptr [esi+9Ch]
@@ -64,7 +64,7 @@ static const FunctionSignature signatures_ie6[] = {
 
     // SIGNATURE_ICSOCKET_SEND_START_SEND
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -15,
         "6A 00"                 // push    0
         "50"                    // push    eax
@@ -75,7 +75,7 @@ static const FunctionSignature signatures_ie6[] = {
 
     // SIGNATURE_SECURE_RECV_DECRYPTMESSAGE_CALL
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -3,
         "FF 50 4C"              // call    dword ptr [eax+4Ch]
         "3B C3"                 // cmp     eax, ebx
@@ -84,7 +84,7 @@ static const FunctionSignature signatures_ie6[] = {
 
     // SIGNATURE_SECURE_SEND_ENCRYPTMESSAGE_CALL
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -3,
         "FF 50 48"              // call    dword ptr [eax+48h]
         "3B C7"                 // cmp     eax, edi
@@ -92,7 +92,7 @@ static const FunctionSignature signatures_ie6[] = {
 
     // SIGNATURE_SECURE_RECV_AFTER_DECRYPT
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         "3D 18 03 09 80"        // cmp     eax, 80090318h
         "89 86 ?? ?? ?? ??"     // mov     [esi+0B0h], eax
@@ -100,7 +100,7 @@ static const FunctionSignature signatures_ie6[] = {
 
     // SIGNATURE_SECURE_SEND_AFTER_ENCRYPT
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         "85 C0"                 // test    eax, eax
         "89 45 08"              // mov     [ebp+arg_0], eax
@@ -109,21 +109,21 @@ static const FunctionSignature signatures_ie6[] = {
 
     // SIGNATURE_ICASYNCTHREAD_MY_GETADDR -- not in ie6
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         ""
     },
 
     // SIGNATURE_MY_GETADDR_GETADDRINFO -- not in ie6
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         ""
     },
 
     // SIGNATURE_ICASYNCTHREAD_CONNECT
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         "83 F8 FF"              // cmp     eax, 0FFFFFFFFh
         "74 16"                 // jz      short loc_771D8FFF
@@ -134,7 +134,7 @@ static const FunctionSignature signatures_ie6[] = {
 static const FunctionSignature signatures_ie7[] = {
     // SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -33,
         "81 4E 28 00 00 01 00"  // or      dword ptr [esi+28h], 10000h
         "89 86 ?? ?? ?? ??"     // mov     [esi+0C8h], eax
@@ -146,7 +146,7 @@ static const FunctionSignature signatures_ie7[] = {
 
     // SIGNATURE_ICSOCKET_RECEIVE_CONTINUE_RECV
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -21,
         "6A 00"                 // push    0
         "FF B6 ?? 00 00 00"     // push    [esi+CFsm_SocketReceive.dataLen]
@@ -157,7 +157,7 @@ static const FunctionSignature signatures_ie7[] = {
 
     // SIGNATURE_ICSOCKET_SEND_START_SEND
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -13,
         "6A 00"                 // push    0
         "50"                    // push    eax
@@ -168,7 +168,7 @@ static const FunctionSignature signatures_ie7[] = {
 
     // SIGNATURE_SECURE_RECV_DECRYPTMESSAGE_CALL
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -3,
         "FF 50 4C"              // call    dword ptr [eax+4Ch]
         "3B C3"                 // cmp     eax, ebx
@@ -177,7 +177,7 @@ static const FunctionSignature signatures_ie7[] = {
 
     // SIGNATURE_SECURE_SEND_ENCRYPTMESSAGE_CALL
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -3,
         "FF 50 48"              // call    dword ptr [eax+48h]
         "85 C0"                 // test    eax, eax
@@ -185,14 +185,14 @@ static const FunctionSignature signatures_ie7[] = {
 
     // SIGNATURE_SECURE_RECV_AFTER_DECRYPT
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         "B9 65 32 00 00"        // mov     ecx, 3265h
     },
 
     // SIGNATURE_SECURE_SEND_AFTER_ENCRYPT
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         "85 C0"                 // test    eax, eax
         "89 45 08"              // mov     [ebp+arg_0], eax
@@ -202,7 +202,7 @@ static const FunctionSignature signatures_ie7[] = {
 
     // SIGNATURE_ICASYNCTHREAD_MY_GETADDR
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         "8B F0"                 // mov     esi, eax
         "85 F6"                 // test    esi, esi
@@ -213,7 +213,7 @@ static const FunctionSignature signatures_ie7[] = {
 
     // SIGNATURE_MY_GETADDR_GETADDRINFO
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         "89 45 14"              // mov     [ebp+arg_C], eax
         "A1 ?? ?? ?? ??"        // mov     eax, _WPP_GLOBAL_Control
@@ -221,7 +221,7 @@ static const FunctionSignature signatures_ie7[] = {
 
     // SIGNATURE_ICASYNCTHREAD_CONNECT
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         "3B C6"                 // cmp     eax, esi
         "74 30"                 // jz      short loc_771CACAC
@@ -232,7 +232,7 @@ static const FunctionSignature signatures_ie7[] = {
 static const FunctionSignature signatures_ie8[] = {
     // SIGNATURE_ICSECURESOCKET_VTABLE_OFFSET
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -33,
         "81 4E 28 00 00 01 00"  // or      dword ptr [esi+28h], 10000h
         "89 86 ?? ?? ?? ??"     // mov     [esi+0C8h], eax
@@ -244,7 +244,7 @@ static const FunctionSignature signatures_ie8[] = {
 
     // SIGNATURE_ICSOCKET_RECEIVE_CONTINUE_RECV
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -21,
         "6A 00"                 // push    0
         "FF B6 ?? 00 00 00"     // push    [esi+CFsm_SocketReceive.dataLen]
@@ -255,7 +255,7 @@ static const FunctionSignature signatures_ie8[] = {
 
     // SIGNATURE_ICSOCKET_SEND_START_SEND
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -13,
         "6A 00"                 // push    0
         "50"                    // push    eax
@@ -266,7 +266,7 @@ static const FunctionSignature signatures_ie8[] = {
 
     // SIGNATURE_SECURE_RECV_DECRYPTMESSAGE_CALL
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -3,
         "FF 50 4C"              // call    dword ptr [eax+4Ch]
         "89 45 FC"              // mov     [ebp+var_4], eax
@@ -275,7 +275,7 @@ static const FunctionSignature signatures_ie8[] = {
 
     // SIGNATURE_SECURE_SEND_ENCRYPTMESSAGE_CALL
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         -3,
         "FF 50 48"              // call    dword ptr [eax+48h]
         "85 C0"                 // test    eax, eax
@@ -283,7 +283,7 @@ static const FunctionSignature signatures_ie8[] = {
 
     // SIGNATURE_SECURE_RECV_AFTER_DECRYPT
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         "89 86 ?? 00 00 00"     // mov     [esi+0B4h], eax
         "3D 65 32 00 00"        // cmp     eax, 3265h
@@ -291,7 +291,7 @@ static const FunctionSignature signatures_ie8[] = {
 
     // SIGNATURE_SECURE_SEND_AFTER_ENCRYPT
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         "89 45 08"              // mov     [ebp+arg_0], eax
         "85 C0"                 // test    eax, eax
@@ -301,7 +301,7 @@ static const FunctionSignature signatures_ie8[] = {
 
     // SIGNATURE_ICASYNCTHREAD_MY_GETADDR
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         "8B F0"                 // mov     esi, eax
         "85 F6"                 // test    esi, esi
@@ -312,7 +312,7 @@ static const FunctionSignature signatures_ie8[] = {
 
     // SIGNATURE_MY_GETADDR_GETADDRINFO
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         "89 45 14"              // mov     [ebp+arg_C], eax
         "A1 ?? ?? ?? ??"        // mov     eax, _WPP_GLOBAL_Control
@@ -320,7 +320,7 @@ static const FunctionSignature signatures_ie8[] = {
 
     // SIGNATURE_ICASYNCTHREAD_CONNECT
     {
-        "wininet.dll",
+        _T("wininet.dll"),
         0,
         "3B C6"                 // cmp     eax, esi
         "74 30"                 // jz      short loc_771CACAC
@@ -409,7 +409,7 @@ SecureReceiveAfterDecrypt()
     {
         DWORD origLastError = GetLastError();
 
-        log_tcp_packet("SecureReceive", bt_address, PACKET_DIRECTION_INCOMING, sock_upper->fd,
+        log_tcp_packet(_T("SecureReceive"), bt_address, PACKET_DIRECTION_INCOMING, sock_upper->fd,
                        fsm_upper->data, fsm_upper->dataLen);
 
         SetLastError(origLastError);
@@ -457,7 +457,7 @@ SecureSendAfterEncrypt()
     {
         DWORD origLastError = GetLastError();
 
-        log_tcp_packet("SecureSend", bt_address, PACKET_DIRECTION_OUTGOING, sock_upper->fd,
+        log_tcp_packet(_T("SecureSend"), bt_address, PACKET_DIRECTION_OUTGOING, sock_upper->fd,
                        fsm_upper->data, fsm_upper->dataLen);
 
         SetLastError(origLastError);
@@ -481,18 +481,18 @@ getaddrinfoFromMyGetaddrShouldLog(CpuContext *context, va_list args)
 }
 
 #define LOG_OVERRIDE_ERROR(sig, e) \
-            message_logger_log_message("hook_wininet", 0, MESSAGE_CTX_ERROR,\
-                "override_function_by_signature for " sig " failed: %s", e);\
+            message_logger_log_message(_T("hook_wininet"), 0, MESSAGE_CTX_ERROR,\
+                _T("override_function_by_signature for ") _T(sig) _T(" failed: %s"), e);\
             sspy_free(e)
 
 void
 hook_wininet()
 {
-    HMODULE h = HookManager::Obtain()->OpenLibrary("wininet.dll");
+    HMODULE h = HookManager::Obtain()->OpenLibrary(_T("wininet.dll"));
     if (h == NULL)
     {
-        MessageBox(0, "Failed to load 'wininet.dll'.",
-                   "oSpy", MB_ICONERROR | MB_OK);
+        MessageBox(0, _T("Failed to load 'wininet.dll'."),
+                   _T("oSpy"), MB_ICONERROR | MB_OK);
         return;
     }
 

@@ -77,8 +77,8 @@ receive_thread(LPVOID lpParameter)
         log_http_request(queue, req, NULL, 0);
     }
 
-    message_logger_log_message("receive_thread", 0, MESSAGE_CTX_INFO,
-        "exiting with retval=0x%08x", retval);
+    message_logger_log_message(_T("receive_thread"), 0, MESSAGE_CTX_INFO,
+        _T("exiting with retval=0x%08x"), retval);
 
     return 0;
 }
@@ -106,8 +106,8 @@ HttpCreateHttpHandle_done(ULONG retval,
 
     if (retval == NO_ERROR)
     {
-        message_logger_log_message("HttpCreateHttpHandle", (char *) &retval - 4,
-            MESSAGE_CTX_WARNING, "starting receive thread for handle %p",
+        message_logger_log_message(_T("HttpCreateHttpHandle"), (char *) &retval - 4,
+            MESSAGE_CTX_WARNING, _T("starting receive thread for handle %p"),
             *pReqQueueHandle);
 
         cur_req_queue = *pReqQueueHandle;
@@ -237,21 +237,16 @@ hook_httpapi()
     HookManager *mgr = HookManager::Obtain();
     HMODULE h;
 
-    h = mgr->OpenLibrary("kernel32.dll");
-    if (h == NULL)
-    {
-        MessageBox(0, "Failed to load 'kernel32.dll'.",
-            "oSpy", MB_ICONERROR | MB_OK);
-        return;
-    }
+    h = mgr->OpenLibrary(_T("kernel32.dll"));
+    _ASSERT(h != NULL);
 
     HOOK_FUNCTION(h, GetOverlappedResult);
 
-    h = mgr->OpenLibrary("httpapi.dll");
+    h = mgr->OpenLibrary(_T("httpapi.dll"));
     if (h == NULL)
     {
-        MessageBox(0, "Failed to load 'httpapi.dll'.",
-            "oSpy", MB_ICONERROR | MB_OK);
+        MessageBox(0, _T("Failed to load 'httpapi.dll'."),
+            _T("oSpy"), MB_ICONERROR | MB_OK);
         return;
     }
 

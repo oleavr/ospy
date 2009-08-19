@@ -56,8 +56,8 @@ byte_buffer_append(ByteBuffer *buf, void *bytes, size_t n)
         if (p == NULL)
         {
             /* shouldn't happen */
-            message_logger_log_message("raw_buffer_append", 0,
-                MESSAGE_CTX_ERROR, "realloc failed");
+            message_logger_log_message(_T("raw_buffer_append"), 0,
+                MESSAGE_CTX_ERROR, _T("realloc failed"));
             return;
         }
 

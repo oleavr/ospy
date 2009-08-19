@@ -81,7 +81,7 @@ EncryptMessage_called(BOOL carry_on,
 
             if (buffer->BufferType == SECBUFFER_DATA)
             {
-                message_logger_log_packet("EncryptMessage", bt_addr,
+                message_logger_log_packet(_T("EncryptMessage"), bt_addr,
                                           tracker.GetContextID(phContext),
                                           PACKET_DIRECTION_OUTGOING, NULL, NULL,
                                           (const char *) buffer->pvBuffer,
@@ -143,7 +143,7 @@ DecryptMessage_done(SECURITY_STATUS retval,
 
             if (buffer->BufferType == SECBUFFER_DATA)
             {
-                message_logger_log_packet("DecryptMessage", (char *) &retval - 4,
+                message_logger_log_packet(_T("DecryptMessage"), (char *) &retval - 4,
                                           tracker.GetContextID(phContext),
                                           PACKET_DIRECTION_INCOMING, NULL, NULL,
                                           (const char *) buffer->pvBuffer,
@@ -167,28 +167,28 @@ hook_secur32()
     HookManager *mgr = HookManager::Obtain();
 
     // We don't want to log calls from the RPCRT4 API
-    HMODULE h = mgr->OpenLibrary("RPCRT4.dll");
+    HMODULE h = mgr->OpenLibrary(_T("RPCRT4.dll"));
     if (h == NULL)
     {
-        MessageBox(0, "Failed to load 'RPCRT4.dll'.",
-                   "oSpy", MB_ICONERROR | MB_OK);
+        MessageBox(0, _T("Failed to load 'RPCRT4.dll'."),
+                   _T("oSpy"), MB_ICONERROR | MB_OK);
         return;
     }
 
     if (GetModuleInformation(GetCurrentProcess(), h, &rpcrt4_info,
                              sizeof(rpcrt4_info)) == 0)
     {
-        message_logger_log_message("hook_secur32", 0, MESSAGE_CTX_WARNING,
-                                   "GetModuleInformation failed with errno %d",
+        message_logger_log_message(_T("hook_secur32"), 0, MESSAGE_CTX_WARNING,
+                                   _T("GetModuleInformation failed with errno %u"),
                                    GetLastError());
     }
 
     // Hook the Secur32 API
-    h = mgr->OpenLibrary("secur32.dll");
+    h = mgr->OpenLibrary(_T("secur32.dll"));
     if (h == NULL)
     {
-        MessageBox(0, "Failed to load 'secur32.dll'.",
-                   "oSpy", MB_ICONERROR | MB_OK);
+        MessageBox(0, _T("Failed to load 'secur32.dll'."),
+                   _T("oSpy"), MB_ICONERROR | MB_OK);
         return;
     }
 

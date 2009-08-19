@@ -24,6 +24,7 @@
 #include <psapi.h>
 
 #pragma managed(push, off)
+#include <strsafe.h>
 
 static MODULEINFO wsock32_info;
 
@@ -219,14 +220,14 @@ getaddrinfo_done(int retval,
     if (g_getaddrinfoHookContext.ShouldLog(ret_addr, &ctx_before))
     {
         int ret_addr = *((DWORD *) ((DWORD) &retval - 4));
-        ByteBuffer *msg = byte_buffer_sized_new(64);
+        TCHAR msg[64];
         ByteBuffer *body = byte_buffer_sized_new(256);
         const char *nn, *sn;
 
         nn = (nodename != NULL) ? nodename : "NULL";
         sn = (servname != NULL) ? servname : "NULL";
 
-        byte_buffer_append_printf(msg, "nodename=%s, servname=%s", nn, sn);
+        StringCbPrintfW(msg, sizeof(msg), _T("nodename=%S, servname=%S"), nn, sn);
 
         byte_buffer_append_printf(body, "nodename: %s\r\nservname: %s\r\nhints:",
             nn, sn);
@@ -269,12 +270,11 @@ getaddrinfo_done(int retval,
             }
         }
 
-        message_logger_log("getaddrinfo", (char *) &retval - 4, 0,
+        message_logger_log(_T("getaddrinfo"), (char *) &retval - 4, 0,
             MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID,
             NULL, NULL, (const char *) body->buf, (int) body->offset,
-            (const char *) msg->buf);
+            msg);
 
-        byte_buffer_free(msg);
         byte_buffer_free(body);
     }
 
@@ -289,7 +289,7 @@ closesocket_called(BOOL carry_on,
 {
     void *bt_address = (char *) &carry_on + 8 + CLOSESOCKET_ARGS_SIZE;
 
-    log_tcp_disconnected("closesocket", bt_address, s, NULL);
+    log_tcp_disconnected(_T("closesocket"), bt_address, s, NULL);
     return 0;
 }
 
@@ -337,7 +337,7 @@ recv_called(BOOL carry_on,
             int len,
             int flags)
 {
-    return softwall_decide_from_socket("recv", (DWORD) ret_addr, s, &carry_on);
+    return softwall_decide_from_socket(_T("recv"), (DWORD) ret_addr, s, &carry_on);
 }
 
 static int __stdcall
@@ -357,18 +357,18 @@ recv_done(int retval,
     {
         if (g_recvHookContext.ShouldLog(ret_addr, &ctx_before) && !is_stupid_rpc(s, buf, retval))
         {
-            log_tcp_packet("recv", bt_addr, PACKET_DIRECTION_INCOMING, s, buf, retval);
+            log_tcp_packet(_T("recv"), bt_addr, PACKET_DIRECTION_INCOMING, s, buf, retval);
         }
     }
     else if (retval == 0)
     {
-        log_tcp_disconnected("recv", bt_addr, s, NULL);
+        log_tcp_disconnected(_T("recv"), bt_addr, s, NULL);
     }
     else if (retval == SOCKET_ERROR)
     {
         if (err != WSAEWOULDBLOCK)
         {
-            log_tcp_disconnected("recv", bt_addr, s, &err);
+            log_tcp_disconnected(_T("recv"), bt_addr, s, &err);
         }
     }
 
@@ -386,7 +386,7 @@ send_called(BOOL carry_on,
             int len,
             int flags)
 {
-    return softwall_decide_from_socket("send", (DWORD) ret_addr, s, &carry_on);
+    return softwall_decide_from_socket(_T("send"), (DWORD) ret_addr, s, &carry_on);
 }
 
 static int __stdcall
@@ -406,14 +406,14 @@ send_done(int retval,
     {
         if (g_sendHookContext.ShouldLog(ret_addr, &ctx_before) && !is_stupid_rpc(s, buf, retval))
         {
-            log_tcp_packet("send", bt_addr, PACKET_DIRECTION_OUTGOING, s, buf, retval);
+            log_tcp_packet(_T("send"), bt_addr, PACKET_DIRECTION_OUTGOING, s, buf, retval);
         }
     }
     else if (retval == SOCKET_ERROR)
     {
         if (err != WSAEWOULDBLOCK)
         {
-            log_tcp_disconnected("send", bt_addr, s, &err);
+            log_tcp_disconnected(_T("send"), bt_addr, s, &err);
         }
     }
 
@@ -449,7 +449,7 @@ recvfrom_done(int retval,
     BOOL carry_on;
 
     overridden_retval =
-        softwall_decide_from_socket_and_remote_address("recvfrom", ret_addr,
+        softwall_decide_from_socket_and_remote_address(_T("recvfrom"), ret_addr,
                                                        s, (const sockaddr_in *) from,
                                                        &carry_on);
 
@@ -458,7 +458,7 @@ recvfrom_done(int retval,
 
     if (retval > 0)
     {
-        log_udp_packet("recvfrom", (char *) &retval - 4, PACKET_DIRECTION_INCOMING, s, from, buf, retval);
+        log_udp_packet(_T("recvfrom"), (char *) &retval - 4, PACKET_DIRECTION_INCOMING, s, from, buf, retval);
     }
 
     SetLastError(err);
@@ -493,7 +493,7 @@ sendto_done(int retval,
     BOOL carry_on;
 
     overridden_retval =
-        softwall_decide_from_socket_and_remote_address("sendto", ret_addr,
+        softwall_decide_from_socket_and_remote_address(_T("sendto"), ret_addr,
                                                        s, (const sockaddr_in *) to,
                                                        &carry_on);
 
@@ -502,7 +502,7 @@ sendto_done(int retval,
 
     if (retval > 0)
     {
-        log_udp_packet("sendto", (char *) &retval - 4, PACKET_DIRECTION_OUTGOING, s, to, buf, retval);
+        log_udp_packet(_T("sendto"), (char *) &retval - 4, PACKET_DIRECTION_OUTGOING, s, to, buf, retval);
     }
 
     SetLastError(err);
@@ -517,12 +517,12 @@ accept_called(BOOL carry_on,
               int *addrlen)
 {
     int retval =
-        softwall_decide_from_socket_and_remote_address("accept", ret_addr, s, NULL, &carry_on);
+        softwall_decide_from_socket_and_remote_address(_T("accept"), ret_addr, s, NULL, &carry_on);
 
     if (carry_on)
     {
         void *bt_address = (char *) &carry_on + 8 + ACCEPT_ARGS_SIZE;
-        log_tcp_listening("accept", bt_address, s);
+        log_tcp_listening(_T("accept"), bt_address, s);
     }
 
     return retval;
@@ -540,7 +540,7 @@ accept_done(SOCKET retval,
     BOOL carry_on;
 
     overridden_retval =
-        softwall_decide_from_socket_and_remote_address("accept", ret_addr, s,
+        softwall_decide_from_socket_and_remote_address(_T("accept"), ret_addr, s,
                                                        (const sockaddr_in *) addr,
                                                        &carry_on);
 
@@ -548,7 +548,7 @@ accept_done(SOCKET retval,
         return overridden_retval;
 
     if (retval != INVALID_SOCKET)
-        log_tcp_client_connected("accept", (char *) &retval - 4, s, retval);
+        log_tcp_client_connected(_T("accept"), (char *) &retval - 4, s, retval);
 
     SetLastError(err);
     return retval;
@@ -564,14 +564,14 @@ connect_called(BOOL carry_on,
                int namelen)
 {
     int retval =
-        softwall_decide_from_socket_and_remote_address("connect", (DWORD) ret_addr, s,
+        softwall_decide_from_socket_and_remote_address(_T("connect"), (DWORD) ret_addr, s,
                                                        (const sockaddr_in *) name,
                                                        &carry_on);
 
     if (carry_on && g_connectHookContext.ShouldLog(ret_addr, &ctx_before))
     {
         void *bt_address = (char *) &carry_on + 8 + CONNECT_ARGS_SIZE;
-        log_tcp_connecting("connect", bt_address, s, name);
+        log_tcp_connecting(_T("connect"), bt_address, s, name);
     }
 
     return retval;
@@ -591,7 +591,7 @@ connect_done(int retval,
 
     if (retval != SOCKET_ERROR && g_connectHookContext.ShouldLog(ret_addr, &ctx_before))
     {
-        log_tcp_connected("connect", (char *) &retval - 4, s, name);
+        log_tcp_connected(_T("connect"), (char *) &retval - 4, s, name);
     }
 
     SetLastError(err);
@@ -634,7 +634,7 @@ wsaRecvCompletedHandler(COverlappedOperation *operation)
             if (n > buf->len)
                 n = buf->len;
 
-            log_tcp_packet("WSARecv", ctx->btAddr, PACKET_DIRECTION_INCOMING, ctx->sock,
+            log_tcp_packet(_T("WSARecv"), ctx->btAddr, PACKET_DIRECTION_INCOMING, ctx->sock,
                            buf->buf, n);
 
             bytesLeft -= n;
@@ -684,7 +684,7 @@ WSARecv_called(BOOL carry_on,
         return 0;
     }*/
 
-    return softwall_decide_from_socket("WSARecv", (DWORD) ret_addr, s, &carry_on);
+    return softwall_decide_from_socket(_T("WSARecv"), (DWORD) ret_addr, s, &carry_on);
 }
 
 static int __stdcall
@@ -721,7 +721,7 @@ WSARecv_done(int retval,
             if (n > buf->len)
                 n = buf->len;
 
-            log_tcp_packet("WSARecv", bt_addr, PACKET_DIRECTION_INCOMING, s,
+            log_tcp_packet(_T("WSARecv"), bt_addr, PACKET_DIRECTION_INCOMING, s,
                            buf->buf, n);
 
             bytes_left -= n;
@@ -731,13 +731,13 @@ WSARecv_done(int retval,
     {
         if (wsa_err == WSAEWOULDBLOCK)
         {
-            message_logger_log_message("WSARecv", bt_addr, MESSAGE_CTX_WARNING,
-                                       "non-blocking mode not yet supported");
+            message_logger_log_message(_T("WSARecv"), bt_addr, MESSAGE_CTX_WARNING,
+                                       _T("non-blocking mode not yet supported"));
         }
 
         if (wsa_err != WSAEWOULDBLOCK && wsa_err != WSA_IO_PENDING)
         {
-            log_tcp_disconnected("WSARecv", bt_addr, s,
+            log_tcp_disconnected(_T("WSARecv"), bt_addr, s,
                                  (err == WSAECONNRESET) ? NULL : &err);
         }
     }
@@ -758,7 +758,7 @@ WSASend_called(BOOL carry_on,
                LPWSAOVERLAPPED lpOverlapped,
                LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine)
 {
-    return softwall_decide_from_socket("WSASend", ret_addr, s, &carry_on);
+    return softwall_decide_from_socket(_T("WSASend"), ret_addr, s, &carry_on);
 }
 
 static int __stdcall
@@ -781,8 +781,8 @@ WSASend_done(int retval,
 
     if (lpOverlapped != NULL)
     {
-        message_logger_log_message("WSASend", bt_address, MESSAGE_CTX_WARNING,
-                                   "overlapped I/O not yet supported");
+        message_logger_log_message(_T("WSASend"), bt_address, MESSAGE_CTX_WARNING,
+                                   _T("overlapped I/O not yet supported"));
     }
 
     if (retval == 0)
@@ -797,7 +797,7 @@ WSASend_done(int retval,
             if (n > buf->len)
                 n = buf->len;
 
-            log_tcp_packet("WSASend", bt_address, PACKET_DIRECTION_OUTGOING, s,
+            log_tcp_packet(_T("WSASend"), bt_address, PACKET_DIRECTION_OUTGOING, s,
                            buf->buf, n);
 
             bytes_left -= n;
@@ -807,13 +807,13 @@ WSASend_done(int retval,
     {
         if (wsa_err == WSAEWOULDBLOCK)
         {
-            message_logger_log_message("WSASend", bt_address, MESSAGE_CTX_WARNING,
-                                       "non-blocking mode not yet supported");
+            message_logger_log_message(_T("WSASend"), bt_address, MESSAGE_CTX_WARNING,
+                                       _T("non-blocking mode not yet supported"));
         }
 
         if (wsa_err != WSAEWOULDBLOCK && wsa_err != WSA_IO_PENDING)
         {
-            log_tcp_disconnected("WSASend", bt_address, s,
+            log_tcp_disconnected(_T("WSASend"), bt_address, s,
                                  (err == WSAECONNRESET) ? NULL : &err);
         }
     }
@@ -833,14 +833,14 @@ WSAAccept_called(BOOL carry_on,
                  DWORD dwCallbackData)
 {
     int retval =
-        softwall_decide_from_socket_and_remote_address("WSAAccept", ret_addr, s, NULL, &carry_on);
+        softwall_decide_from_socket_and_remote_address(_T("WSAAccept"), ret_addr, s, NULL, &carry_on);
 
     if (carry_on)
     {
         void *bt_address = (char *) &carry_on + 8 + WSA_ACCEPT_ARGS_SIZE;
 
         /* FIXME: only issue this once for non-blocking sockets */
-        log_tcp_listening("WSAAccept", bt_address, s);
+        log_tcp_listening(_T("WSAAccept"), bt_address, s);
     }
 
     return retval;
@@ -860,7 +860,7 @@ WSAAccept_done(SOCKET retval,
     BOOL carry_on;
 
     overridden_retval =
-        softwall_decide_from_socket_and_remote_address("WSAAccept", ret_addr, s,
+        softwall_decide_from_socket_and_remote_address(_T("WSAAccept"), ret_addr, s,
                                                        (const sockaddr_in *) addr,
                                                        &carry_on);
 
@@ -869,7 +869,7 @@ WSAAccept_done(SOCKET retval,
 
     if (retval != INVALID_SOCKET)
     {
-        log_tcp_client_connected("WSAAccept", (char *) &retval - 4, s, retval);
+        log_tcp_client_connected(_T("WSAAccept"), (char *) &retval - 4, s, retval);
     }
 
     SetLastError(err);
@@ -884,7 +884,7 @@ wsock32_recv_called(BOOL carry_on,
                     int len,
                     int flags)
 {
-    return softwall_decide_from_socket("wsock32_recv", ret_addr, s, &carry_on);
+    return softwall_decide_from_socket(_T("wsock32_recv"), ret_addr, s, &carry_on);
 }
 
 static int __stdcall
@@ -900,17 +900,17 @@ wsock32_recv_done(int retval,
 
   if (retval > 0)
   {
-    log_tcp_packet("wsock32_recv", bt_address, PACKET_DIRECTION_INCOMING, s, buf, retval);
+    log_tcp_packet(_T("wsock32_recv"), bt_address, PACKET_DIRECTION_INCOMING, s, buf, retval);
   }
   else if (retval == 0)
   {
-    log_tcp_disconnected("wsock32_recv", bt_address, s, NULL);
+    log_tcp_disconnected(_T("wsock32_recv"), bt_address, s, NULL);
   }
   else if (retval == SOCKET_ERROR)
   {
     if (err != WSAEWOULDBLOCK)
     {
-      log_tcp_disconnected("wsock32_recv", bt_address, s, &err);
+      log_tcp_disconnected(_T("wsock32_recv"), bt_address, s, &err);
     }
   }
 
@@ -938,11 +938,11 @@ hook_winsock()
 {
     HookManager *mgr = HookManager::Obtain();
 
-    HMODULE h = mgr->OpenLibrary("ws2_32.dll");
+    HMODULE h = mgr->OpenLibrary(_T("ws2_32.dll"));
     if (h == NULL)
     {
-        MessageBox(0, "Failed to load 'ws2_32.dll'.",
-                   "oSpy", MB_ICONERROR | MB_OK);
+        MessageBox(0, _T("Failed to load 'ws2_32.dll'."),
+                   _T("oSpy"), MB_ICONERROR | MB_OK);
       return;
     }
 
@@ -961,19 +961,19 @@ hook_winsock()
     HOOK_FUNCTION(h, WSASend);
     HOOK_FUNCTION(h, WSAAccept);
 
-    h = mgr->OpenLibrary("wsock32.dll");
+    h = mgr->OpenLibrary(_T("wsock32.dll"));
     if (h == NULL)
     {
-        MessageBox(0, "Failed to load 'wsock32.dll'.",
-                   "oSpy", MB_ICONERROR | MB_OK);
+        MessageBox(0, _T("Failed to load 'wsock32.dll'."),
+                   _T("oSpy"), MB_ICONERROR | MB_OK);
         return;
     }
 
     if (GetModuleInformation(GetCurrentProcess(), h, &wsock32_info,
                              sizeof(wsock32_info)) == 0)
     {
-        message_logger_log_message("DllMain", 0, MESSAGE_CTX_WARNING,
-                                   "GetModuleInformation failed with errno %d",
+        message_logger_log_message(_T("DllMain"), 0, MESSAGE_CTX_WARNING,
+                                   _T("GetModuleInformation failed with errno %u"),
                                    GetLastError());
     }
 

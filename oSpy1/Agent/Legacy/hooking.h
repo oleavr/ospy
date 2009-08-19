@@ -78,7 +78,7 @@ protected:
 };
 
 typedef struct {
-    char *module_name;
+    TCHAR *module_name;
     int start_offset;
     char *signature;
 } FunctionSignature;
@@ -246,14 +246,14 @@ typedef struct {
       } \
       else \
       { \
-        MessageBox(0, "Signature of " #name " is incompatible", \
-                      "oSpy", MB_ICONWARNING | MB_OK); \
+        MessageBox(0, _T("Signature of ") _T(#name) _T(" is incompatible"), \
+                      _T("oSpy"), MB_ICONWARNING | MB_OK); \
       } \
     } \
     else \
     { \
-      MessageBox(0, "GetProcAddress of " #name " failed", \
-                    "oSpy", MB_ICONWARNING | MB_OK); \
+      MessageBox(0, _T("GetProcAddress of ") _T(#name) _T(" failed"), \
+                    _T("oSpy"), MB_ICONWARNING | MB_OK); \
     } \
   }
 
@@ -457,14 +457,14 @@ typedef struct {
             } \
             else \
             { \
-                MessageBox(0, "Signature of " #name " is incompatible", \
-                           "oSpy", MB_ICONWARNING | MB_OK); \
+                MessageBox(0, _T("Signature of ") _T(#name) _T(" is incompatible"), \
+                           _T("oSpy"), MB_ICONWARNING | MB_OK); \
             } \
         } \
         else \
         { \
-            MessageBox(0, "GetProcAddress of " #name " failed", \
-                       "oSpy", MB_ICONWARNING | MB_OK); \
+            MessageBox(0, _T("GetProcAddress of ") _T(#name) _T(" failed"), \
+                       _T("oSpy"), MB_ICONWARNING | MB_OK); \
         } \
     }
 
@@ -472,7 +472,7 @@ void write_byte_to_addr(LPVOID lpAddr, BYTE b);
 void write_dword_to_addr(LPVOID lpAddr, DWORD dw);
 bool write_jmp_instruction_to_addr(LPVOID lpOrgProc, LPVOID lpNewProc);
 bool find_signature(const FunctionSignature *sig, LPVOID *address, char **error);
-bool find_signature_in_module(const FunctionSignature *sig, const char *module_name, LPVOID *address, char **error);
+bool find_signature_in_module(const FunctionSignature *sig, const TCHAR *module_name, LPVOID *address, char **error);
 bool intercept_code_matching(const FunctionSignature *sig, LPVOID replacement, LPVOID *resume_trampoline, char **error);
 bool override_function_by_signature(const FunctionSignature *sig, LPVOID replacement, LPVOID *patched_address, char **error);
-bool override_function_by_signature_in_module(const FunctionSignature *sig, const char *module_name, LPVOID replacement, LPVOID *patched_address, char **error);
+bool override_function_by_signature_in_module(const FunctionSignature *sig, const TCHAR *module_name, LPVOID replacement, LPVOID *patched_address, char **error);

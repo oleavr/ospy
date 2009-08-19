@@ -20,9 +20,9 @@ DeviceIoControl_called(BOOL carry_on,
 {
     void *bt_address = (char *) &carry_on + 8 + DEVICEIOCONTROL_ARGS_SIZE;
 
-    message_logger_log("DeviceIoControl", bt_address, (DWORD) hDevice, MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO,
+    message_logger_log(_T("DeviceIoControl"), bt_address, (DWORD) hDevice, MESSAGE_TYPE_PACKET, MESSAGE_CTX_INFO,
                        PACKET_DIRECTION_OUTGOING, NULL, NULL, (const char *) lpInBuffer, nInBufferSize,
-                       "hDevice=0x%08x, dwIoControlCode=0x%08x, nInBufferSize=%d, nOutBufferSize=%d",
+                       _T("hDevice=0x%08x, dwIoControlCode=0x%08x, nInBufferSize=%u, nOutBufferSize=%u"),
                        hDevice, dwIoControlCode, nInBufferSize, nOutBufferSize);
 
     return TRUE;
@@ -51,13 +51,8 @@ HOOK_GLUE_SPECIAL(DeviceIoControl, DEVICEIOCONTROL_ARGS_SIZE)
 void
 hook_kernel32()
 {
-    HMODULE h = HookManager::Obtain()->OpenLibrary("kernel32.dll");
-    if (h == NULL)
-    {
-        MessageBox(0, "Failed to load 'kernel32.dll'.",
-                   "oSpy", MB_ICONERROR | MB_OK);
-        return;
-    }
+    HMODULE h = HookManager::Obtain()->OpenLibrary(_T("kernel32.dll"));
+    _ASSERT(h != NULL);
     
     HOOK_FUNCTION_SPECIAL(h, DeviceIoControl);
 }

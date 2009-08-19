@@ -39,7 +39,7 @@ namespace oSpy.Capture
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Ansi)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
     public class MessageQueueElement
     {
         /* Common fields */
@@ -82,7 +82,7 @@ namespace oSpy.Capture
     };
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Ansi)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
     public class SoftwallRule
     {
         /* mask of conditions */

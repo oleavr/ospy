@@ -76,11 +76,10 @@ private:
     ContextMap contexts;
 };
 
-void get_process_name(char *name, int len);
-void get_module_name_for_address(LPVOID address, char *buf, int buf_size);
-BOOL get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, char **error);
+void get_module_name_for_address(LPVOID address, TCHAR *buf, int buf_size);
+BOOL get_module_base_and_size(const TCHAR *module_name, LPVOID *base, DWORD *size, char **error);
 BOOL address_has_bytes(LPVOID address, unsigned char *buf, int len);
-bool cur_process_is(const char *name);
+bool cur_process_is(const TCHAR *name);
 
 DWORD ospy_rand();
 
@@ -91,26 +90,31 @@ typedef struct {
     DWORD endAddress;
 } OModuleInfo;
 
+typedef LPTSTR (NTAPI * RtlIpv4AddressToStringFunc)(const IN_ADDR *Addr, LPTSTR S);
+
 class CUtil
 {
 public:
     static void Init();
     static void UpdateModuleList();
 
-    static const OString &GetProcessName() { return m_processName; }
+    static void Ipv4AddressToString(const IN_ADDR *addr, TCHAR *str);
+
+    static const OTString &GetProcessName() { return m_processName; }
     static OString GetModuleNameForAddress(DWORD address);
     static OModuleInfo GetModuleInfo(const OICString &name) { return m_modules[name]; }
     static OVector<OModuleInfo>::Type GetAllModules();
     static bool AddressIsWithinExecutableModule(DWORD address);
 
-    static OString CreateBackTrace(void *address);
+    static OTString CreateBackTrace(void *address);
 
 private:
     static DWORD FindPreferredImageBaseOf(const WCHAR *filename);
     static OModuleInfo *GetModuleInfoForAddress(DWORD address);
 
     static CRITICAL_SECTION m_cs;
-    static OString m_processName;
+    static RtlIpv4AddressToStringFunc m_rtlIpv4AddressToStringImpl;
+    static OTString m_processName;
     static OMap<OICString, OModuleInfo>::Type m_modules;
     static DWORD m_lowestAddress;
     static DWORD m_highestAddress;

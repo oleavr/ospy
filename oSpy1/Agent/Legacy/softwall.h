@@ -31,8 +31,8 @@ typedef struct {
     DWORD conditions;
 
     /* condition values */
-    char process_name[32];
-    char function_name[16];
+    TCHAR process_name[32];
+    TCHAR function_name[16];
     DWORD return_address;
     in_addr local_address;
     int local_port;
@@ -46,6 +46,6 @@ typedef struct {
 
 void softwall_init(const SoftwallRule *rules, unsigned int num_rules);
 
-DWORD softwall_decide_from_addresses(const char *function_name, DWORD return_address, const sockaddr_in *local_address, const sockaddr_in *remote_address, BOOL *carry_on);
-DWORD softwall_decide_from_socket(const char *function_name, DWORD return_address, SOCKET s, BOOL *carry_on);
-DWORD softwall_decide_from_socket_and_remote_address(const char *function_name, DWORD return_address, SOCKET s, const sockaddr_in *remote_address, BOOL *carry_on);
+DWORD softwall_decide_from_addresses(const TCHAR *function_name, DWORD return_address, const sockaddr_in *local_address, const sockaddr_in *remote_address, BOOL *carry_on);
+DWORD softwall_decide_from_socket(const TCHAR *function_name, DWORD return_address, SOCKET s, BOOL *carry_on);
+DWORD softwall_decide_from_socket_and_remote_address(const TCHAR *function_name, DWORD return_address, SOCKET s, const sockaddr_in *remote_address, BOOL *carry_on);
