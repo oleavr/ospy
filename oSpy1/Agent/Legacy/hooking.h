@@ -20,6 +20,33 @@
 
 #include "util.h"
 
+class CodeFragment
+{
+public:
+    CodeFragment(void *address, DWORD size);
+
+    void Revert();
+
+private:
+    void *m_address;
+    OString m_originalCode;
+};
+
+class HookManager : public BaseObject
+{
+public:
+    static void Init();
+    static void Uninit();
+
+    static HookManager *Obtain();
+
+    void Add(void *address, DWORD size);
+    void RevertAll();
+
+private:
+    OVector<CodeFragment>::Type m_fragments;
+};
+
 typedef struct {
     DWORD edi;
     DWORD esi;
@@ -210,6 +237,7 @@ typedef struct {
     { \
       if (address_has_bytes(name##_start, signature, sizeof(signature))) \
       { \
+        HookManager::Obtain()->Add(name##_start, sizeof(signature)); \
         write_jmp_instruction_to_addr(name##_start, name##_hook); \
       } \
       else \
@@ -411,12 +439,14 @@ typedef struct {
             BYTE other_sig[] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x5d }; \
             if (memcmp(p, other_sig, sizeof(other_sig)) == 0) \
             { \
+                HookManager::Obtain()->Add(name##_start, sizeof(other_sig)); \
                 name##_locals_size = -1; \
                 name##_cookie_offset = 0; \
                 write_jmp_instruction_to_addr(name##_start, name##_hook); \
             } \
             else if (p[0] == 0x6A && p[2] == 0x68 && p[7] == 0xE8) \
             { \
+                HookManager::Obtain()->Add(name##_start, 7); \
                 name##_locals_size = p[1]; \
                 name##_cookie_offset = *((DWORD *) (p + 3)); \
                 write_jmp_instruction_to_addr(name##_start, name##_hook); \

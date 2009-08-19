@@ -27,6 +27,64 @@
 
 #pragma managed(push, off)
 
+static HookManager *g_hookMgr = NULL;
+
+void
+HookManager::Init()
+{
+    g_hookMgr = new HookManager();
+}
+
+void
+HookManager::Uninit()
+{
+    delete g_hookMgr;
+    g_hookMgr = NULL;
+}
+
+HookManager *
+HookManager::Obtain()
+{
+    return g_hookMgr;
+}
+
+void
+HookManager::Add(void *address, DWORD size)
+{
+    CodeFragment frag(address, size);
+    m_fragments.push_back(frag);
+}
+
+void
+HookManager::RevertAll()
+{
+    OVector<CodeFragment>::Type::iterator it;
+    for (it = m_fragments.begin(); it != m_fragments.end(); ++it)
+    {
+        it->Revert();
+    }
+}
+
+CodeFragment::CodeFragment(void *address, DWORD size)
+    : m_address(address)
+{
+    m_originalCode.resize(size);
+
+    DWORD oldProt;
+    VirtualProtect(address, size, PAGE_EXECUTE_READ, &oldProt);
+    memcpy(const_cast<char *>(m_originalCode.data()), address, size);
+    VirtualProtect(address, size, oldProt, &oldProt);
+}
+
+void
+CodeFragment::Revert()
+{
+    DWORD oldProt;
+    VirtualProtect(m_address, m_originalCode.size(), PAGE_EXECUTE_WRITECOPY, &oldProt);
+    memcpy(m_address, m_originalCode.data(), m_originalCode.size());
+    VirtualProtect(m_address, m_originalCode.size(), oldProt, &oldProt);
+}
+
 bool
 CHookContext::ShouldLog(void *returnAddress, CpuContext *ctx, ...)
 {
