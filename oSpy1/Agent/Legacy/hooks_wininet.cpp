@@ -482,7 +482,7 @@ getaddrinfoFromMyGetaddrShouldLog(CpuContext *context, va_list args)
 
 #define LOG_OVERRIDE_ERROR(sig, e) \
             message_logger_log_message(_T("hook_wininet"), 0, MESSAGE_CTX_ERROR,\
-                _T("override_function_by_signature for ") _T(sig) _T(" failed: %s"), e);\
+                _T("override_function_by_signature for ") _T(sig) _T(" failed: %S"), e);\
             sspy_free(e)
 
 void

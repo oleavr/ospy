@@ -48,6 +48,19 @@ HookManager::Obtain()
     return g_hookMgr;
 }
 
+HookManager::~HookManager()
+{
+    FreeTrampolines();
+    CloseLibraries();
+}
+
+void
+HookManager::Shutdown()
+{
+    RemoveAll();
+    WaitForOngoingCalls();
+}
+
 HMODULE
 HookManager::OpenLibrary(const TCHAR *name)
 {
@@ -77,9 +90,29 @@ HookManager::RemoveAll()
 {
     OVector<CodeFragment>::Type::iterator it;
     for (it = m_fragments.begin(); it != m_fragments.end(); ++it)
-    {
         it->Revert();
-    }
+    m_fragments.clear();
+}
+
+void
+HookManager::WaitForOngoingCalls()
+{
+    // TODO
+}
+
+void
+HookManager::RegisterTrampoline(void *address)
+{
+    m_trampolines.push_back(address);
+}
+
+void
+HookManager::FreeTrampolines()
+{
+    OVector<void *>::Type::iterator it;
+    for (it = m_trampolines.begin(); it != m_trampolines.end(); ++it)
+        VirtualFree(*it, 0, MEM_RELEASE);
+    m_trampolines.clear();
 }
 
 CodeFragment::CodeFragment(void *address, DWORD size)
@@ -456,6 +489,10 @@ intercept_code_matching(const FunctionSignature *sig,
     write_jmp_instruction_to_addr(static_cast<char *>(*resume_trampoline) + n_bytes_to_copy,
         static_cast<char *>(address) + n_bytes_to_copy);
 
+    HookManager *mgr = HookManager::Obtain();
+    mgr->Add(address, n_bytes_to_copy);
+    mgr->RegisterTrampoline(*resume_trampoline);
+
     write_jmp_instruction_to_addr(address, replacement);
 
     unsigned char *pad = static_cast<unsigned char *>(address) + bytes_needed_for_jump;
@@ -491,6 +528,8 @@ override_function_by_signature_in_module(const FunctionSignature *sig,
 
     if (!find_signature_in_module(sig, module_name, &address, error))
         return false;
+
+    HookManager::Obtain()->Add(address, 5);
 
     if (!write_jmp_instruction_to_addr(address, replacement))
     {

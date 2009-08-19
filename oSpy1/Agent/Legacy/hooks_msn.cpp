@@ -190,7 +190,7 @@ msnmsgr_debug(DWORD domain,
 
 #define LOG_OVERRIDE_ERROR(e) \
             message_logger_log_message(_T("hook_msn"), 0, MESSAGE_CTX_ERROR,\
-                _T("override_function_by_signature failed: %s"), e);\
+                _T("override_function_by_signature failed: %S"), e);\
             sspy_free(e)
 
 typedef const char *(__stdcall *GetChallengeSecretFunc) (const char **ret, int which_one);
@@ -278,7 +278,7 @@ hook_msn()
     else
     {
         message_logger_log_message(_T("hook_msn"), 0, MESSAGE_CTX_WARNING,
-            _T("failed to find SIGNATURE_GET_CHALLENGE_SECRET: %s"), error);
+            _T("failed to find SIGNATURE_GET_CHALLENGE_SECRET: %S"), error);
         sspy_free(error);
     }
 
@@ -347,7 +347,7 @@ hook_msn()
     else
     {
         message_logger_log_message(_T("hook_msn"), 0, MESSAGE_CTX_WARNING,
-            _T("failed to find SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME: %s"), error);
+            _T("failed to find SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME: %S"), error);
         sspy_free(error);
     }
 
