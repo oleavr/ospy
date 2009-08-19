@@ -286,7 +286,7 @@ hook_msn()
     if (!override_function_by_signature(&msn_signatures[SIGNATURE_MSNMSGR_DEBUG],
                                         msnmsgr_debug, NULL, &error))
     {
-        HMODULE logMod = GetModuleHandle(_T("wldlog.dll"));
+        HMODULE logMod = HookManager::Obtain()->OpenLibrary(_T("wldlog.dll"));
         if (logMod != NULL)
         {
             HOOK_FUNCTION(logMod, ZoneLoggingEnabled);

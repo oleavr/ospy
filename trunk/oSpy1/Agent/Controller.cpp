@@ -112,7 +112,10 @@ namespace oSpyAgent
 
     void Controller::DisableLegacyHooks()
     {
-        HookManager::Obtain()->RevertAll();
+        HookManager *mgr = HookManager::Obtain();
+        mgr->RemoveAll();
+        mgr->CloseLibraries();
+
         HookManager::Uninit();
     }
 

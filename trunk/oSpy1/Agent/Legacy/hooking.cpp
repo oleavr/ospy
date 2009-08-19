@@ -48,6 +48,23 @@ HookManager::Obtain()
     return g_hookMgr;
 }
 
+HMODULE
+HookManager::OpenLibrary(const TCHAR *name)
+{
+    HMODULE mod = LoadLibrary(name);
+    if (mod != NULL)
+        m_modules.push_back(mod);
+    return mod;
+}
+
+void
+HookManager::CloseLibraries()
+{
+    for (OVector<HMODULE>::Type::iterator it = m_modules.begin(); it != m_modules.end(); ++it)
+        FreeLibrary(*it);
+    m_modules.clear();
+}
+
 void
 HookManager::Add(void *address, DWORD size)
 {
@@ -56,7 +73,7 @@ HookManager::Add(void *address, DWORD size)
 }
 
 void
-HookManager::RevertAll()
+HookManager::RemoveAll()
 {
     OVector<CodeFragment>::Type::iterator it;
     for (it = m_fragments.begin(); it != m_fragments.end(); ++it)

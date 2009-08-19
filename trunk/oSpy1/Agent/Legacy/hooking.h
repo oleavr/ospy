@@ -40,10 +40,14 @@ public:
 
     static HookManager *Obtain();
 
+    HMODULE OpenLibrary(const TCHAR *name);
+    void CloseLibraries();
+
     void Add(void *address, DWORD size);
-    void RevertAll();
+    void RemoveAll();
 
 private:
+    OVector<HMODULE>::Type m_modules;
     OVector<CodeFragment>::Type m_fragments;
 };
 

@@ -590,6 +590,8 @@ rapistub_debug(void *obj,
 void
 hook_activesync()
 {
+    HookManager *mgr = HookManager::Obtain();
+
     HKEY key = 0;
     DWORD val_type;
     WCHAR path[_MAX_PATH];
@@ -646,7 +648,7 @@ hook_activesync()
         // is used asynchronously for this so this is the quickest path) */
         wsprintf(tmp_path, "%S%S%S", drive, dir, L"httpsys.dll");
 
-        h = LoadLibrary(tmp_path);
+        h = mgr->OpenLibrary(tmp_path);
         if (h != NULL)
         {
             if (!override_function_by_signature(&as_signatures[SIGNATURE_HTTP_REQUEST_FETCHED],
@@ -665,7 +667,7 @@ hook_activesync()
 
         // Hook httpapi.dll for outgoing responses (synchronous only,
         // which is fine for ActiveSync)
-        h = LoadLibrary("httpapi.dll");
+        h = mgr->OpenLibrary("httpapi.dll");
         if (h != NULL)
         {
             HOOK_FUNCTION(h, HttpSendHttpResponse);
@@ -757,7 +759,7 @@ hook_activesync()
     /* Hook rapistub.dll for all processes */
     wsprintf(tmp_path, "%S%S%S", drive, dir, L"rapistub.dll");
 
-    h = LoadLibrary(tmp_path);
+    h = mgr->OpenLibrary(tmp_path);
     if (h != NULL)
     {
         // Hook the internal debug function

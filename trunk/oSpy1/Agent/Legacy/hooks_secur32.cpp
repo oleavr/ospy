@@ -164,8 +164,10 @@ HOOK_GLUE_EXTENDED(DecryptMessage, (4 * 4))
 void
 hook_secur32()
 {
+    HookManager *mgr = HookManager::Obtain();
+
     // We don't want to log calls from the RPCRT4 API
-    HMODULE h = LoadLibrary("RPCRT4.dll");
+    HMODULE h = mgr->OpenLibrary("RPCRT4.dll");
     if (h == NULL)
     {
         MessageBox(0, "Failed to load 'RPCRT4.dll'.",
@@ -182,7 +184,7 @@ hook_secur32()
     }
 
     // Hook the Secur32 API
-    h = LoadLibrary("secur32.dll");
+    h = mgr->OpenLibrary("secur32.dll");
     if (h == NULL)
     {
         MessageBox(0, "Failed to load 'secur32.dll'.",

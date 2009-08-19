@@ -234,9 +234,10 @@ HOOK_GLUE_INTERRUPTIBLE(GetOverlappedResult, (4 * 4))
 void
 hook_httpapi()
 {
+    HookManager *mgr = HookManager::Obtain();
     HMODULE h;
 
-    h = LoadLibrary("kernel32.dll");
+    h = mgr->OpenLibrary("kernel32.dll");
     if (h == NULL)
     {
         MessageBox(0, "Failed to load 'kernel32.dll'.",
@@ -246,7 +247,7 @@ hook_httpapi()
 
     HOOK_FUNCTION(h, GetOverlappedResult);
 
-    h = LoadLibrary("httpapi.dll");
+    h = mgr->OpenLibrary("httpapi.dll");
     if (h == NULL)
     {
         MessageBox(0, "Failed to load 'httpapi.dll'.",
