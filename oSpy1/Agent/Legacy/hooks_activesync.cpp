@@ -786,8 +786,10 @@ hook_activesync()
     goto DONE;
 
 ACTIVESYNC_NOT_FOUND:
+    /*
     message_logger_log_message(_T("DllMain"), 0, MESSAGE_CTX_INFO,
         _T("ActiveSync not found, API not hooked"));
+    */
 
 DONE:
     if (key != 0)
