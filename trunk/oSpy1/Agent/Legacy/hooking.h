@@ -40,15 +40,25 @@ public:
 
     static HookManager *Obtain();
 
-    HMODULE OpenLibrary(const TCHAR *name);
-    void CloseLibraries();
+    ~HookManager();
 
+    // Public API
+    void Shutdown();
+
+    // Low-level API for hooking infrastructure
+    HMODULE OpenLibrary(const TCHAR *name);
     void Add(void *address, DWORD size);
-    void RemoveAll();
+    void RegisterTrampoline(void *address);
 
 private:
+    void CloseLibraries();
+    void RemoveAll();
+    void WaitForOngoingCalls();
+    void FreeTrampolines();
+
     OVector<HMODULE>::Type m_modules;
     OVector<CodeFragment>::Type m_fragments;
+    OVector<void *>::Type m_trampolines;
 };
 
 typedef struct {
