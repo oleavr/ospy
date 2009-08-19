@@ -35,7 +35,7 @@ softwall_init(const SoftwallRule *rules, unsigned int num_rules)
 }
 
 static BOOL
-softwall_find_rule(const char *function_name,
+softwall_find_rule(const TCHAR *function_name,
                    DWORD return_address,
                    const sockaddr_in *local_address,
                    const sockaddr_in *remote_address,
@@ -54,7 +54,7 @@ softwall_find_rule(const char *function_name,
 
         if ((rule->conditions & SOFTWALL_CONDITION_FUNCTION_NAME) != 0)
         {
-            if (strcmp(function_name, rule->function_name) != 0)
+            if (_tcscmp(function_name, rule->function_name) != 0)
                 continue;
         }
 
@@ -115,7 +115,7 @@ softwall_find_rule(const char *function_name,
  */
 
 DWORD
-softwall_decide_from_addresses(const char *function_name,
+softwall_decide_from_addresses(const TCHAR *function_name,
                                DWORD return_address,
                                const sockaddr_in *local_address,
                                const sockaddr_in *remote_address,
@@ -135,8 +135,8 @@ softwall_decide_from_addresses(const char *function_name,
         return 0;
     }
 
-    message_logger_log_message("Softwall", 0, MESSAGE_CTX_INFO,
-        "found matching rule for %s called from 0x%08x",
+    message_logger_log_message(_T("Softwall"), 0, MESSAGE_CTX_INFO,
+        _T("found matching rule for %s called from 0x%08x"),
         function_name, return_address);
 
     *carry_on = FALSE;
@@ -147,7 +147,7 @@ softwall_decide_from_addresses(const char *function_name,
 }
 
 DWORD
-softwall_decide_from_socket(const char *function_name,
+softwall_decide_from_socket(const TCHAR *function_name,
                             DWORD return_address,
                             SOCKET s,
                             BOOL *carry_on)
@@ -167,7 +167,7 @@ softwall_decide_from_socket(const char *function_name,
 }
 
 DWORD
-softwall_decide_from_socket_and_remote_address(const char *function_name,
+softwall_decide_from_socket_and_remote_address(const TCHAR *function_name,
                                                DWORD return_address,
                                                SOCKET s,
                                                const sockaddr_in *remote_address,

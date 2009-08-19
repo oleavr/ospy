@@ -325,7 +325,7 @@ find_signature(const FunctionSignature *sig, LPVOID *address, char **error)
 }
 
 bool
-find_signature_in_module(const FunctionSignature *sig, const char *module_name, LPVOID *address, char **error)
+find_signature_in_module(const FunctionSignature *sig, const TCHAR *module_name, LPVOID *address, char **error)
 {
     BYTE *base;
     DWORD size;
@@ -482,7 +482,7 @@ override_function_by_signature(const FunctionSignature *sig,
 
 bool
 override_function_by_signature_in_module(const FunctionSignature *sig,
-                                         const char *module_name,
+                                         const TCHAR *module_name,
                                          LPVOID replacement,
                                          LPVOID *patched_address,
                                          char **error)

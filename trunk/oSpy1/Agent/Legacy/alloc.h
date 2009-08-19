@@ -195,12 +195,21 @@ struct ci_char_traits : public char_traits<char>
     }
 };
 
+#ifdef _UNICODE
+#define OTString OWString
+#define OTStringStream OWStringStream
+#else
+#define OTString OString
+#define OTStringStream OStringStream
+#endif
+
 typedef basic_string<char, char_traits<char>, MyAlloc<char>> OString;
 typedef basic_string<wchar_t, char_traits<wchar_t>, MyAlloc<wchar_t>> OWString;
 
 typedef basic_string<char, ci_char_traits, MyAlloc<char>> OICString;
 
 typedef basic_ostringstream<char, char_traits<char>, MyAlloc<char>> OStringStream;
+typedef basic_ostringstream<wchar_t, char_traits<wchar_t>, MyAlloc<wchar_t>> OWStringStream;
 
 template <class eT>
 struct OVector

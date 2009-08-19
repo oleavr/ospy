@@ -33,6 +33,8 @@ char *sspy_strdup(const char *str);
 #define _WIN32_IE 0x0600    // Change this to the appropriate value to target other versions of IE.
 #endif
 
+#define OSPY_N_ELEMENTS(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>

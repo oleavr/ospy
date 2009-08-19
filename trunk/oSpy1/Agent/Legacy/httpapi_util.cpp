@@ -313,7 +313,7 @@ log_http_request(HANDLE queue_handle, HTTP_REQUEST *req,
 
         byte_buffer_append_printf(buf, " ");
         byte_buffer_append(buf, (void *) req->pRawUrl, req->RawUrlLength);
-        byte_buffer_append_printf(buf, " HTTP/%d.%d\r\n",
+        byte_buffer_append_printf(buf, " HTTP/%u.%u\r\n",
             req->Version.MajorVersion, req->Version.MinorVersion);
 
         http_request_dump_headers(req, buf);
@@ -326,7 +326,7 @@ log_http_request(HANDLE queue_handle, HTTP_REQUEST *req,
         byte_buffer_append(buf, (void *) body, body_size);
     }
 
-    message_logger_log_packet("HttpRequest",
+    message_logger_log_packet(_T("HttpRequest"),
         0, (DWORD) req->RequestId, PACKET_DIRECTION_INCOMING,
         (const sockaddr_in *) req->Address.pLocalAddress,
         (const sockaddr_in *) req->Address.pRemoteAddress,
@@ -351,7 +351,7 @@ log_http_response(HANDLE queue_handle,
     
     if (resp)
     {
-        byte_buffer_append_printf(buf, "HTTP/%d.%d %d",
+        byte_buffer_append_printf(buf, "HTTP/%u.%u %u",
             resp->Version.MajorVersion, resp->Version.MinorVersion,
             resp->StatusCode);
 
@@ -383,7 +383,7 @@ log_http_response(HANDLE queue_handle,
         remove_tracked_request(req_id);
     }
 
-    message_logger_log_packet("HttpResponse",
+    message_logger_log_packet(_T("HttpResponse"),
         0, (DWORD) req_id, PACKET_DIRECTION_OUTGOING, &local, &remote,
         (const char *) buf->buf, (int) buf->offset);
 

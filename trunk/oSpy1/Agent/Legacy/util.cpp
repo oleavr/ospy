@@ -28,10 +28,10 @@
 #pragma managed(push, off)
 
 static bool initialized = FALSE;
-static char cur_process_name[_MAX_PATH];
+static TCHAR cur_process_name[_MAX_PATH];
 
 bool
-cur_process_is(const char *name)
+cur_process_is(const TCHAR *name)
 {
   if (!initialized)
   {
@@ -40,19 +40,19 @@ cur_process_is(const char *name)
     // Get the current process name
     if (GetModuleBaseName(GetCurrentProcess(), NULL, cur_process_name, _MAX_PATH) == 0)
     {
-      message_logger_log_message("DllMain", 0, MESSAGE_CTX_WARNING,
-                                 "GetModuleBaseName failed with errno %d",
+      message_logger_log_message(_T("DllMain"), 0, MESSAGE_CTX_WARNING,
+                                 _T("GetModuleBaseName failed with errno %u"),
                                  GetLastError());
       return FALSE;
     }
   }
 
-  return (stricmp(cur_process_name, name) == 0);
+  return (_tcsicmp(cur_process_name, name) == 0);
 }
 
 void
 get_module_name_for_address(LPVOID address,
-                            char *buf, int buf_size)
+                            TCHAR *buf, int buf_size)
 {
     HANDLE process;
     HMODULE modules[256];
@@ -95,7 +95,7 @@ get_module_name_for_address(LPVOID address,
 }
 
 BOOL
-get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, char **error)
+get_module_base_and_size(const TCHAR *module_name, LPVOID *base, DWORD *size, char **error)
 {
     HMODULE mod = HookManager::Obtain()->OpenLibrary(module_name);
     if (mod == NULL)
@@ -116,22 +116,6 @@ get_module_base_and_size(const char *module_name, LPVOID *base, DWORD *size, cha
     return TRUE;
 }
 
-void get_process_name(char *name, int len)
-{
-  WCHAR path_buffer[_MAX_PATH];
-  WCHAR drive[_MAX_DRIVE];
-  WCHAR dir[_MAX_DIR];
-  WCHAR fname[_MAX_FNAME];
-  WCHAR ext[_MAX_EXT];
-
-  GetModuleFileNameW(NULL, path_buffer, _MAX_PATH);
-
-  _wsplitpath_s(path_buffer, drive, _MAX_DRIVE, dir, _MAX_DIR,
-                fname, _MAX_FNAME, ext, _MAX_EXT);
-
-  wsprintf(name, "%S%S", fname, ext);
-}
-
 BOOL address_has_bytes(LPVOID address, unsigned char *buf, int len)
 {
   unsigned char *func_bytes = (unsigned char *) address;
@@ -141,8 +125,8 @@ BOOL address_has_bytes(LPVOID address, unsigned char *buf, int len)
   {
     if (func_bytes[i] != buf[i])
     {
-      message_logger_log_message("address_has_bytes", 0, MESSAGE_CTX_ERROR,
-                                 "Signature mismatch on index %d, expected %d got %d",
+      message_logger_log_message(_T("address_has_bytes"), 0, MESSAGE_CTX_ERROR,
+                                 _T("Signature mismatch on index %d, expected %u got %u"),
                                  i, buf[i], func_bytes[i]);
       return FALSE;
     }
@@ -206,7 +190,8 @@ HOOK_GLUE_INTERRUPTIBLE(LoadLibraryA, (1 * 4))
 HOOK_GLUE_INTERRUPTIBLE(LoadLibraryW, (1 * 4))
 
 CRITICAL_SECTION CUtil::m_cs = { 0, };
-OString CUtil::m_processName = "";
+RtlIpv4AddressToStringFunc CUtil::m_rtlIpv4AddressToStringImpl = NULL;
+OTString CUtil::m_processName = _T("");
 OMap<OICString, OModuleInfo>::Type CUtil::m_modules;
 DWORD CUtil::m_lowestAddress = 0xFFFFFFFF;
 DWORD CUtil::m_highestAddress = 0;
@@ -216,13 +201,23 @@ CUtil::Init()
 {
     InitializeCriticalSection(&m_cs);
 
-    char buf[_MAX_PATH];
-    if (GetModuleBaseNameA(NULL, NULL, buf, sizeof(buf)) > 0)
     {
-        m_processName = buf;
+        HMODULE ntMod = GetModuleHandle(_T("ntdll.dll"));
+        _ASSERT(ntMod != NULL);
+
+        m_rtlIpv4AddressToStringImpl = reinterpret_cast<RtlIpv4AddressToStringFunc>(
+            GetProcAddress(ntMod, "RtlIpv4AddressToString"));
     }
 
-    HMODULE h = HookManager::Obtain()->OpenLibrary("kernel32.dll");
+    {
+        TCHAR buf[_MAX_PATH];
+        if (GetModuleBaseName(GetCurrentProcess(), NULL, buf, OSPY_N_ELEMENTS(buf)) > 0)
+        {
+            m_processName = buf;
+        }
+    }
+
+    HMODULE h = HookManager::Obtain()->OpenLibrary(_T("kernel32.dll"));
     if (h != NULL)
     {
         HOOK_FUNCTION(h, LoadLibraryA);
@@ -230,6 +225,22 @@ CUtil::Init()
     }
 
     UpdateModuleList();
+}
+
+void
+CUtil::Ipv4AddressToString(const IN_ADDR *addr,
+                           TCHAR *str)
+{
+    if (FALSE/*m_rtlIpv4AddressToStringImpl != NULL*/)
+    {
+        m_rtlIpv4AddressToStringImpl(addr, str);
+    }
+    else
+    {
+        const char *ansiStr = inet_ntoa(*addr);
+        int result = MultiByteToWideChar(CP_ACP, 0, ansiStr, -1, str, 16);
+        _ASSERT(result != 0);
+    }
 }
 
 void
@@ -358,10 +369,10 @@ CUtil::AddressIsWithinExecutableModule(DWORD address)
 #define OPCODE_CALL_NEAR_RELATIVE     0xE8
 #define OPCODE_CALL_NEAR_ABS_INDIRECT 0xFF
 
-OString
+OTString
 CUtil::CreateBackTrace(void *address)
 {
-    OStringStream s;
+    OTStringStream s;
     int count = 0;
     DWORD *p = (DWORD *) address;
 
@@ -402,9 +413,9 @@ CUtil::CreateBackTrace(void *address)
                     DWORD canonicalAddress = mi->preferredStartAddress + (value - mi->startAddress);
 
                     if (count > 0)
-                        s << "\n";
+                        s << _T("\n");
 
-                    s << mi->name.c_str() << "::0x" << hex << canonicalAddress;
+                    s << mi->name.c_str() << _T("::0x") << hex << canonicalAddress;
 
                     count++;
                 }

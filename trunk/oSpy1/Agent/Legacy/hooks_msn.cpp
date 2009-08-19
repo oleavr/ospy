@@ -21,6 +21,7 @@
 #include "logging.h"
 
 #pragma managed(push, off)
+#include <strsafe.h>
 
 //
 // Signatures
@@ -38,7 +39,7 @@ typedef enum {
 static FunctionSignature msn_signatures[] = {
     // SIGNATURE_GET_CHALLENGE_SECRET
     {
-        "msnmsgr.exe",
+        _T("msnmsgr.exe"),
         16,
         "80 7D 0C 00"           // cmp     byte ptr [ebp+0Ch], 0
         "68 B7 00 00 00"        // push    183
@@ -46,7 +47,7 @@ static FunctionSignature msn_signatures[] = {
 
     // SIGNATURE_MSNMSGR_DEBUG
     {
-        "msnmsgr.exe",
+        _T("msnmsgr.exe"),
         11,
         "84 C0"                    // test    al, al
         "74 14"                    // jz      short loc_448B51
@@ -60,7 +61,7 @@ static FunctionSignature msn_signatures[] = {
 
     // SIGNATURE_IDCRL_DEBUG
     {
-        "msidcrl40.dll",
+        _T("msidcrl40.dll"),
         0,
         "55"                    // push    ebp
         "8B EC"                 // mov     ebp, esp
@@ -81,7 +82,7 @@ static FunctionSignature msn_signatures[] = {
 
     // SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME
     {
-        "msnmsgr.exe",
+        _T("msnmsgr.exe"),
         -4,                        // we include the last two instructions of the function before
                                 // the one we're interested in in order to make sure we find
                                 // just one match (since this function is so generic)
@@ -99,7 +100,7 @@ static FunctionSignature msn_signatures[] = {
 
     // SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME_2
     {
-        "msnmsgr.exe",
+        _T("msnmsgr.exe"),
         -6,                        // we include the last two instructions of the function before
 
         "5E"                    // pop     esi
@@ -115,7 +116,7 @@ static FunctionSignature msn_signatures[] = {
 
     // SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME_3
     {
-        "msnmsgr.exe",
+        _T("msnmsgr.exe"),
         -7,                        // we include the last two instructions of the function before
 
         "5E"                    // pop     esi
@@ -160,13 +161,13 @@ idcrl_debug(void *obj,
         return;
 
     buf = (LPWSTR) sspy_malloc(size);
-    wsprintfW(buf, L"%s%s%s",
+    StringCbPrintfW(buf, size, L"%s%s%s",
         (function_name != NULL) ? function_name : L"",
         (function_name != NULL && message != NULL) ? L": " : L"",
         (message != NULL) ? message : L"");
 
     va_start(args, message);
-    log_debug_w("MSNIDCRL", (char *) &obj - 4, buf, args);
+    log_debug_w(_T("MSNIDCRL"), (char *) &obj - 4, buf, args);
 
     sspy_free(buf);
 }
@@ -184,12 +185,12 @@ msnmsgr_debug(DWORD domain,
     if (memcmp(fmt_str, bad_str, sizeof(bad_str)) == 0)
         fmt_str = good_str;
 
-    log_debug_w("MsnmsgrDebug", (char *) &domain - 4, fmt_str, args, domain, severity);
+    log_debug_w(_T("MsnmsgrDebug"), (char *) &domain - 4, fmt_str, args, domain, severity);
 }
 
 #define LOG_OVERRIDE_ERROR(e) \
-            message_logger_log_message("hook_msn", 0, MESSAGE_CTX_ERROR,\
-                "override_function_by_signature failed: %s", e);\
+            message_logger_log_message(_T("hook_msn"), 0, MESSAGE_CTX_ERROR,\
+                _T("override_function_by_signature failed: %s"), e);\
             sspy_free(e)
 
 typedef const char *(__stdcall *GetChallengeSecretFunc) (const char **ret, int which_one);
@@ -226,13 +227,11 @@ LogOutput_called(BOOL carry_on,
                  va_list args)
 {
     void *bt_address = (char *) &carry_on + 8 + LOG_OUTPUT_ARGS_SIZE;
-    char buf[256];
+    WCHAR buf[256];
 
     carry_on = FALSE;
 
-    strcpy_s(buf, sizeof(buf), "wldlog");
-    strcat_s(buf, sizeof(buf), "_");
-    strcat_s(buf, sizeof(buf), zone);
+    StringCbPrintfW(buf, sizeof(buf), _T("wldlog_%S"), zone);
 
     log_debug_w(buf, bt_address, format, args, flags, level);
 }
@@ -255,7 +254,7 @@ hook_msn()
 {
     char *error;
 
-    if (!cur_process_is("msnmsgr.exe"))
+    if (!cur_process_is(_T("msnmsgr.exe")))
         return;
 
     GetChallengeSecretFunc get_challenge_secret;
@@ -272,14 +271,14 @@ hook_msn()
         s << "Product ID: '" << product_id << "'\r\n";
         s << "Product Key: '" << product_key << "'";
 
-        message_logger_log("hook_msn", 0, 0, MESSAGE_TYPE_PACKET,
+        message_logger_log(_T("hook_msn"), 0, 0, MESSAGE_TYPE_PACKET,
             MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL,
-            s.str().c_str(), s.str().size(), "Product ID and Key");
+            s.str().c_str(), s.str().size(), _T("Product ID and Key"));
     }
     else
     {
-        message_logger_log_message("hook_msn", 0, MESSAGE_CTX_WARNING,
-            "failed to find SIGNATURE_GET_CHALLENGE_SECRET: %s", error);
+        message_logger_log_message(_T("hook_msn"), 0, MESSAGE_CTX_WARNING,
+            _T("failed to find SIGNATURE_GET_CHALLENGE_SECRET: %s"), error);
         sspy_free(error);
     }
 
@@ -341,14 +340,14 @@ hook_msn()
             sspy_free(buf);
         }
 
-        message_logger_log("hook_msn", 0, 0, MESSAGE_TYPE_PACKET,
+        message_logger_log(_T("hook_msn"), 0, 0, MESSAGE_TYPE_PACKET,
             MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL,
-            s.str().c_str(), s.str().size(), "Contact property id mappings");
+            s.str().c_str(), s.str().size(), _T("Contact property id mappings"));
     }
     else
     {
-        message_logger_log_message("hook_msn", 0, MESSAGE_CTX_WARNING,
-            "failed to find SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME: %s", error);
+        message_logger_log_message(_T("hook_msn"), 0, MESSAGE_CTX_WARNING,
+            _T("failed to find SIGNATURE_CONTACT_PROPERTY_ID_TO_NAME: %s"), error);
         sspy_free(error);
     }
 

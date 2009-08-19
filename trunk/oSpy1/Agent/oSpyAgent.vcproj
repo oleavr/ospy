@@ -22,7 +22,7 @@
 			IntermediateDirectory="$(SolutionDir)obj\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
-			CharacterSet="0"
+			CharacterSet="1"
 			ManagedExtensions="1"
 			>
 			<Tool
@@ -103,7 +103,7 @@
 			IntermediateDirectory="$(SolutionDir)obj\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
-			CharacterSet="0"
+			CharacterSet="1"
 			ManagedExtensions="1"
 			WholeProgramOptimization="1"
 			>

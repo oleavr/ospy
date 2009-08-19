@@ -46,7 +46,7 @@ typedef enum {
 static FunctionSignature as_signatures[] = {
     // SIGNATURE_UI_STATUS_LABEL_SET
     {
-        "wcesmgr.exe",
+        _T("wcesmgr.exe"),
         0,
         "56"                    // push    esi
         "FF 74 24 08"           // push    [esp+text]
@@ -69,7 +69,7 @@ static FunctionSignature as_signatures[] = {
 
     // SIGNATURE_WIZ_STATUS_LABEL_SET
     {
-        "wcesmgr.exe",
+        _T("wcesmgr.exe"),
         0,
         "83 C1 74"              // add     ecx, 74h
         "51"                    // push    ecx
@@ -81,7 +81,7 @@ static FunctionSignature as_signatures[] = {
 
     // SIGNATURE_HTTP_REQUEST_FETCHED
     {
-        "httpsys.dll",
+        _T("httpsys.dll"),
         0,
         "8B 06"                 // mov     eax, [esi]
         "8B CE"                 // mov     ecx, esi
@@ -96,7 +96,7 @@ static FunctionSignature as_signatures[] = {
     // and possibly more...
     //
     {
-        "<NULL>",
+        _T("<NULL>"),
         0,
         "8B 44 24 08"           // mov     eax, [esp+arg_4]
         "57"                    // push    edi
@@ -109,7 +109,7 @@ static FunctionSignature as_signatures[] = {
 
     // SIGNATURE_WCESMGR_DEBUG2
     {
-        "wcesmgr.exe",
+        _T("wcesmgr.exe"),
         0,
         "55"                    // push    ebp
         "8B EC"                 // mov     ebp, esp
@@ -122,7 +122,7 @@ static FunctionSignature as_signatures[] = {
 
     // SIGNATURE_WCESMGR_DEBUG2_ALTERNATE
     {
-        "wcesmgr.exe",
+        _T("wcesmgr.exe"),
         0,
         "55"                    // push    ebp
         "8B EC"                    // mov     ebp, esp
@@ -135,7 +135,7 @@ static FunctionSignature as_signatures[] = {
 
     // SIGNATURE_WCESMGR_DEBUG3
     {
-        "wcesmgr.exe",
+        _T("wcesmgr.exe"),
         0,
         "55"                    // push    ebp
         "8B EC"                 // mov     ebp, esp
@@ -147,7 +147,7 @@ static FunctionSignature as_signatures[] = {
 
     // SIGNATURE_WCESMGR_DEBUG3_ALTERNATE
     {
-        "wcesmgr.exe",
+        _T("wcesmgr.exe"),
         0,
         "55"                    // push    ebp
         "8B EC"                 // mov     ebp, esp
@@ -159,7 +159,7 @@ static FunctionSignature as_signatures[] = {
 
     // SIGNATURE_WCESCOMM_DEBUG2
     {
-        "wcescomm.exe",
+        _T("wcescomm.exe"),
         0,
         "55"                    // push    ebp
         "8D AC 24 6C FC FF FF"  // lea     ebp, [esp-394h]
@@ -180,7 +180,7 @@ static FunctionSignature as_signatures[] = {
 
     // SIGNATURE_WCESCOMM_DEBUG2_ALTERNATE
     {
-        "wcescomm.exe",
+        _T("wcescomm.exe"),
         50,
         "83 3D ?? ?? ?? ?? 00"  // cmp     dword_430BB4, 0
         "0F 84 D0 00 00 00"        // jz      loc_410BB4
@@ -188,7 +188,7 @@ static FunctionSignature as_signatures[] = {
 
     // SIGNATURE_WCESCOMM_DEBUG3
     {
-        "wcescomm.exe",
+        _T("wcescomm.exe"),
         0,
         "55"                    // push    ebp
         "8D AC 24 6C FC FF FF"  // lea     ebp, [esp-394h]
@@ -209,7 +209,7 @@ static FunctionSignature as_signatures[] = {
 
     // SIGNATURE_WCESCOMM_DEBUG3_ALTERNATE
     {
-        "wcescomm.exe",
+        _T("wcescomm.exe"),
         50,
         "83 3D ?? ?? ?? ?? 00"    // cmp     dword_430BB4, 0
         "0F 84 E3 00 00 00"        // jz      loc_410CEB
@@ -354,16 +354,16 @@ HttpSendResponseEntityBody_done(ULONG retval,
             }
             else
             {
-                message_logger_log_message("HttpSendResponseEntityBody", NULL,
+                message_logger_log_message(_T("HttpSendResponseEntityBody"), NULL,
                     MESSAGE_CTX_ERROR,
-                    "only HttpDataChunkFromMemory is supported for now");
+                    _T("only HttpDataChunkFromMemory is supported for now"));
             }
 
             if (EntityChunkCount > 1)
             {
-                message_logger_log_message("HttpSendResponseEntityBody", NULL,
+                message_logger_log_message(_T("HttpSendResponseEntityBody"), NULL,
                     MESSAGE_CTX_WARNING,
-                    "only EntityChunkCount == 1 is supported for now");
+                    _T("only EntityChunkCount == 1 is supported for now"));
             }
         }
     }
@@ -388,6 +388,7 @@ ui_status_label_set(char *text)
     char *p;
     RECT parent_rect, label_rect;
     int x, y;
+    TCHAR wide_text[512];
 
     __asm {
         push    ebp;
@@ -403,26 +404,28 @@ ui_status_label_set(char *text)
     x = label_rect.left - parent_rect.left;
     y = label_rect.top - parent_rect.top;
 
+    MultiByteToWideChar(CP_ACP, 0, text, -1, wide_text, sizeof(wide_text) / sizeof(wide_text[0]));
+
     if (y >= 40)
     {
         /* substatus: y = 50 */
-        message_logger_log_message("UIStatusLabelSet", NULL,
+        message_logger_log_message(_T("UIStatusLabelSet"), NULL,
             MESSAGE_CTX_ACTIVESYNC_SUBSTATUS,
-            text);
+            wide_text);
     }
     else if (y >= 20)
     {
         /* status: y = 33 */
-        message_logger_log_message("UIStatusLabelSet", NULL,
+        message_logger_log_message(_T("UIStatusLabelSet"), NULL,
             MESSAGE_CTX_ACTIVESYNC_STATUS,
-            text);
+            wide_text);
     }
     else
     {
         /* device: y = 2 */
-        message_logger_log_message("UIStatusLabelSet", NULL,
+        message_logger_log_message(_T("UIStatusLabelSet"), NULL,
             MESSAGE_CTX_ACTIVESYNC_DEVICE,
-            text);
+            wide_text);
     }
 
     SetWindowTextA(self->m_hWnd, text);
@@ -447,6 +450,7 @@ static __declspec(naked) void
 wiz_status_label_set(void *pDX /* CDataExchange * */ )
 {
     char *status;
+    TCHAR wide_status[512];
 
     __asm {
         push            ebp;
@@ -458,9 +462,11 @@ wiz_status_label_set(void *pDX /* CDataExchange * */ )
         mov        [status], ecx
     }
 
-    message_logger_log_message("WizStatusLabelSet", NULL,
+    MultiByteToWideChar(CP_ACP, 0, status, -1, wide_status, sizeof(wide_status) / sizeof(wide_status[0]));
+
+    message_logger_log_message(_T("WizStatusLabelSet"), NULL,
         MESSAGE_CTX_ACTIVESYNC_WZ_STATUS,
-        status);
+        wide_status);
 
     __asm {
         popad;
@@ -487,7 +493,7 @@ wcesmgr_debug_1(void *obj,
     va_list args;
 
     va_start(args, format);
-    log_debug_w("WCESMgrDebug", (char *) &obj - 4, format, args);
+    log_debug_w(_T("WCESMgrDebug"), (char *) &obj - 4, format, args);
 }
 
 static void __cdecl
@@ -499,7 +505,7 @@ wcesmgr_debug_2(void *obj,
     va_list args;
 
     va_start(args, format);
-    log_debug("WCESMgrDebug2", (char *) &obj - 4, format, args);
+    log_debug(_T("WCESMgrDebug2"), (char *) &obj - 4, format, args);
 }
 
 static void __cdecl
@@ -510,7 +516,7 @@ wcesmgr_debug_3(void *obj,
     va_list args;
 
     va_start(args, format);
-    log_debug("WCESMgrDebug3", (char *) &obj - 4, format, args);
+    log_debug(_T("WCESMgrDebug3"), (char *) &obj - 4, format, args);
 }
 
 
@@ -526,7 +532,7 @@ rapimgr_debug(void *obj,
     va_list args;
 
     va_start(args, format);
-    log_debug_w("RAPIMgrDebug", (char *) &obj - 4, format, args);
+    log_debug_w(_T("RAPIMgrDebug"), (char *) &obj - 4, format, args);
 }
 
 
@@ -542,7 +548,7 @@ wcescomm_debug_1(void *obj,
     va_list args;
 
     va_start(args, format);
-    log_debug_w("WCESCommDebug1", (char *) &obj - 4, format, args);
+    log_debug_w(_T("WCESCommDebug1"), (char *) &obj - 4, format, args);
 }
 
 static void __cdecl
@@ -552,7 +558,7 @@ wcescomm_debug_2(const char *format,
     va_list args;
 
     va_start(args, format);
-    log_debug("WCESCommDebug2", (char *) &format - 4, format, args);
+    log_debug(_T("WCESCommDebug2"), (char *) &format - 4, format, args);
 }
 
 static void __cdecl
@@ -562,7 +568,7 @@ wcescomm_debug_3(const char *format,
     va_list args;
 
     va_start(args, format);
-    log_debug("WCESCommDebug3", (char *) &format - 4, format, args);
+    log_debug(_T("WCESCommDebug3"), (char *) &format - 4, format, args);
 }
 
 
@@ -578,13 +584,13 @@ rapistub_debug(void *obj,
     va_list args;
 
     va_start(args, format);
-    log_debug_w("RAPIStubDebug", (char *) &obj - 4, format, args);
+    log_debug_w(_T("RAPIStubDebug"), (char *) &obj - 4, format, args);
 }
 
 
 #define LOG_OVERRIDE_ERROR(sig, e) \
-            message_logger_log_message("hook_activesync", 0, MESSAGE_CTX_ERROR,\
-                "override_function_by_signature for " sig " failed: %s", e);\
+            message_logger_log_message(_T("hook_activesync"), 0, MESSAGE_CTX_ERROR,\
+                _T("override_function_by_signature for ") _T(sig) _T(" failed: %s"), e);\
             sspy_free(e)
 
 void
@@ -627,7 +633,7 @@ hook_activesync()
     _wsplitpath_s(path, drive, _MAX_DRIVE, dir, _MAX_DIR,
         fname, _MAX_FNAME, ext, _MAX_EXT);
 
-    if (cur_process_is("wcesmgr.exe"))
+    if (cur_process_is(_T("wcesmgr.exe")))
     {
         // UI status labels
         if (!override_function_by_signature(&as_signatures[SIGNATURE_UI_STATUS_LABEL_SET],
@@ -646,7 +652,7 @@ hook_activesync()
 
         // Hook httpsys.dll for catching incoming requests (since httpapi.dll
         // is used asynchronously for this so this is the quickest path) */
-        wsprintf(tmp_path, "%S%S%S", drive, dir, L"httpsys.dll");
+        wsprintf(tmp_path, _T("%S%S%S"), drive, dir, L"httpsys.dll");
 
         h = mgr->OpenLibrary(tmp_path);
         if (h != NULL)
@@ -660,14 +666,14 @@ hook_activesync()
         }
         else
         {
-            message_logger_log_message("DllMain", 0, MESSAGE_CTX_ERROR,
-                "ActiveSync found but loading '%s' failed",
+            message_logger_log_message(_T("DllMain"), 0, MESSAGE_CTX_ERROR,
+                _T("ActiveSync found but loading '%s' failed"),
                 tmp_path);
         }
 
         // Hook httpapi.dll for outgoing responses (synchronous only,
         // which is fine for ActiveSync)
-        h = mgr->OpenLibrary("httpapi.dll");
+        h = mgr->OpenLibrary(_T("httpapi.dll"));
         if (h != NULL)
         {
             HOOK_FUNCTION(h, HttpSendHttpResponse);
@@ -675,13 +681,13 @@ hook_activesync()
         }
         else
         {
-            message_logger_log_message("DllMain", 0, MESSAGE_CTX_ERROR,
-                "Failed to load httpapi.dll");
+            message_logger_log_message(_T("DllMain"), 0, MESSAGE_CTX_ERROR,
+                _T("Failed to load httpapi.dll"));
         }
 
         // Hook the internal debug/logging functions
         if (!override_function_by_signature_in_module(
-            &as_signatures[SIGNATURE_ACTIVESYNC_DEBUG], "wcesmgr.exe",
+            &as_signatures[SIGNATURE_ACTIVESYNC_DEBUG], _T("wcesmgr.exe"),
             wcesmgr_debug_1, NULL, &error))
         {
             LOG_OVERRIDE_ERROR("SIGNATURE_ACTIVESYNC_DEBUG", error);
@@ -711,21 +717,21 @@ hook_activesync()
             }
         }
     }
-    else if (cur_process_is("rapimgr.exe"))
+    else if (cur_process_is(_T("rapimgr.exe")))
     {
         // Hook the internal debug function
         if (!override_function_by_signature_in_module(
-            &as_signatures[SIGNATURE_ACTIVESYNC_DEBUG], "rapimgr.exe",
+            &as_signatures[SIGNATURE_ACTIVESYNC_DEBUG], _T("rapimgr.exe"),
             rapimgr_debug, NULL, &error))
         {
             LOG_OVERRIDE_ERROR("SIGNATURE_ACTIVESYNC_DEBUG", error);
         }
     }
-    else if (cur_process_is("wcescomm.exe"))
+    else if (cur_process_is(_T("wcescomm.exe")))
     {
         // Hook the internal debug/logging functions
         if (!override_function_by_signature_in_module(
-            &as_signatures[SIGNATURE_ACTIVESYNC_DEBUG], "wcescomm.exe",
+            &as_signatures[SIGNATURE_ACTIVESYNC_DEBUG], _T("wcescomm.exe"),
             wcescomm_debug_1, NULL, &error))
         {
             LOG_OVERRIDE_ERROR("SIGNATURE_ACTIVESYNC_DEBUG", error);
@@ -757,14 +763,14 @@ hook_activesync()
     }
 
     /* Hook rapistub.dll for all processes */
-    wsprintf(tmp_path, "%S%S%S", drive, dir, L"rapistub.dll");
+    wsprintf(tmp_path, _T("%S%S%S"), drive, dir, L"rapistub.dll");
 
     h = mgr->OpenLibrary(tmp_path);
     if (h != NULL)
     {
         // Hook the internal debug function
         if (!override_function_by_signature_in_module(
-            &as_signatures[SIGNATURE_ACTIVESYNC_DEBUG], "rapistub.dll",
+            &as_signatures[SIGNATURE_ACTIVESYNC_DEBUG], _T("rapistub.dll"),
             rapistub_debug, NULL, &error))
         {
             LOG_OVERRIDE_ERROR("SIGNATURE_ACTIVESYNC_DEBUG", error);
@@ -772,16 +778,16 @@ hook_activesync()
     }
     else
     {
-        message_logger_log_message("DllMain", 0, MESSAGE_CTX_ERROR,
-            "ActiveSync found but loading '%s' failed",
+        message_logger_log_message(_T("DllMain"), 0, MESSAGE_CTX_ERROR,
+            _T("ActiveSync found but loading '%s' failed"),
             tmp_path);
     }
 
     goto DONE;
 
 ACTIVESYNC_NOT_FOUND:
-    message_logger_log_message("DllMain", 0, MESSAGE_CTX_INFO,
-        "ActiveSync not found, API not hooked");
+    message_logger_log_message(_T("DllMain"), 0, MESSAGE_CTX_INFO,
+        _T("ActiveSync not found, API not hooked"));
 
 DONE:
     if (key != 0)
