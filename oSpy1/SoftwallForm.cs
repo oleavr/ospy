@@ -284,7 +284,14 @@ namespace oSpy
             DataTable tbl = softwallDataSet.Tables[0];
             DataRow row = tbl.NewRow();
 
-            string name = String.Format("Rule{0:00}", ruleListView.Items.Count + 1);
+            string name;
+            int n = tbl.Rows.Count + 1;
+            do
+            {
+                name = String.Format("Rule{0:00}", n);
+                n++;
+            }
+            while (tbl.Rows.Contains(name));
 
             row["Name"] = name;
             row["ProcessName"] = processName;
@@ -309,8 +316,7 @@ namespace oSpy
             tbl.Rows.Add(row);
             ruleListView.Items.Add(name);
 
-            ruleListView.SelectedIndices.Clear();
-            ruleListView.SelectedIndices.Add(ruleListView.Items.Count - 1);
+            SelectLastItem();
         }
 
         public SoftwallRule[] GetRules()
