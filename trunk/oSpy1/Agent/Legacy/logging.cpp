@@ -46,18 +46,18 @@ message_element_init(MessageQueueElement *el,
 
     /* process name, id and thread id */
     OTString processName = CUtil::GetProcessName();
-    _tcscpy_s(el->process_name, OSPY_N_ELEMENTS(el->process_name), processName.c_str());
+    _tcsncpy_s(el->process_name, OSPY_N_ELEMENTS(el->process_name), processName.c_str(), _TRUNCATE);
     el->process_id = GetCurrentProcessId();      
     el->thread_id = GetCurrentThreadId();
 
     std::string s;
 
     /* function name and return address */
-    _tcscpy_s(el->function_name, OSPY_N_ELEMENTS(el->function_name), function_name);
+    _tcsncpy_s(el->function_name, OSPY_N_ELEMENTS(el->function_name), function_name, _TRUNCATE);
     if (bt_address != NULL)
     {
         OTString backtrace = CUtil::CreateBackTrace(bt_address);
-        _tcscpy_s(el->backtrace, OSPY_N_ELEMENTS(el->backtrace), backtrace.c_str());
+        _tcsncpy_s(el->backtrace, OSPY_N_ELEMENTS(el->backtrace), backtrace.c_str(), _TRUNCATE);
     }
 
     /* underlying resource id */
@@ -175,7 +175,7 @@ message_logger_log_full(const TCHAR *function_name,
 
     if (message != NULL)
     {
-        _tcscpy_s(el.message, OSPY_N_ELEMENTS(el.message), message);
+        _tcsncpy_s(el.message, OSPY_N_ELEMENTS(el.message), message, _TRUNCATE);
         el.message[sizeof(el.message) - 1] = '\0';
     }
 
