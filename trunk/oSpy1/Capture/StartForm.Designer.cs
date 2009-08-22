@@ -70,6 +70,8 @@
             // 
             this.startInBox.Anchor = ((System.Windows.Forms.AnchorStyles) (((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
+            this.startInBox.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Suggest;
+            this.startInBox.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.FileSystemDirectories;
             this.startInBox.Location = new System.Drawing.Point(72, 71);
             this.startInBox.Name = "startInBox";
             this.startInBox.Size = new System.Drawing.Size(386, 20);
