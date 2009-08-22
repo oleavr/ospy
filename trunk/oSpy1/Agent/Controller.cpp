@@ -53,6 +53,8 @@ namespace oSpyAgent
 
         RemoteHooking::WakeUpProcess();
 
+        DWORD myPid = GetCurrentProcessId();
+
         try
         {
             while (true)
@@ -73,7 +75,7 @@ namespace oSpyAgent
                 }
                 else
                 {
-                    m_manager->Ping();
+                    m_manager->Ping(myPid);
                 }
             }
         }
