@@ -28,18 +28,19 @@ namespace oSpy
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TextView));
             this.richTextBox = new System.Windows.Forms.RichTextBox();
             this.closeButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // richTextBox
             // 
-            this.richTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            this.richTextBox.Anchor = ((System.Windows.Forms.AnchorStyles) ((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.richTextBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(64)))));
+            this.richTextBox.BackColor = System.Drawing.Color.FromArgb(((int) (((byte) (0)))), ((int) (((byte) (0)))), ((int) (((byte) (64)))));
             this.richTextBox.Cursor = System.Windows.Forms.Cursors.Default;
-            this.richTextBox.Font = new System.Drawing.Font("Lucida Console", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.richTextBox.Font = new System.Drawing.Font("Lucida Console", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte) (0)));
             this.richTextBox.ForeColor = System.Drawing.Color.Silver;
             this.richTextBox.Location = new System.Drawing.Point(12, 12);
             this.richTextBox.Name = "richTextBox";
@@ -51,7 +52,7 @@ namespace oSpy
             // 
             // closeButton
             // 
-            this.closeButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.closeButton.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.closeButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.closeButton.Location = new System.Drawing.Point(640, 491);
             this.closeButton.Name = "closeButton";
@@ -70,6 +71,7 @@ namespace oSpy
             this.ClientSize = new System.Drawing.Size(727, 526);
             this.Controls.Add(this.closeButton);
             this.Controls.Add(this.richTextBox);
+            this.Icon = ((System.Drawing.Icon) (resources.GetObject("$this.Icon")));
             this.Name = "TextView";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "TextView";
