@@ -35,7 +35,7 @@ namespace oSpy.Capture
     public interface IManager
     {
         void Submit(MessageQueueElement[] elements);
-        void Ping();
+        void Ping(int pid);
     }
 
     [Serializable]
@@ -184,8 +184,12 @@ namespace oSpy.Capture
         private IProgressFeedback progress = null;
 
         private Thread startWorkerThread;
+
         private IpcServerChannel serverChannel;
         private string serverChannelName;
+        private List<int> clients;
+        private AutoResetEvent clientAdded = new AutoResetEvent(false);
+        private ManualResetEvent stopRequest = new ManualResetEvent(false);
 
         public Manager()
         {
@@ -204,8 +208,16 @@ namespace oSpy.Capture
             }
         }
 
-        public void Ping()
+        public void Ping(int pid)
         {
+            lock (clients)
+            {
+                if (!clients.Contains(pid))
+                {
+                    clients.Add(pid);
+                    clientAdded.Set();
+                }
+            }
         }
 
         public void StartCapture(Details details, IProgressFeedback progress)
@@ -213,21 +225,23 @@ namespace oSpy.Capture
             this.details = details;
             this.progress = progress;
 
+            stopRequest.Reset();
+
             startWorkerThread = new Thread(DoStartCapture);
             startWorkerThread.Start();
         }
 
         public void StopCapture(IProgressFeedback progress)
         {
+            stopRequest.Set();
+
+            // Unlikely:
+            while (startWorkerThread != null)
+                Thread.Sleep(20);
+
             this.progress = progress;
 
-            startWorkerThread = null;
-            RemotingServices.Disconnect(this);
-            ChannelServices.UnregisterChannel(serverChannel);
-            serverChannel = null;
-            serverChannelName = null;
-
-            progress.OperationComplete();
+            DoStopCapture();
         }
 
         private void DoStartCapture()
@@ -236,34 +250,67 @@ namespace oSpy.Capture
             {
                 PrepareCapture();
 
+                int expectedPidCount;
+
                 if (details is StartDetails)
-                    DoCreation();
+                {
+                    StartDetails startDetails = details as StartDetails;
+                    DoCreation(startDetails);
+                    expectedPidCount = 1;
+                }
                 else if (details is AttachDetails)
-                    DoInjection();
+                {
+                    AttachDetails attachDetails = details as AttachDetails;
+                    DoInjection(attachDetails);
+                    expectedPidCount = attachDetails.Processes.Length;
+                }
                 else
+                {
                     throw new NotImplementedException();
+                }
+
+                WaitForAllClientsToPingUs(expectedPidCount);
 
                 progress.OperationComplete();
             }
             catch (Exception e)
             {
                 progress.OperationFailed(e.Message);
-                return;
             }
+
+            progress = null;
+            startWorkerThread = null;
+        }
+
+        private void DoStopCapture()
+        {
+            RemotingServices.Disconnect(this);
+            ChannelServices.UnregisterChannel(serverChannel);
+
+            serverChannel = null;
+            serverChannelName = null;
+            clients = null;
+            clientAdded.Reset();
+            stopRequest.Reset();
+
+            details = null;
+
+            progress.OperationComplete();
+            progress = null;
         }
 
         private void PrepareCapture()
         {
             serverChannelName = GenerateChannelName();
             serverChannel = CreateServerChannel(serverChannelName);
+            clients = new List<int>();
+
             ChannelServices.RegisterChannel(serverChannel, false);
             RemotingServices.Marshal(this, serverChannelName, typeof(IManager));
         }
 
-        private void DoCreation()
+        private void DoCreation(StartDetails startDetails)
         {
-            StartDetails startDetails = details as StartDetails;
-
             progress.ProgressUpdate("Starting process and injecting logging agent", 100);
 
             ProcessStartInfo psi = startDetails.Info;
@@ -275,9 +322,8 @@ namespace oSpy.Capture
                 serverChannelName, details.SoftwallRules);
         }
 
-        private void DoInjection()
+        private void DoInjection(AttachDetails attachDetails)
         {
-            AttachDetails attachDetails = details as AttachDetails;
             Process[] processes = attachDetails.Processes;
             for (int i = 0; i < processes.Length; i++)
             {
@@ -285,6 +331,23 @@ namespace oSpy.Capture
                 progress.ProgressUpdate("Injecting logging agents", percentComplete);
                 RemoteHooking.Inject(processes[i].Id, AGENT_DLL, AGENT_DLL,
                     serverChannelName, details.SoftwallRules);
+            }
+        }
+
+        private void WaitForAllClientsToPingUs(int expectedPidCount)
+        {
+            WaitHandle[] waitHandles = { stopRequest, clientAdded };
+
+            while (true)
+            {
+                lock (clients)
+                {
+                    if (clients.Count == expectedPidCount)
+                        break;
+                }
+
+                if (WaitHandle.WaitAny(waitHandles) == 0)
+                    break;
             }
         }
 
