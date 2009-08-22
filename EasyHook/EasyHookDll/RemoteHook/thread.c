@@ -408,6 +408,7 @@ Description:
 EASYHOOK_NT_EXPORT RtlCreateSuspendedProcess(
 		WCHAR* InEXEPath,
         WCHAR* InCommandLine,
+        WCHAR* InWorkingDirectory,
 		ULONG InCustomFlags,
         ULONG* OutProcessId,
         ULONG* OutThreadId)
@@ -428,6 +429,10 @@ Parameters:
 
         Optional command line parameters passed to the newly created process.
 
+    - InWorkingDirectory
+
+        Optional working directory for the newly created process.
+
 	- InCustomFlags
 
 		Additional process creation flags.
@@ -443,8 +448,9 @@ Parameters:
     STARTUPINFO				StartInfo;
 	PROCESS_INFORMATION		ProcessInfo;
 	WCHAR					FullExePath[MAX_PATH + 1];
-	WCHAR					CurrentDir[MAX_PATH + 1];
+	WCHAR					CanonicalExePath[MAX_PATH + 1];
     WCHAR*					FilePart;
+    WCHAR*					WorkingDirectory;
     NTSTATUS            NtStatus;
 
     // must be executed before any THROW or RETURN!
@@ -461,13 +467,18 @@ Parameters:
     if(!RtlFileExists(InEXEPath))
         THROW(STATUS_INVALID_PARAMETER_1, L"The given process file does not exist.");
 
-    if(GetFullPathName(InEXEPath, MAX_PATH, CurrentDir, &FilePart) > MAX_PATH)
+    if(GetFullPathName(InEXEPath, MAX_PATH, CanonicalExePath, &FilePart) > MAX_PATH)
         THROW(STATUS_INVALID_PARAMETER_1, L"Full path information exceeds MAX_PATH characters.");
 
     // compute current directory...
-    RtlCopyMemory(FullExePath, CurrentDir, sizeof(FullExePath));
+    RtlCopyMemory(FullExePath, CanonicalExePath, sizeof(FullExePath));
     
     *FilePart = 0;
+
+    if (InWorkingDirectory)
+        WorkingDirectory = InWorkingDirectory;
+    else
+        WorkingDirectory = CanonicalExePath;
 
     // create suspended process
     StartInfo.cb = sizeof(StartInfo);
@@ -480,7 +491,7 @@ Parameters:
             FALSE, 
 		    InCustomFlags | CREATE_SUSPENDED,
 		    NULL,
-		    CurrentDir,
+		    WorkingDirectory,
 		    &StartInfo,
 		    &ProcessInfo))
 	    THROW(STATUS_INVALID_PARAMETER, L"Unable to start process; please check the given parameters.");
@@ -510,6 +521,7 @@ FINALLY_OUTRO:
 EASYHOOK_NT_EXPORT RhCreateAndInject(
 		WCHAR* InEXEPath,
         WCHAR* InCommandLine,
+        WCHAR* InWorkingDirectory,
 		ULONG InProcessCreationFlags,
 		ULONG InInjectionOptions,
 		WCHAR* InLibraryPath_x86,
@@ -538,6 +550,10 @@ Parameters:
     - InCommandLine
 
         Optional command line parameters passed to the newly created process.
+
+    - InWorkingDirectory
+
+        Optional working directory for the newly created process.
 
 	- InProcessCreationFlags
 
@@ -603,7 +619,7 @@ Parameters:
         THROW(STATUS_INVALID_PARAMETER_8, L"The given process ID storage is invalid.");
 
     // all other parameters are validate by called APIs...
-	FORCE(RtlCreateSuspendedProcess(InEXEPath, InCommandLine, InProcessCreationFlags, &ProcessId, &ThreadId));
+	FORCE(RtlCreateSuspendedProcess(InEXEPath, InCommandLine, InWorkingDirectory, InProcessCreationFlags, &ProcessId, &ThreadId));
 
 
     // inject library

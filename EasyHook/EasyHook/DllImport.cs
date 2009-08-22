@@ -178,6 +178,7 @@ namespace EasyHook
         public static extern Int32 RtlCreateSuspendedProcess(
            String InEXEPath,
            String InCommandLine,
+           String InWorkingDirectory,
             Int32 InProcessCreationFlags,
            out Int32 OutProcessId,
            out Int32 OutThreadId);
@@ -360,6 +361,7 @@ namespace EasyHook
         public static extern Int32 RtlCreateSuspendedProcess(
            String InEXEPath,
            String InCommandLine,
+           String InWorkingDirectory,
             Int32 InProcessCreationFlags,
            out Int32 OutProcessId,
            out Int32 OutThreadId);
@@ -662,13 +664,14 @@ namespace EasyHook
         public static void RtlCreateSuspendedProcess(
            String InEXEPath,
            String InCommandLine,
+           String InWorkingDirectory,
             Int32 InProcessCreationFlags,
            out Int32 OutProcessId,
            out Int32 OutThreadId)
         {
-            if (Is64Bit) Force(NativeAPI_x64.RtlCreateSuspendedProcess(InEXEPath, InCommandLine, InProcessCreationFlags,
+            if (Is64Bit) Force(NativeAPI_x64.RtlCreateSuspendedProcess(InEXEPath, InCommandLine, InWorkingDirectory, InProcessCreationFlags,
                 out OutProcessId, out OutThreadId));
-            else Force(NativeAPI_x86.RtlCreateSuspendedProcess(InEXEPath, InCommandLine, InProcessCreationFlags,
+            else Force(NativeAPI_x86.RtlCreateSuspendedProcess(InEXEPath, InCommandLine, InWorkingDirectory, InProcessCreationFlags,
                 out OutProcessId, out OutThreadId));
         }
 

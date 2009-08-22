@@ -376,6 +376,7 @@ DRIVER_SHARED_API(NTSTATUS, LhBarrierCallStackTrace(
 	EASYHOOK_NT_EXPORT RhCreateAndInject(
 				WCHAR* InEXEPath,
 				WCHAR* InCommandLine,
+				WCHAR* InWorkingDirectory,
 				ULONG InProcessCreationFlags,
 				ULONG InInjectionOptions,
 				WCHAR* InLibraryPath_x86,
