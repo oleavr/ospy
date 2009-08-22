@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -34,6 +35,21 @@ namespace oSpy.Capture
 
             Thread th = new Thread(CreateSuggestions);
             th.Start();
+        }
+
+        public StartDetails GetDetails()
+        {
+            StartDetails details = null;
+
+            if (ShowDialog() == DialogResult.OK)
+            {
+                ProcessStartInfo info = new ProcessStartInfo(filenameBox.Text, argsBox.Text);
+                info.WorkingDirectory = startInBox.Text;
+
+                details = new StartDetails(info);
+            }
+
+            return details;
         }
 
         private void UpdateUi()

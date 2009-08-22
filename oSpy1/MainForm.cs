@@ -356,7 +356,35 @@ namespace oSpy
             Close();
         }
 
+        private void startToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (!PrepareCapture())
+                return;
+
+            Capture.StartForm frm = new Capture.StartForm();
+
+            Capture.StartDetails details = frm.GetDetails();
+            if (details == null)
+                return;
+
+            DoCapture(details);
+        }
+
         private void attachToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (!PrepareCapture())
+                return;
+
+            Capture.AttachForm frm = new Capture.AttachForm();
+
+            Capture.AttachDetails details = frm.GetDetails();
+            if (details == null)
+                return;
+
+            DoCapture(details);
+        }
+
+        private bool PrepareCapture()
         {
             if (!hasRegistered)
             {
@@ -369,17 +397,18 @@ namespace oSpy
                 {
                     MessageBox.Show("You need to run oSpy with administrative privileges in order to do this.",
                                     "Permission Denied", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
+                    return false;
                 }
 
                 hasRegistered = true;
             }
 
-            Capture.AttachForm frm = new Capture.AttachForm();
+            return true;
+        }
 
-            System.Diagnostics.Process[] processes;
-            if (!frm.GetSelection(out processes))
-                return;
+        private void DoCapture(Capture.Details details)
+        {
+            details.SoftwallRules = swForm.GetRules();
 
             ClearState();
 
@@ -387,7 +416,7 @@ namespace oSpy
             dataGridView.DataSource = null;
 
             ProgressForm progFrm = new ProgressForm("Starting capture");
-            captureMgr.StartCapture(processes, swForm.GetRules(), progFrm);
+            captureMgr.StartCapture(details, progFrm);
 
             if (progFrm.ShowDialog(this) != DialogResult.OK)
             {
@@ -415,16 +444,6 @@ namespace oSpy
             th.Start(progFrm);
 
             progFrm.ShowDialog(this);
-        }
-
-        private void runToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Capture.StartForm frm = new Capture.StartForm();
-
-            if (frm.ShowDialog() == DialogResult.OK)
-            {
-                MessageBox.Show(this, "Not yet implemented.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
         }
 
         private void openMenuItem_Click(object sender, EventArgs e)

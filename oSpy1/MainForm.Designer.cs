@@ -81,8 +81,8 @@ namespace oSpy
             this.nextpacketToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.nextRowTransactionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.captureToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.startToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.attachToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.runToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.manageSoftwallRulesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.analyzeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -534,11 +534,19 @@ namespace oSpy
             // captureToolStripMenuItem
             // 
             this.captureToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.runToolStripMenuItem,
+            this.startToolStripMenuItem,
             this.attachToolStripMenuItem});
             this.captureToolStripMenuItem.Name = "captureToolStripMenuItem";
             this.captureToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.captureToolStripMenuItem.Text = "&Capture";
+            // 
+            // startToolStripMenuItem
+            // 
+            this.startToolStripMenuItem.Name = "startToolStripMenuItem";
+            this.startToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys) ((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F5)));
+            this.startToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
+            this.startToolStripMenuItem.Text = "&Start Process...";
+            this.startToolStripMenuItem.Click += new System.EventHandler(this.startToolStripMenuItem_Click);
             // 
             // attachToolStripMenuItem
             // 
@@ -547,14 +555,6 @@ namespace oSpy
             this.attachToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
             this.attachToolStripMenuItem.Text = "&Attach to Process...";
             this.attachToolStripMenuItem.Click += new System.EventHandler(this.attachToolStripMenuItem_Click);
-            // 
-            // runToolStripMenuItem
-            // 
-            this.runToolStripMenuItem.Name = "runToolStripMenuItem";
-            this.runToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys) ((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F5)));
-            this.runToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
-            this.runToolStripMenuItem.Text = "&Start Process...";
-            this.runToolStripMenuItem.Click += new System.EventHandler(this.runToolStripMenuItem_Click);
             // 
             // optionsToolStripMenuItem
             // 
@@ -1483,7 +1483,7 @@ namespace oSpy
         private System.Windows.Forms.ToolStripMenuItem welcomeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem captureToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem attachToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem runToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem startToolStripMenuItem;
     }
 }
 
