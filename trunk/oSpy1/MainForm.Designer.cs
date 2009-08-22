@@ -29,8 +29,8 @@ namespace oSpy
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.dataSet = new System.Data.DataSet();
             this.messageTbl = new System.Data.DataTable();
@@ -77,21 +77,22 @@ namespace oSpy
             this.selectallToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.rowsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.transactionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.goToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
+            this.goToToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.nextpacketToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.nextRowTransactionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem9 = new System.Windows.Forms.ToolStripSeparator();
+            this.applydebugSymbolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.captureToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.startToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.attachToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem8 = new System.Windows.Forms.ToolStripSeparator();
             this.manageSoftwallRulesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.analyzeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewInternalDebugToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewWinCryptToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
             this.showMSNP2PConversationsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.applydebugSymbolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.debugToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
@@ -410,11 +411,8 @@ namespace oSpy
             this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
             this.editToolStripMenuItem,
-            this.goToolStripMenuItem,
             this.captureToolStripMenuItem,
-            this.optionsToolStripMenuItem,
             this.analyzeToolStripMenuItem,
-            this.toolsToolStripMenuItem,
             this.helpToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
@@ -478,7 +476,11 @@ namespace oSpy
             // editToolStripMenuItem
             // 
             this.editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.selectallToolStripMenuItem});
+            this.selectallToolStripMenuItem,
+            this.toolStripMenuItem7,
+            this.goToToolStripMenuItem,
+            this.toolStripMenuItem9,
+            this.applydebugSymbolsToolStripMenuItem});
             this.editToolStripMenuItem.Name = "editToolStripMenuItem";
             this.editToolStripMenuItem.Size = new System.Drawing.Size(39, 20);
             this.editToolStripMenuItem.Text = "&Edit";
@@ -489,7 +491,7 @@ namespace oSpy
             this.rowsToolStripMenuItem,
             this.transactionsToolStripMenuItem});
             this.selectallToolStripMenuItem.Name = "selectallToolStripMenuItem";
-            this.selectallToolStripMenuItem.Size = new System.Drawing.Size(120, 22);
+            this.selectallToolStripMenuItem.Size = new System.Drawing.Size(189, 22);
             this.selectallToolStripMenuItem.Text = "Select &all";
             // 
             // rowsToolStripMenuItem
@@ -506,14 +508,19 @@ namespace oSpy
             this.transactionsToolStripMenuItem.Text = "&Transactions";
             this.transactionsToolStripMenuItem.Click += new System.EventHandler(this.transactionsToolStripMenuItem_Click);
             // 
-            // goToolStripMenuItem
+            // toolStripMenuItem7
             // 
-            this.goToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripMenuItem7.Name = "toolStripMenuItem7";
+            this.toolStripMenuItem7.Size = new System.Drawing.Size(186, 6);
+            // 
+            // goToToolStripMenuItem
+            // 
+            this.goToToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.nextpacketToolStripMenuItem,
             this.nextRowTransactionToolStripMenuItem});
-            this.goToolStripMenuItem.Name = "goToolStripMenuItem";
-            this.goToolStripMenuItem.Size = new System.Drawing.Size(34, 20);
-            this.goToolStripMenuItem.Text = "&Go";
+            this.goToToolStripMenuItem.Name = "goToToolStripMenuItem";
+            this.goToToolStripMenuItem.Size = new System.Drawing.Size(189, 22);
+            this.goToToolStripMenuItem.Text = "&Go To";
             // 
             // nextpacketToolStripMenuItem
             // 
@@ -531,11 +538,25 @@ namespace oSpy
             this.nextRowTransactionToolStripMenuItem.Text = "Next row belonging to a &transaction";
             this.nextRowTransactionToolStripMenuItem.Click += new System.EventHandler(this.nextRowTransactionToolStripMenuItem_Click);
             // 
+            // toolStripMenuItem9
+            // 
+            this.toolStripMenuItem9.Name = "toolStripMenuItem9";
+            this.toolStripMenuItem9.Size = new System.Drawing.Size(186, 6);
+            // 
+            // applydebugSymbolsToolStripMenuItem
+            // 
+            this.applydebugSymbolsToolStripMenuItem.Name = "applydebugSymbolsToolStripMenuItem";
+            this.applydebugSymbolsToolStripMenuItem.Size = new System.Drawing.Size(189, 22);
+            this.applydebugSymbolsToolStripMenuItem.Text = "Apply debug &symbols";
+            this.applydebugSymbolsToolStripMenuItem.Click += new System.EventHandler(this.applydebugSymbolsToolStripMenuItem_Click);
+            // 
             // captureToolStripMenuItem
             // 
             this.captureToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.startToolStripMenuItem,
-            this.attachToolStripMenuItem});
+            this.attachToolStripMenuItem,
+            this.toolStripMenuItem8,
+            this.manageSoftwallRulesToolStripMenuItem});
             this.captureToolStripMenuItem.Name = "captureToolStripMenuItem";
             this.captureToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.captureToolStripMenuItem.Text = "&Capture";
@@ -556,19 +577,16 @@ namespace oSpy
             this.attachToolStripMenuItem.Text = "&Attach to Process...";
             this.attachToolStripMenuItem.Click += new System.EventHandler(this.attachToolStripMenuItem_Click);
             // 
-            // optionsToolStripMenuItem
+            // toolStripMenuItem8
             // 
-            this.optionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.manageSoftwallRulesToolStripMenuItem});
-            this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
-            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
-            this.optionsToolStripMenuItem.Text = "&Options";
+            this.toolStripMenuItem8.Name = "toolStripMenuItem8";
+            this.toolStripMenuItem8.Size = new System.Drawing.Size(193, 6);
             // 
             // manageSoftwallRulesToolStripMenuItem
             // 
             this.manageSoftwallRulesToolStripMenuItem.Name = "manageSoftwallRulesToolStripMenuItem";
-            this.manageSoftwallRulesToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
-            this.manageSoftwallRulesToolStripMenuItem.Text = "&Softwall rules...";
+            this.manageSoftwallRulesToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
+            this.manageSoftwallRulesToolStripMenuItem.Text = "Softwall &rules...";
             this.manageSoftwallRulesToolStripMenuItem.Click += new System.EventHandler(this.manageSoftwallRulesToolStripMenuItem_Click);
             // 
             // analyzeToolStripMenuItem
@@ -614,21 +632,6 @@ namespace oSpy
             this.showMSNP2PConversationsToolStripMenuItem.Text = "&Conversations...";
             this.showMSNP2PConversationsToolStripMenuItem.Click += new System.EventHandler(this.showMSNP2PConversationsToolStripMenuItem_Click);
             // 
-            // toolsToolStripMenuItem
-            // 
-            this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.applydebugSymbolsToolStripMenuItem});
-            this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
-            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
-            this.toolsToolStripMenuItem.Text = "&Tools";
-            // 
-            // applydebugSymbolsToolStripMenuItem
-            // 
-            this.applydebugSymbolsToolStripMenuItem.Name = "applydebugSymbolsToolStripMenuItem";
-            this.applydebugSymbolsToolStripMenuItem.Size = new System.Drawing.Size(189, 22);
-            this.applydebugSymbolsToolStripMenuItem.Text = "Apply &debug symbols";
-            this.applydebugSymbolsToolStripMenuItem.Click += new System.EventHandler(this.applydebugSymbolsToolStripMenuItem_Click);
-            // 
             // helpToolStripMenuItem
             // 
             this.helpToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -643,26 +646,29 @@ namespace oSpy
             // debugToolStripMenuItem1
             // 
             this.debugToolStripMenuItem1.Name = "debugToolStripMenuItem1";
-            this.debugToolStripMenuItem1.Size = new System.Drawing.Size(124, 22);
+            this.debugToolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys) ((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.D)));
+            this.debugToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
             this.debugToolStripMenuItem1.Text = "&Debug";
+            this.debugToolStripMenuItem1.Visible = false;
             this.debugToolStripMenuItem1.Click += new System.EventHandler(this.debugToolStripMenuItem_Click);
             // 
             // toolStripMenuItem2
             // 
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(121, 6);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(149, 6);
+            this.toolStripMenuItem2.Visible = false;
             // 
             // welcomeToolStripMenuItem
             // 
             this.welcomeToolStripMenuItem.Name = "welcomeToolStripMenuItem";
-            this.welcomeToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
+            this.welcomeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.welcomeToolStripMenuItem.Text = "&Welcome";
             this.welcomeToolStripMenuItem.Click += new System.EventHandler(this.welcomeToolStripMenuItem_Click);
             // 
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.aboutToolStripMenuItem.Text = "&About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
@@ -926,9 +932,9 @@ namespace oSpy
             // 
             this.timestampDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
             this.timestampDataGridViewTextBoxColumn.DataPropertyName = "Timestamp";
-            dataGridViewCellStyle1.Format = "T";
-            dataGridViewCellStyle1.NullValue = null;
-            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle3.Format = "T";
+            dataGridViewCellStyle3.NullValue = null;
+            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle3;
             this.timestampDataGridViewTextBoxColumn.HeaderText = "Timestamp";
             this.timestampDataGridViewTextBoxColumn.Name = "timestampDataGridViewTextBoxColumn";
             this.timestampDataGridViewTextBoxColumn.ReadOnly = true;
@@ -976,9 +982,9 @@ namespace oSpy
             // returnAddressDataGridViewTextBoxColumn
             // 
             this.returnAddressDataGridViewTextBoxColumn.DataPropertyName = "ReturnAddress";
-            dataGridViewCellStyle2.Format = "x";
-            dataGridViewCellStyle2.NullValue = null;
-            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle4.Format = "x";
+            dataGridViewCellStyle4.NullValue = null;
+            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle4;
             this.returnAddressDataGridViewTextBoxColumn.HeaderText = "ReturnAddress";
             this.returnAddressDataGridViewTextBoxColumn.Name = "returnAddressDataGridViewTextBoxColumn";
             this.returnAddressDataGridViewTextBoxColumn.ReadOnly = true;
@@ -1404,8 +1410,6 @@ namespace oSpy
         private System.Data.DataColumn resourceIdCol;
         private System.Windows.Forms.ContextMenuStrip dataGridContextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem createSwRuleFromEntryToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem optionsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem manageSoftwallRulesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem showAsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aSCIIToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem hexToolStripMenuItem;
@@ -1466,14 +1470,9 @@ namespace oSpy
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
         private System.Windows.Forms.ToolStripButton nextPacketBtn;
         private System.Windows.Forms.ToolStripButton nextTransactionBtn;
-        private System.Windows.Forms.ToolStripMenuItem goToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem nextpacketToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem nextRowTransactionToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem viewInternalDebugToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem viewWinCryptToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem5;
-        private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem applydebugSymbolsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem selBytesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem copyRawToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem selSaveToFileToolStripMenuItem;
@@ -1484,6 +1483,14 @@ namespace oSpy
         private System.Windows.Forms.ToolStripMenuItem captureToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem attachToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem startToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem7;
+        private System.Windows.Forms.ToolStripMenuItem goToToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem nextRowTransactionToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem nextpacketToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem8;
+        private System.Windows.Forms.ToolStripMenuItem manageSoftwallRulesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem9;
+        private System.Windows.Forms.ToolStripMenuItem applydebugSymbolsToolStripMenuItem;
     }
 }
 
