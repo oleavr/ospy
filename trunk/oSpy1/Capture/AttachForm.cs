@@ -63,6 +63,26 @@ namespace oSpy.Capture
             x64NoteLbl.Visible = EasyHook.RemoteHooking.IsX64System;
         }
 
+        public AttachDetails GetDetails()
+        {
+            AttachDetails details = null;
+
+            if (ShowDialog() == DialogResult.OK)
+            {
+                List<Process> procList = new List<Process>();
+
+                foreach (ListViewItem item in processView.Items)
+                {
+                    if (item.Checked)
+                        procList.Add(item.Tag as Process);
+                }
+
+                details = new AttachDetails(procList.ToArray());
+            }
+
+            return details;
+        }
+
         private void ProcessEventArrived(object o, EventArrivedEventArgs e)
         {
             processViewUpdater.Update();
@@ -113,24 +133,6 @@ namespace oSpy.Capture
         private void startBtn_Click(object sender, EventArgs e)
         {
             DialogResult = DialogResult.OK;
-        }
-
-        public bool GetSelection(out Process[] processes)
-        {
-            List<Process> procList = new List<Process>();
-
-            if (ShowDialog() == DialogResult.OK)
-            {
-                foreach (ListViewItem item in processView.Items)
-                {
-                    if (item.Checked)
-                        procList.Add(item.Tag as Process);
-                }
-            }
-
-            processes = procList.ToArray();
-
-            return processes.Length > 0;
         }
     }
 

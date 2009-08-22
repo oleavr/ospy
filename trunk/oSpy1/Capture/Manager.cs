@@ -104,10 +104,67 @@ namespace oSpy.Capture
         public UInt32 last_error;
     };
 
-    internal class Manager : MarshalByRefObject, IManager
+    public class Details
+    {
+        private SoftwallRule[] softwallRules;
+
+        public SoftwallRule[] SoftwallRules
+        {
+            get
+            {
+                return softwallRules;
+            }
+
+            set
+            {
+                softwallRules = value;
+            }
+        }
+
+    }
+
+    public class StartDetails : Details
+    {
+        private ProcessStartInfo info;
+
+        public ProcessStartInfo Info
+        {
+            get
+            {
+                return info;
+            }
+        }
+
+        public StartDetails(ProcessStartInfo info)
+        {
+            this.info = info;
+        }
+    }
+
+    public class AttachDetails : Details
+    {
+        private Process[] processes;
+
+        public Process[] Processes
+        {
+            get
+            {
+                return processes;
+            }
+        }
+
+        public AttachDetails(Process[] processes)
+        {
+            this.processes = processes;
+        }
+    }
+
+    public class Manager : MarshalByRefObject, IManager
     {
         public delegate void ElementsReceivedHandler(MessageQueueElement[] elements);
         public event ElementsReceivedHandler MessageElementsReceived;
+
+        private const string AGENT_DLL = "oSpyAgent.dll";
 
         public const int PACKET_BUFSIZE = 65536;
         public const int BACKTRACE_BUFSIZE = 384;
@@ -123,9 +180,7 @@ namespace oSpy.Capture
         /* connect() errors */
         public const int WSAEHOSTUNREACH = 10065;
 
-        private Process[] processes = null;
-        private SoftwallRule[] softwallRules = null;
-
+        private Details details = null;
         private IProgressFeedback progress = null;
 
         private Thread startWorkerThread;
@@ -153,10 +208,9 @@ namespace oSpy.Capture
         {
         }
 
-        public void StartCapture(Process[] processes, SoftwallRule[] softwallRules, IProgressFeedback progress)
+        public void StartCapture(Details details, IProgressFeedback progress)
         {
-            this.processes = processes;
-            this.softwallRules = softwallRules;
+            this.details = details;
             this.progress = progress;
 
             startWorkerThread = new Thread(DoStartCapture);
@@ -181,7 +235,14 @@ namespace oSpy.Capture
             try
             {
                 PrepareCapture();
-                DoInjection();
+
+                if (details is StartDetails)
+                    DoCreation();
+                else if (details is AttachDetails)
+                    DoInjection();
+                else
+                    throw new NotImplementedException();
+
                 progress.OperationComplete();
             }
             catch (Exception e)
@@ -199,13 +260,26 @@ namespace oSpy.Capture
             RemotingServices.Marshal(this, serverChannelName, typeof(IManager));
         }
 
+        private void DoCreation()
+        {
+            StartDetails startDetails = details as StartDetails;
+
+            progress.ProgressUpdate("Starting process and injecting logging agent", 100);
+            int processId;
+            RemoteHooking.CreateAndInject(startDetails.Info.FileName, startDetails.Info.Arguments, 0, AGENT_DLL, AGENT_DLL,
+                out processId, serverChannelName, details.SoftwallRules);
+            // FIXME: startDetails.Info.WorkingDirectory is ignored
+        }
+
         private void DoInjection()
         {
+            AttachDetails attachDetails = details as AttachDetails;
+            Process[] processes = attachDetails.Processes;
             for (int i = 0; i < processes.Length; i++)
             {
                 int percentComplete = (int)(((float)(i + 1) / (float)processes.Length) * 100.0f);
                 progress.ProgressUpdate("Injecting logging agents", percentComplete);
-                RemoteHooking.Inject(processes[i].Id, "oSpyAgent.dll", "oSpyAgent.dll", serverChannelName, softwallRules);
+                RemoteHooking.Inject(processes[i].Id, AGENT_DLL, AGENT_DLL, serverChannelName, details.SoftwallRules);
             }
         }
 
