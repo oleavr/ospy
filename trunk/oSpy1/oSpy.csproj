@@ -92,18 +92,18 @@
     <Compile Include="Capture\ProgressForm.Designer.cs">
       <DependentUpon>ProgressForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Capture\ChooseForm.cs">
+    <Compile Include="Capture\AttachForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Capture\ChooseForm.designer.cs">
-      <DependentUpon>ChooseForm.cs</DependentUpon>
+    <Compile Include="Capture\AttachForm.designer.cs">
+      <DependentUpon>AttachForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Capture\Manager.cs" />
-    <Compile Include="Capture\RunForm.cs">
+    <Compile Include="Capture\StartForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Capture\RunForm.Designer.cs">
-      <DependentUpon>RunForm.cs</DependentUpon>
+    <Compile Include="Capture\StartForm.Designer.cs">
+      <DependentUpon>StartForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Configuration\ConfigManager.cs" />
     <Compile Include="Configuration\ParserConfigDialog.cs">
@@ -230,11 +230,11 @@
       <SubType>Designer</SubType>
       <DependentUpon>ProgressForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Capture\ChooseForm.resx">
-      <DependentUpon>ChooseForm.cs</DependentUpon>
+    <EmbeddedResource Include="Capture\AttachForm.resx">
+      <DependentUpon>AttachForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Capture\RunForm.resx">
-      <DependentUpon>RunForm.cs</DependentUpon>
+    <EmbeddedResource Include="Capture\StartForm.resx">
+      <DependentUpon>StartForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Configuration\ParserConfigDialog.resx">
       <SubType>Designer</SubType>
@@ -370,6 +370,7 @@
   <ItemGroup>
     <None Include="Images\donate.gif" />
     <None Include="oSpy.snk" />
+    <None Include="Images\search.png" />
     <Content Include="oSpy.ico" />
     <Content Include="README.txt" />
   </ItemGroup>

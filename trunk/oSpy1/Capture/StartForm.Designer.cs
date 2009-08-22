@@ -1,6 +1,6 @@
 ﻿namespace oSpy.Capture
 {
-    partial class RunForm
+    partial class StartForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(RunForm));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(StartForm));
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.startInBox = new System.Windows.Forms.TextBox();
@@ -148,7 +148,7 @@
             // cancelBtn
             // 
             this.cancelBtn.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cancelBtn.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.cancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.cancelBtn.Location = new System.Drawing.Point(401, 144);
             this.cancelBtn.Name = "cancelBtn";
             this.cancelBtn.Size = new System.Drawing.Size(75, 23);
@@ -169,7 +169,7 @@
             this.searchBox.Text = "Please wait...";
             this.searchBox.SuggestionActivated += new oSpy.SearchBox.SuggestionActivatedHandler(this.searchBox_SuggestionActivated);
             // 
-            // RunForm
+            // StartForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -183,10 +183,10 @@
             this.MaximizeBox = false;
             this.MaximumSize = new System.Drawing.Size(512, 211);
             this.MinimumSize = new System.Drawing.Size(320, 211);
-            this.Name = "RunForm";
+            this.Name = "StartForm";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Run";
+            this.Text = "Start Process";
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
             this.ResumeLayout(false);
