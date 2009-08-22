@@ -27,14 +27,24 @@ namespace oSpy.Capture
 {
     public partial class StartForm : Form
     {
+        private static ICollection<ListViewItem> suggestItems = null;
+        private static ImageList suggestImages = null;
+
         public StartForm()
         {
             InitializeComponent();
 
             UpdateUi();
 
-            Thread th = new Thread(CreateSuggestions);
-            th.Start();
+            if (suggestItems == null)
+            {
+                Thread th = new Thread(CreateSuggestions);
+                th.Start();
+            }
+            else
+            {
+                searchBox.UpdateSuggestions(suggestItems, suggestImages);
+            }
         }
 
         public StartDetails GetDetails()
@@ -109,7 +119,10 @@ namespace oSpy.Capture
 
             items.Sort();
 
-            searchBox.UpdateSuggestions(items.ToArray(), imageLst);
+            suggestItems = items.ToArray();
+            suggestImages = imageLst;
+
+            searchBox.UpdateSuggestions(suggestItems, suggestImages);
         }
 
         private void searchBox_SuggestionActivated(object sender, SuggestionActivatedEventArgs e)
