@@ -783,6 +783,9 @@ namespace EasyHook
         /// <param name="InCommandLine">
         /// Optional command line parameters for process creation.
         /// </param>
+        /// <param name="InWorkingDirectory">
+        /// Optional working directory for process creation.
+        /// </param>
         /// <param name="InProcessCreationFlags">
         /// Internally CREATE_SUSPENDED is already passed to CreateProcess(). With this
         /// parameter you can add more flags like DETACHED_PROCESS, CREATE_NEW_CONSOLE or
@@ -809,6 +812,7 @@ namespace EasyHook
         public static void CreateAndInject(
             String InEXEPath,
             String InCommandLine,
+            String InWorkingDirectory,
             Int32 InProcessCreationFlags,
             String InLibraryPath_x86,
             String InLibraryPath_x64,
@@ -824,6 +828,7 @@ namespace EasyHook
             NativeAPI.RtlCreateSuspendedProcess(
                 InEXEPath,
                 InCommandLine,
+                InWorkingDirectory,
                 InProcessCreationFlags,
                 out RemotePID,
                 out RemoteTID);
