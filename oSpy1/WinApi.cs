@@ -8,7 +8,7 @@ namespace oSpy
 {
     public class WinApi
     {
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = false)]
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.VariantBool)]
         public static extern bool IsWow64Process(IntPtr hProcess, out bool Wow64Process);
 
@@ -178,6 +178,15 @@ namespace oSpy
 
         [DllImport ("comctl32.dll", SetLastError = true)]
         public static extern IntPtr ImageList_GetIcon (IntPtr himl, int i, int flags);
+
+        public enum CSIDL
+        {
+            COMMON_STARTMENU = 0x0016,
+            COMMON_PROGRAMS = 0x0017
+        }
+
+        [DllImport("shell32.dll", SetLastError = false)]
+        public static extern bool SHGetSpecialFolderPath(IntPtr hwndOwner, StringBuilder lpszPath, CSIDL nFolder, bool fCreate);
 
         [Serializable]
         [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]

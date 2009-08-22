@@ -356,7 +356,7 @@ namespace oSpy
             Close();
         }
 
-        private void newCaptureMenuItem_Click(object sender, EventArgs e)
+        private void attachToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (!hasRegistered)
             {
@@ -415,6 +415,16 @@ namespace oSpy
             th.Start(progFrm);
 
             progFrm.ShowDialog(this);
+        }
+
+        private void runToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Capture.RunForm frm = new Capture.RunForm();
+
+            if (frm.ShowDialog() == DialogResult.OK)
+            {
+                MessageBox.Show(this, "Not yet implemented.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void openMenuItem_Click(object sender, EventArgs e)

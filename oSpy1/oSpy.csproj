@@ -77,6 +77,9 @@
     <Compile Include="AboutBoxForm.Designer.cs">
       <DependentUpon>AboutBoxForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="SearchBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="BacktraceForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -96,6 +99,12 @@
       <DependentUpon>ChooseForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Capture\Manager.cs" />
+    <Compile Include="Capture\RunForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Capture\RunForm.Designer.cs">
+      <DependentUpon>RunForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Configuration\ConfigManager.cs" />
     <Compile Include="Configuration\ParserConfigDialog.cs">
       <SubType>Form</SubType>
@@ -223,6 +232,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Capture\ChooseForm.resx">
       <DependentUpon>ChooseForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Capture\RunForm.resx">
+      <DependentUpon>RunForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Configuration\ParserConfigDialog.resx">
       <SubType>Designer</SubType>
@@ -390,6 +402,16 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="IWshRuntimeLibrary">
+      <Guid>{F935DC20-1CF0-11D0-ADB9-00C04FD58A0B}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+    </COMReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

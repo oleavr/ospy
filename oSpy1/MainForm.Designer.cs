@@ -29,8 +29,8 @@ namespace oSpy
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.dataSet = new System.Data.DataSet();
             this.messageTbl = new System.Data.DataTable();
@@ -80,9 +80,11 @@ namespace oSpy
             this.goToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.nextpacketToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.nextRowTransactionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.captureToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.attachToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.runToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.manageSoftwallRulesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.parserConfigToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.analyzeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewInternalDebugToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewWinCryptToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -164,19 +166,17 @@ namespace oSpy
             this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.swReleaseStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
-            this.newCaptureMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
-            ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize) (this.dataSet)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize) (this.messageTbl)).BeginInit();
             this.menuStrip.SuspendLayout();
             this.dataGridContextMenuStrip.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.bindingSource)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize) (this.bindingSource)).BeginInit();
             this.dumpContextMenuStrip.SuspendLayout();
             this.propertyGridContextMenuStrip.SuspendLayout();
             this.mainSplitContainer.Panel1.SuspendLayout();
             this.mainSplitContainer.Panel2.SuspendLayout();
             this.mainSplitContainer.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize) (this.dataGridView)).BeginInit();
             this.lowerSplitContainer.Panel1.SuspendLayout();
             this.lowerSplitContainer.Panel2.SuspendLayout();
             this.lowerSplitContainer.SuspendLayout();
@@ -411,6 +411,7 @@ namespace oSpy
             this.fileToolStripMenuItem,
             this.editToolStripMenuItem,
             this.goToolStripMenuItem,
+            this.captureToolStripMenuItem,
             this.optionsToolStripMenuItem,
             this.analyzeToolStripMenuItem,
             this.toolsToolStripMenuItem,
@@ -424,8 +425,6 @@ namespace oSpy
             // fileToolStripMenuItem
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.newCaptureMenuItem,
-            this.toolStripMenuItem7,
             this.openMenuItem,
             this.saveMenuItem,
             this.toolStripSeparator1,
@@ -439,38 +438,40 @@ namespace oSpy
             // openMenuItem
             // 
             this.openMenuItem.Name = "openMenuItem";
-            this.openMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.openMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys) ((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
+            this.openMenuItem.Size = new System.Drawing.Size(155, 22);
             this.openMenuItem.Text = "&Open...";
             this.openMenuItem.Click += new System.EventHandler(this.openMenuItem_Click);
             // 
             // saveMenuItem
             // 
             this.saveMenuItem.Name = "saveMenuItem";
-            this.saveMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.saveMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys) ((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
+            this.saveMenuItem.Size = new System.Drawing.Size(155, 22);
             this.saveMenuItem.Text = "&Save...";
             this.saveMenuItem.Click += new System.EventHandler(this.saveMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(109, 6);
             // 
             // clearMenuItem
             // 
             this.clearMenuItem.Name = "clearMenuItem";
-            this.clearMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.clearMenuItem.Size = new System.Drawing.Size(112, 22);
             this.clearMenuItem.Text = "&Clear";
             this.clearMenuItem.Click += new System.EventHandler(this.clearMenuItem_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(109, 6);
             // 
             // exitMenuItem
             // 
             this.exitMenuItem.Name = "exitMenuItem";
-            this.exitMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exitMenuItem.Size = new System.Drawing.Size(112, 22);
             this.exitMenuItem.Text = "E&xit";
             this.exitMenuItem.Click += new System.EventHandler(this.exitMenuItem_Click);
             // 
@@ -517,7 +518,7 @@ namespace oSpy
             // nextpacketToolStripMenuItem
             // 
             this.nextpacketToolStripMenuItem.Name = "nextpacketToolStripMenuItem";
-            this.nextpacketToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.R)));
+            this.nextpacketToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys) ((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.R)));
             this.nextpacketToolStripMenuItem.Size = new System.Drawing.Size(306, 22);
             this.nextpacketToolStripMenuItem.Text = "Next &packet row";
             this.nextpacketToolStripMenuItem.Click += new System.EventHandler(this.nextpacketToolStripMenuItem_Click);
@@ -525,16 +526,40 @@ namespace oSpy
             // nextRowTransactionToolStripMenuItem
             // 
             this.nextRowTransactionToolStripMenuItem.Name = "nextRowTransactionToolStripMenuItem";
-            this.nextRowTransactionToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
+            this.nextRowTransactionToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys) ((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
             this.nextRowTransactionToolStripMenuItem.Size = new System.Drawing.Size(306, 22);
             this.nextRowTransactionToolStripMenuItem.Text = "Next row belonging to a &transaction";
             this.nextRowTransactionToolStripMenuItem.Click += new System.EventHandler(this.nextRowTransactionToolStripMenuItem_Click);
             // 
+            // captureToolStripMenuItem
+            // 
+            this.captureToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.attachToolStripMenuItem,
+            this.runToolStripMenuItem});
+            this.captureToolStripMenuItem.Name = "captureToolStripMenuItem";
+            this.captureToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
+            this.captureToolStripMenuItem.Text = "&Capture";
+            // 
+            // attachToolStripMenuItem
+            // 
+            this.attachToolStripMenuItem.Name = "attachToolStripMenuItem";
+            this.attachToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F5;
+            this.attachToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
+            this.attachToolStripMenuItem.Text = "Attach to &Process...";
+            this.attachToolStripMenuItem.Click += new System.EventHandler(this.attachToolStripMenuItem_Click);
+            // 
+            // runToolStripMenuItem
+            // 
+            this.runToolStripMenuItem.Name = "runToolStripMenuItem";
+            this.runToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys) ((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F5)));
+            this.runToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
+            this.runToolStripMenuItem.Text = "&Run...";
+            this.runToolStripMenuItem.Click += new System.EventHandler(this.runToolStripMenuItem_Click);
+            // 
             // optionsToolStripMenuItem
             // 
             this.optionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.manageSoftwallRulesToolStripMenuItem,
-            this.parserConfigToolStripMenuItem});
+            this.manageSoftwallRulesToolStripMenuItem});
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
             this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.optionsToolStripMenuItem.Text = "&Options";
@@ -545,13 +570,6 @@ namespace oSpy
             this.manageSoftwallRulesToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
             this.manageSoftwallRulesToolStripMenuItem.Text = "&Softwall rules...";
             this.manageSoftwallRulesToolStripMenuItem.Click += new System.EventHandler(this.manageSoftwallRulesToolStripMenuItem_Click);
-            // 
-            // parserConfigToolStripMenuItem
-            // 
-            this.parserConfigToolStripMenuItem.Name = "parserConfigToolStripMenuItem";
-            this.parserConfigToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
-            this.parserConfigToolStripMenuItem.Text = "Parser Config...";
-            this.parserConfigToolStripMenuItem.Click += new System.EventHandler(this.parserConfigToolStripMenuItem_Click);
             // 
             // analyzeToolStripMenuItem
             // 
@@ -817,7 +835,7 @@ namespace oSpy
             // 
             // mainSplitContainer
             // 
-            this.mainSplitContainer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            this.mainSplitContainer.Anchor = ((System.Windows.Forms.AnchorStyles) ((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.mainSplitContainer.Location = new System.Drawing.Point(0, 52);
@@ -908,9 +926,9 @@ namespace oSpy
             // 
             this.timestampDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
             this.timestampDataGridViewTextBoxColumn.DataPropertyName = "Timestamp";
-            dataGridViewCellStyle3.Format = "T";
-            dataGridViewCellStyle3.NullValue = null;
-            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle5.Format = "T";
+            dataGridViewCellStyle5.NullValue = null;
+            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle5;
             this.timestampDataGridViewTextBoxColumn.HeaderText = "Timestamp";
             this.timestampDataGridViewTextBoxColumn.Name = "timestampDataGridViewTextBoxColumn";
             this.timestampDataGridViewTextBoxColumn.ReadOnly = true;
@@ -958,9 +976,9 @@ namespace oSpy
             // returnAddressDataGridViewTextBoxColumn
             // 
             this.returnAddressDataGridViewTextBoxColumn.DataPropertyName = "ReturnAddress";
-            dataGridViewCellStyle4.Format = "x";
-            dataGridViewCellStyle4.NullValue = null;
-            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle6.Format = "x";
+            dataGridViewCellStyle6.NullValue = null;
+            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle6;
             this.returnAddressDataGridViewTextBoxColumn.HeaderText = "ReturnAddress";
             this.returnAddressDataGridViewTextBoxColumn.Name = "returnAddressDataGridViewTextBoxColumn";
             this.returnAddressDataGridViewTextBoxColumn.ReadOnly = true;
@@ -1138,7 +1156,7 @@ namespace oSpy
             this.richTextBox.ContextMenuStrip = this.dumpContextMenuStrip;
             this.richTextBox.Cursor = System.Windows.Forms.Cursors.Arrow;
             this.richTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.richTextBox.Font = new System.Drawing.Font("Lucida Console", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.richTextBox.Font = new System.Drawing.Font("Lucida Console", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte) (0)));
             this.richTextBox.ForeColor = System.Drawing.Color.Black;
             this.richTextBox.Location = new System.Drawing.Point(0, 0);
             this.richTextBox.Name = "richTextBox";
@@ -1243,7 +1261,7 @@ namespace oSpy
             // nextPacketBtn
             // 
             this.nextPacketBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.nextPacketBtn.Image = ((System.Drawing.Image)(resources.GetObject("nextPacketBtn.Image")));
+            this.nextPacketBtn.Image = ((System.Drawing.Image) (resources.GetObject("nextPacketBtn.Image")));
             this.nextPacketBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.nextPacketBtn.Name = "nextPacketBtn";
             this.nextPacketBtn.Size = new System.Drawing.Size(26, 22);
@@ -1254,7 +1272,7 @@ namespace oSpy
             // nextTransactionBtn
             // 
             this.nextTransactionBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.nextTransactionBtn.Image = ((System.Drawing.Image)(resources.GetObject("nextTransactionBtn.Image")));
+            this.nextTransactionBtn.Image = ((System.Drawing.Image) (resources.GetObject("nextTransactionBtn.Image")));
             this.nextTransactionBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.nextTransactionBtn.Name = "nextTransactionBtn";
             this.nextTransactionBtn.Size = new System.Drawing.Size(26, 19);
@@ -1293,18 +1311,6 @@ namespace oSpy
             this.dumpSaveFileDialog.DefaultExt = "bin";
             this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
             // 
-            // newCaptureMenuItem
-            // 
-            this.newCaptureMenuItem.Name = "newCaptureMenuItem";
-            this.newCaptureMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.newCaptureMenuItem.Text = "&New capture...";
-            this.newCaptureMenuItem.Click += new System.EventHandler(this.newCaptureMenuItem_Click);
-            // 
-            // toolStripMenuItem7
-            // 
-            this.toolStripMenuItem7.Name = "toolStripMenuItem7";
-            this.toolStripMenuItem7.Size = new System.Drawing.Size(149, 6);
-            // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(828, 585);
@@ -1312,24 +1318,24 @@ namespace oSpy
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.mainSplitContainer);
             this.Controls.Add(this.menuStrip);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Icon = ((System.Drawing.Icon) (resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
             this.Text = "oSpy";
             this.Shown += new System.EventHandler(this.MainForm_Shown);
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
-            ((System.ComponentModel.ISupportInitialize)(this.dataSet)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.messageTbl)).EndInit();
+            ((System.ComponentModel.ISupportInitialize) (this.dataSet)).EndInit();
+            ((System.ComponentModel.ISupportInitialize) (this.messageTbl)).EndInit();
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
             this.dataGridContextMenuStrip.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.bindingSource)).EndInit();
+            ((System.ComponentModel.ISupportInitialize) (this.bindingSource)).EndInit();
             this.dumpContextMenuStrip.ResumeLayout(false);
             this.propertyGridContextMenuStrip.ResumeLayout(false);
             this.mainSplitContainer.Panel1.ResumeLayout(false);
             this.mainSplitContainer.Panel2.ResumeLayout(false);
             this.mainSplitContainer.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).EndInit();
+            ((System.ComponentModel.ISupportInitialize) (this.dataGridView)).EndInit();
             this.lowerSplitContainer.Panel1.ResumeLayout(false);
             this.lowerSplitContainer.Panel2.ResumeLayout(false);
             this.lowerSplitContainer.ResumeLayout(false);
@@ -1421,7 +1427,6 @@ namespace oSpy
         private System.Windows.Forms.SaveFileDialog dumpSaveFileDialog;
         private System.Windows.Forms.ToolStripMenuItem goToReturnaddressInIDAToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
-        private System.Windows.Forms.ToolStripMenuItem parserConfigToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
         private System.Data.DataColumn domainCol;
         private System.Data.DataColumn severityCol;
@@ -1476,8 +1481,9 @@ namespace oSpy
         private System.Windows.Forms.ToolStripMenuItem copyToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel swReleaseStatusLabel;
         private System.Windows.Forms.ToolStripMenuItem welcomeToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem newCaptureMenuItem;
-        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem7;
+        private System.Windows.Forms.ToolStripMenuItem captureToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem attachToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem runToolStripMenuItem;
     }
 }
 
