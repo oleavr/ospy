@@ -29,11 +29,14 @@ namespace oSpy
 {
     public partial class DebugForm : Form, DebugLogger
     {
-        private int numLines = 0;
+        private delegate void AddMessageHandler(string msg);
+        private AddMessageHandler addMsgHandler;
 
         public DebugForm()
         {
             InitializeComponent();
+
+            addMsgHandler = new AddMessageHandler(AddMessage);
         }
 
         private void closeButton_Click(object sender, EventArgs e)
@@ -43,27 +46,29 @@ namespace oSpy
 
         public void AddMessage(string msg)
         {
-            string newLine = String.Format("{0}\r\n", msg);
+            if (!Visible)
+                return;
 
-            /*
-            if (numLines >= 1000)
+            if (InvokeRequired)
             {
-                string text = textBox.Text;
-                int pos = text.IndexOf("\r\n");
-                textBox.Text = text.Substring(pos + 2) + newLine;
+                Invoke(addMsgHandler, msg);
+                return;
             }
-            else
-            {*/
-                textBox.Text += newLine;
-            //}
 
-            numLines++;
+            if (textBox.Text.Length > 0)
+                textBox.Text += "\r\n" + msg;
+            else
+                textBox.Text += msg;
         }
-        public void AddMessage(string msg, params object[] vals) {
-            string newLine = String.Format(msg + "\r\n", vals);
-            textBox.Text += newLine;
-            numLines++;
+
+        public void AddMessage(string msg, params object[] vals)
+        {
+            if (!Visible)
+                return;
+
+            AddMessage(String.Format(msg, vals));
         }
+
         private void clearButton_Click(object sender, EventArgs e)
         {
             textBox.Text = "";
