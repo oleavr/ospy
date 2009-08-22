@@ -123,14 +123,14 @@ namespace oSpy.Capture
         /* connect() errors */
         public const int WSAEHOSTUNREACH = 10065;
 
-        private Process[] m_processes = null;
-        private SoftwallRule[] m_softwallRules = null;
+        private Process[] processes = null;
+        private SoftwallRule[] softwallRules = null;
 
         private IProgressFeedback progress = null;
 
         private Thread startWorkerThread;
-        private IpcServerChannel m_channel;
-        private string m_channelName;
+        private IpcServerChannel serverChannel;
+        private string serverChannelName;
 
         public Manager()
         {
@@ -155,8 +155,8 @@ namespace oSpy.Capture
 
         public void StartCapture(Process[] processes, SoftwallRule[] softwallRules, IProgressFeedback progress)
         {
-            this.m_processes = processes;
-            this.m_softwallRules = softwallRules;
+            this.processes = processes;
+            this.softwallRules = softwallRules;
             this.progress = progress;
 
             startWorkerThread = new Thread(DoStartCapture);
@@ -169,9 +169,9 @@ namespace oSpy.Capture
 
             startWorkerThread = null;
             RemotingServices.Disconnect(this);
-            ChannelServices.UnregisterChannel(m_channel);
-            m_channel = null;
-            m_channelName = null;
+            ChannelServices.UnregisterChannel(serverChannel);
+            serverChannel = null;
+            serverChannelName = null;
 
             progress.OperationComplete();
         }
@@ -193,19 +193,19 @@ namespace oSpy.Capture
 
         private void PrepareCapture()
         {
-            m_channelName = GenerateChannelName();
-            m_channel = CreateServerChannel(m_channelName);
-            ChannelServices.RegisterChannel(m_channel, false);
-            RemotingServices.Marshal(this, m_channelName, typeof(IManager));
+            serverChannelName = GenerateChannelName();
+            serverChannel = CreateServerChannel(serverChannelName);
+            ChannelServices.RegisterChannel(serverChannel, false);
+            RemotingServices.Marshal(this, serverChannelName, typeof(IManager));
         }
 
         private void DoInjection()
         {
-            for (int i = 0; i < m_processes.Length; i++)
+            for (int i = 0; i < processes.Length; i++)
             {
-                int percentComplete = (int)(((float)(i + 1) / (float)m_processes.Length) * 100.0f);
+                int percentComplete = (int)(((float)(i + 1) / (float)processes.Length) * 100.0f);
                 progress.ProgressUpdate("Injecting logging agents", percentComplete);
-                RemoteHooking.Inject(m_processes[i].Id, "oSpyAgent.dll", "oSpyAgent.dll", m_channelName, m_softwallRules);
+                RemoteHooking.Inject(processes[i].Id, "oSpyAgent.dll", "oSpyAgent.dll", serverChannelName, softwallRules);
             }
         }
 

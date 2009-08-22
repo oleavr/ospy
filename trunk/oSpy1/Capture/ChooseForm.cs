@@ -136,11 +136,11 @@ namespace oSpy.Capture
 
     public class ProcessViewItemComparer : System.Collections.IComparer
     {
-        private int m_curSessionId;
+        private int curSessionId;
 
         public ProcessViewItemComparer()
         {
-            m_curSessionId = Process.GetCurrentProcess().SessionId;
+            curSessionId = Process.GetCurrentProcess().SessionId;
         }
 
         public int Compare(object itemA, object itemB)
@@ -148,9 +148,9 @@ namespace oSpy.Capture
             Process a = (itemA as ListViewItem).Tag as Process;
             Process b = (itemB as ListViewItem).Tag as Process;
 
-            if (a.SessionId != b.SessionId && ((a.SessionId == m_curSessionId) || (b.SessionId == m_curSessionId)))
+            if (a.SessionId != b.SessionId && ((a.SessionId == curSessionId) || (b.SessionId == curSessionId)))
             {
-                if (a.SessionId == m_curSessionId)
+                if (a.SessionId == curSessionId)
                     return -1;
                 else
                     return 1;
