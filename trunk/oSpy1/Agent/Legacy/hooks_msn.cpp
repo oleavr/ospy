@@ -231,7 +231,7 @@ LogOutput_called(BOOL carry_on,
 
     carry_on = FALSE;
 
-    StringCbPrintfW(buf, sizeof(buf), _T("wldlog_%S"), zone);
+    StringCbPrintfW(buf, sizeof(buf), _T("%SDebug"), zone);
 
     log_debug_w(buf, bt_address, format, args, flags, level);
 }
