@@ -420,8 +420,8 @@ namespace oSpy
 
             if (progFrm.ShowDialog(this) != DialogResult.OK)
             {
-                MessageBox.Show(String.Format("Failed to start capture: {0}", progFrm.GetOperationErrorMessage()),
-                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(String.Format("Failed to start capture: {0}\n\nIf you're trying to monitor Internet Explorer, make sure you disable its \"Protected Mode\" feature. This issue will be addressed in a future oSpy release.",
+                    progFrm.GetOperationErrorMessage()), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
