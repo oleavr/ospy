@@ -38,7 +38,7 @@
             this.argsBox = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
-            this.runBtn = new System.Windows.Forms.Button();
+            this.startBtn = new System.Windows.Forms.Button();
             this.cancelBtn = new System.Windows.Forms.Button();
             this.searchBox = new oSpy.SearchBox();
             this.groupBox2.SuspendLayout();
@@ -73,7 +73,8 @@
             this.startInBox.Location = new System.Drawing.Point(72, 71);
             this.startInBox.Name = "startInBox";
             this.startInBox.Size = new System.Drawing.Size(386, 20);
-            this.startInBox.TabIndex = 3;
+            this.startInBox.TabIndex = 4;
+            this.startInBox.TextChanged += new System.EventHandler(this.anyFileTextBox_TextChanged);
             // 
             // label3
             // 
@@ -90,7 +91,7 @@
             this.browseBtn.Location = new System.Drawing.Point(385, 17);
             this.browseBtn.Name = "browseBtn";
             this.browseBtn.Size = new System.Drawing.Size(73, 23);
-            this.browseBtn.TabIndex = 0;
+            this.browseBtn.TabIndex = 1;
             this.browseBtn.Text = "&Browse...";
             this.browseBtn.UseVisualStyleBackColor = true;
             this.browseBtn.Click += new System.EventHandler(this.browseBtn_Click);
@@ -104,8 +105,8 @@
             this.filenameBox.Location = new System.Drawing.Point(72, 19);
             this.filenameBox.Name = "filenameBox";
             this.filenameBox.Size = new System.Drawing.Size(307, 20);
-            this.filenameBox.TabIndex = 1;
-            this.filenameBox.TextChanged += new System.EventHandler(this.filenameBox_TextChanged);
+            this.filenameBox.TabIndex = 2;
+            this.filenameBox.TextChanged += new System.EventHandler(this.anyFileTextBox_TextChanged);
             // 
             // argsBox
             // 
@@ -114,7 +115,7 @@
             this.argsBox.Location = new System.Drawing.Point(72, 45);
             this.argsBox.Name = "argsBox";
             this.argsBox.Size = new System.Drawing.Size(386, 20);
-            this.argsBox.TabIndex = 2;
+            this.argsBox.TabIndex = 3;
             // 
             // label2
             // 
@@ -134,16 +135,16 @@
             this.label1.TabIndex = 0;
             this.label1.Text = "File name:";
             // 
-            // runBtn
+            // startBtn
             // 
-            this.runBtn.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.runBtn.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.runBtn.Location = new System.Drawing.Point(320, 144);
-            this.runBtn.Name = "runBtn";
-            this.runBtn.Size = new System.Drawing.Size(75, 23);
-            this.runBtn.TabIndex = 4;
-            this.runBtn.Text = "&Run";
-            this.runBtn.UseVisualStyleBackColor = true;
+            this.startBtn.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.startBtn.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.startBtn.Location = new System.Drawing.Point(320, 144);
+            this.startBtn.Name = "startBtn";
+            this.startBtn.Size = new System.Drawing.Size(75, 23);
+            this.startBtn.TabIndex = 5;
+            this.startBtn.Text = "&Start";
+            this.startBtn.UseVisualStyleBackColor = true;
             // 
             // cancelBtn
             // 
@@ -152,7 +153,7 @@
             this.cancelBtn.Location = new System.Drawing.Point(401, 144);
             this.cancelBtn.Name = "cancelBtn";
             this.cancelBtn.Size = new System.Drawing.Size(75, 23);
-            this.cancelBtn.TabIndex = 5;
+            this.cancelBtn.TabIndex = 6;
             this.cancelBtn.Text = "&Cancel";
             this.cancelBtn.UseVisualStyleBackColor = true;
             // 
@@ -165,7 +166,7 @@
             this.searchBox.Location = new System.Drawing.Point(12, 12);
             this.searchBox.Name = "searchBox";
             this.searchBox.Size = new System.Drawing.Size(464, 20);
-            this.searchBox.TabIndex = 6;
+            this.searchBox.TabIndex = 0;
             this.searchBox.Text = "Please wait...";
             this.searchBox.SuggestionActivated += new oSpy.SearchBox.SuggestionActivatedHandler(this.searchBox_SuggestionActivated);
             // 
@@ -177,13 +178,13 @@
             this.ClientSize = new System.Drawing.Size(488, 173);
             this.Controls.Add(this.searchBox);
             this.Controls.Add(this.cancelBtn);
-            this.Controls.Add(this.runBtn);
+            this.Controls.Add(this.startBtn);
             this.Controls.Add(this.groupBox2);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon) (resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(512, 211);
-            this.MinimumSize = new System.Drawing.Size(320, 211);
             this.Name = "StartForm";
+            this.ShowInTaskbar = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Start Process";
@@ -202,7 +203,7 @@
         private System.Windows.Forms.TextBox argsBox;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Button runBtn;
+        private System.Windows.Forms.Button startBtn;
         private System.Windows.Forms.Button browseBtn;
         private System.Windows.Forms.Button cancelBtn;
         private System.Windows.Forms.TextBox startInBox;

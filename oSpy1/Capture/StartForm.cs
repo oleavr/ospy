@@ -64,7 +64,18 @@ namespace oSpy.Capture
 
         private void UpdateUi()
         {
-            runBtn.Enabled = (filenameBox.Text.Length > 0 && filenameBox.Text.EndsWith(".exe") && File.Exists(filenameBox.Text));
+            bool enabled = true;
+
+            if (filenameBox.Text.Length == 0)
+                enabled = false;
+            else if (!filenameBox.Text.EndsWith(".exe"))
+                enabled = false;
+            else if (!File.Exists(filenameBox.Text))
+                enabled = false;
+            else if (startInBox.Text.Length > 0 && !Directory.Exists(startInBox.Text))
+                enabled = false;
+
+            startBtn.Enabled = enabled;
         }
 
         private void CreateSuggestions()
@@ -133,10 +144,10 @@ namespace oSpy.Capture
             startInBox.Text = item.WorkingDirectory;
 
             UpdateUi();
-            runBtn.Focus();
+            startBtn.Focus();
         }
 
-        private void filenameBox_TextChanged(object sender, EventArgs e)
+        private void anyFileTextBox_TextChanged(object sender, EventArgs e)
         {
             UpdateUi();
         }
