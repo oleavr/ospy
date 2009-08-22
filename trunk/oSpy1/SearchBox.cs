@@ -75,7 +75,7 @@ namespace oSpy
 
             UpdateUi();
         }
-        
+
         private void UpdateUi()
         {
             if (suggestions != null)
@@ -114,6 +114,7 @@ namespace oSpy
             isInactive = true;
             Text = "";
             matchView.Hide();
+            matchView.Clear();
             UpdateUi();
         }
 
