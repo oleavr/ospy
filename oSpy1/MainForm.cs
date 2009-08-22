@@ -375,7 +375,7 @@ namespace oSpy
                 hasRegistered = true;
             }
 
-            Capture.ChooseForm frm = new Capture.ChooseForm();
+            Capture.AttachForm frm = new Capture.AttachForm();
 
             System.Diagnostics.Process[] processes;
             if (!frm.GetSelection(out processes))
@@ -419,7 +419,7 @@ namespace oSpy
 
         private void runToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Capture.RunForm frm = new Capture.RunForm();
+            Capture.StartForm frm = new Capture.StartForm();
 
             if (frm.ShowDialog() == DialogResult.OK)
             {

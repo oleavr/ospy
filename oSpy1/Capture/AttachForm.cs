@@ -31,7 +31,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace oSpy.Capture
 {
-    public partial class ChooseForm : Form
+    public partial class AttachForm : Form
     {
         private int checkCount = 0;
 
@@ -40,7 +40,7 @@ namespace oSpy.Capture
         private ManagementEventWatcher processStartWatcher = null;
         private ManagementEventWatcher processStopWatcher = null;
 
-        public ChooseForm()
+        public AttachForm()
         {
             InitializeComponent();
 

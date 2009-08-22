@@ -27,8 +27,9 @@ namespace oSpy
 {
     public class SearchBox : TextBox
     {
-        private bool isInactive = true;
         private MatchView matchView;
+        private PictureBox searchPic;
+        private bool isInactive = true;
         private string idleText;
         private ICollection<ListViewItem> suggestions;
 
@@ -66,6 +67,11 @@ namespace oSpy
             matchView.Visible = false;
             matchView.View = View.List;
             matchView.MultiSelect = false;
+
+            searchPic = new PictureBox();
+            searchPic.Image = oSpy.Properties.Resources.SearchImg;
+            searchPic.Size = searchPic.PreferredSize;
+            searchPic.Parent = this;
 
             UpdateUi();
         }
@@ -129,6 +135,14 @@ namespace oSpy
 
             if (suggestions != null)
                 Focus();
+        }
+
+        protected override void OnSizeChanged(EventArgs e)
+        {
+            base.OnSizeChanged(e);
+
+            searchPic.Left = Width - searchPic.Width - 5;
+            searchPic.Top = 0;
         }
 
         protected override void OnGotFocus(EventArgs e)
@@ -240,7 +254,7 @@ namespace oSpy
                     textBox.Focus();
                     e.Handled = true;
                 }
-                else if (e.KeyValue == '\n')
+                else if (e.KeyValue == 13)
                 {
                     if (TrySelectMatch())
                         e.Handled = true;

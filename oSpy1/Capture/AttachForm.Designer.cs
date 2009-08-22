@@ -15,7 +15,7 @@
 
 namespace oSpy.Capture
 {
-    partial class ChooseForm
+    partial class AttachForm
     {
         /// <summary>
         /// Required designer variable.

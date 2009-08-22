@@ -24,9 +24,9 @@ using System.Windows.Forms;
 
 namespace oSpy.Capture
 {
-    public partial class RunForm : Form
+    public partial class StartForm : Form
     {
-        public RunForm()
+        public StartForm()
         {
             InitializeComponent();
 
