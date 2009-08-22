@@ -265,10 +265,14 @@ namespace oSpy.Capture
             StartDetails startDetails = details as StartDetails;
 
             progress.ProgressUpdate("Starting process and injecting logging agent", 100);
+
+            ProcessStartInfo psi = startDetails.Info;
             int processId;
-            RemoteHooking.CreateAndInject(startDetails.Info.FileName, startDetails.Info.Arguments, 0, AGENT_DLL, AGENT_DLL,
-                out processId, serverChannelName, details.SoftwallRules);
-            // FIXME: startDetails.Info.WorkingDirectory is ignored
+            RemoteHooking.CreateAndInject(psi.FileName,
+                (psi.Arguments != String.Empty) ? psi.Arguments : null,
+                (psi.WorkingDirectory != String.Empty) ? psi.WorkingDirectory : null,
+                0, AGENT_DLL, AGENT_DLL, out processId,
+                serverChannelName, details.SoftwallRules);
         }
 
         private void DoInjection()
@@ -279,7 +283,8 @@ namespace oSpy.Capture
             {
                 int percentComplete = (int)(((float)(i + 1) / (float)processes.Length) * 100.0f);
                 progress.ProgressUpdate("Injecting logging agents", percentComplete);
-                RemoteHooking.Inject(processes[i].Id, AGENT_DLL, AGENT_DLL, serverChannelName, details.SoftwallRules);
+                RemoteHooking.Inject(processes[i].Id, AGENT_DLL, AGENT_DLL,
+                    serverChannelName, details.SoftwallRules);
             }
         }
 
