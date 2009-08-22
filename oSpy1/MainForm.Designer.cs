@@ -29,8 +29,8 @@ namespace oSpy
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle7 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle8 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.dataSet = new System.Data.DataSet();
             this.messageTbl = new System.Data.DataTable();
@@ -398,7 +398,6 @@ namespace oSpy
             // openFileDialog
             // 
             this.openFileDialog.DefaultExt = "osd";
-            this.openFileDialog.FileName = "openFileDialog1";
             this.openFileDialog.Filter = "oSpy dump files|*.osd";
             // 
             // saveFileDialog
@@ -647,7 +646,7 @@ namespace oSpy
             // 
             this.debugToolStripMenuItem1.Name = "debugToolStripMenuItem1";
             this.debugToolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys) ((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.D)));
-            this.debugToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
+            this.debugToolStripMenuItem1.Size = new System.Drawing.Size(151, 22);
             this.debugToolStripMenuItem1.Text = "&Debug";
             this.debugToolStripMenuItem1.Visible = false;
             this.debugToolStripMenuItem1.Click += new System.EventHandler(this.debugToolStripMenuItem_Click);
@@ -655,20 +654,20 @@ namespace oSpy
             // toolStripMenuItem2
             // 
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(149, 6);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(148, 6);
             this.toolStripMenuItem2.Visible = false;
             // 
             // welcomeToolStripMenuItem
             // 
             this.welcomeToolStripMenuItem.Name = "welcomeToolStripMenuItem";
-            this.welcomeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.welcomeToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
             this.welcomeToolStripMenuItem.Text = "&Welcome";
             this.welcomeToolStripMenuItem.Click += new System.EventHandler(this.welcomeToolStripMenuItem_Click);
             // 
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
             this.aboutToolStripMenuItem.Text = "&About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
@@ -932,9 +931,9 @@ namespace oSpy
             // 
             this.timestampDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
             this.timestampDataGridViewTextBoxColumn.DataPropertyName = "Timestamp";
-            dataGridViewCellStyle3.Format = "T";
-            dataGridViewCellStyle3.NullValue = null;
-            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle7.Format = "T";
+            dataGridViewCellStyle7.NullValue = null;
+            this.timestampDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle7;
             this.timestampDataGridViewTextBoxColumn.HeaderText = "Timestamp";
             this.timestampDataGridViewTextBoxColumn.Name = "timestampDataGridViewTextBoxColumn";
             this.timestampDataGridViewTextBoxColumn.ReadOnly = true;
@@ -982,9 +981,9 @@ namespace oSpy
             // returnAddressDataGridViewTextBoxColumn
             // 
             this.returnAddressDataGridViewTextBoxColumn.DataPropertyName = "ReturnAddress";
-            dataGridViewCellStyle4.Format = "x";
-            dataGridViewCellStyle4.NullValue = null;
-            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle8.Format = "x";
+            dataGridViewCellStyle8.NullValue = null;
+            this.returnAddressDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle8;
             this.returnAddressDataGridViewTextBoxColumn.HeaderText = "ReturnAddress";
             this.returnAddressDataGridViewTextBoxColumn.Name = "returnAddressDataGridViewTextBoxColumn";
             this.returnAddressDataGridViewTextBoxColumn.ReadOnly = true;
