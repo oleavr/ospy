@@ -23,7 +23,10 @@
 #include <psapi.h>
 
 #include <assert.h>
+#include <algorithm>
 #include <fstream>
+
+#include <udis86.h>
 
 #pragma managed(push, off)
 
@@ -146,6 +149,11 @@ ospy_rand()
     return 1 + rand();
 }
 
+CodeRegion::CodeRegion(void *startAddress, DWORD length)
+    : StartAddress(startAddress), Length(length)
+{
+}
+
 static HMODULE __cdecl
 LoadLibraryA_called(BOOL carry_on,
                     DWORD ret_addr,
@@ -193,8 +201,9 @@ CRITICAL_SECTION CUtil::m_cs = { 0, };
 RtlIpv4AddressToStringFunc CUtil::m_rtlIpv4AddressToStringImpl = NULL;
 OTString CUtil::m_processName = _T("");
 OMap<OICString, OModuleInfo>::Type CUtil::m_modules;
-DWORD CUtil::m_lowestAddress = 0xFFFFFFFF;
-DWORD CUtil::m_highestAddress = 0;
+void *CUtil::m_lowestAddress = reinterpret_cast<void *>(0xFFFFFFFF);
+void *CUtil::m_highestAddress = NULL;
+OVector<CodeRegion>::Type CUtil::m_codeRegions;
 
 void
 CUtil::Init()
@@ -206,7 +215,7 @@ CUtil::Init()
         _ASSERT(ntMod != NULL);
 
         m_rtlIpv4AddressToStringImpl = reinterpret_cast<RtlIpv4AddressToStringFunc>(
-            GetProcAddress(ntMod, "RtlIpv4AddressToString"));
+            GetProcAddress(ntMod, "RtlIpv4AddressToStringW"));
     }
 
     {
@@ -231,7 +240,7 @@ void
 CUtil::Ipv4AddressToString(const IN_ADDR *addr,
                            TCHAR *str)
 {
-    if (FALSE/*m_rtlIpv4AddressToStringImpl != NULL*/)
+    if (m_rtlIpv4AddressToStringImpl != NULL)
     {
         m_rtlIpv4AddressToStringImpl(addr, str);
     }
@@ -248,8 +257,8 @@ CUtil::UpdateModuleList()
 {
     EnterCriticalSection(&m_cs);
 
-    m_lowestAddress = 0xFFFFFFFF;
-    m_highestAddress = 0;
+    m_lowestAddress = reinterpret_cast<void *>(0xFFFFFFFF);
+    m_highestAddress = NULL;
 
     m_modules.clear();
 
@@ -263,6 +272,8 @@ CUtil::UpdateModuleList()
     {
         goto DONE;
     }
+
+    ClearCodeRegions();
 
     if (bytes_needed > sizeof(modules))
         bytes_needed = sizeof(modules);
@@ -280,25 +291,29 @@ CUtil::UpdateModuleList()
             filename[MAX_PATH] = 0;
 
             OModuleInfo modInfo;
-            modInfo.name = basename;
+            modInfo.Name = basename;
 
-            modInfo.preferredStartAddress = FindPreferredImageBaseOf(filename);
-            modInfo.startAddress = (DWORD) mi.lpBaseOfDll;
-            modInfo.endAddress = (DWORD) mi.lpBaseOfDll + mi.SizeOfImage - 1;
+            modInfo.PreferredStartAddress = FindPreferredImageBaseOf(filename);
+            modInfo.StartAddress = mi.lpBaseOfDll;
+            modInfo.EndAddress = static_cast<BYTE *>(mi.lpBaseOfDll) + mi.SizeOfImage - 1;
             m_modules[basename] = modInfo;
 
-            if (modInfo.startAddress < m_lowestAddress)
-                m_lowestAddress = modInfo.startAddress;
-            if (modInfo.endAddress > m_highestAddress)
-                m_highestAddress = modInfo.endAddress;
+            if (modInfo.StartAddress < m_lowestAddress)
+                m_lowestAddress = modInfo.StartAddress;
+            if (modInfo.EndAddress > m_highestAddress)
+                m_highestAddress = modInfo.EndAddress;
+
+            AppendCodeRegionsFoundIn(modInfo);
         }
     }
+
+    SortCodeRegions();
 
 DONE:
     LeaveCriticalSection(&m_cs);
 }
 
-DWORD
+void *
 CUtil::FindPreferredImageBaseOf(const WCHAR *filename)
 {
     std::ifstream file;
@@ -309,7 +324,7 @@ CUtil::FindPreferredImageBaseOf(const WCHAR *filename)
     file.seekg(offsetof(IMAGE_DOS_HEADER, e_lfanew));
     file.read(reinterpret_cast<char *>(&offset), sizeof(offset));
 
-    DWORD imageBase;
+    void *imageBase;
     file.seekg(offset + offsetof(IMAGE_NT_HEADERS, OptionalHeader) + offsetof(IMAGE_OPTIONAL_HEADER, ImageBase));
     file.read(reinterpret_cast<char *>(&imageBase), sizeof(imageBase));
 
@@ -319,7 +334,7 @@ CUtil::FindPreferredImageBaseOf(const WCHAR *filename)
 }
 
 OString
-CUtil::GetModuleNameForAddress(DWORD address)
+CUtil::GetModuleNameForAddress(void *address)
 {
     OString result = "";
 
@@ -327,7 +342,7 @@ CUtil::GetModuleNameForAddress(DWORD address)
 
     OModuleInfo *mi = CUtil::GetModuleInfoForAddress(address);
     if (mi != NULL)
-        result = mi->name.c_str();
+        result = mi->Name.c_str();
 
     LeaveCriticalSection(&m_cs);
 
@@ -352,70 +367,73 @@ CUtil::GetAllModules()
     return ret;
 }
 
-bool
-CUtil::AddressIsWithinExecutableModule(DWORD address)
-{
-    bool result;
+#define MIN_CALL_INSN_SIZE 3
+#define MED_CALL_INSN_SIZE 5
+#define MAX_CALL_INSN_SIZE 6
 
-    EnterCriticalSection(&m_cs);
-
-    result = (address >= m_lowestAddress && address <= m_highestAddress);
-
-    LeaveCriticalSection(&m_cs);
-
-    return result;
-}
-
-#define OPCODE_CALL_NEAR_RELATIVE     0xE8
-#define OPCODE_CALL_NEAR_ABS_INDIRECT 0xFF
+#define CHECK_FOR_CALL_INSTRUCTION_AT(PTR, OFFSET)                                  \
+    {                                                                               \
+        ud_set_input_buffer(&udObj, PTR - OFFSET, OFFSET);                          \
+        insnSize = ud_disassemble(&udObj);                                          \
+        isCallInstruction = (insnSize == OFFSET) && (udObj.mnemonic == UD_Icall);   \
+    }
 
 OTString
 CUtil::CreateBackTrace(void *address)
 {
+    // Get the top of stack from TIB (http://en.wikipedia.org/wiki/Win32_Thread_Information_Block)
+    void *topOfStack;
+
+    __asm
+    {
+        push dword ptr fs:[4]
+        pop [topOfStack]
+    }
+
+    // Highly unlikely unless we're dealing with a hostile app
+    if (topOfStack < address)
+        topOfStack = reinterpret_cast<DWORD *>(static_cast<BYTE *>(address) + 16384);
+
     OTStringStream s;
+    s << hex;
     int count = 0;
-    DWORD *p = (DWORD *) address;
+
+    ud_t udObj;
+    ud_init(&udObj);
+    ud_set_mode(&udObj, 32);
 
     EnterCriticalSection(&m_cs);
 
-    for (; count < 8 && (char *) p < (char *) address + 16384; p++)
+    for (BYTE **p = static_cast<BYTE **>(address); count < 8 && p < topOfStack; ++p)
     {
-        if (IsBadReadPtr(p, 4))
-            break;
+        BYTE *value = *p;
 
-        DWORD value = *p;
+        if (value < m_lowestAddress || value > m_highestAddress)
+            continue;
 
-        if (value >= m_lowestAddress && value <= m_highestAddress)
+        if (IsWithinCodeRegion(value - MAX_CALL_INSN_SIZE))
         {
-            bool isRetAddr = false;
-            unsigned char *codeAddr = (unsigned char *) value;
-            unsigned char *p1 = codeAddr - 5;
-            unsigned char *p2 = codeAddr - 6;
-            unsigned char *p3 = codeAddr - 3;
+            bool isCallInstruction = true;
+            unsigned int insnSize;
 
-            // FIXME: add the other CALL variations
-            if ((!IsBadCodePtr((FARPROC) p1) && *p1 == OPCODE_CALL_NEAR_RELATIVE) ||
-                (!IsBadCodePtr((FARPROC) p2) && *p2 == OPCODE_CALL_NEAR_ABS_INDIRECT) ||
-                (!IsBadCodePtr((FARPROC) p3) && *p3 == OPCODE_CALL_NEAR_ABS_INDIRECT))
-            {
-                isRetAddr = true;
-            }
+            CHECK_FOR_CALL_INSTRUCTION_AT(value, MED_CALL_INSN_SIZE);
+            if (!isCallInstruction)
+                CHECK_FOR_CALL_INSTRUCTION_AT(value, MAX_CALL_INSN_SIZE);
+            if (!isCallInstruction)
+                CHECK_FOR_CALL_INSTRUCTION_AT(value, MIN_CALL_INSN_SIZE);
 
-            if (isRetAddr)
+            if (isCallInstruction)
             {
                 OModuleInfo *mi = GetModuleInfoForAddress(value);
 
                 if (mi != NULL)
                 {
-                    if (mi->name == "oSpyAgent.dll")
-                        break;
-
-                    DWORD canonicalAddress = mi->preferredStartAddress + (value - mi->startAddress);
+                    DWORD canonicalAddress = reinterpret_cast<DWORD>(static_cast<BYTE *>(mi->PreferredStartAddress) + (value - static_cast<BYTE *>(mi->StartAddress)));
 
                     if (count > 0)
                         s << _T("\n");
 
-                    s << mi->name.c_str() << _T("::0x") << hex << canonicalAddress;
+                    s << mi->Name.c_str() << _T("::0x") << canonicalAddress;
 
                     count++;
                 }
@@ -429,20 +447,66 @@ CUtil::CreateBackTrace(void *address)
 }
 
 OModuleInfo *
-CUtil::GetModuleInfoForAddress(DWORD address)
+CUtil::GetModuleInfoForAddress(void *address)
 {
     OMap<OICString, OModuleInfo>::Type::iterator it;
     for (it = m_modules.begin(); it != m_modules.end(); it++)
     {
         OModuleInfo &mi = (*it).second;
 
-        if (address >= mi.startAddress && address <= mi.endAddress)
+        if (address >= mi.StartAddress && address <= mi.EndAddress)
         {
             return &mi;
         }
     }
 
     return NULL;
+}
+
+void
+CUtil::ClearCodeRegions()
+{
+    m_codeRegions.clear();
+}
+
+void
+CUtil::AppendCodeRegionsFoundIn(const OModuleInfo &mi)
+{
+    BYTE *p = reinterpret_cast<BYTE *>(mi.StartAddress);
+
+    do
+    {
+        MEMORY_BASIC_INFORMATION mbi;
+        if (VirtualQuery(p, &mbi, sizeof(mbi)) != sizeof(mbi))
+            break;
+
+        if ((mbi.Protect & (PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY)) != 0)
+        {
+            m_codeRegions.push_back(CodeRegion(mbi.BaseAddress, mbi.RegionSize));
+        }
+
+        p = static_cast<BYTE *>(mbi.BaseAddress) + mbi.RegionSize;
+    }
+    while (p < reinterpret_cast<BYTE *>(mi.EndAddress));
+}
+
+static bool
+CodeRegionLessThan(const CodeRegion &a, const CodeRegion &b)
+{
+    return a.StartAddress < b.StartAddress && (static_cast<BYTE *>(a.StartAddress) + a.Length - 1) < b.StartAddress;
+}
+
+void
+CUtil::SortCodeRegions()
+{
+    std::sort(m_codeRegions.begin(), m_codeRegions.end(), CodeRegionLessThan);
+}
+
+bool
+CUtil::IsWithinCodeRegion(void *address)
+{
+    CodeRegion region(address, 1);
+    return std::binary_search(m_codeRegions.begin(), m_codeRegions.end(), region, CodeRegionLessThan);
 }
 
 #pragma managed(pop)

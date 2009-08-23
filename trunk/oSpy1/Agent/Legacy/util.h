@@ -83,12 +83,23 @@ bool cur_process_is(const TCHAR *name);
 
 DWORD ospy_rand();
 
-typedef struct {
-    OICString name;
-    DWORD preferredStartAddress;
-    DWORD startAddress;
-    DWORD endAddress;
-} OModuleInfo;
+class OModuleInfo : public BaseObject
+{
+public:
+    OICString Name;
+    void *PreferredStartAddress;
+    void *StartAddress;
+    void *EndAddress;
+};
+
+class CodeRegion : public BaseObject
+{
+public:
+    CodeRegion(void *startAddress, DWORD length);
+
+    void *StartAddress;
+    DWORD Length;
+};
 
 typedef LPTSTR (NTAPI * RtlIpv4AddressToStringFunc)(const IN_ADDR *Addr, LPTSTR S);
 
@@ -101,21 +112,25 @@ public:
     static void Ipv4AddressToString(const IN_ADDR *addr, TCHAR *str);
 
     static const OTString &GetProcessName() { return m_processName; }
-    static OString GetModuleNameForAddress(DWORD address);
+    static OString GetModuleNameForAddress(void *address);
     static OModuleInfo GetModuleInfo(const OICString &name) { return m_modules[name]; }
     static OVector<OModuleInfo>::Type GetAllModules();
-    static bool AddressIsWithinExecutableModule(DWORD address);
 
     static OTString CreateBackTrace(void *address);
 
 private:
-    static DWORD FindPreferredImageBaseOf(const WCHAR *filename);
-    static OModuleInfo *GetModuleInfoForAddress(DWORD address);
+    static void *FindPreferredImageBaseOf(const WCHAR *filename);
+    static OModuleInfo *GetModuleInfoForAddress(void *address);
+    static void ClearCodeRegions();
+    static void AppendCodeRegionsFoundIn(const OModuleInfo &mi);
+    static void SortCodeRegions();
+    static bool IsWithinCodeRegion(void *address);
 
     static CRITICAL_SECTION m_cs;
     static RtlIpv4AddressToStringFunc m_rtlIpv4AddressToStringImpl;
     static OTString m_processName;
     static OMap<OICString, OModuleInfo>::Type m_modules;
-    static DWORD m_lowestAddress;
-    static DWORD m_highestAddress;
+    static void *m_lowestAddress;
+    static void *m_highestAddress;
+    static OVector<CodeRegion>::Type m_codeRegions;
 };
