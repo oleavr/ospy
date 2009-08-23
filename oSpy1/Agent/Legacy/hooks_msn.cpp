@@ -277,8 +277,7 @@ hook_msn()
     }
     else
     {
-        message_logger_log_message(_T("hook_msn"), 0, MESSAGE_CTX_WARNING,
-            _T("failed to find SIGNATURE_GET_CHALLENGE_SECRET: %S"), error);
+        // This is fine for newer versions
         sspy_free(error);
     }
 
