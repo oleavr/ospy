@@ -149,8 +149,8 @@ ospy_rand()
     return 1 + rand();
 }
 
-CodeRegion::CodeRegion(void *startAddress, DWORD length)
-    : StartAddress(startAddress), Length(length)
+CodeRegion::CodeRegion(HMODULE moduleHandle, void *startAddress, DWORD length)
+    : ModuleHandle(moduleHandle), StartAddress(startAddress), Length(length)
 {
 }
 
@@ -257,11 +257,9 @@ CUtil::UpdateModuleList()
 {
     EnterCriticalSection(&m_cs);
 
-    m_lowestAddress = reinterpret_cast<void *>(0xFFFFFFFF);
-    m_highestAddress = NULL;
-
-    m_modules.clear();
-
+    //
+    // Find new modules
+    //
     HANDLE process = GetCurrentProcess();
 
     HMODULE modules[256];
@@ -273,41 +271,91 @@ CUtil::UpdateModuleList()
         goto DONE;
     }
 
-    ClearCodeRegions();
+    // Make sure we recalculate bounds every time
+    m_lowestAddress = reinterpret_cast<void *>(0xFFFFFFFF);
+    m_highestAddress = NULL;
 
     if (bytes_needed > sizeof(modules))
         bytes_needed = sizeof(modules);
 
-    for (unsigned int i = 0; i < bytes_needed / sizeof(HMODULE); i++)
+    bool moduleAdded = false;
+
+    for (unsigned int i = 0; i < bytes_needed / sizeof(HMODULE); ++i)
     {
-        WCHAR filename[MAX_PATH + 1];
         char basename[128];
-        MODULEINFO mi;
+        if (GetModuleBaseNameA(process, modules[i], basename, sizeof(basename)) == 0)
+            continue;
 
-        if (GetModuleFileNameExW(process, modules[i], filename, MAX_PATH) != 0 &&
-            GetModuleBaseNameA(process, modules[i], basename, sizeof(basename)) != 0 &&
-            GetModuleInformation(process, modules[i], &mi, sizeof(mi)) != 0)
+        ModuleMap::iterator it = m_modules.find(basename);
+        if (it == m_modules.end())
         {
-            filename[MAX_PATH] = 0;
+            WCHAR filename[MAX_PATH + 1];
+            MODULEINFO mi;
 
-            OModuleInfo modInfo;
-            modInfo.Name = basename;
+            if (GetModuleFileNameExW(process, modules[i], filename, MAX_PATH) != 0 &&
+                GetModuleInformation(process, modules[i], &mi, sizeof(mi)) != 0)
+            {
+                filename[MAX_PATH] = 0;
 
-            modInfo.PreferredStartAddress = FindPreferredImageBaseOf(filename);
-            modInfo.StartAddress = mi.lpBaseOfDll;
-            modInfo.EndAddress = static_cast<BYTE *>(mi.lpBaseOfDll) + mi.SizeOfImage - 1;
-            m_modules[basename] = modInfo;
+                OModuleInfo modInfo;
+                modInfo.Name = basename;
+                modInfo.Handle = modules[i];
 
-            if (modInfo.StartAddress < m_lowestAddress)
-                m_lowestAddress = modInfo.StartAddress;
-            if (modInfo.EndAddress > m_highestAddress)
-                m_highestAddress = modInfo.EndAddress;
+                modInfo.PreferredStartAddress = FindPreferredImageBaseOf(filename);
+                modInfo.StartAddress = mi.lpBaseOfDll;
+                modInfo.EndAddress = static_cast<BYTE *>(mi.lpBaseOfDll) + mi.SizeOfImage - 1;
+                pair<ModuleMap::iterator, bool> insertPair = m_modules.insert(ModulePair(basename, modInfo));
+                it = insertPair.first;
 
-            AppendCodeRegionsFoundIn(modInfo);
+                AppendCodeRegionsFoundIn(modInfo);
+
+                moduleAdded = true;
+            }
+        }
+
+        if (it != m_modules.end())
+        {
+            // Update bounds
+            if (it->second.StartAddress < m_lowestAddress)
+                m_lowestAddress = it->second.StartAddress;
+            if (it->second.EndAddress > m_highestAddress)
+                m_highestAddress = it->second.EndAddress;
         }
     }
 
-    SortCodeRegions();
+    //
+    // Remove modules that are no longer around
+    //
+    for (ModuleMap::iterator it = m_modules.begin(); it != m_modules.end();)
+    {
+        // The most straight-forward approach here would have been to call
+        // GetModuleHandle(), but turns out that doing so results in failure
+        // with certain modules, so instead we'll do it the silly way...
+        bool stillAround = false;
+
+        for (unsigned int i = 0; i < bytes_needed / sizeof(HMODULE) && !stillAround; ++i)
+        {
+            if (it->second.Handle == modules[i])
+                stillAround = true;
+        }
+
+        if (stillAround)
+        {
+            ++it;
+        }
+        else
+        {
+            RemoveCodeRegionsOwnedBy(it->second);
+            m_modules.erase(it);
+            it = m_modules.begin();
+        }
+    }
+
+    //
+    // Finish off
+    //
+    if (moduleAdded)
+        SortCodeRegions();
 
 DONE:
     LeaveCriticalSection(&m_cs);
@@ -464,12 +512,6 @@ CUtil::GetModuleInfoForAddress(void *address)
 }
 
 void
-CUtil::ClearCodeRegions()
-{
-    m_codeRegions.clear();
-}
-
-void
 CUtil::AppendCodeRegionsFoundIn(const OModuleInfo &mi)
 {
     BYTE *p = reinterpret_cast<BYTE *>(mi.StartAddress);
@@ -482,12 +524,24 @@ CUtil::AppendCodeRegionsFoundIn(const OModuleInfo &mi)
 
         if ((mbi.Protect & (PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY)) != 0)
         {
-            m_codeRegions.push_back(CodeRegion(mbi.BaseAddress, mbi.RegionSize));
+            m_codeRegions.push_back(CodeRegion(mi.Handle, mbi.BaseAddress, mbi.RegionSize));
         }
 
         p = static_cast<BYTE *>(mbi.BaseAddress) + mbi.RegionSize;
     }
     while (p < reinterpret_cast<BYTE *>(mi.EndAddress));
+}
+
+void
+CUtil::RemoveCodeRegionsOwnedBy(const OModuleInfo &mi)
+{
+    for (CodeRegionVector::iterator it = m_codeRegions.begin(); it != m_codeRegions.end();)
+    {
+        if (it->ModuleHandle == mi.Handle)
+            it = m_codeRegions.erase(it);
+        else
+            ++it;
+    }
 }
 
 static bool
@@ -505,7 +559,7 @@ CUtil::SortCodeRegions()
 bool
 CUtil::IsWithinCodeRegion(void *address)
 {
-    CodeRegion region(address, 1);
+    CodeRegion region(NULL, address, 1);
     return std::binary_search(m_codeRegions.begin(), m_codeRegions.end(), region, CodeRegionLessThan);
 }
 
