@@ -168,7 +168,8 @@ LoadLibraryA_done(HMODULE retval,
 {
     DWORD err = GetLastError();
 
-    CUtil::UpdateModuleList();
+    if (retval != NULL)
+        CUtil::UpdateModuleList();
 
     SetLastError(err);
     return retval;
@@ -188,7 +189,29 @@ LoadLibraryW_done(HMODULE retval,
 {
     DWORD err = GetLastError();
 
-    CUtil::UpdateModuleList();
+    if (retval != NULL)
+        CUtil::UpdateModuleList();
+
+    SetLastError(err);
+    return retval;
+}
+
+static BOOL __cdecl
+FreeLibrary_called(BOOL carry_on,
+                   DWORD ret_addr,
+                   HMODULE hModule)
+{
+    return 0;
+}
+
+static BOOL __stdcall
+FreeLibrary_done(BOOL retval,
+                 HMODULE hModule)
+{
+    DWORD err = GetLastError();
+
+    if (retval)
+        CUtil::UpdateModuleList();
 
     SetLastError(err);
     return retval;
@@ -196,6 +219,7 @@ LoadLibraryW_done(HMODULE retval,
 
 HOOK_GLUE_INTERRUPTIBLE(LoadLibraryA, (1 * 4))
 HOOK_GLUE_INTERRUPTIBLE(LoadLibraryW, (1 * 4))
+HOOK_GLUE_INTERRUPTIBLE(FreeLibrary, (1 * 4))
 
 CRITICAL_SECTION CUtil::m_cs = { 0, };
 RtlIpv4AddressToStringFunc CUtil::m_rtlIpv4AddressToStringImpl = NULL;
@@ -231,6 +255,7 @@ CUtil::Init()
     {
         HOOK_FUNCTION(h, LoadLibraryA);
         HOOK_FUNCTION(h, LoadLibraryW);
+        HOOK_FUNCTION(h, FreeLibrary);
     }
 
     UpdateModuleList();
