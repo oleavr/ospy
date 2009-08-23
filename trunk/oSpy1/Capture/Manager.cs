@@ -153,6 +153,17 @@ namespace oSpy.Capture
             }
         }
 
+        public int[] ProcessIds
+        {
+            get
+            {
+                List<int> result = new List<int>();
+                foreach (Process proc in processes)
+                    result.Add(proc.Id);
+                return result.ToArray();
+            }
+        }
+
         public AttachDetails(Process[] processes)
         {
             this.processes = processes;
@@ -250,28 +261,29 @@ namespace oSpy.Capture
             {
                 PrepareCapture();
 
-                int expectedPidCount;
+                int[] processIds;
 
                 if (details is StartDetails)
                 {
                     StartDetails startDetails = details as StartDetails;
-                    DoCreation(startDetails);
-                    expectedPidCount = 1;
+                    int processId = DoCreation(startDetails);
+                    processIds = new int[1] { processId };
                 }
                 else if (details is AttachDetails)
                 {
                     AttachDetails attachDetails = details as AttachDetails;
                     DoInjection(attachDetails);
-                    expectedPidCount = attachDetails.Processes.Length;
+                    processIds = attachDetails.ProcessIds;
                 }
                 else
                 {
                     throw new NotImplementedException();
                 }
 
-                WaitForAllClientsToPingUs(expectedPidCount);
-
-                progress.OperationComplete();
+                if (WaitForAllClientsToPingUs(processIds))
+                    progress.OperationComplete();
+                else
+                    progress.OperationFailed("Capture aborted.");
             }
             catch (Exception e)
             {
@@ -309,7 +321,7 @@ namespace oSpy.Capture
             RemotingServices.Marshal(this, serverChannelName, typeof(IManager));
         }
 
-        private void DoCreation(StartDetails startDetails)
+        private int DoCreation(StartDetails startDetails)
         {
             progress.ProgressUpdate("Starting process and injecting logging agent", 100);
 
@@ -320,6 +332,8 @@ namespace oSpy.Capture
                 (psi.WorkingDirectory != String.Empty) ? psi.WorkingDirectory : null,
                 0, AGENT_DLL, AGENT_DLL, out processId,
                 serverChannelName, details.SoftwallRules);
+
+            return processId;
         }
 
         private void DoInjection(AttachDetails attachDetails)
@@ -334,7 +348,7 @@ namespace oSpy.Capture
             }
         }
 
-        private void WaitForAllClientsToPingUs(int expectedPidCount)
+        private bool WaitForAllClientsToPingUs(int[] clientProcessIds)
         {
             WaitHandle[] waitHandles = { stopRequest, clientAdded };
 
@@ -342,12 +356,16 @@ namespace oSpy.Capture
             {
                 lock (clients)
                 {
-                    if (clients.Count == expectedPidCount)
-                        break;
+                    if (clients.Count == clientProcessIds.Length)
+                        return true;
                 }
 
-                if (WaitHandle.WaitAny(waitHandles) == 0)
-                    break;
+                int index = WaitHandle.WaitAny(waitHandles, 1000);
+                if (index == 0)
+                    return false;
+
+                foreach (int clientPid in clientProcessIds)
+                    Process.GetProcessById(clientPid); // throws an ArgumentException if the process is no longer around
             }
         }
 
