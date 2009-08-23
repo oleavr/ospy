@@ -87,6 +87,7 @@ class OModuleInfo : public BaseObject
 {
 public:
     OICString Name;
+    HMODULE Handle;
     void *PreferredStartAddress;
     void *StartAddress;
     void *EndAddress;
@@ -95,8 +96,9 @@ public:
 class CodeRegion : public BaseObject
 {
 public:
-    CodeRegion(void *startAddress, DWORD length);
+    CodeRegion(HMODULE moduleHandle, void *startAddress, DWORD length);
 
+    HMODULE ModuleHandle;
     void *StartAddress;
     DWORD Length;
 };
@@ -121,16 +123,20 @@ public:
 private:
     static void *FindPreferredImageBaseOf(const WCHAR *filename);
     static OModuleInfo *GetModuleInfoForAddress(void *address);
-    static void ClearCodeRegions();
     static void AppendCodeRegionsFoundIn(const OModuleInfo &mi);
+    static void RemoveCodeRegionsOwnedBy(const OModuleInfo &mi);
     static void SortCodeRegions();
     static bool IsWithinCodeRegion(void *address);
+
+    typedef pair<OICString, OModuleInfo> ModulePair;
+    typedef OMap<OICString, OModuleInfo>::Type ModuleMap;
+    typedef OVector<CodeRegion>::Type CodeRegionVector;
 
     static CRITICAL_SECTION m_cs;
     static RtlIpv4AddressToStringFunc m_rtlIpv4AddressToStringImpl;
     static OTString m_processName;
-    static OMap<OICString, OModuleInfo>::Type m_modules;
+    static ModuleMap m_modules;
     static void *m_lowestAddress;
     static void *m_highestAddress;
-    static OVector<CodeRegion>::Type m_codeRegions;
+    static CodeRegionVector m_codeRegions;
 };
