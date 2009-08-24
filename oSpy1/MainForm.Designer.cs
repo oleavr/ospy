@@ -167,6 +167,7 @@ namespace oSpy
             this.statusBarLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.swReleaseStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.dumpSaveFileDialog = new System.Windows.Forms.SaveFileDialog();
+            this.toolStripMenuItem10 = new System.Windows.Forms.ToolStripSeparator();
             ((System.ComponentModel.ISupportInitialize) (this.dataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize) (this.messageTbl)).BeginInit();
             this.menuStrip.SuspendLayout();
@@ -637,6 +638,7 @@ namespace oSpy
             this.debugToolStripMenuItem1,
             this.toolStripMenuItem2,
             this.welcomeToolStripMenuItem,
+            this.toolStripMenuItem10,
             this.aboutToolStripMenuItem});
             this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
             this.helpToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
@@ -1316,6 +1318,11 @@ namespace oSpy
             this.dumpSaveFileDialog.DefaultExt = "bin";
             this.dumpSaveFileDialog.Filter = "Binary dump files|*.bin";
             // 
+            // toolStripMenuItem10
+            // 
+            this.toolStripMenuItem10.Name = "toolStripMenuItem10";
+            this.toolStripMenuItem10.Size = new System.Drawing.Size(149, 6);
+            // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(828, 585);
@@ -1490,6 +1497,7 @@ namespace oSpy
         private System.Windows.Forms.ToolStripMenuItem manageSoftwallRulesToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem9;
         private System.Windows.Forms.ToolStripMenuItem applydebugSymbolsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem10;
     }
 }
 
