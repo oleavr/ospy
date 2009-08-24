@@ -25,12 +25,12 @@ using System.Windows.Forms;
 
 namespace oSpy.Capture
 {
-    public partial class StartForm : Form
+    public partial class CreateForm : Form
     {
         private static ICollection<ListViewItem> suggestItems = null;
         private static ImageList suggestImages = null;
 
-        public StartForm()
+        public CreateForm()
         {
             InitializeComponent();
 
@@ -47,16 +47,16 @@ namespace oSpy.Capture
             }
         }
 
-        public StartDetails GetDetails()
+        public CreateDetails GetDetails()
         {
-            StartDetails details = null;
+            CreateDetails details = null;
 
             if (ShowDialog() == DialogResult.OK)
             {
                 ProcessStartInfo info = new ProcessStartInfo(filenameBox.Text, argsBox.Text);
                 info.WorkingDirectory = startInBox.Text;
 
-                details = new StartDetails(info);
+                details = new CreateDetails(info);
             }
 
             return details;
