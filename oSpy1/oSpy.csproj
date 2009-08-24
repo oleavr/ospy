@@ -99,11 +99,11 @@
       <DependentUpon>AttachForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Capture\Manager.cs" />
-    <Compile Include="Capture\StartForm.cs">
+    <Compile Include="Capture\CreateForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Capture\StartForm.Designer.cs">
-      <DependentUpon>StartForm.cs</DependentUpon>
+    <Compile Include="Capture\CreateForm.Designer.cs">
+      <DependentUpon>CreateForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Configuration\ConfigManager.cs" />
     <Compile Include="Configuration\ParserConfigDialog.cs">
@@ -227,8 +227,8 @@
     <EmbeddedResource Include="Capture\AttachForm.resx">
       <DependentUpon>AttachForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Capture\StartForm.resx">
-      <DependentUpon>StartForm.cs</DependentUpon>
+    <EmbeddedResource Include="Capture\CreateForm.resx">
+      <DependentUpon>CreateForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Configuration\ParserConfigDialog.resx">
       <SubType>Designer</SubType>

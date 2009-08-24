@@ -123,7 +123,7 @@ namespace oSpy.Capture
 
     }
 
-    public class StartDetails : Details
+    public class CreateDetails : Details
     {
         private ProcessStartInfo info;
 
@@ -135,7 +135,7 @@ namespace oSpy.Capture
             }
         }
 
-        public StartDetails(ProcessStartInfo info)
+        public CreateDetails(ProcessStartInfo info)
         {
             this.info = info;
         }
@@ -263,10 +263,10 @@ namespace oSpy.Capture
 
                 int[] processIds;
 
-                if (details is StartDetails)
+                if (details is CreateDetails)
                 {
-                    StartDetails startDetails = details as StartDetails;
-                    int processId = DoCreation(startDetails);
+                    CreateDetails createDetails = details as CreateDetails;
+                    int processId = DoCreation(createDetails);
                     processIds = new int[1] { processId };
                 }
                 else if (details is AttachDetails)
@@ -321,11 +321,11 @@ namespace oSpy.Capture
             RemotingServices.Marshal(this, serverChannelName, typeof(IManager));
         }
 
-        private int DoCreation(StartDetails startDetails)
+        private int DoCreation(CreateDetails createDetails)
         {
-            progress.ProgressUpdate("Starting process and injecting logging agent", 100);
+            progress.ProgressUpdate("Creating process and injecting logging agent", 100);
 
-            ProcessStartInfo psi = startDetails.Info;
+            ProcessStartInfo psi = createDetails.Info;
             int processId;
             RemoteHooking.CreateAndInject(psi.FileName,
                 (psi.Arguments != String.Empty) ? psi.Arguments : null,
@@ -342,7 +342,7 @@ namespace oSpy.Capture
             for (int i = 0; i < processes.Length; i++)
             {
                 int percentComplete = (int)(((float)(i + 1) / (float)processes.Length) * 100.0f);
-                progress.ProgressUpdate("Injecting logging agents", percentComplete);
+                progress.ProgressUpdate("Injecting logging agent" + ((processes.Length == 1) ? "" : "s"), percentComplete);
                 RemoteHooking.Inject(processes[i].Id, AGENT_DLL, AGENT_DLL,
                     serverChannelName, details.SoftwallRules);
             }
@@ -356,6 +356,8 @@ namespace oSpy.Capture
             {
                 lock (clients)
                 {
+                    progress.ProgressUpdate("Waiting for logging agent" + ((clientProcessIds.Length == 1) ? "" : "s"),
+                        (int) (((float) Math.Min(clients.Count + 1, clientProcessIds.Length) / (float) clientProcessIds.Length) * 100.0f));
                     if (clients.Count == clientProcessIds.Length)
                         return true;
                 }

@@ -356,14 +356,14 @@ namespace oSpy
             Close();
         }
 
-        private void startToolStripMenuItem_Click(object sender, EventArgs e)
+        private void createToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (!PrepareCapture())
                 return;
 
-            Capture.StartForm frm = new Capture.StartForm();
+            Capture.CreateForm frm = new Capture.CreateForm();
 
-            Capture.StartDetails details = frm.GetDetails();
+            Capture.CreateDetails details = frm.GetDetails();
             if (details == null)
                 return;
 
