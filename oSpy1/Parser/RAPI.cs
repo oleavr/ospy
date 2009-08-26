@@ -149,7 +149,7 @@ namespace oSpy.Parser
 
         public override bool HandleSession(IPSession session)
         {
-            if (session.LocalEndpoint.Port != 990)
+            if (session.LocalEndpoint == null || session.LocalEndpoint.Port != 990)
                 return false;
 
             this.session = session;

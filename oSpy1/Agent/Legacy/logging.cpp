@@ -26,12 +26,72 @@
 
 #pragma warning( disable : 4996 )
 
+class ResourceTracker;
+
 static MessageLoggerSubmitFunc message_logger_submit = NULL;
+static ResourceTracker *resourceTracker = NULL;
+
+class ResourceTracker : public BaseObject
+{
+public:
+    ResourceTracker()
+    {
+        InitializeCriticalSection(&cs);
+    }
+
+    ~ResourceTracker()
+    {
+        DeleteCriticalSection(&cs);
+    }
+
+    DWORD GetIdForSocket(SOCKET sock)
+    {
+        DWORD id;
+
+        EnterCriticalSection(&cs);
+
+        SocketToIdMap::iterator it = sockets.find(sock);
+        if (it != sockets.end())
+        {
+            id = it->second;
+        }
+        else
+        {
+            id = ospy_rand();
+            sockets[sock] = id;
+        }
+
+        LeaveCriticalSection(&cs);
+
+        return id;
+    }
+
+    void NotifySocketDestroyed(SOCKET sock)
+    {
+        EnterCriticalSection(&cs);
+
+        SocketToIdMap::iterator it = sockets.find(sock);
+        if (it != sockets.end())
+        {
+            sockets.erase(it);
+        }
+
+        LeaveCriticalSection(&cs);
+    }
+
+private:
+    typedef OMap<SOCKET, DWORD>::Type SocketToIdMap;
+
+    CRITICAL_SECTION cs;
+    SocketToIdMap sockets;
+};
 
 void
 message_logger_init(MessageLoggerSubmitFunc submit_func)
 {
     message_logger_submit = submit_func;
+
+    resourceTracker = new ResourceTracker();
 }
 
 static void
@@ -90,7 +150,7 @@ message_logger_log_message(const TCHAR *function_name,
 
     message_logger_log_full(function_name, bt_address, 0,
         MESSAGE_TYPE_MESSAGE, context, PACKET_DIRECTION_INVALID,
-        NULL, NULL, NULL, 0, buf, 0, 0);
+        NULL, NULL, NULL, 0, buf);
 }
 
 void
@@ -119,9 +179,7 @@ message_logger_log_full(const TCHAR *function_name,
                         const sockaddr_in *peer_addr,
                         const char *buf,
                         int len,
-                        const TCHAR *message,
-                        DWORD domain,
-                        DWORD severity)
+                        const TCHAR *message)
 {
     MessageQueueElement el;
     int read_len;
@@ -130,9 +188,6 @@ message_logger_log_full(const TCHAR *function_name,
 
     /* fill in basic fields */
     message_element_init(&el, function_name, bt_address, resource_id, msg_type);
-
-    el.domain = domain;
-    el.severity = severity;
 
     /* context */
     el.context = context;
@@ -143,15 +198,13 @@ message_logger_log_full(const TCHAR *function_name,
     /* fill in local address and port */
     if (local_addr)
     {
-        CUtil::Ipv4AddressToString(&local_addr->sin_addr, el.local_address);
-        el.local_port = ntohs(local_addr->sin_port);
+        memcpy(&el.local_address, local_addr, sizeof(sockaddr_in));
     }
 
     /* fill in peer address and port */
     if (peer_addr)
     {
-        CUtil::Ipv4AddressToString(&peer_addr->sin_addr, el.peer_address);
-        el.peer_port = ntohs(peer_addr->sin_port);
+        memcpy(&el.peer_address, peer_addr, sizeof(sockaddr_in));
     }
 
     /* copy the buffer */
@@ -210,7 +263,7 @@ message_logger_log(const TCHAR *function_name,
 
     message_logger_log_full(function_name, bt_address, resource_id,
         msg_type, context, direction, local_addr, peer_addr, buf, len,
-        message, 0, 0);
+        message);
 }
 
 
@@ -218,25 +271,109 @@ message_logger_log(const TCHAR *function_name,
  * Logging utility functions                                                *
  ****************************************************************************/
 
+class SocketAddress
+{
+public:
+    SocketAddress(const struct sockaddr *addr)
+        : Ipv4Address(NULL)
+    {
+        OTStringStream ss;
+
+        if (addr != NULL)
+        {
+            if (addr->sa_family == AF_INET)
+            {
+                Ipv4Address = reinterpret_cast<const struct sockaddr_in *>(addr);
+
+                TCHAR buf[16];
+                CUtil::Ipv4AddressToString(&Ipv4Address->sin_addr, buf);
+                ss << buf << _T(":") << static_cast<DWORD>(ntohs(Ipv4Address->sin_port));
+            }
+            else
+            {
+                ss << _T("<unhandled address family 0x") << hex << addr->sa_family << _T(">");
+            }
+        }
+        else
+        {
+            ss << _T("<null>");
+        }
+
+        descStr = ss.str();
+        Description = descStr.c_str();
+    }
+
+    const TCHAR *Description;
+    const struct sockaddr_in *Ipv4Address;
+
+private:
+    OTString descStr;
+};
+
+class Socket
+{
+public:
+    Socket(SOCKET sock)
+        : LocalIpv4Address(NULL), PeerIpv4Address(NULL)
+    {
+        int len;
+        
+        len = sizeof(localAddr);
+        if (getsockname(sock, &localAddr, &len) == 0)
+        {
+            SocketAddress sa(&localAddr);
+            localDescStr = sa.Description;
+
+            if (localAddr.sa_family == AF_INET)
+                LocalIpv4Address = reinterpret_cast<struct sockaddr_in *>(&localAddr);
+        }
+        else
+        {
+            localDescStr = _T("<unbound>");
+        }
+
+        len = sizeof(peerAddr);
+        if (getpeername(sock, &peerAddr, &len) == 0)
+        {
+            SocketAddress sa(&peerAddr);
+            peerDescStr = sa.Description;
+
+            if (peerAddr.sa_family == AF_INET)
+                PeerIpv4Address = reinterpret_cast<struct sockaddr_in *>(&peerAddr);
+        }
+        else
+        {
+            peerDescStr = _T("<unconnected>");
+        }
+
+        LocalDescription = localDescStr.c_str();
+        PeerDescription = peerDescStr.c_str();
+    }
+
+    const TCHAR *LocalDescription;
+    const struct sockaddr_in *LocalIpv4Address;
+
+    const TCHAR *PeerDescription;
+    const struct sockaddr_in *PeerIpv4Address;
+
+private:
+    OTString localDescStr;
+    struct sockaddr localAddr;
+
+    OTString peerDescStr;
+    struct sockaddr peerAddr;
+};
+
 void
 log_tcp_listening(const TCHAR *function_name,
                   void *bt_address,
                   SOCKET server_socket)
 {
-    struct sockaddr_in sin;
-    int sin_len;
-    TCHAR addr_str[16];
-
-    /* local address */
-    sin_len = sizeof(sin);
-    getsockname(server_socket, (struct sockaddr *) &sin, &sin_len);
-    CUtil::Ipv4AddressToString(&sin.sin_addr, addr_str);
-
-    message_logger_log(function_name, bt_address, server_socket,
-                       MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_SOCKET_LISTENING,
-                       PACKET_DIRECTION_INCOMING, &sin, NULL, NULL, 0,
-                       _T("%s:%u: listening for connections"),
-                       addr_str, ntohs(sin.sin_port));
+    Socket sock(server_socket);
+    message_logger_log(function_name, bt_address, resourceTracker->GetIdForSocket(server_socket),
+                       MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_SOCKET_LISTENING, PACKET_DIRECTION_INCOMING,
+                       sock.LocalIpv4Address, NULL, NULL, 0,
+                       _T("%s: listening for connections"), sock.LocalDescription);
 }
 
 void
@@ -245,24 +382,12 @@ log_tcp_connecting(const TCHAR *function_name,
                    SOCKET socket,
                    const struct sockaddr *name)
 {
-    struct sockaddr_in sin;
-    int sin_len;
-    const sockaddr_in *peer_addr = (const sockaddr_in *) name;
-    TCHAR local_addr_str[16], peer_addr_str[16];
-
-    /* local address */
-    sin_len = sizeof(sin);
-    getsockname(socket, (struct sockaddr *) &sin, &sin_len);
-
-    CUtil::Ipv4AddressToString(&sin.sin_addr, local_addr_str);
-    CUtil::Ipv4AddressToString(&peer_addr->sin_addr, peer_addr_str);
-
-    message_logger_log(function_name, bt_address, socket,
-                       MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_SOCKET_CONNECTING,
-                       PACKET_DIRECTION_OUTGOING, &sin, peer_addr, NULL, 0,
-                       _T("%s:%u: connecting to %s:%u"),
-                       local_addr_str, ntohs(sin.sin_port),
-                       peer_addr_str, ntohs(peer_addr->sin_port));
+    Socket sock(socket);
+    SocketAddress remoteAddr(name);
+    message_logger_log(function_name, bt_address, resourceTracker->GetIdForSocket(socket),
+                       MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_SOCKET_CONNECTING, PACKET_DIRECTION_OUTGOING,
+                       sock.LocalIpv4Address, remoteAddr.Ipv4Address, NULL, 0,
+                       _T("%s: connecting to %s"), sock.LocalDescription, remoteAddr.Description);
 }
 
 void
@@ -271,24 +396,12 @@ log_tcp_connected(const TCHAR *function_name,
                   SOCKET socket,
                   const struct sockaddr *name)
 {
-    struct sockaddr_in sin;
-    int sin_len;
-    const sockaddr_in *peer_addr = (const sockaddr_in *) name;
-    TCHAR local_addr_str[16], peer_addr_str[16];
-
-    /* local address */
-    sin_len = sizeof(sin);
-    getsockname(socket, (struct sockaddr *) &sin, &sin_len);
-
-    CUtil::Ipv4AddressToString(&sin.sin_addr, local_addr_str);
-    CUtil::Ipv4AddressToString(&peer_addr->sin_addr, peer_addr_str);
-
-    message_logger_log(function_name, bt_address, socket,
-                       MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_SOCKET_CONNECTED,
-                       PACKET_DIRECTION_OUTGOING, &sin, peer_addr, NULL, 0,
-                       _T("%s:%u: connected to %s:%u"),
-                       local_addr_str, ntohs(sin.sin_port),
-                       peer_addr_str, ntohs(peer_addr->sin_port));
+    Socket sock(socket);
+    SocketAddress remoteAddr(name);
+    message_logger_log(function_name, bt_address, resourceTracker->GetIdForSocket(socket),
+                       MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_SOCKET_CONNECTED, PACKET_DIRECTION_OUTGOING,
+                       sock.LocalIpv4Address, remoteAddr.Ipv4Address, NULL, 0,
+                       _T("%s: connected to %s"), sock.LocalDescription, remoteAddr.Description);
 }
 
 void
@@ -297,29 +410,13 @@ log_tcp_client_connected(const TCHAR *function_name,
                          SOCKET server_socket,
                          SOCKET client_socket)
 {
-    struct sockaddr_in sin_local, sin_peer;
-    int sin_len;
-    TCHAR local_addr_str[16], peer_addr_str[16];
-
-    /* local address
-     *
-     * FIXME: maybe client_socket should be used instead?
-     */
-    sin_len = sizeof(sin_local);
-    getsockname(server_socket, (struct sockaddr *) &sin_local, &sin_len);
-    CUtil::Ipv4AddressToString(&sin_local.sin_addr, local_addr_str);
-
-    /* peer address */
-    sin_len = sizeof(sin_peer);
-    getpeername(client_socket, (struct sockaddr *) &sin_peer, &sin_len);
-    CUtil::Ipv4AddressToString(&sin_peer.sin_addr, peer_addr_str);
-
-    message_logger_log(function_name, bt_address, client_socket,
+    Socket servSock(server_socket);
+    Socket clientSock(client_socket);
+    message_logger_log(function_name, bt_address,
+                       resourceTracker->GetIdForSocket(client_socket),
                        MESSAGE_TYPE_MESSAGE, MESSAGE_CTX_SOCKET_CONNECTED,
-                       PACKET_DIRECTION_INCOMING, &sin_local, &sin_peer, NULL,
-                       0, _T("%s:%u: client connected from %s:%u"),
-                       local_addr_str, ntohs(sin_local.sin_port),
-                       peer_addr_str, ntohs(sin_peer.sin_port));
+                       PACKET_DIRECTION_INCOMING, servSock.LocalIpv4Address, clientSock.PeerIpv4Address, NULL, 0,
+                       _T("%s: client connected from %s"), servSock.LocalDescription, clientSock.PeerDescription);
 }
 
 void
@@ -328,26 +425,12 @@ log_tcp_disconnected(const TCHAR *function_name,
                      SOCKET s,
                      DWORD *last_error)
 {
-    struct sockaddr_in sin_local, sin_peer;
-    int sin_len;
-    TCHAR local_addr_str[16], peer_addr_str[16];
-
-    /* local address */
-    sin_len = sizeof(sin_local);
-    getsockname(s, (struct sockaddr *) &sin_local, &sin_len);
-    CUtil::Ipv4AddressToString(&sin_local.sin_addr, local_addr_str);
-
-    /* peer address */
-    sin_len = sizeof(sin_peer);
-    getpeername(s, (struct sockaddr *) &sin_peer, &sin_len);
-    CUtil::Ipv4AddressToString(&sin_peer.sin_addr, peer_addr_str);
-
-    message_logger_log(function_name, bt_address, s, MESSAGE_TYPE_MESSAGE,
+    Socket sock(s);
+    message_logger_log(function_name, bt_address, resourceTracker->GetIdForSocket(s), MESSAGE_TYPE_MESSAGE,
                        (last_error == NULL) ? MESSAGE_CTX_SOCKET_DISCONNECTED : MESSAGE_CTX_SOCKET_RESET,
-                       PACKET_DIRECTION_INVALID, &sin_local, &sin_peer, (const char *) last_error,
-                       (last_error == NULL) ? 0 : 4, _T("%s:%u: connection to %s:%u %s"),
-                       local_addr_str, ntohs(sin_local.sin_port),
-                       peer_addr_str, ntohs(sin_peer.sin_port),
+                       PACKET_DIRECTION_INVALID, sock.LocalIpv4Address, sock.PeerIpv4Address, (const char *) last_error,
+                       (last_error == NULL) ? 0 : 4,
+                       _T("%s: connection to %s %s"), sock.LocalDescription, sock.PeerDescription,
                        (last_error == NULL) ? _T("closed") : _T("reset"));
 }
 
@@ -358,17 +441,9 @@ log_tcp_packet(const TCHAR *function_name,
                SOCKET s, const char *buf,
                int len)
 {
-    struct sockaddr_in local_addr, peer_addr;
-    int sin_len;
-
-    sin_len = sizeof(local_addr);
-    getsockname(s, (struct sockaddr *) &local_addr, &sin_len);
-
-    sin_len = sizeof(peer_addr);
-    getpeername(s, (struct sockaddr *) &peer_addr, &sin_len);
-
-    message_logger_log_packet(function_name, bt_address, s, direction,
-                              &local_addr, &peer_addr, buf, len);
+    Socket sock(s);
+    message_logger_log_packet(function_name, bt_address, resourceTracker->GetIdForSocket(s), direction,
+                              sock.LocalIpv4Address, sock.PeerIpv4Address, buf, len);
 }
 
 void
@@ -380,24 +455,24 @@ log_udp_packet(const TCHAR *function_name,
                const char *buf,
                int len)
 {
-    struct sockaddr_in local_addr, peer_addr;
-    int sin_len;
+    Socket sock(s);
+    SocketAddress peerAddr(peer);
+    message_logger_log_packet(function_name, bt_address, resourceTracker->GetIdForSocket(s), direction,
+                              sock.LocalIpv4Address, (peer != NULL) ? peerAddr.Ipv4Address : sock.PeerIpv4Address,
+                              buf, len);
+}
 
-    sin_len = sizeof(local_addr);
-    getsockname(s, (struct sockaddr *) &local_addr, &sin_len);
+void
+log_socket_closed(void *bt_address,
+                  SOCKET s)
+{
+    Socket sock(s);
+    message_logger_log(_T("closesocket"), bt_address, resourceTracker->GetIdForSocket(s), MESSAGE_TYPE_MESSAGE,
+                       MESSAGE_CTX_SOCKET_DISCONNECTED, PACKET_DIRECTION_INVALID,
+                       sock.LocalIpv4Address, sock.PeerIpv4Address, NULL, 0,
+                       _T("%s: closed"), sock.LocalDescription);
 
-    if (peer == NULL)
-    {
-        sin_len = sizeof(peer_addr);
-        getsockname(s, (struct sockaddr *) &peer_addr, &sin_len);    
-    }
-    else
-    {
-        peer_addr = *((const struct sockaddr_in *) peer);
-    }
-
-    message_logger_log_packet(function_name, bt_address, s, direction,
-                              &local_addr, &peer_addr, buf, len);
+    resourceTracker->NotifySocketDestroyed(s);
 }
 
 void
@@ -417,7 +492,7 @@ log_debug_w(const TCHAR *source,
 
     message_logger_log_full(source, bt_address, 0, MESSAGE_TYPE_MESSAGE,
         MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL,
-        buf, strlen(buf), wide_buf, domain, severity);
+        buf, strlen(buf), wide_buf);
 }
 
 void
@@ -436,8 +511,7 @@ log_debug(const TCHAR *source,
     MultiByteToWideChar(CP_ACP, 0, buf, -1, wide_buf, LOG_BUFFER_SIZE);
 
     message_logger_log_full(source, bt_address, 0, MESSAGE_TYPE_MESSAGE,
-        MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL, NULL, 0, wide_buf,
-        domain, severity);
+        MESSAGE_CTX_INFO, PACKET_DIRECTION_INVALID, NULL, NULL, NULL, 0, wide_buf);
 }
 
 #pragma managed(pop)

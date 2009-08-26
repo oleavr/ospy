@@ -71,17 +71,13 @@ typedef struct {
   
   /* MessageType.Message */
   MessageContext context;
-  DWORD domain;
-  DWORD severity;
   TCHAR message[256];
 
   /* MessageType.Packet */
   PacketDirection direction;
 
-  TCHAR local_address[16];
-  int local_port;
-  TCHAR peer_address[16];
-  int peer_port;
+  sockaddr_in local_address;
+  sockaddr_in peer_address;
 
   char buf[PACKET_BUFSIZE];
   int len;
@@ -91,7 +87,7 @@ typedef void (*MessageLoggerSubmitFunc)(const MessageQueueElement *el);
 
 void message_logger_init(MessageLoggerSubmitFunc submit_func);
 
-void message_logger_log_full(const TCHAR *function_name, void *bt_address, DWORD resource_id, MessageType msg_type, MessageContext context, PacketDirection direction, const sockaddr_in *local_addr, const sockaddr_in *peer_addr, const char *buf, int len, const TCHAR *message, DWORD domain, DWORD severity);
+void message_logger_log_full(const TCHAR *function_name, void *bt_address, DWORD resource_id, MessageType msg_type, MessageContext context, PacketDirection direction, const sockaddr_in *local_addr, const sockaddr_in *peer_addr, const char *buf, int len, const TCHAR *message);
 void message_logger_log(const TCHAR *function_name, void *bt_address, DWORD resource_id, MessageType msg_type, MessageContext context, PacketDirection direction, const sockaddr_in *local_addr, const sockaddr_in *peer_addr, const char *buf, int len, const TCHAR *message, ...);
 void message_logger_log_message(const TCHAR *function_name, void *bt_address, MessageContext context, const TCHAR *message, ...);
 void message_logger_log_packet(const TCHAR *function_name, void *bt_address, DWORD resource_id, PacketDirection direction, const sockaddr_in *local_addr, const sockaddr_in *peer_addr, const char *buf, int len);
@@ -104,6 +100,8 @@ void log_tcp_disconnected(const TCHAR *function_name, void *bt_address, SOCKET s
 
 void log_tcp_packet(const TCHAR *function_name, void *bt_address, PacketDirection direction, SOCKET s, const char *buf, int len);
 void log_udp_packet(const TCHAR *function_name, void *bt_address, PacketDirection direction, SOCKET s, const struct sockaddr *peer, const char *buf, int len);
+
+void log_socket_closed(void *bt_address, SOCKET s);
 
 void log_debug_w(const TCHAR *source, void *bt_address, const LPWSTR format, va_list args, DWORD domain = 0, DWORD severity = 0);
 void log_debug(const TCHAR *source, void *bt_address, const char *format, va_list args, DWORD domain = 0, DWORD severity = 0);

@@ -77,6 +77,10 @@
     <Compile Include="AboutBoxForm.Designer.cs">
       <DependentUpon>AboutBoxForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Capture\Event.cs" />
+    <Compile Include="Capture\EventFactory.cs" />
+    <Compile Include="Capture\MessageEvent.cs" />
+    <Compile Include="Capture\PacketEvent.cs" />
     <Compile Include="SearchBox.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -120,7 +124,6 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="IDrawToBitmapFull.cs" />
-    <Compile Include="Net\IPEndpoint.cs" />
     <Compile Include="Net\IPPacket.cs" />
     <Compile Include="Net\IPSession.cs" />
     <Compile Include="Net\PacketStream.cs" />
