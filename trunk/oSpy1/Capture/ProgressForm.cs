@@ -31,7 +31,7 @@ namespace oSpy.Capture
         private uint msgCount, msgBytes;
         private uint pktCount, pktBytes;
 
-        private Manager.ElementsReceivedHandler recvHandler;
+        private Manager.EventsReceivedHandler recvHandler;
 
         public ProgressForm(Manager manager)
         {
@@ -40,30 +40,32 @@ namespace oSpy.Capture
             msgCount = msgBytes = 0;
             pktCount = pktBytes = 0;
 
-            recvHandler = manager_MessageElementsReceived;
-            manager.MessageElementsReceived += recvHandler;
+            recvHandler = manager_EventsReceived;
+            manager.EventsReceived += recvHandler;
         }
 
-        private void manager_MessageElementsReceived(MessageQueueElement[] elements)
+        private void manager_EventsReceived(Event[] events)
         {
             if (InvokeRequired)
             {
-                Invoke(recvHandler, new object[] { elements });
+                Invoke(recvHandler, new object[] { events });
                 return;
             }
 
-            foreach (MessageQueueElement el in elements)
+            foreach (Event ev in events)
             {
-                if (el.msg_type == MessageType.MESSAGE_TYPE_MESSAGE)
+                if (ev is MessageEvent)
                 {
                     msgCount++;
-                    msgBytes += (uint) el.message.Length;
+                    msgBytes += (uint) (2 * ((ev as MessageEvent).Message.Length + 1));
                 }
                 else
                 {
                     pktCount++;
-                    pktBytes += el.len;
                 }
+
+                if (ev.Data != null)
+                    msgBytes += (uint) ev.Data.Length;
             }
 
             msgCountLabel.Text = Convert.ToString(msgCount);

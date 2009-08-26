@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\Legacy;.\Legacy\udis86-1.7"
+				AdditionalIncludeDirectories=".\;.\Legacy;.\Legacy\udis86-1.7"
 				AdditionalUsingDirectories="&quot;$(SolutionDir)..\EasyHook&quot;;&quot;$(OutDir)&quot;"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_WIN32_WINNT=0x0501;WINVER=0x0501;_USRDLL;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS"
 				RuntimeLibrary="3"
@@ -124,7 +124,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\Legacy;.\Legacy\udis86-1.7"
+				AdditionalIncludeDirectories=".\;.\Legacy;.\Legacy\udis86-1.7"
 				AdditionalUsingDirectories="&quot;$(SolutionDir)..\EasyHook&quot;;&quot;$(OutDir)&quot;"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_WIN32_WINNT=0x0501;WINVER=0x0501;_USRDLL;NDEBUG;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
@@ -223,6 +223,18 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<Filter
+				Name="Hooks"
+				>
+				<File
+					RelativePath=".\Hooks\Monitor.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Hooks\OpenGL.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -234,9 +246,25 @@
 				>
 			</File>
 			<File
+				RelativePath=".\IEventLogger.hpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Stdafx.h"
 				>
 			</File>
+			<Filter
+				Name="Hooks"
+				>
+				<File
+					RelativePath=".\Hooks\Monitor.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Hooks\OpenGL.hpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"

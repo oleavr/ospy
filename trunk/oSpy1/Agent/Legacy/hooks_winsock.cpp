@@ -289,7 +289,7 @@ closesocket_called(BOOL carry_on,
 {
     void *bt_address = (char *) &carry_on + 8 + CLOSESOCKET_ARGS_SIZE;
 
-    log_tcp_disconnected(_T("closesocket"), bt_address, s, NULL);
+    log_socket_closed(bt_address, s);
     return 0;
 }
 

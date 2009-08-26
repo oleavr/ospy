@@ -18,11 +18,15 @@
 
 #include "Stdafx.h"
 
+#using <System.dll>
+
 #include "Controller.hpp"
 
 #include "hooks.h"
 #include "hooking.h"
 #include "util.h"
+
+#include "Hooks/OpenGL.hpp"
 
 #include <msclr\lock.h>
 
@@ -34,15 +38,16 @@ namespace oSpyAgent
     Controller::Controller(RemoteHooking::IContext ^context,
                            String ^channelName,
                            array<oSpy::Capture::SoftwallRule ^> ^softwallRules)
-        : m_events(gcnew List<oSpy::Capture::MessageQueueElement ^>())
+        : eventFactory(gcnew oSpy::Capture::EventFactory()),
+          events(gcnew List<oSpy::Capture::Event ^>())
     {
         String ^url = "ipc://" + channelName + "/" + channelName;
-        m_manager = dynamic_cast<oSpy::Capture::IManager ^>(Activator::GetObject(oSpy::Capture::IManager::typeid, url));
+        this->manager = dynamic_cast<oSpy::Capture::IManager ^>(Activator::GetObject(oSpy::Capture::IManager::typeid, url));
 
-        m_softwallRules = softwallRules;
+        this->softwallRules = softwallRules;
 
-        m_submitElementHandler = gcnew SubmitElementHandler(this, &Controller::OnSubmitElement);
-        m_submitElementHandlerFuncPtr = Marshal::GetFunctionPointerForDelegate(m_submitElementHandler);
+        this->submitElementHandler = gcnew SubmitElementHandler(this, &Controller::OnSubmitElement);
+        this->submitElementHandlerFuncPtr = Marshal::GetFunctionPointerForDelegate(submitElementHandler);
     }
 
     void Controller::Run(RemoteHooking::IContext ^context,
@@ -50,6 +55,15 @@ namespace oSpyAgent
                          array<oSpy::Capture::SoftwallRule ^> ^softwallRules)
     {
         EnableLegacyHooks();
+
+        try
+        {
+            Hooks::GLMonitor glm;
+            glm.SetLogger(this);
+        }
+        catch (...)
+        {
+        }
 
         RemoteHooking::WakeUpProcess();
 
@@ -61,29 +75,44 @@ namespace oSpyAgent
             {
                 Thread::Sleep(500);
 
-                if (m_events.Count > 0)
+                if (events.Count > 0)
                 {
-                    array<oSpy::Capture::MessageQueueElement ^> ^elements = nullptr;
+                    array<oSpy::Capture::Event ^> ^batch = nullptr;
 
                     {
                         msclr::lock l(this);
-                        elements = m_events.ToArray();
-                        m_events.Clear();
+                        batch = events.ToArray();
+                        events.Clear();
                     }
 
-                    m_manager->Submit(elements);
+                    manager->Submit(batch);
                 }
                 else
                 {
-                    m_manager->Ping(myPid);
+                    manager->Ping(myPid);
                 }
             }
         }
-        catch (Exception ^)
+        catch (Exception ^ex)
         {
+#ifdef _DEBUG
+            pin_ptr<const wchar_t> str = PtrToStringChars(ex->Message);
+            MessageBox(NULL, str, _T("Error"), MB_OK | MB_ICONERROR);
+#endif
         }
 
         DisableLegacyHooks();
+    }
+
+    oSpy::Capture::EventFactory ^Controller::Factory::get()
+    {
+        return eventFactory;
+    }
+
+    void Controller::Submit(oSpy::Capture::Event ^ev)
+    {
+        msclr::lock l(this);
+        events.Add(ev);
     }
 
     void Controller::EnableLegacyHooks()
@@ -91,18 +120,18 @@ namespace oSpyAgent
         HookManager::Init();
         CUtil::Init();
 
-        SoftwallRule *rules = new SoftwallRule[m_softwallRules->Length];
+        ::SoftwallRule *rules = new ::SoftwallRule[softwallRules->Length];
         unsigned int i = 0;
-        for each (oSpy::Capture::SoftwallRule ^rule in m_softwallRules)
+        for each (oSpy::Capture::SoftwallRule ^rule in softwallRules)
         {
             IntPtr nativeRule(&rules[i]);
             Marshal::StructureToPtr(rule, nativeRule, false);
             i++;
         }
-        softwall_init(rules, m_softwallRules->Length);
+        softwall_init(rules, softwallRules->Length);
         delete[] rules;
 
-        message_logger_init(static_cast<MessageLoggerSubmitFunc>(static_cast<void *>(m_submitElementHandlerFuncPtr)));
+        message_logger_init(static_cast<MessageLoggerSubmitFunc>(static_cast<void *>(submitElementHandlerFuncPtr)));
 
         hook_winsock();
         hook_secur32();
@@ -122,11 +151,43 @@ namespace oSpyAgent
 
     void Controller::OnSubmitElement(const MessageQueueElement *el)
     {
-        IntPtr elPtr(const_cast<MessageQueueElement *>(el));
-        oSpy::Capture::MessageQueueElement ^managedEl = gcnew oSpy::Capture::MessageQueueElement;
-        Marshal::PtrToStructure(elPtr, managedEl);
+        Event ^ev = nullptr;
 
-        msclr::lock l(this);
-        m_events.Add(managedEl);
+        Event::InvocationOrigin origin(gcnew String(el->function_name), gcnew String(el->backtrace), el->resource_id);
+
+        if (el->type == MESSAGE_TYPE_MESSAGE)
+        {
+            MessageEvent ^msgEv = gcnew MessageEvent(eventFactory, origin, gcnew String(el->message));
+            msgEv->Context = static_cast<oSpy::MessageContext>(el->context);
+
+            ev = msgEv;
+        }
+        else
+        {
+            PacketEvent ^pktEv = gcnew PacketEvent(eventFactory, origin);
+
+            ev = pktEv;
+        }
+
+        ev->Direction = static_cast<oSpy::PacketDirection>(el->direction);
+
+        if (el->local_address.sin_port != 0)
+        {
+            ev->LocalEndpoint = gcnew System::Net::IPEndPoint(Int64(el->local_address.sin_addr.s_addr), ntohs(el->local_address.sin_port));
+        }
+
+        if (el->peer_address.sin_port != 0)
+        {
+            ev->PeerEndpoint = gcnew System::Net::IPEndPoint(Int64(el->peer_address.sin_addr.s_addr), ntohs(el->peer_address.sin_port));
+        }
+
+        if (el->len > 0)
+        {
+            array<Byte> ^data = gcnew array<Byte>(el->len);
+            Marshal::Copy(static_cast<IntPtr>(const_cast<char *>(el->buf)), data, 0, el->len);
+            ev->Data = data;
+        }
+
+        Submit(ev);
     }
 }

@@ -40,7 +40,7 @@ namespace oSpy.Parser
 
         public override bool HandleSession(IPSession session)
         {
-            if (session.RemoteEndpoint.Port != XMPP_PORT)
+            if (session.RemoteEndpoint == null || session.RemoteEndpoint.Port != XMPP_PORT)
                 return false;
 
             PacketStream stream = session.GetNextStreamDirection();

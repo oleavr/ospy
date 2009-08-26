@@ -618,9 +618,9 @@ namespace oSpy.Parser
         }
         public override bool HandleSession(IPSession session)
         {
-            logger.AddMessage(String.Format("session.LocalEndpoint.Port={0}, session.RemoteEndpoint.Port={1}",
-                session.LocalEndpoint.Port, session.RemoteEndpoint.Port));
-            if (session.RemoteEndpoint.Port == MSN_SB_PORT)
+            logger.AddMessage(String.Format("session.LocalEndpoint={0}, session.RemoteEndpoint={1}",
+                session.LocalEndpoint, session.RemoteEndpoint));
+            if (session.RemoteEndpoint != null && session.RemoteEndpoint.Port == MSN_SB_PORT)
                 return HandleSwitchboardSession(session);
 
             PacketStream stream = session.GetNextStreamDirection();

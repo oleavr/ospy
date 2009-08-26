@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2007-2008 Ole André Vadla Ravnås <oleavr@gmail.com>
+// Copyright (c) 2007-2009 Ole André Vadla Ravnås <oleavr@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,52 +34,9 @@ namespace oSpy.Capture
 {
     public interface IManager
     {
-        void Submit(MessageQueueElement[] elements);
+        void Submit(Event[] events);
         void Ping(int pid);
     }
-
-    [Serializable]
-    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
-    public class MessageQueueElement
-    {
-        /* Common fields */
-        public WinApi.SYSTEMTIME time;
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        public string process_name;
-        public UInt32 process_id;
-        public UInt32 thread_id;
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        public string function_name;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = Manager.BACKTRACE_BUFSIZE)]
-        public string backtrace;
-
-        public UInt32 resource_id;
-
-        public MessageType msg_type;
-
-        /* MessageType.Message */
-        public MessageContext context;
-        public UInt32 domain;
-        public UInt32 severity;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
-        public string message;
-
-        /* MessageType.Packet */
-        public PacketDirection direction;
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
-        public string local_address;
-        public UInt32 local_port;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
-        public string peer_address;
-        public UInt32 peer_port;
-
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = Manager.PACKET_BUFSIZE)]
-        public byte[] buf;
-        public UInt32 len;
-    };
 
     [Serializable]
     [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
@@ -172,8 +129,8 @@ namespace oSpy.Capture
 
     public class Manager : MarshalByRefObject, IManager
     {
-        public delegate void ElementsReceivedHandler(MessageQueueElement[] elements);
-        public event ElementsReceivedHandler MessageElementsReceived;
+        public delegate void EventsReceivedHandler(Event[] events);
+        public event EventsReceivedHandler EventsReceived;
 
         private const string AGENT_DLL = "oSpyAgent.dll";
 
@@ -211,11 +168,11 @@ namespace oSpy.Capture
             return null; // live forever
         }
 
-        public void Submit(MessageQueueElement[] elements)
+        public void Submit(Event[] events)
         {
-            lock (MessageElementsReceived)
+            lock (EventsReceived)
             {
-                MessageElementsReceived(elements);
+                EventsReceived(events);
             }
         }
 

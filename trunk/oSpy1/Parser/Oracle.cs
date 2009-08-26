@@ -61,7 +61,7 @@ namespace oSpy.Parser {
             //foreach(Configuration.Setting setting in settings)
             //    logger.AddMessage("Using property {0} with value {1}", setting.Property, setting.Value);
             PacketStream stream = session.GetNextStreamDirection();
-            if ((session.RemoteEndpoint.Port == 1521) || (session.RemoteEndpoint.Port == redirPort)) {
+            if (session.RemoteEndpoint != null && ((session.RemoteEndpoint.Port == 1521) || (session.RemoteEndpoint.Port == redirPort))) {
                 //we're either connected to the standard Oracle port or the redirected port
             }else
                 return false;

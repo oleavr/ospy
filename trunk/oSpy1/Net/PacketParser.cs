@@ -31,9 +31,8 @@ using oSpy.Parser;
 namespace oSpy.Net
 {
     //
-    // Class that parses packets into transactions by using transaction
-    // factories. It has a list of the raw packets as well as parsed
-    // transactions.
+    // Parses packets into transactions by using transaction factories.
+    // Keeps track of raw packets and parsed transactions.
     //
     [Serializable()]
     [TypeConverterAttribute(typeof(ExpandableObjectConverter))]

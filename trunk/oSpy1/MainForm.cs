@@ -1,20 +1,19 @@
-/**
- * Copyright (C) 2006  Ole André Vadla Ravnås <oleavr@gmail.com>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+//
+// Copyright (c) 2006-2009 Ole André Vadla Ravnås <oleavr@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 using System;
 using System.Collections.Generic;
@@ -30,6 +29,7 @@ using oSpy.Event;
 using oSpy.Net;
 using oSpy.Parser;
 using oSpy.Util;
+using System.Net;
 
 namespace oSpy
 {
@@ -37,7 +37,7 @@ namespace oSpy
     {
         private ConfigContext config;
         private Capture.Manager captureMgr;
-        private Capture.Manager.ElementsReceivedHandler recvHandler;
+        private Capture.Manager.EventsReceivedHandler recvHandler;
         private bool hasRegistered = false;
 
         private DataTable tblMessages;
@@ -79,23 +79,15 @@ namespace oSpy
         private bool updatingSelections = false;
         private PacketSlice[] prevSelectedSlices;
 
-        private ColorPool colorPool;
-        private string deviceLabel;
-        private string statusLabel;
-        private string subStatusLabel;
-        private string wizStatusLabel;
-
         public MainForm()
         {
             InitializeComponent();
 
             config = ConfigManager.GetContext("MainForm");
 
-            colorPool = new ColorPool();
-
             captureMgr = new Capture.Manager();
-            recvHandler = listener_ElementsReceived;
-            captureMgr.MessageElementsReceived += recvHandler;
+            recvHandler = listener_EventsReceived;
+            captureMgr.EventsReceived += recvHandler;
 
             tblMessages = dataSet.Tables["messages"];
 
@@ -153,11 +145,6 @@ namespace oSpy
 
         protected void ClearState()
         {
-            deviceLabel = "";
-            statusLabel = "";
-            subStatusLabel = "";
-            wizStatusLabel = "";
-
             dataSet.Clear();
             packetParser.Reset();
             prevSelectedSlices = null;
@@ -254,11 +241,11 @@ namespace oSpy
             }
         }
 
-        private void listener_ElementsReceived(Capture.MessageQueueElement[] elements)
+        private void listener_EventsReceived(Capture.Event[] events)
         {
             if (InvokeRequired)
             {
-                Invoke(recvHandler, new object[] { elements });
+                Invoke(recvHandler, new object[] { events });
                 return;
             }
 
@@ -266,7 +253,7 @@ namespace oSpy
             dataGridView.DataSource = null;
             dataSet.Tables[0].BeginLoadData();
 
-            foreach (Capture.MessageQueueElement msg in elements)
+            foreach (Capture.Event ev in events)
             {
                 DataTable tbl = dataSet.Tables["messages"];
 
@@ -274,25 +261,21 @@ namespace oSpy
                 row.BeginEdit();
 
                 /* Common stuff */
-                row["Timestamp"] = new DateTime(msg.time.wYear, msg.time.wMonth,
-                                                msg.time.wDay, msg.time.wHour,
-                                                msg.time.wMinute, msg.time.wSecond,
-                                                msg.time.wMilliseconds,
-                                                DateTimeKind.Local);
+                row["Timestamp"] = DateTime.Now; // FIXME
 
-                row["ProcessName"] = msg.process_name;
-                row["ProcessId"] = msg.process_id;
-                row["ThreadId"] = msg.thread_id;
+                row["ProcessName"] = ev.ProcessName;
+                row["ProcessId"] = ev.ProcessId;
+                row["ThreadId"] = ev.ThreadId;
 
-                row["FunctionName"] = msg.function_name;
-                row["Backtrace"] = msg.backtrace;
+                row["FunctionName"] = ev.FunctionName;
+                row["Backtrace"] = ev.Backtrace;
 
                 UInt32 returnAddress = 0;
                 string callerModName = "";
 
-                if (msg.backtrace.Length > 0)
+                if (ev.Backtrace != null)
                 {
-                    string[] tokens = msg.backtrace.Split(new char[] { '\n' }, 2);
+                    string[] tokens = ev.Backtrace.Split(new char[] { '\n' }, 2);
                     if (tokens.Length >= 1)
                     {
                         string line = tokens[0];
@@ -309,38 +292,39 @@ namespace oSpy
                 row["ReturnAddress"] = returnAddress;
                 row["CallerModuleName"] = callerModName;
 
-                row["ResourceId"] = msg.resource_id;
+                row["ResourceId"] = ev.ResourceId;
 
-                row["MsgType"] = msg.msg_type;
+                if (ev is Capture.MessageEvent)
+                {
+                    Capture.MessageEvent msgEvent = ev as Capture.MessageEvent;
 
-                row["MsgContext"] = msg.context;
-                row["Domain"] = msg.domain;
-                row["Severity"] = msg.severity;
-                row["Message"] = msg.message;
+                    row["MsgType"] = MessageType.MESSAGE_TYPE_MESSAGE;
 
-                if (msg.context == MessageContext.MESSAGE_CTX_ACTIVESYNC_DEVICE)
-                    deviceLabel = msg.message;
-                else if (msg.context == MessageContext.MESSAGE_CTX_ACTIVESYNC_STATUS)
-                    statusLabel = msg.message;
-                else if (msg.context == MessageContext.MESSAGE_CTX_ACTIVESYNC_SUBSTATUS)
-                    subStatusLabel = msg.message;
-                else if (msg.context == MessageContext.MESSAGE_CTX_ACTIVESYNC_WZ_STATUS)
-                    wizStatusLabel = msg.message;
+                    row["MsgContext"] = msgEvent.Context;
+                    row["Message"] = msgEvent.Message;
+                }
+                else
+                {
+                    Capture.PacketEvent pktEvent = ev as Capture.PacketEvent;
 
-                row["Direction"] = msg.direction;
-                row["LocalAddress"] = msg.local_address;
-                row["LocalPort"] = msg.local_port;
-                row["PeerAddress"] = msg.peer_address;
-                row["PeerPort"] = msg.peer_port;
+                    row["MsgType"] = MessageType.MESSAGE_TYPE_PACKET;
+                }
 
-                byte[] data = new byte[msg.len];
-                Array.Copy(msg.buf, data, data.Length);
-                row["Data"] = data;
+                row["Direction"] = ev.Direction;
 
-                row["AS_Device"] = deviceLabel;
-                row["AS_Status"] = statusLabel;
-                row["AS_SubStatus"] = subStatusLabel;
-                row["AS_WizStatus"] = wizStatusLabel;
+                if (ev.LocalEndpoint != null)
+                {
+                    row["LocalAddress"] = ev.LocalEndpoint.Address.ToString();
+                    row["LocalPort"] = ev.LocalEndpoint.Port;
+                }
+
+                if (ev.PeerEndpoint != null)
+                {
+                    row["PeerAddress"] = ev.PeerEndpoint.Address.ToString();
+                    row["PeerPort"] = ev.PeerEndpoint.Port;
+                }
+
+                row["Data"] = ev.Data;
 
                 row.EndEdit();
 
@@ -499,67 +483,18 @@ namespace oSpy
         {
             IProgressFeedback progress = param as IProgressFeedback;
 
-            //
-            // Find all the sessions and create a PacketStream for each
-            //
-            Dictionary<UInt32, IPSession> sessions = new Dictionary<UInt32, IPSession>();
-            List<UInt32> sessionList = new List<UInt32>();
-            IPSession session;
-
-            progress.ProgressUpdate("Identifying sessions", 0);
-
-            int i = 0;
-            foreach (IPPacket p in tmpPacketList)
-            {
-                UInt32 id = (UInt32) (p.ResourceId + p.RemoteEndpoint.Port);
-
-                if (sessions.ContainsKey(id))
-                    session = sessions[id];
-                else
-                {
-                    session = new IPSession();
-                    sessions[id] = session;
-                    sessionList.Add(id);
-                }
-
-                session.AddPacket(p);
-                i++;
-
-                progress.ProgressUpdate("Identifying sessions",
-                    (int) ((i / (float) tmpPacketList.Count) * 100.0f));
-            }
-
-            //
-            // Add the events to the appropriate sessions
-            //
-
-            // First off, sort them by timestamp
-            tmpEventList.Sort();
-
-            // Then match them with the sessions
-            foreach (TCPEvent ev in tmpEventList)
-            {
-                if (sessions.ContainsKey(ev.ResourceId))
-                    sessions[ev.ResourceId].AddEvent(ev);
-            }
-
-            // Don't need these any more now
+            IPSession[] sessions = IPSession.ExtractAllFrom(tmpPacketList.ToArray(), tmpEventList.ToArray(), progress);
             tmpEventList.Clear();
             tmpPacketList.Clear();
 
-            //
-            // Iterate over them, in sequence, and hand each over to the parser.
-            //
-            i = 0;
-            foreach (UInt32 id in sessionList)
+            int i = 0;
+            foreach (IPSession session in sessions)
             {
-                session = sessions[id];
                 packetParser.AddSession(session);
 
                 i++;
-
                 progress.ProgressUpdate("Parsing sessions",
-                    (int)((i / (float)sessionList.Count) * 100.0f));
+                    (int) ((i / (float) sessions.Length) * 100.0f));
             }
         }
 
@@ -753,13 +688,13 @@ namespace oSpy
                 UInt32 resourceId = (UInt32) e.Row["ResourceId"];
                 PacketDirection direction = (PacketDirection)((UInt32)e.Row["Direction"]);
 
-                byte[] data = (byte[]) e.Row["Data"];
-                string suffix = (data.Length > 1) ? "s" : "";
+                IPEndPoint localEndpoint = null;
+                if (!(e.Row["LocalAddress"] is DBNull))
+                    localEndpoint = new IPEndPoint(IPAddress.Parse((string) e.Row["LocalAddress"]), (UInt16) e.Row["LocalPort"]);
 
-                IPEndpoint localEndpoint = new IPEndpoint((string) e.Row["LocalAddress"],
-                                                          (UInt16) e.Row["LocalPort"]);
-                IPEndpoint remoteEndpoint = new IPEndpoint((string)e.Row["PeerAddress"],
-                                                           (UInt16)e.Row["PeerPort"]);
+                IPEndPoint remoteEndpoint = null;
+                if (!(e.Row["PeerAddress"] is DBNull))
+                    remoteEndpoint = new IPEndPoint(IPAddress.Parse((string) e.Row["PeerAddress"]), (UInt16) e.Row["PeerPort"]);
 
                 if ((MessageType) ((UInt32) e.Row["MsgType"]) == MessageType.MESSAGE_TYPE_MESSAGE)
                 {
@@ -826,30 +761,40 @@ namespace oSpy
                 else
                 {
                     string msgPrefix = "";
-                    if (localEndpoint.Address.Length > 0)
+                    if (localEndpoint != null)
                     {
                         msgPrefix = String.Format("{0}: ", localEndpoint);
                     }
 
                     string msgSuffix = "";
-                    if (remoteEndpoint.Address.Length > 0)
+                    if (remoteEndpoint != null)
                     {
                         msgSuffix = String.Format(" {0} {1}",
                             (direction == PacketDirection.PACKET_DIRECTION_INCOMING) ? "from" : "to",
                             remoteEndpoint);
                     }
 
+                    byte[] data = null;
+                    int dataLen = 0;
+                    if (!(e.Row["Data"] is DBNull))
+                    {
+                        data = e.Row["Data"] as byte[];
+                        dataLen = data.Length;
+                    }
+
                     if (msgPrefix.Length > 0 && msgSuffix.Length > 0)
                     {
+                        string suffix = (dataLen == 1) ? "" : "s";
+
                         if (direction == PacketDirection.PACKET_DIRECTION_INCOMING)
                         {
                             e.Row["Description"] = String.Format("{0}Received {1} byte{2}{3}",
-                                                                 msgPrefix, data.Length, suffix, msgSuffix);
+                                                                 msgPrefix, dataLen, suffix, msgSuffix);
                         }
                         else
                         {
                             e.Row["Description"] = String.Format("{0}Sent {1} byte{2}{3}",
-                                                                 msgPrefix, data.Length, suffix, msgSuffix);
+                                                                 msgPrefix, dataLen, suffix, msgSuffix);
                         }
                     }
                     else
@@ -857,11 +802,15 @@ namespace oSpy
                         e.Row["Description"] = e.Row["Message"];
                     }
 
-                    IPPacket pkt = new IPPacket(index, timestamp, resourceId, direction, localEndpoint, remoteEndpoint, data);
-                    tmpPacketList.Add(pkt);
+                    if (data != null)
+                    {
+                        IPPacket pkt = new IPPacket(index, timestamp, resourceId, direction, localEndpoint, remoteEndpoint, data);
+                        tmpPacketList.Add(pkt);
+                    }
                 }
 
-                e.Row["BgColor"] = GetColorForASState(e.Row);
+                // TODO FUTURE: Use this color to reflect application-specific state
+                e.Row["BgColor"] = new byte[3] { 0xff, 0xff, 0xff };
 
                 e.Row.EndEdit();
             }
@@ -882,33 +831,6 @@ namespace oSpy
             }
 
             return s.ToString();
-        }
-
-        private byte[] GetColorForASState(DataRow row)
-        {
-            string dev, status, subStatus, wizStatus;
-            byte[] c = new byte[3];
-
-            dev = (string)row["AS_Device"];
-            status = (string)row["AS_Status"];
-            subStatus = (string)row["AS_SubStatus"];
-            wizStatus = (string)row["AS_WizStatus"];
-
-            string devHash = MD5Sum(dev);
-            string statusHash = MD5Sum(status);
-            string subStatusHash = MD5Sum(subStatus);
-            string wizStatusHash = MD5Sum(wizStatus);
-
-            string combinedHash = MD5Sum(devHash + statusHash + subStatusHash + wizStatusHash);
-
-            Color col = colorPool.GetColorForId(combinedHash);
-
-            byte[] b = new byte[3];
-            b[0] = col.R;
-            b[1] = col.G;
-            b[2] = col.B;
-
-            return b;
         }
 
         private void propertyGrid_SelectedGridItemChanged(object sender, SelectedGridItemChangedEventArgs e)
@@ -1573,11 +1495,27 @@ namespace oSpy
 
             resourceId = (UInt32)cells[resourceIdDataGridViewTextBoxColumn.Index].Value;
 
-            localAddr = (string)cells[localAddressDataGridViewTextBoxColumn.Index].Value;
-            localPort = (UInt16)cells[localPortDataGridViewTextBoxColumn.Index].Value;
+            if (!(cells[localAddressDataGridViewTextBoxColumn.Index].Value is DBNull))
+            {
+                localAddr = (string) cells[localAddressDataGridViewTextBoxColumn.Index].Value;
+                localPort = (UInt16) cells[localPortDataGridViewTextBoxColumn.Index].Value;
+            }
+            else
+            {
+                localAddr = null;
+                localPort = 0;
+            }
 
-            peerAddr = (string)cells[peerAddressDataGridViewTextBoxColumn.Index].Value;
-            peerPort = (UInt16)cells[peerPortDataGridViewTextBoxColumn.Index].Value;
+            if (!(cells[peerAddressDataGridViewTextBoxColumn.Index].Value is DBNull))
+            {
+                peerAddr = (string) cells[peerAddressDataGridViewTextBoxColumn.Index].Value;
+                peerPort = (UInt16) cells[peerPortDataGridViewTextBoxColumn.Index].Value;
+            }
+            else
+            {
+                peerAddr = null;
+                peerPort = 0;
+            }
         }
 
         private void expandAllToolStripMenuItem_Click(object sender, EventArgs e)
@@ -2130,8 +2068,8 @@ namespace oSpy
 
             foreach (DataRow row in dataSet.Tables[0].Rows)
             {
-                string bt = (string) row["Backtrace"];
-                if (bt == String.Empty)
+                string bt = row["Backtrace"] as string;
+                if (bt == null)
                     continue;
 
                 StringBuilder builder = new StringBuilder(bt.Length);

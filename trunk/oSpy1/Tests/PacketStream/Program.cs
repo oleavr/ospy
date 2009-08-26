@@ -6,6 +6,8 @@ using System.IO;
 using System.Diagnostics;
 using oSpy.Parser;
 using oSpy.Net;
+using System.Net;
+
 namespace TestPacketStream
 {
     class Program
@@ -14,8 +16,8 @@ namespace TestPacketStream
         {
             PacketStream stream = new PacketStream();
 
-            IPEndpoint localEndpoint = new IPEndpoint("169.254.2.2", 27516);
-            IPEndpoint remoteEndpoint = new IPEndpoint("169.254.2.1", 1056);
+            IPEndPoint localEndpoint = new IPEndPoint(IPAddress.Parse("169.254.2.2"), 27516);
+            IPEndPoint remoteEndpoint = new IPEndPoint(IPAddress.Parse("169.254.2.1"), 1056);
 
             int n = 1;
 

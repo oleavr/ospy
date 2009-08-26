@@ -21,6 +21,7 @@
 #using <EasyHook.dll>
 #using <oSpy.exe>
 
+#include "IEventLogger.hpp"
 #include "logging.h"
 
 using namespace System;
@@ -31,12 +32,20 @@ namespace oSpyAgent
 {
     private delegate void SubmitElementHandler(const MessageQueueElement *el);
 
-    public ref class Controller : public IEntryPoint
+    public ref class Controller : public IEntryPoint, IEventLogger
     {
     public:
         Controller(RemoteHooking::IContext ^context, String ^channelName, array<oSpy::Capture::SoftwallRule ^> ^softwallRules);
 
+        // IEntryPoint
         void Run(RemoteHooking::IContext ^context, String ^channelName, array<oSpy::Capture::SoftwallRule ^> ^softwallRules);
+
+        // IEventLogger
+        property oSpy::Capture::EventFactory ^Factory
+        {
+            virtual oSpy::Capture::EventFactory ^get();
+        }
+        virtual void Submit(oSpy::Capture::Event ^ev);
 
     private:
         void EnableLegacyHooks();
@@ -44,11 +53,12 @@ namespace oSpyAgent
 
         void OnSubmitElement(const MessageQueueElement *el);
 
-        oSpy::Capture::IManager ^m_manager;
-        array<oSpy::Capture::SoftwallRule ^> ^m_softwallRules;
-        List<oSpy::Capture::MessageQueueElement ^> m_events;
+        oSpy::Capture::IManager ^manager;
+        array<oSpy::Capture::SoftwallRule ^> ^softwallRules;
+        oSpy::Capture::EventFactory ^eventFactory;
+        List<oSpy::Capture::Event ^> events;
 
-        SubmitElementHandler ^m_submitElementHandler;
-        IntPtr m_submitElementHandlerFuncPtr;
+        SubmitElementHandler ^submitElementHandler;
+        IntPtr submitElementHandlerFuncPtr;
     };
 }
