@@ -160,6 +160,29 @@ namespace oSpy.Capture
                 UpdateUi();
             }
         }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            int key = msg.WParam.ToInt32();
+
+            if (key == (int) Keys.Escape)
+            {
+                if (searchBox.HandleEscape())
+                    return true;
+            }
+            else if (key == (int) Keys.Enter)
+            {
+                if (searchBox.HandleEnter())
+                    return true;
+            }
+            else if (key == (int) Keys.Tab)
+            {
+                if (searchBox.HandleTab())
+                    return true;
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
     }
 
     internal class ApplicationListViewItem : ListViewItem, IComparable

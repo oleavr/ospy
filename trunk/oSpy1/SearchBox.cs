@@ -56,6 +56,14 @@ namespace oSpy
             }
         }
 
+        public bool IsEditing
+        {
+            get
+            {
+                return matchView.Visible;
+            }
+        }
+
         public delegate void SuggestionActivatedHandler(object sender, SuggestionActivatedEventArgs e);
 
         [Category("Action")]
@@ -111,7 +119,7 @@ namespace oSpy
 
         private void CancelInput()
         {
-            isInactive = true;
+            isInactive = !Focused;
             Text = "";
             matchView.Hide();
             matchView.Clear();
@@ -136,6 +144,44 @@ namespace oSpy
 
             if (suggestions != null)
                 Focus();
+        }
+
+        public bool HandleEnter()
+        {
+            if (Focused)
+                matchView.Focus();
+            else if (matchView.Focused)
+                matchView.TrySelectMatch();
+            else
+                return false;
+
+            return true;
+        }
+
+        public bool HandleEscape()
+        {
+            if (IsEditing)
+            {
+                CancelInput();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool HandleTab()
+        {
+            if (IsEditing && !matchView.Focused)
+            {
+                matchView.Focus();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         protected override void OnSizeChanged(EventArgs e)
@@ -199,7 +245,7 @@ namespace oSpy
 
             if (matchView.Visible)
             {
-                if (e.KeyCode == Keys.Down || e.KeyValue == 13)
+                if (e.KeyValue == 13 || e.KeyCode == Keys.Down)
                 {
                     matchView.Focus();
                     e.Handled = true;
@@ -276,7 +322,7 @@ namespace oSpy
                 textBox.CancelInput();
             }
 
-            private bool TrySelectMatch()
+            public bool TrySelectMatch()
             {
                 var selected = SelectedItems;
                 if (selected.Count == 0)
