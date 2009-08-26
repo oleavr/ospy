@@ -157,8 +157,7 @@ namespace oSpy
         protected override void OnLostFocus(EventArgs e)
         {
             base.OnLostFocus(e);
-
-            if (!matchView.Visible)
+            if (!matchView.Focused)
                 CancelInput();
         }
 
