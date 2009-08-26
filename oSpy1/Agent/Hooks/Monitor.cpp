@@ -29,13 +29,18 @@ namespace oSpyAgent
         void Monitor::SetLogger(IEventLogger ^logger)
         {
             this->logger = logger;
-            this->factory = logger->Factory;
+            this->coordinator = logger->Coordinator;
         }
 
         String ^Monitor::BacktraceHere()
         {
             void *address = static_cast<void *>(HookRuntimeInfo::AddressOfReturnAddress);
             return gcnew String(CUtil::CreateBackTrace(address).c_str());
+        }
+
+        String ^Monitor::BoolToString(BOOL value)
+        {
+            return (value) ? "TRUE" : "FALSE";
         }
     }
 }

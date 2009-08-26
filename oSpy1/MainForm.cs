@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.IO;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -29,7 +30,6 @@ using oSpy.Event;
 using oSpy.Net;
 using oSpy.Parser;
 using oSpy.Util;
-using System.Net;
 
 namespace oSpy
 {
@@ -37,7 +37,6 @@ namespace oSpy
     {
         private ConfigContext config;
         private Capture.Manager captureMgr;
-        private Capture.Manager.EventsReceivedHandler recvHandler;
         private bool hasRegistered = false;
 
         private DataTable tblMessages;
@@ -86,8 +85,6 @@ namespace oSpy
             config = ConfigManager.GetContext("MainForm");
 
             captureMgr = new Capture.Manager();
-            recvHandler = listener_EventsReceived;
-            captureMgr.EventsReceived += recvHandler;
 
             tblMessages = dataSet.Tables["messages"];
 
@@ -151,8 +148,8 @@ namespace oSpy
             curNodeList = null;
             curPacketList = null;
             curSelBytes = new MemoryStream();
-            tmpEventList = new List<TCPEvent>(8);
-            tmpPacketList = new List<IPPacket>(32);
+            tmpEventList = new List<TCPEvent>();
+            tmpPacketList = new List<IPPacket>();
             richTextBox.Clear();
             propertyGrid.SelectedObject = null;
         }
@@ -239,100 +236,6 @@ namespace oSpy
                 else
                     row["Comment"] = String.Format("...{0}...", description);
             }
-        }
-
-        private void listener_EventsReceived(Capture.Event[] events)
-        {
-            if (InvokeRequired)
-            {
-                Invoke(recvHandler, new object[] { events });
-                return;
-            }
-
-            object source = dataGridView.DataSource;
-            dataGridView.DataSource = null;
-            dataSet.Tables[0].BeginLoadData();
-
-            foreach (Capture.Event ev in events)
-            {
-                DataTable tbl = dataSet.Tables["messages"];
-
-                DataRow row = tbl.NewRow();
-                row.BeginEdit();
-
-                /* Common stuff */
-                row["Timestamp"] = DateTime.Now; // FIXME
-
-                row["ProcessName"] = ev.ProcessName;
-                row["ProcessId"] = ev.ProcessId;
-                row["ThreadId"] = ev.ThreadId;
-
-                row["FunctionName"] = ev.FunctionName;
-                row["Backtrace"] = ev.Backtrace;
-
-                UInt32 returnAddress = 0;
-                string callerModName = "";
-
-                if (ev.Backtrace != null)
-                {
-                    string[] tokens = ev.Backtrace.Split(new char[] { '\n' }, 2);
-                    if (tokens.Length >= 1)
-                    {
-                        string line = tokens[0];
-                        string[] lineTokens = line.Split(new string[] { "::" }, 2, StringSplitOptions.None);
-
-                        if (lineTokens.Length == 2)
-                        {
-                            returnAddress = Convert.ToUInt32(lineTokens[1].Substring(2), 16);
-                            callerModName = lineTokens[0];
-                        }
-                    }
-                }
-
-                row["ReturnAddress"] = returnAddress;
-                row["CallerModuleName"] = callerModName;
-
-                row["ResourceId"] = ev.ResourceId;
-
-                if (ev is Capture.MessageEvent)
-                {
-                    Capture.MessageEvent msgEvent = ev as Capture.MessageEvent;
-
-                    row["MsgType"] = MessageType.MESSAGE_TYPE_MESSAGE;
-
-                    row["MsgContext"] = msgEvent.Context;
-                    row["Message"] = msgEvent.Message;
-                }
-                else
-                {
-                    Capture.PacketEvent pktEvent = ev as Capture.PacketEvent;
-
-                    row["MsgType"] = MessageType.MESSAGE_TYPE_PACKET;
-                }
-
-                row["Direction"] = ev.Direction;
-
-                if (ev.LocalEndpoint != null)
-                {
-                    row["LocalAddress"] = ev.LocalEndpoint.Address.ToString();
-                    row["LocalPort"] = ev.LocalEndpoint.Port;
-                }
-
-                if (ev.PeerEndpoint != null)
-                {
-                    row["PeerAddress"] = ev.PeerEndpoint.Address.ToString();
-                    row["PeerPort"] = ev.PeerEndpoint.Port;
-                }
-
-                row["Data"] = ev.Data;
-
-                row.EndEdit();
-
-                tbl.Rows.Add(row);
-            }
-
-            dataSet.Tables[0].EndLoadData();
-            dataGridView.DataSource = source;
         }
 
         private void exitMenuItem_Click(object sender, EventArgs e)
@@ -422,9 +325,9 @@ namespace oSpy
                 return;
             }
 
-            progFrm = new ProgressForm("Analyzing data");
+            progFrm = new ProgressForm("Loading data");
 
-            Thread th = new Thread(new ParameterizedThreadStart(DoPostAnalysis));
+            Thread th = new Thread(new ParameterizedThreadStart(DoCapturePostProcessing));
             th.Start(progFrm);
 
             progFrm.ShowDialog(this);
@@ -490,11 +393,10 @@ namespace oSpy
             int i = 0;
             foreach (IPSession session in sessions)
             {
-                packetParser.AddSession(session);
-
                 i++;
-                progress.ProgressUpdate("Parsing sessions",
-                    (int) ((i / (float) sessions.Length) * 100.0f));
+                progress.ProgressUpdate("Parsing sessions", (int) (((float) i / (float) sessions.Length) * 100.0f));
+
+                packetParser.AddSession(session);
             }
         }
 
@@ -510,9 +412,12 @@ namespace oSpy
             }
         }
 
-        private void DoPostAnalysis(object param)
+        private void DoCapturePostProcessing(object param)
         {
             IProgressFeedback progress = param as IProgressFeedback;
+
+            Capture.Event[] events = captureMgr.HarvestEvents();
+            AddEventsToDataSet(events, progress);
 
             AnalyzePackets(progress);
 
@@ -520,6 +425,98 @@ namespace oSpy
             Invoke(new ThreadStart(RestoreDataSource));
 
             progress.OperationComplete();
+        }
+
+        private void AddEventsToDataSet(Capture.Event[] events, IProgressFeedback progress)
+        {
+            object source = dataGridView.DataSource;
+            dataGridView.DataSource = null;
+            dataSet.Tables[0].BeginLoadData();
+
+            DataTable tbl = dataSet.Tables["messages"];
+
+            int i = 0;
+            foreach (Capture.Event ev in events)
+            {
+                i++;
+                progress.ProgressUpdate("Loading events", (int) (((float) i / (float) events.Length) * 100.0f));
+
+                DataRow row = tbl.NewRow();
+                row.BeginEdit();
+
+                /* Common stuff */
+                row["Timestamp"] = ev.Timestamp;
+
+                row["ProcessName"] = ev.ProcessName;
+                row["ProcessId"] = ev.ProcessId;
+                row["ThreadId"] = ev.ThreadId;
+
+                row["FunctionName"] = ev.FunctionName;
+                row["Backtrace"] = ev.Backtrace;
+
+                UInt32 returnAddress = 0;
+                string callerModName = "";
+
+                if (ev.Backtrace != null)
+                {
+                    string[] tokens = ev.Backtrace.Split(new char[] { '\n' }, 2);
+                    if (tokens.Length >= 1)
+                    {
+                        string line = tokens[0];
+                        string[] lineTokens = line.Split(new string[] { "::" }, 2, StringSplitOptions.None);
+
+                        if (lineTokens.Length == 2)
+                        {
+                            returnAddress = Convert.ToUInt32(lineTokens[1].Substring(2), 16);
+                            callerModName = lineTokens[0];
+                        }
+                    }
+                }
+
+                row["ReturnAddress"] = returnAddress;
+                row["CallerModuleName"] = callerModName;
+
+                row["ResourceId"] = ev.ResourceId;
+
+                if (ev is Capture.MessageEvent)
+                {
+                    Capture.MessageEvent msgEvent = ev as Capture.MessageEvent;
+
+                    row["MsgType"] = MessageType.MESSAGE_TYPE_MESSAGE;
+
+                    row["MsgContext"] = msgEvent.Context;
+                    row["Message"] = msgEvent.Message;
+                }
+                else
+                {
+                    Capture.PacketEvent pktEvent = ev as Capture.PacketEvent;
+
+                    row["MsgType"] = MessageType.MESSAGE_TYPE_PACKET;
+                }
+
+                row["Direction"] = ev.Direction;
+
+                if (ev.LocalEndpoint != null)
+                {
+                    row["LocalAddress"] = ev.LocalEndpoint.Address.ToString();
+                    row["LocalPort"] = ev.LocalEndpoint.Port;
+                }
+
+                if (ev.PeerEndpoint != null)
+                {
+                    row["PeerAddress"] = ev.PeerEndpoint.Address.ToString();
+                    row["PeerPort"] = ev.PeerEndpoint.Port;
+                }
+
+                row["Data"] = ev.Data;
+
+                row.EndEdit();
+
+                tbl.Rows.Add(row);
+            }
+
+            dataSet.Tables[0].EndLoadData();
+            dataGridView.DataSource = source;
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)

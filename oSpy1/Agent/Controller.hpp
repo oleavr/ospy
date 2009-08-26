@@ -41,9 +41,9 @@ namespace oSpyAgent
         void Run(RemoteHooking::IContext ^context, String ^channelName, array<oSpy::Capture::SoftwallRule ^> ^softwallRules);
 
         // IEventLogger
-        property oSpy::Capture::EventFactory ^Factory
+        property oSpy::Capture::EventCoordinator ^Coordinator
         {
-            virtual oSpy::Capture::EventFactory ^get();
+            virtual oSpy::Capture::EventCoordinator ^get();
         }
         virtual void Submit(oSpy::Capture::Event ^ev);
 
@@ -55,7 +55,7 @@ namespace oSpyAgent
 
         oSpy::Capture::IManager ^manager;
         array<oSpy::Capture::SoftwallRule ^> ^softwallRules;
-        oSpy::Capture::EventFactory ^eventFactory;
+        oSpy::Capture::EventCoordinator ^eventCoordinator;
         List<oSpy::Capture::Event ^> events;
 
         SubmitElementHandler ^submitElementHandler;

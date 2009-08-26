@@ -24,19 +24,18 @@ namespace oSpyAgent
 {
     namespace Hooks
     {
-        typedef BOOL (WINAPI *WglMakeCurrentFunc)(HDC hdc, HGLRC hglrc);
-        delegate BOOL WglMakeCurrentHandler(HDC hdc, HGLRC hglrc);
-
         public ref class GLMonitor : Monitor
         {
         public:
             GLMonitor();
 
         private:
-            BOOL OnWglMakeCurrent(HDC hdc, HGLRC hglrc);
-
-            WglMakeCurrentFunc wglMakeCurrentImpl;
-            LocalHook ^wglMakeCurrentHook;
+            DECLARE_HOOK(int, ChoosePixelFormat, HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd);
+            DECLARE_HOOK(int, DescribePixelFormat, HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd);
+            DECLARE_HOOK(int, GetPixelFormat, HDC hdc);
+            DECLARE_HOOK(BOOL, SetPixelFormat, HDC hdc, int iPixelFormat, const PIXELFORMATDESCRIPTOR *ppfd);
+            DECLARE_HOOK(BOOL, SwapBuffers, HDC hdc);
+            DECLARE_HOOK(BOOL, wglMakeCurrent, HDC hdc, HGLRC hglrc);
         };
     }
 }

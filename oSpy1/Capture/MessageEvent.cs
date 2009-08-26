@@ -46,14 +46,29 @@ namespace oSpy.Capture
             }
         }
 
-        public MessageEvent(EventFactory factory, InvocationOrigin invocationOrigin, string message)
-            : base(factory, invocationOrigin)
+        public MessageEvent(EventCoordinator coordinator, InvocationOrigin invocationOrigin)
+            : base(coordinator, invocationOrigin)
+        {
+        }
+
+        public MessageEvent(EventCoordinator coordinator, InvocationOrigin invocationOrigin, string message)
+            : base(coordinator, invocationOrigin)
+        {
+            SetMessage(message);
+        }
+
+        public MessageEvent(EventCoordinator coordinator, InvocationOrigin invocationOrigin, string format, params object[] args)
+            : base(coordinator, invocationOrigin)
+        {
+            SetMessage(format, args);
+        }
+
+        public void SetMessage(string message)
         {
             this.message = message;
         }
 
-        public MessageEvent(EventFactory factory, InvocationOrigin invocationOrigin, string format, params object[] args)
-            : base(factory, invocationOrigin)
+        public void SetMessage(string format, params object[] args)
         {
             message = String.Format(format, args);
         }

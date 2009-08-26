@@ -21,7 +21,7 @@ using System.Net;
 namespace oSpy.Capture
 {
     [Serializable]
-    public class Event
+    public class Event : IComparable
     {
         [Serializable]
         public struct ExecutionOrigin
@@ -53,7 +53,8 @@ namespace oSpy.Capture
             }
         }
 
-        private TimeSpan timestamp;
+        private UInt32 localId;
+        private DateTime timestamp;
         private ExecutionOrigin executionOrigin;
         private InvocationOrigin invocationOrigin;
 
@@ -62,7 +63,15 @@ namespace oSpy.Capture
         private IPEndPoint peerEndpoint;
         private byte[] data;
 
-        public TimeSpan Timestamp
+        public UInt32 LocalId
+        {
+            get
+            {
+                return localId;
+            }
+        }
+
+        public DateTime Timestamp
         {
             get
             {
@@ -170,11 +179,26 @@ namespace oSpy.Capture
             }
         }
 
-        protected Event(EventFactory factory, InvocationOrigin invocationOrigin)
+        protected Event(EventCoordinator coordinator, InvocationOrigin invocationOrigin)
         {
-            this.timestamp = factory.DurationNow();
-            this.executionOrigin = factory.ExecutionOriginHere();
+            this.localId = coordinator.AllocateId();
+            this.timestamp = coordinator.TimeNow();
+            this.executionOrigin = coordinator.ExecutionOriginHere();
             this.invocationOrigin = invocationOrigin;
+        }
+
+        public int CompareTo(Object obj)
+        {
+            Event other = obj as Event;
+
+            if (other.ProcessId == this.ProcessId)
+            {
+                return localId.CompareTo(other.localId);
+            }
+            else
+            {
+                return timestamp.CompareTo(other.timestamp);
+            }
         }
     }
 }

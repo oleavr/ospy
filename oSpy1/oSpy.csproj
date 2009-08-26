@@ -78,7 +78,7 @@
       <DependentUpon>AboutBoxForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Capture\Event.cs" />
-    <Compile Include="Capture\EventFactory.cs" />
+    <Compile Include="Capture\EventCoordinator.cs" />
     <Compile Include="Capture\MessageEvent.cs" />
     <Compile Include="Capture\PacketEvent.cs" />
     <Compile Include="SearchBox.cs">

@@ -31,7 +31,7 @@ namespace oSpy.Capture
         private uint msgCount, msgBytes;
         private uint pktCount, pktBytes;
 
-        private Manager.EventsReceivedHandler recvHandler;
+        private EventHandler statsChangedHandler;
 
         public ProgressForm(Manager manager)
         {
@@ -40,38 +40,23 @@ namespace oSpy.Capture
             msgCount = msgBytes = 0;
             pktCount = pktBytes = 0;
 
-            recvHandler = manager_EventsReceived;
-            manager.EventsReceived += recvHandler;
+            statsChangedHandler = manager_EventStatsChanged;
+            manager.EventStatsChanged += statsChangedHandler;
         }
 
-        private void manager_EventsReceived(Event[] events)
+        private void manager_EventStatsChanged(object sender, EventArgs e)
         {
             if (InvokeRequired)
             {
-                Invoke(recvHandler, new object[] { events });
+                Invoke(statsChangedHandler, sender, e);
                 return;
             }
 
-            foreach (Event ev in events)
-            {
-                if (ev is MessageEvent)
-                {
-                    msgCount++;
-                    msgBytes += (uint) (2 * ((ev as MessageEvent).Message.Length + 1));
-                }
-                else
-                {
-                    pktCount++;
-                }
-
-                if (ev.Data != null)
-                    msgBytes += (uint) ev.Data.Length;
-            }
-
-            msgCountLabel.Text = Convert.ToString(msgCount);
-            msgBytesLabel.Text = Convert.ToString(msgBytes);
-            pktCountLabel.Text = Convert.ToString(pktCount);
-            pktBytesLabel.Text = Convert.ToString(pktBytes);
+            Manager.EventStats stats = (sender as Manager).Stats;
+            msgCountLabel.Text = Convert.ToString(stats.MessageCount);
+            msgBytesLabel.Text = Convert.ToString(stats.MessageBytes);
+            pktCountLabel.Text = Convert.ToString(stats.PacketCount);
+            pktBytesLabel.Text = Convert.ToString(stats.PacketBytes);
         }
 
         private void stopButton_Click(object sender, EventArgs e)
