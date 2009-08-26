@@ -415,7 +415,7 @@ namespace oSpy.Capture
                         return true;
                 }
 
-                int index = WaitHandle.WaitAny(waitHandles, 1000);
+                int index = WaitHandle.WaitAny(waitHandles, 1000, false);
                 if (index == 0)
                     return false;
 
