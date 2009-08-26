@@ -286,6 +286,24 @@ namespace oSpy
                                     "Permission Denied", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                 }
+                catch (BadImageFormatException)
+                {
+                    MessageBox.Show("oSpy has detected that a previous capture was likely interrupted by an unclean " +
+                        "system shutdown or power failure, resulting in left-over .NET assemblies in your " +
+                        "system-wide Global Assembly Cache.\r\n\r\n" +
+                        "Recovering from this will be automated in a future oSpy release, but for now you " +
+                        "will have to manually perform the following steps:\r\n" +
+                        "  1. Ensure that a .NET Framework Software Development Kit is\r\n" +
+                        "      installed (or Visual Studio).\r\n" +
+                        "  2. Run cmd.exe as Administrator and execute:\r\n" +
+                        "      gacutil /uf oSpy\r\n" +
+                        "      gacutil /uf oSpyAgent\r\n" +
+                        "      gacutil /uf EasyHook\r\n" +
+                        "\r\n" +
+                        "Sorry for the inconvenience!",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return false;
+                }
 
                 hasRegistered = true;
             }
