@@ -467,10 +467,21 @@ log_socket_closed(void *bt_address,
                   SOCKET s)
 {
     Socket sock(s);
-    message_logger_log(_T("closesocket"), bt_address, resourceTracker->GetIdForSocket(s), MESSAGE_TYPE_MESSAGE,
-                       MESSAGE_CTX_SOCKET_DISCONNECTED, PACKET_DIRECTION_INVALID,
-                       sock.LocalIpv4Address, sock.PeerIpv4Address, NULL, 0,
-                       _T("%s: closed"), sock.LocalDescription);
+
+    if (sock.LocalIpv4Address != NULL)
+    {
+        message_logger_log(_T("closesocket"), bt_address, resourceTracker->GetIdForSocket(s), MESSAGE_TYPE_MESSAGE,
+                           MESSAGE_CTX_SOCKET_DISCONNECTED, PACKET_DIRECTION_INVALID,
+                           sock.LocalIpv4Address, sock.PeerIpv4Address, NULL, 0,
+                           _T("%s: closed"), sock.LocalDescription);
+    }
+    else
+    {
+        message_logger_log(_T("closesocket"), bt_address, resourceTracker->GetIdForSocket(s), MESSAGE_TYPE_MESSAGE,
+                           MESSAGE_CTX_SOCKET_DISCONNECTED, PACKET_DIRECTION_INVALID,
+                           sock.LocalIpv4Address, sock.PeerIpv4Address, NULL, 0,
+                           _T(""));
+    }
 
     resourceTracker->NotifySocketDestroyed(s);
 }
