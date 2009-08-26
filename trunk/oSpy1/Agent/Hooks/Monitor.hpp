@@ -31,16 +31,59 @@ namespace oSpyAgent
 {
     namespace Hooks
     {
+        #define DECLARE_HOOK(RTYPE, FNAME, ...)                                     \
+            typedef RTYPE (WINAPI * FNAME##Func)(__VA_ARGS__);                      \
+            delegate RTYPE FNAME##Handler(__VA_ARGS__);                             \
+            FNAME##Func FNAME##Impl;                                                \
+            LocalHook ^FNAME##Hook;                                                 \
+            RTYPE On##FNAME(__VA_ARGS__)
+
+        #define INSTALL_HOOK(MOD, FNAME)                                            \
+            {                                                                       \
+                IntPtr ptr = LocalHook::GetProcAddress(MOD, _T(#FNAME));            \
+                FNAME##Impl = static_cast<FNAME##Func>(static_cast<void *>(ptr));   \
+                FNAME##Hook = LocalHook::Create(ptr,                                \
+                    gcnew FNAME##Handler(this, &GLMonitor::On##FNAME),              \
+                    this);                                                          \
+                FNAME##Hook->ThreadACL->SetExclusiveACL(anyAcl);                    \
+            }
+
         public ref class Monitor
         {
         public:
             void SetLogger(IEventLogger ^logger);
 
-        protected:
+        internal:
             String ^BacktraceHere();
+            String ^BoolToString(BOOL value);
 
             IEventLogger ^logger;
-            EventFactory ^factory;
+            EventCoordinator ^coordinator;
+        };
+
+        public ref class AutoSubmitMessage
+        {
+        public:
+            AutoSubmitMessage(Monitor ^monitor, String ^functionName, UInt32 resourceId)
+                : monitor(monitor)
+            {
+                Event::InvocationOrigin origin(functionName, monitor->BacktraceHere(), resourceId);
+                ev = gcnew MessageEvent(monitor->coordinator, origin);
+            }
+
+            ~AutoSubmitMessage()
+            {
+                monitor->logger->Submit(ev);
+            }
+
+            MessageEvent ^operator->()
+            {
+                return ev;
+            }
+
+        private:
+            Monitor ^monitor;
+            MessageEvent ^ev;
         };
     }
 }

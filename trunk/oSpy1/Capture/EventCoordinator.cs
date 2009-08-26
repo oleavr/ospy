@@ -16,15 +16,30 @@
 //
 
 using System;
+using System.Diagnostics;
+using System.Threading;
 
 namespace oSpy.Capture
 {
-    [Serializable]
-    public class PacketEvent : Event
+    public class EventCoordinator
     {
-        public PacketEvent(EventCoordinator factory, InvocationOrigin invocationOrigin)
-            : base(factory, invocationOrigin)
+        private int id = 0;
+        private Process process = Process.GetCurrentProcess();
+
+        public UInt32 AllocateId()
         {
+            return (UInt32) Interlocked.Increment(ref id);
+        }
+
+        public DateTime TimeNow()
+        {
+            // TODO: not the most precise, but good enough for now
+            return DateTime.Now;
+        }
+
+        public Event.ExecutionOrigin ExecutionOriginHere()
+        {
+            return new Event.ExecutionOrigin(process.MainModule.ModuleName, (uint) process.Id, (uint) AppDomain.GetCurrentThreadId());
         }
     }
 }

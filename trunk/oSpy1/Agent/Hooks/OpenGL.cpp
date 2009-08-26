@@ -29,25 +29,67 @@ namespace oSpyAgent
         GLMonitor::GLMonitor()
         {
             String ^oglDll = _T("Opengl32.dll");
-
-            IntPtr ptr = LocalHook::GetProcAddress(oglDll, _T("wglMakeCurrent"));
-            wglMakeCurrentImpl = static_cast<WglMakeCurrentFunc>(static_cast<void *>(ptr));
-            wglMakeCurrentHook = LocalHook::Create(
-                ptr,
-                gcnew WglMakeCurrentHandler(this, &GLMonitor::OnWglMakeCurrent),
-                this);
+            String ^gdiDll = _T("gdi32.dll");
 
             array<int> ^anyAcl = gcnew array<int>(1);
             anyAcl[0] = 0;
-            wglMakeCurrentHook->ThreadACL->SetExclusiveACL(anyAcl);
+
+            INSTALL_HOOK(gdiDll, ChoosePixelFormat);
+            INSTALL_HOOK(gdiDll, DescribePixelFormat);
+            INSTALL_HOOK(gdiDll, GetPixelFormat);
+            INSTALL_HOOK(gdiDll, SetPixelFormat);
+            INSTALL_HOOK(gdiDll, SwapBuffers);
+            INSTALL_HOOK(oglDll, wglMakeCurrent);
         }
 
-        BOOL GLMonitor::OnWglMakeCurrent(HDC hdc, HGLRC hglrc)
+        int GLMonitor::OnChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd)
         {
-            Event::InvocationOrigin origin("wglMakeCurrent", BacktraceHere(), UInt32(hglrc));
-            MessageEvent ^ev = gcnew MessageEvent(factory, origin, "hdc=0x{0:x8} hglrc=0x{1:x8}", UInt32(hdc), UInt32(hglrc));
-            logger->Submit(ev);
-            return wglMakeCurrentImpl(hdc, hglrc);
+            AutoSubmitMessage msg(this, "ChoosePixelFormat", UInt32(hdc));
+            int result = ChoosePixelFormatImpl(hdc, ppfd);
+            msg->SetMessage("hdc=0x{0:x8} => {1}", UInt32(hdc), Int32(result));
+            return result;
+        }
+
+        int GLMonitor::OnDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd)
+        {
+            AutoSubmitMessage msg(this, "DescribePixelFormat", UInt32(hdc));
+            int result = DescribePixelFormatImpl(hdc, iPixelFormat, nBytes, ppfd);
+            msg->SetMessage("hdc=0x{0:x8} iPixelFormat={1} nBytes={2} => {3}",
+                UInt32(hdc), Int32(iPixelFormat), UInt32(nBytes), Int32(result));
+            return result;
+        }
+
+        int GLMonitor::OnGetPixelFormat(HDC hdc)
+        {
+            AutoSubmitMessage msg(this, "GetPixelFormat", UInt32(hdc));
+            int result = GetPixelFormatImpl(hdc);
+            msg->SetMessage("hdc=0x{0:x8} => {1}", UInt32(hdc), Int32(result));
+            return result;
+        }
+
+        BOOL GLMonitor::OnSetPixelFormat(HDC hdc, int iPixelFormat, const PIXELFORMATDESCRIPTOR *ppfd)
+        {
+            AutoSubmitMessage msg(this, "SetPixelFormat", UInt32(hdc));
+            BOOL result = SetPixelFormatImpl(hdc, iPixelFormat, ppfd);
+            msg->SetMessage("hdc=0x{0:x8} iPixelFormat={1} => {2}",
+                UInt32(hdc), Int32(iPixelFormat), BoolToString(result));
+            return result;
+        }
+
+        BOOL GLMonitor::OnSwapBuffers(HDC hdc)
+        {
+            AutoSubmitMessage msg(this, "SwapBuffers", UInt32(hdc));
+            BOOL result = SwapBuffersImpl(hdc);
+            msg->SetMessage("hdc=0x{0:x8} => {1}", UInt32(hdc), BoolToString(result));
+            return result;
+        }
+
+        BOOL GLMonitor::OnwglMakeCurrent(HDC hdc, HGLRC hglrc)
+        {
+            AutoSubmitMessage msg(this, "wglMakeCurrent", UInt32(hglrc));
+            BOOL result = wglMakeCurrentImpl(hdc, hglrc);
+            msg->SetMessage("hdc=0x{0:x8} hglrc=0x{1:x8} => {2}", UInt32(hdc), UInt32(hglrc), BoolToString(result));
+            return result;
         }
     }
 }

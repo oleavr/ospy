@@ -129,8 +129,57 @@ namespace oSpy.Capture
 
     public class Manager : MarshalByRefObject, IManager
     {
-        public delegate void EventsReceivedHandler(Event[] events);
-        public event EventsReceivedHandler EventsReceived;
+        public class EventStats
+        {
+            internal uint msgCount;
+            internal uint msgBytes;
+            internal uint pktCount;
+            internal uint pktBytes;
+
+            public uint MessageCount
+            {
+                get
+                {
+                    return msgCount;
+                }
+            }
+
+            public uint MessageBytes
+            {
+                get
+                {
+                    return msgBytes;
+                }
+            }
+
+            public uint PacketCount
+            {
+                get
+                {
+                    return pktCount;
+                }
+            }
+
+            public uint PacketBytes
+            {
+                get
+                {
+                    return pktBytes;
+                }
+            }
+        }
+
+        public event EventHandler EventStatsChanged;
+
+        public EventStats Stats
+        {
+            get
+            {
+                if (eventStats == null)
+                    throw new InvalidOperationException();
+                return eventStats;
+            }
+        }
 
         private const string AGENT_DLL = "oSpyAgent.dll";
 
@@ -152,10 +201,13 @@ namespace oSpy.Capture
         private IProgressFeedback progress = null;
 
         private Thread startWorkerThread;
+        private Thread stopWorkerThread;
 
         private IpcServerChannel serverChannel;
         private string serverChannelName;
         private List<int> clients;
+        private EventStats eventStats;
+        private List<Event> eventQueue;
         private AutoResetEvent clientAdded = new AutoResetEvent(false);
         private ManualResetEvent stopRequest = new ManualResetEvent(false);
 
@@ -170,9 +222,29 @@ namespace oSpy.Capture
 
         public void Submit(Event[] events)
         {
-            lock (EventsReceived)
+            lock (eventQueue)
             {
-                EventsReceived(events);
+                eventQueue.AddRange(events);
+
+                foreach (Event ev in events)
+                {
+                    if (ev is MessageEvent)
+                    {
+                        eventStats.msgCount++;
+                        eventStats.msgBytes += (uint) (2 * ((ev as MessageEvent).Message.Length + 1));
+                        if (ev.Data != null)
+                            eventStats.msgBytes += (uint) ev.Data.Length;
+                    }
+                    else
+                    {
+                        eventStats.pktCount++;
+                        if (ev.Data != null)
+                            eventStats.pktBytes += (uint) ev.Data.Length;
+                    }
+                }
+
+                if (EventStatsChanged != null)
+                    EventStatsChanged(this, EventArgs.Empty);
             }
         }
 
@@ -190,6 +262,9 @@ namespace oSpy.Capture
 
         public void StartCapture(Details details, IProgressFeedback progress)
         {
+            if (startWorkerThread != null || stopWorkerThread != null)
+                throw new InvalidOperationException();
+
             this.details = details;
             this.progress = progress;
 
@@ -201,6 +276,9 @@ namespace oSpy.Capture
 
         public void StopCapture(IProgressFeedback progress)
         {
+            if (stopWorkerThread != null)
+                throw new InvalidOperationException();
+
             stopRequest.Set();
 
             // Unlikely:
@@ -209,7 +287,17 @@ namespace oSpy.Capture
 
             this.progress = progress;
 
-            DoStopCapture();
+            stopWorkerThread = new Thread(DoStopCapture);
+            stopWorkerThread.Start();
+        }
+
+        public Event[] HarvestEvents()
+        {
+            if (eventQueue == null)
+                throw new InvalidOperationException();
+            Event[] result = eventQueue.ToArray();
+            eventQueue = null;
+            return result;
         }
 
         private void DoStartCapture()
@@ -253,19 +341,25 @@ namespace oSpy.Capture
 
         private void DoStopCapture()
         {
+            progress.ProgressUpdate("Stopping capture", 100);
+
             RemotingServices.Disconnect(this);
             ChannelServices.UnregisterChannel(serverChannel);
 
             serverChannel = null;
             serverChannelName = null;
             clients = null;
+            eventStats = null;
             clientAdded.Reset();
             stopRequest.Reset();
 
             details = null;
 
+            eventQueue.Sort();
+
             progress.OperationComplete();
             progress = null;
+            stopWorkerThread = null;
         }
 
         private void PrepareCapture()
@@ -273,6 +367,8 @@ namespace oSpy.Capture
             serverChannelName = GenerateChannelName();
             serverChannel = CreateServerChannel(serverChannelName);
             clients = new List<int>();
+            eventQueue = new List<Event>();
+            eventStats = new EventStats();
 
             ChannelServices.RegisterChannel(serverChannel, false);
             RemotingServices.Marshal(this, serverChannelName, typeof(IManager));

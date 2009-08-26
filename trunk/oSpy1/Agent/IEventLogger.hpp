@@ -25,9 +25,9 @@ namespace oSpyAgent
     public interface class IEventLogger
     {
     public:
-        property oSpy::Capture::EventFactory ^Factory
+        property oSpy::Capture::EventCoordinator ^Coordinator
         {
-            oSpy::Capture::EventFactory ^get();
+            oSpy::Capture::EventCoordinator ^get();
         }
 
         void Submit(oSpy::Capture::Event ^ev);

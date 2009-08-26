@@ -38,7 +38,7 @@ namespace oSpyAgent
     Controller::Controller(RemoteHooking::IContext ^context,
                            String ^channelName,
                            array<oSpy::Capture::SoftwallRule ^> ^softwallRules)
-        : eventFactory(gcnew oSpy::Capture::EventFactory()),
+        : eventCoordinator(gcnew oSpy::Capture::EventCoordinator()),
           events(gcnew List<oSpy::Capture::Event ^>())
     {
         String ^url = "ipc://" + channelName + "/" + channelName;
@@ -104,9 +104,9 @@ namespace oSpyAgent
         DisableLegacyHooks();
     }
 
-    oSpy::Capture::EventFactory ^Controller::Factory::get()
+    oSpy::Capture::EventCoordinator ^Controller::Coordinator::get()
     {
-        return eventFactory;
+        return eventCoordinator;
     }
 
     void Controller::Submit(oSpy::Capture::Event ^ev)
@@ -157,14 +157,14 @@ namespace oSpyAgent
 
         if (el->type == MESSAGE_TYPE_MESSAGE)
         {
-            MessageEvent ^msgEv = gcnew MessageEvent(eventFactory, origin, gcnew String(el->message));
+            MessageEvent ^msgEv = gcnew MessageEvent(eventCoordinator, origin, gcnew String(el->message));
             msgEv->Context = static_cast<oSpy::MessageContext>(el->context);
 
             ev = msgEv;
         }
         else
         {
-            PacketEvent ^pktEv = gcnew PacketEvent(eventFactory, origin);
+            PacketEvent ^pktEv = gcnew PacketEvent(eventCoordinator, origin);
 
             ev = pktEv;
         }
