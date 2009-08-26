@@ -98,6 +98,8 @@ namespace oSpyAgent
 #ifdef _DEBUG
             pin_ptr<const wchar_t> str = PtrToStringChars(ex->Message);
             MessageBox(NULL, str, _T("Error"), MB_OK | MB_ICONERROR);
+#else
+            (void) ex;
 #endif
         }
 
