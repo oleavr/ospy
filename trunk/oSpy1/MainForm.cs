@@ -503,7 +503,6 @@ namespace oSpy
                     row["MsgType"] = MessageType.MESSAGE_TYPE_MESSAGE;
 
                     row["MsgContext"] = msgEvent.Context;
-                    row["Message"] = msgEvent.Message;
                 }
                 else
                 {
@@ -511,6 +510,8 @@ namespace oSpy
 
                     row["MsgType"] = MessageType.MESSAGE_TYPE_PACKET;
                 }
+
+                row["Message"] = ev.Message;
 
                 row["Direction"] = ev.Direction;
 
@@ -1284,8 +1285,11 @@ namespace oSpy
 
                 int index = (int)row.Cells[indexDataGridViewTextBoxColumn.Index].Value;
                 IPPacket packet = packetParser.GetPacket(index);
-                packets.Add(packet);
-                packetToRow[packet] = row;
+                if (packet != null)
+                {
+                    packets.Add(packet);
+                    packetToRow[packet] = row;
+                }
             }
             packets.Sort();
 
