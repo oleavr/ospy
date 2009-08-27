@@ -231,7 +231,8 @@ namespace oSpy.Capture
                     if (ev is MessageEvent)
                     {
                         eventStats.msgCount++;
-                        eventStats.msgBytes += (uint) (2 * ((ev as MessageEvent).Message.Length + 1));
+                        if (ev.Message != null)
+                            eventStats.msgBytes += (uint) (2 * ((ev as MessageEvent).Message.Length + 1));
                         if (ev.Data != null)
                             eventStats.msgBytes += (uint) ev.Data.Length;
                     }
@@ -333,6 +334,7 @@ namespace oSpy.Capture
             catch (Exception e)
             {
                 progress.OperationFailed(e.Message);
+                UnprepareCapture(false);
             }
 
             progress = null;
@@ -343,19 +345,9 @@ namespace oSpy.Capture
         {
             progress.ProgressUpdate("Stopping capture", 100);
 
-            RemotingServices.Disconnect(this);
-            ChannelServices.UnregisterChannel(serverChannel);
+            UnprepareCapture(true);
 
-            serverChannel = null;
-            serverChannelName = null;
-            clients = null;
-            eventStats = null;
-            clientAdded.Reset();
             stopRequest.Reset();
-
-            details = null;
-
-            eventQueue.Sort();
 
             progress.OperationComplete();
             progress = null;
@@ -372,6 +364,23 @@ namespace oSpy.Capture
 
             ChannelServices.RegisterChannel(serverChannel, false);
             RemotingServices.Marshal(this, serverChannelName, typeof(IManager));
+        }
+
+        private void UnprepareCapture(bool captureStarted)
+        {
+            RemotingServices.Disconnect(this);
+            ChannelServices.UnregisterChannel(serverChannel);
+
+            serverChannelName = null;
+            serverChannel = null;
+            clients = null;
+            if (captureStarted)
+                eventQueue.Sort();
+            else
+                eventQueue = null;
+            eventStats = null;
+
+            details = null;
         }
 
         private int DoCreation(CreateDetails createDetails)
