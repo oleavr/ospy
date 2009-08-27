@@ -36,6 +36,10 @@ namespace oSpyAgent
             DECLARE_HOOK(BOOL, SetPixelFormat, HDC hdc, int iPixelFormat, const PIXELFORMATDESCRIPTOR *ppfd);
             DECLARE_HOOK(BOOL, SwapBuffers, HDC hdc);
             DECLARE_HOOK(BOOL, wglMakeCurrent, HDC hdc, HGLRC hglrc);
+
+            array<unsigned char> ^PixelFormatDescriptorToRawString(const PIXELFORMATDESCRIPTOR *pfd);
+            String ^PixelFormatFlagsToString(DWORD flags);
+            String ^PixelTypetoString(BYTE pixelType);
         };
     }
 }

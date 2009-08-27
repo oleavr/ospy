@@ -85,5 +85,30 @@ namespace oSpyAgent
             Monitor ^monitor;
             MessageEvent ^ev;
         };
+
+        public ref class AutoSubmitPacket
+        {
+        public:
+            AutoSubmitPacket(Monitor ^monitor, String ^functionName, UInt32 resourceId)
+                : monitor(monitor)
+            {
+                Event::InvocationOrigin origin(functionName, monitor->BacktraceHere(), resourceId);
+                ev = gcnew PacketEvent(monitor->coordinator, origin);
+            }
+
+            ~AutoSubmitPacket()
+            {
+                monitor->logger->Submit(ev);
+            }
+
+            PacketEvent ^operator->()
+            {
+                return ev;
+            }
+
+        private:
+            Monitor ^monitor;
+            PacketEvent ^ev;
+        };
     }
 }
