@@ -71,6 +71,8 @@ namespace oSpyAgent
 
         try
         {
+            manager->Ping(myPid);
+
             while (true)
             {
                 Thread::Sleep(500);
