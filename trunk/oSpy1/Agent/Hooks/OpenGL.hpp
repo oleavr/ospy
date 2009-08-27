@@ -39,7 +39,8 @@ namespace oSpyAgent
 
             array<unsigned char> ^PixelFormatDescriptorToRawString(const PIXELFORMATDESCRIPTOR *pfd);
             String ^PixelFormatFlagsToString(DWORD flags);
-            String ^PixelTypetoString(BYTE pixelType);
+            String ^PixelTypeToString(BYTE pixelType);
+            String ^LayerTypeToString(BYTE layerType);
         };
     }
 }
