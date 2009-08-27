@@ -28,17 +28,11 @@ namespace oSpy.Capture
 {
     internal partial class ProgressForm : Form
     {
-        private uint msgCount, msgBytes;
-        private uint pktCount, pktBytes;
-
         private EventHandler statsChangedHandler;
 
         public ProgressForm(Manager manager)
         {
             InitializeComponent();
-
-            msgCount = msgBytes = 0;
-            pktCount = pktBytes = 0;
 
             statsChangedHandler = manager_EventStatsChanged;
             manager.EventStatsChanged += statsChangedHandler;
