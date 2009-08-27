@@ -193,7 +193,11 @@ namespace oSpy.Net
 
         public IPPacket GetPacket(int index)
         {
-            return packets[index];
+            IPPacket packet;
+            if (packets.TryGetValue(index, out packet))
+                return packet;
+            else
+                return null;
         }
 
         public TransactionNodeList GetTransactionsForPackets(List<IPPacket> packets)

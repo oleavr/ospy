@@ -22,16 +22,7 @@ namespace oSpy.Capture
     [Serializable]
     public class MessageEvent : Event
     {
-        private string message;
         private MessageContext context = MessageContext.MESSAGE_CTX_INFO;
-
-        public string Message
-        {
-            get
-            {
-                return message;
-            }
-        }
 
         public MessageContext Context
         {
@@ -61,16 +52,6 @@ namespace oSpy.Capture
             : base(coordinator, invocationOrigin)
         {
             SetMessage(format, args);
-        }
-
-        public void SetMessage(string message)
-        {
-            this.message = message;
-        }
-
-        public void SetMessage(string format, params object[] args)
-        {
-            message = String.Format(format, args);
         }
     }
 }

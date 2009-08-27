@@ -61,6 +61,7 @@ namespace oSpy.Capture
         private PacketDirection direction = PacketDirection.PACKET_DIRECTION_INVALID;
         private IPEndPoint localEndpoint;
         private IPEndPoint peerEndpoint;
+        private string message;
         private byte[] data;
 
         public UInt32 LocalId
@@ -166,6 +167,14 @@ namespace oSpy.Capture
             }
         }
 
+        public string Message
+        {
+            get
+            {
+                return message;
+            }
+        }
+
         public byte[] Data
         {
             get
@@ -185,6 +194,16 @@ namespace oSpy.Capture
             this.timestamp = coordinator.TimeNow();
             this.executionOrigin = coordinator.ExecutionOriginHere();
             this.invocationOrigin = invocationOrigin;
+        }
+
+        public void SetMessage(string message)
+        {
+            this.message = message;
+        }
+
+        public void SetMessage(string format, params object[] args)
+        {
+            message = String.Format(format, args);
         }
 
         public int CompareTo(Object obj)

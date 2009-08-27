@@ -159,7 +159,7 @@ namespace oSpyAgent
 
         if (el->type == MESSAGE_TYPE_MESSAGE)
         {
-            MessageEvent ^msgEv = gcnew MessageEvent(eventCoordinator, origin, gcnew String(el->message));
+            MessageEvent ^msgEv = gcnew MessageEvent(eventCoordinator, origin);
             msgEv->Context = static_cast<oSpy::MessageContext>(el->context);
 
             ev = msgEv;
@@ -181,6 +181,11 @@ namespace oSpyAgent
         if (el->peer_address.sin_port != 0)
         {
             ev->PeerEndpoint = gcnew System::Net::IPEndPoint(Int64(el->peer_address.sin_addr.s_addr), ntohs(el->peer_address.sin_port));
+        }
+
+        if (el->message[0] != 0)
+        {
+            ev->SetMessage(gcnew String(el->message));
         }
 
         if (el->len > 0)
