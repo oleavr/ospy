@@ -105,10 +105,13 @@ namespace oSpyAgent
         {
             StringBuilder sb;
 
-            sb.AppendFormat("nSize: {0}" CRLF, pfd->nSize);
+            if (pfd->nSize == sizeof(PIXELFORMATDESCRIPTOR))
+                sb.Append("nSize: sizeof(PIXELFORMATDESCRIPTOR)" CRLF);
+            else
+                sb.AppendFormat("nSize: {0}" CRLF, pfd->nSize);
             sb.AppendFormat("nVersion: {0}" CRLF, pfd->nVersion);
             sb.AppendFormat("dwFlags: {0}" CRLF, PixelFormatFlagsToString(pfd->dwFlags));
-            sb.AppendFormat("iPixelType: {0}" CRLF, PixelTypetoString(pfd->iPixelType));
+            sb.AppendFormat("iPixelType: {0}" CRLF, PixelTypeToString(pfd->iPixelType));
             sb.AppendFormat("cColorBits: {0}" CRLF, pfd->cColorBits);
             sb.AppendFormat("cRedBits: {0}" CRLF, pfd->cRedBits);
             sb.AppendFormat("cRedShift: {0}" CRLF, pfd->cRedShift);
@@ -126,7 +129,7 @@ namespace oSpyAgent
             sb.AppendFormat("cDepthBits: {0}" CRLF, pfd->cDepthBits);
             sb.AppendFormat("cStencilBits: {0}" CRLF, pfd->cStencilBits);
             sb.AppendFormat("cAuxBuffers: {0}" CRLF, pfd->cAuxBuffers);
-            sb.AppendFormat("iLayerType: {0}" CRLF, pfd->iLayerType);
+            sb.AppendFormat("iLayerType: {0}" CRLF, LayerTypeToString(pfd->iLayerType));
             sb.AppendFormat("bReserved: {0}" CRLF, pfd->bReserved);
             sb.AppendFormat("dwLayerMask: {0}" CRLF, pfd->dwLayerMask);
             sb.AppendFormat("dwVisibleMask: {0}" CRLF, pfd->dwVisibleMask);
@@ -193,12 +196,23 @@ namespace oSpyAgent
             return sb.ToString();;
         }
 
-        String ^GLMonitor::PixelTypetoString(BYTE pixelType)
+        String ^GLMonitor::PixelTypeToString(BYTE pixelType)
         {
             switch (pixelType)
             {
                 case PFD_TYPE_RGBA: return "PFD_TYPE_RGBA";
                 case PFD_TYPE_COLORINDEX: return "PFD_TYPE_COLORINDEX";
+                default: return "<unknown>";
+            }
+        }
+
+        String ^GLMonitor::LayerTypeToString(BYTE layerType)
+        {
+            switch (layerType)
+            {
+                case PFD_MAIN_PLANE: return "PFD_MAIN_PLANE";
+                case PFD_OVERLAY_PLANE: return "PFD_OVERLAY_PLANE";
+                case PFD_UNDERLAY_PLANE: return "PFD_UNDERLAY_PLANE";
                 default: return "<unknown>";
             }
         }
