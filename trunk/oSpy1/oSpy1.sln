@@ -10,7 +10,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oSpyAgent", "Agent\oSpyAgen
 		{32EB5641-50CC-4A6B-A913-E814EEE3B34D} = {32EB5641-50CC-4A6B-A913-E814EEE3B34D}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libudis86", "Agent\Legacy\udis86-1.7\libudis86.vcproj", "{0E5DBEF1-84B5-49B8-91A0-33830F153236}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oScoutAgent", "ScoutAgent\oScoutAgent.vcproj", "{CB1AD822-E025-4713-9064-9E4F4A4977CC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libudis86", "udis86-1.7\libudis86.vcproj", "{0E5DBEF1-84B5-49B8-91A0-33830F153236}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -52,6 +54,16 @@ Global
 		{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}.Release|Win32.ActiveCfg = Release|Win32
 		{0DEA2D86-0522-401F-80AF-BFAA863A9DD5}.Release|Win32.Build.0 = Release|Win32
+		{CB1AD822-E025-4713-9064-9E4F4A4977CC}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{CB1AD822-E025-4713-9064-9E4F4A4977CC}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{CB1AD822-E025-4713-9064-9E4F4A4977CC}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{CB1AD822-E025-4713-9064-9E4F4A4977CC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CB1AD822-E025-4713-9064-9E4F4A4977CC}.Debug|Win32.Build.0 = Debug|Win32
+		{CB1AD822-E025-4713-9064-9E4F4A4977CC}.Release|Any CPU.ActiveCfg = Release|Win32
+		{CB1AD822-E025-4713-9064-9E4F4A4977CC}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{CB1AD822-E025-4713-9064-9E4F4A4977CC}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{CB1AD822-E025-4713-9064-9E4F4A4977CC}.Release|Win32.ActiveCfg = Release|Win32
+		{CB1AD822-E025-4713-9064-9E4F4A4977CC}.Release|Win32.Build.0 = Release|Win32
 		{0E5DBEF1-84B5-49B8-91A0-33830F153236}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{0E5DBEF1-84B5-49B8-91A0-33830F153236}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{0E5DBEF1-84B5-49B8-91A0-33830F153236}.Debug|Mixed Platforms.Build.0 = Debug|Win32

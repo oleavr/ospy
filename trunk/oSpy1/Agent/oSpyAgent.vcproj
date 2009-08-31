@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\;.\Legacy;.\Legacy\udis86-1.7"
+				AdditionalIncludeDirectories=".\;.\Legacy;$(SolutionDir)udis86-1.7"
 				AdditionalUsingDirectories="&quot;$(SolutionDir)..\EasyHook&quot;;&quot;$(OutDir)&quot;"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_WIN32_WINNT=0x0501;WINVER=0x0501;_USRDLL;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS"
 				RuntimeLibrary="3"
@@ -124,7 +124,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\;.\Legacy;.\Legacy\udis86-1.7"
+				AdditionalIncludeDirectories=".\;.\Legacy;$(SolutionDir)udis86-1.7"
 				AdditionalUsingDirectories="&quot;$(SolutionDir)..\EasyHook&quot;;&quot;$(OutDir)&quot;"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_WIN32_WINNT=0x0501;WINVER=0x0501;_USRDLL;NDEBUG;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
@@ -186,7 +186,7 @@
 			CopyLocal="false"
 			CopyLocalDependencies="false"
 			CopyLocalSatelliteAssemblies="false"
-			RelativePathToProject=".\Agent\Legacy\udis86-1.7\libudis86.vcproj"
+			RelativePathToProject=".\udis86-1.7\libudis86.vcproj"
 		/>
 	</References>
 	<Files>
