@@ -30,6 +30,8 @@
 using namespace System;
 using namespace System::Collections::Generic;
 using namespace System::Diagnostics;
+using namespace System::IO;
+using namespace System::Runtime::InteropServices;
 using namespace System::Text;
 using namespace EasyHook;
 
@@ -49,7 +51,7 @@ namespace oScoutAgent
             SYSTEM_INFO si;
             GetSystemInfo(&si);
 
-            startAddress = static_cast<BYTE *>(VirtualAlloc(NULL, si.dwPageSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_WRITECOPY));
+            startAddress = static_cast<BYTE *>(VirtualAlloc(NULL, si.dwPageSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
             endAddress = startAddress + si.dwPageSize;
             offset = startAddress;
         }
@@ -69,6 +71,50 @@ namespace oScoutAgent
         BYTE *offset;
     };
 
+    private class CodeWriter
+    {
+    public:
+        CodeWriter(BYTE *data)
+            : dataStart(data), dataCur(data)
+        {
+        }
+
+        void Write(BYTE b)
+        {
+            *dataCur = b;
+            dataCur++;
+        }
+
+        void Write(int dw)
+        {
+            *reinterpret_cast<int *>(dataCur) = dw;
+            dataCur += sizeof(dw);
+        }
+
+        void Write(void *bytes, DWORD numBytes)
+        {
+            memcpy(dataCur, bytes, numBytes);
+            dataCur += numBytes;
+        }
+
+        void WriteJump(void *target)
+        {
+            int distance = reinterpret_cast<int>(target) - reinterpret_cast<int>(dataCur + 5);
+            Write(static_cast<BYTE>(0xE9));
+            Write(distance);
+        }
+
+    private:
+        BYTE *dataStart;
+        BYTE *dataCur;
+    };
+
+    public struct TrampolineHeader
+    {
+        DWORD InvocationCount;
+        DWORD OverwrittenSize;
+    };
+
     public ref class DllFunction
     {
     public:
@@ -83,13 +129,23 @@ namespace oScoutAgent
         {
             DetermineRelocationSize();
 
-            DWORD trampolineSize = 5 + relocSize;
+            const DWORD jumpSize = 5;
+            DWORD trampoSize = sizeof(TrampolineHeader) + relocSize + jumpSize;
+            BYTE *trampoline = allocator->Alloc(trampoSize);
 
-            BYTE *trampoline = allocator->Alloc(trampolineSize);
+            CodeWriter cw(trampoline);
+            TrampolineHeader hdr = { 0, relocSize };
+            cw.Write(&hdr, sizeof(hdr));
+            cw.Write(Address, relocSize);
+            BYTE *continueAddr = static_cast<BYTE *>(Address) + relocSize;
+            cw.WriteJump(continueAddr);
+
+            Trampoline = reinterpret_cast<TrampolineHeader *>(trampoline);
         }
 
         property String ^Name;
         property void *Address;
+        property TrampolineHeader *Trampoline;
 
     private:
         void DetermineRelocationSize()
