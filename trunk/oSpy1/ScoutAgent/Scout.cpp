@@ -79,19 +79,31 @@ namespace oScoutAgent
         {
         }
 
-        void Write(BYTE b)
+        void WriteInt8(char b)
+        {
+            *reinterpret_cast<char *>(dataCur) = b;
+            dataCur++;
+        }
+
+        void WriteUInt8(BYTE b)
         {
             *dataCur = b;
             dataCur++;
         }
 
-        void Write(int dw)
+        void WriteInt32(int i)
         {
-            *reinterpret_cast<int *>(dataCur) = dw;
+            *reinterpret_cast<int *>(dataCur) = i;
+            dataCur += sizeof(i);
+        }
+
+        void WriteUInt32(DWORD dw)
+        {
+            *reinterpret_cast<DWORD *>(dataCur) = dw;
             dataCur += sizeof(dw);
         }
 
-        void Write(void *bytes, DWORD numBytes)
+        void WriteBytes(void *bytes, DWORD numBytes)
         {
             memcpy(dataCur, bytes, numBytes);
             dataCur += numBytes;
@@ -100,8 +112,8 @@ namespace oScoutAgent
         void WriteJump(void *target)
         {
             int distance = reinterpret_cast<int>(target) - reinterpret_cast<int>(dataCur + 5);
-            Write(static_cast<BYTE>(0xE9));
-            Write(distance);
+            WriteUInt8(0xE9);
+            WriteInt32(distance);
         }
 
     private:
@@ -134,10 +146,27 @@ namespace oScoutAgent
             BYTE *trampoline = allocator->Alloc(trampoSize);
 
             CodeWriter cw(trampoline);
+
             TrampolineHeader hdr = { 0, relocSize };
-            cw.Write(&hdr, sizeof(hdr));
-            cw.Write(Address, relocSize);
+            cw.WriteBytes(&hdr, sizeof(hdr));
+
+            // mov eax, [fs:24h]
+            cw.WriteUInt8(0x64); cw.WriteUInt8(0xA1);
+            cw.WriteUInt32(0x24);
+
+            // cmp eax, <scout-threadid>
+            cw.WriteUInt8(0x3D);
+            cw.WriteUInt32(GetCurrentThreadId());
+
+            // jz +n
+            char n = 1;
+            cw.WriteUInt8(0x74);
+            cw.WriteInt8(n);
+
+            // original instructions
+            cw.WriteBytes(Address, relocSize);
             BYTE *continueAddr = static_cast<BYTE *>(Address) + relocSize;
+            // followed by a JMP back to the next instruction
             cw.WriteJump(continueAddr);
 
             Trampoline = reinterpret_cast<TrampolineHeader *>(trampoline);
