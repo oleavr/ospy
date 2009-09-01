@@ -37,6 +37,8 @@ using namespace EasyHook;
 
 namespace oScoutAgent
 {
+    #define OPCODE_INT3 (0xCC)
+
     public interface class ICodeAllocator
     {
     public:
@@ -52,6 +54,7 @@ namespace oScoutAgent
             GetSystemInfo(&si);
 
             startAddress = static_cast<BYTE *>(VirtualAlloc(NULL, si.dwPageSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+            memset(startAddress, OPCODE_INT3, si.dwPageSize);
             endAddress = startAddress + si.dwPageSize;
             offset = startAddress;
         }
@@ -62,6 +65,15 @@ namespace oScoutAgent
                 return NULL;
             BYTE *result = offset;
             offset += numBytes;
+
+            const DWORD align = 16;
+            if (reinterpret_cast<size_t>(offset) % align != 0)
+            {
+                offset = reinterpret_cast<BYTE *>((reinterpret_cast<size_t>(offset) + (align - 1)) & ~(align - 1));
+                if (offset > endAddress)
+                    offset = endAddress;
+            }
+
             return result;
         }
 
@@ -74,6 +86,11 @@ namespace oScoutAgent
     private class CodeWriter
     {
     public:
+        CodeWriter(void *data)
+            : dataStart(static_cast<BYTE *>(data)), dataCur(static_cast<BYTE *>(data))
+        {
+        }
+
         CodeWriter(BYTE *data)
             : dataStart(data), dataCur(data)
         {
@@ -131,7 +148,8 @@ namespace oScoutAgent
     {
     public:
         DllFunction(String ^name, void *address, ICodeAllocator ^allocator)
-            : allocator(allocator)
+            : allocator(allocator),
+              headerSize(16) // sizeof(TrampolineHeader) rounded up to 16 bytes bounary
         {
             Name = name;
             Address = address;
@@ -141,27 +159,36 @@ namespace oScoutAgent
         {
             DetermineRelocationSize();
 
+            const DWORD codeSize = 6 + 5 + 2 + 7;
             const DWORD jumpSize = 5;
-            DWORD trampoSize = sizeof(TrampolineHeader) + relocSize + jumpSize;
+            DWORD trampoSize = headerSize + codeSize + relocSize + jumpSize;
             BYTE *trampoline = allocator->Alloc(trampoSize);
 
             CodeWriter cw(trampoline);
 
+            // Header; where the InvocationCount member will be atomically incremented by the trampoline code following it
             TrampolineHeader hdr = { 0, relocSize };
             cw.WriteBytes(&hdr, sizeof(hdr));
+            // Padding for 16 byte alignment
+            for (DWORD i = 0; i < headerSize - sizeof(hdr); i++)
+                cw.WriteUInt8(OPCODE_INT3);
 
             // mov eax, [fs:24h]
             cw.WriteUInt8(0x64); cw.WriteUInt8(0xA1);
             cw.WriteUInt32(0x24);
 
-            // cmp eax, <scout-threadid>
+            // cmp eax, <scout-thread-id>
             cw.WriteUInt8(0x3D);
             cw.WriteUInt32(GetCurrentThreadId());
 
             // jz +n
-            char n = 1;
+            char n = 7;
             cw.WriteUInt8(0x74);
             cw.WriteInt8(n);
+
+            // lock inc dword [trampoline + TrampolineHeader.InvocationCount]
+            cw.WriteUInt8(0xF0); cw.WriteUInt8(0xFF); cw.WriteUInt8(0x05);
+            cw.WriteUInt32(reinterpret_cast<DWORD>(trampoline));
 
             // original instructions
             cw.WriteBytes(Address, relocSize);
@@ -170,6 +197,17 @@ namespace oScoutAgent
             cw.WriteJump(continueAddr);
 
             Trampoline = reinterpret_cast<TrampolineHeader *>(trampoline);
+        }
+
+        void ActivateHook()
+        {
+            DWORD oldProt;
+            VirtualProtect(Address, 5, PAGE_EXECUTE_WRITECOPY, &oldProt);
+
+            CodeWriter cw(Address);
+            cw.WriteJump(reinterpret_cast<BYTE *>(Trampoline) + headerSize);
+
+            VirtualProtect(Address, 5, oldProt, &oldProt);
         }
 
         property String ^Name;
@@ -199,6 +237,7 @@ namespace oScoutAgent
 
         DWORD relocSize;
         ICodeAllocator ^allocator;
+        const DWORD headerSize;
     };
 
     public ref class Controller : public IEntryPoint, ICodeAllocator
@@ -226,6 +265,11 @@ namespace oScoutAgent
                     for each (DllFunction ^func in EnumerateModuleExports(mod))
                     {
                         func->PrepareHook();
+
+                        if (func->Name == "recv" || func->Name == "send")
+                        {
+                            func->ActivateHook();
+                        }
                     }
                 }
             }
@@ -282,7 +326,6 @@ namespace oScoutAgent
                     {
                         String ^funcName = gcnew System::String(reinterpret_cast<char *>(&modBase[nameRvas[index]]));
                         DllFunction ^func = gcnew DllFunction(funcName, funcAddress, this);
-                        func->PrepareHook();
                         result.Add(func);
                     }
                 }
