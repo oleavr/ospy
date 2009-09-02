@@ -138,18 +138,11 @@ namespace oScoutAgent
         BYTE *dataCur;
     };
 
-    public struct TrampolineHeader
-    {
-        DWORD InvocationCount;
-        DWORD OverwrittenSize;
-    };
-
     public ref class DllFunction
     {
     public:
         DllFunction(String ^name, void *address, ICodeAllocator ^allocator)
-            : allocator(allocator),
-              headerSize(16) // sizeof(TrampolineHeader) rounded up to 16 bytes bounary
+            : allocator(allocator)
         {
             Name = name;
             Address = address;
@@ -157,21 +150,34 @@ namespace oScoutAgent
 
         void PrepareHook()
         {
-            DetermineRelocationSize();
+            relocationSize = DetermineRelocationSize(Address);
+            if (relocationSize == 0)
+                return;
 
-            const DWORD codeSize = 6 + 5 + 2 + 7;
+            const DWORD codeSize = 2 + 6 + 5 + 2 + 7 + 2;
             const DWORD jumpSize = 5;
-            DWORD trampoSize = headerSize + codeSize + relocSize + jumpSize;
-            BYTE *trampoline = allocator->Alloc(trampoSize);
+
+            trampolineSize = codeSize + relocationSize + jumpSize;
+
+            const DWORD align = 16;
+            if (trampolineSize % align != 0)
+            {
+                trampolineSize = (trampolineSize + (align - 1)) & ~(align - 1);
+            }
+
+            trampolineSize += sizeof(DWORD);
+
+            trampoline = allocator->Alloc(trampolineSize);
+            callCount = reinterpret_cast<DWORD *>(trampoline + trampolineSize - sizeof(DWORD));
+            *callCount = 0;
 
             CodeWriter cw(trampoline);
 
-            // Header; where the InvocationCount member will be atomically incremented by the trampoline code following it
-            TrampolineHeader hdr = { 0, relocSize };
-            cw.WriteBytes(&hdr, sizeof(hdr));
-            // Padding for 16 byte alignment
-            for (DWORD i = 0; i < headerSize - sizeof(hdr); i++)
-                cw.WriteUInt8(OPCODE_INT3);
+            // pushfd
+            cw.WriteUInt8(0x9C);
+
+            // push eax
+            cw.WriteUInt8(0x50);
 
             // mov eax, [fs:24h]
             cw.WriteUInt8(0x64); cw.WriteUInt8(0xA1);
@@ -188,56 +194,107 @@ namespace oScoutAgent
 
             // lock inc dword [trampoline + TrampolineHeader.InvocationCount]
             cw.WriteUInt8(0xF0); cw.WriteUInt8(0xFF); cw.WriteUInt8(0x05);
-            cw.WriteUInt32(reinterpret_cast<DWORD>(trampoline));
+            cw.WriteUInt32(reinterpret_cast<DWORD>(callCount));
+
+            // pop eax
+            cw.WriteUInt8(0x58);
+
+            // popfd
+            cw.WriteUInt8(0x9D);
 
             // original instructions
-            cw.WriteBytes(Address, relocSize);
-            BYTE *continueAddr = static_cast<BYTE *>(Address) + relocSize;
+            cw.WriteBytes(Address, relocationSize);
+            BYTE *continueAddr = static_cast<BYTE *>(Address) + relocationSize;
             // followed by a JMP back to the next instruction
             cw.WriteJump(continueAddr);
-
-            Trampoline = reinterpret_cast<TrampolineHeader *>(trampoline);
         }
 
         void ActivateHook()
         {
+            // Temporary
+            if (relocationSize == 0)
+                return;
+
             DWORD oldProt;
             VirtualProtect(Address, 5, PAGE_EXECUTE_WRITECOPY, &oldProt);
 
             CodeWriter cw(Address);
-            cw.WriteJump(reinterpret_cast<BYTE *>(Trampoline) + headerSize);
+            cw.WriteJump(trampoline);
 
             VirtualProtect(Address, 5, oldProt, &oldProt);
         }
 
         property String ^Name;
         property void *Address;
-        property TrampolineHeader *Trampoline;
 
     private:
-        void DetermineRelocationSize()
+        static DWORD DetermineRelocationSize(void *address)
         {
             DWORD codeSize = 5; // 1 byte JMP + 4 byte offset
 
             ud_t obj;
             ud_init(&obj);
-            ud_set_input_buffer(&obj, static_cast<uint8_t *>(Address), 4096);
+            ud_set_input_buffer(&obj, static_cast<uint8_t *>(address), 4096);
             ud_set_mode(&obj, 32);
 
-            relocSize = 0;
+            DWORD relocSize = 0;
             while (relocSize < codeSize)
             {
                 DWORD size = ud_disassemble(&obj);
                 if (size == 0)
                     throw gcnew ArgumentException("Failed to disassemble instruction");
+                else if (!IsRelocatableInstruction(obj.mnemonic))
+                    return 0;
 
                 relocSize += size;
             }
+            return relocSize;
         }
 
-        DWORD relocSize;
+        static bool IsRelocatableInstruction(enum ud_mnemonic_code insn)
+        {
+            static const enum ud_mnemonic_code jumpCodes[] =
+            {
+              UD_Icall,
+              UD_Ija,
+              UD_Ijae,
+              UD_Ijb,
+              UD_Ijbe,
+              UD_Ijcxz,
+              UD_Ijecxz,
+              UD_Ijg,
+              UD_Ijge,
+              UD_Ijl,
+              UD_Ijle,
+              UD_Ijmp,
+              UD_Ijnp,
+              UD_Ijns,
+              UD_Ijnz,
+              UD_Ijo,
+              UD_Ijp,
+              UD_Ijrcxz,
+              UD_Ijs,
+              UD_Ijz,
+              UD_Iret,
+              UD_Iretf
+            };
+
+            for (DWORD i = 0; i < sizeof(jumpCodes) / sizeof(jumpCodes[i]); i++)
+            {
+                if (insn == jumpCodes[i])
+                    return false;
+            }
+
+            return true;
+        }
+
         ICodeAllocator ^allocator;
-        const DWORD headerSize;
+
+        BYTE *trampoline;
+        DWORD trampolineSize;
+        DWORD relocationSize;
+
+        DWORD *callCount;
     };
 
     public ref class Controller : public IEntryPoint, ICodeAllocator
@@ -265,12 +322,22 @@ namespace oScoutAgent
                     for each (DllFunction ^func in EnumerateModuleExports(mod))
                     {
                         func->PrepareHook();
-
-                        if (func->Name == "recv" || func->Name == "send")
-                        {
-                            func->ActivateHook();
-                        }
+                        dllFunctions.Add(func);
                     }
+                }
+
+                for each (DllFunction ^func in dllFunctions)
+                {
+                    if (func->Name == "recv" || func->Name == "send")
+                    {
+                        func->ActivateHook();
+                    }
+                }
+
+                while (true)
+                {
+                    Sleep(500);
+                    manager->Ping(myPid);
                 }
             }
             catch (Exception ^ex)
@@ -282,6 +349,8 @@ namespace oScoutAgent
                 (void) ex;
 #endif
             }
+
+            MessageBox(NULL, _T("Now exiting..."), _T("oScoutAgent"), MB_OK | MB_ICONINFORMATION);
         }
 
         // ICodeAllocator
@@ -336,5 +405,6 @@ namespace oScoutAgent
 
         oSpy::Capture::IManager ^manager;
         List<CodePage ^> codePages;
+        List<DllFunction ^> dllFunctions;
     };
 }
