@@ -22,8 +22,8 @@ namespace oSpy.Capture
     [Serializable]
     public class PacketEvent : Event
     {
-        public PacketEvent(EventCoordinator factory, InvocationOrigin invocationOrigin)
-            : base(factory, invocationOrigin)
+        public PacketEvent(EventCoordinator coordinator, InvocationOrigin invocationOrigin)
+            : base(coordinator, invocationOrigin)
         {
         }
     }
