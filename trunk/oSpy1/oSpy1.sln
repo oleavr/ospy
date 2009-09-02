@@ -14,6 +14,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oScoutAgent", "ScoutAgent\o
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libudis86", "udis86-1.7\libudis86.vcproj", "{0E5DBEF1-84B5-49B8-91A0-33830F153236}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "oHeapAgent", "HeapAgent\oHeapAgent.csproj", "{1D965D55-3FD5-450D-8B01-BD3707BF4020}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -74,6 +76,16 @@ Global
 		{0E5DBEF1-84B5-49B8-91A0-33830F153236}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{0E5DBEF1-84B5-49B8-91A0-33830F153236}.Release|Win32.ActiveCfg = Release|Win32
 		{0E5DBEF1-84B5-49B8-91A0-33830F153236}.Release|Win32.Build.0 = Release|Win32
+		{1D965D55-3FD5-450D-8B01-BD3707BF4020}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D965D55-3FD5-450D-8B01-BD3707BF4020}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D965D55-3FD5-450D-8B01-BD3707BF4020}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{1D965D55-3FD5-450D-8B01-BD3707BF4020}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{1D965D55-3FD5-450D-8B01-BD3707BF4020}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{1D965D55-3FD5-450D-8B01-BD3707BF4020}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D965D55-3FD5-450D-8B01-BD3707BF4020}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D965D55-3FD5-450D-8B01-BD3707BF4020}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{1D965D55-3FD5-450D-8B01-BD3707BF4020}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{1D965D55-3FD5-450D-8B01-BD3707BF4020}.Release|Win32.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
