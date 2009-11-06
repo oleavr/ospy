@@ -25,7 +25,6 @@ using System.Threading;
 using System.Windows.Forms;
 using EasyHook;
 using oSpy.Capture;
-using System.Diagnostics;
 
 namespace oHeapAgent
 {
@@ -40,10 +39,23 @@ namespace oHeapAgent
         private LocalHook reallocHook;
         private LocalHook freeHook;
 
+        private bool enableEntryLimit = false;
+
+        private uint levelTlsKey;
+
         #region Hook types
 
         private const string gdiDll = "gdi32.dll";
         private const string vcrDll = "msvcr90.dll";
+
+        [DllImport("kernel32.dll", SetLastError=true)]
+        private static extern uint TlsAlloc();
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr TlsGetValue(uint dwTlsIndex);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool TlsSetValue(uint dwTlsIndex, IntPtr lpTlsValue);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
         private delegate bool SwapBuffersHandler(IntPtr hdc);
@@ -51,24 +63,24 @@ namespace oHeapAgent
         private static extern bool SwapBuffers(IntPtr hdc);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl, SetLastError = false)]
-        private delegate IntPtr MallocHandler(int size);
+        private delegate UIntPtr MallocHandler(int size);
         [DllImport(vcrDll, SetLastError = false, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr malloc(int size);
+        private static extern UIntPtr malloc(int size);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl, SetLastError = false)]
-        private delegate IntPtr CallocHandler(int num, int size);
+        private delegate UIntPtr CallocHandler(int num, int size);
         [DllImport(vcrDll, SetLastError = false, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr calloc(int num, int size);
+        private static extern UIntPtr calloc(int num, int size);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl, SetLastError = false)]
-        private delegate IntPtr ReallocHandler(IntPtr memblock, int size);
+        private delegate UIntPtr ReallocHandler(UIntPtr memblock, int size);
         [DllImport(vcrDll, SetLastError = false, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr realloc(IntPtr memblock, int size);
+        private static extern UIntPtr realloc(UIntPtr memblock, int size);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl, SetLastError = false)]
-        private delegate void FreeHandler(IntPtr memblock);
+        private delegate void FreeHandler(UIntPtr memblock);
         [DllImport(vcrDll, SetLastError = false, CallingConvention = CallingConvention.Cdecl)]
-        private static extern void free(IntPtr memblock);
+        private static extern void free(UIntPtr memblock);
 
         #endregion
 
@@ -79,6 +91,30 @@ namespace oHeapAgent
             string url = "ipc://" + channelName + "/" + channelName;
             manager = Activator.GetObject(typeof(IManager), url) as IManager;
             eventCoordinator = new EventCoordinator();
+
+            levelTlsKey = TlsAlloc();
+        }
+
+        private void EnterAllocFunction()
+        {
+            AdjustAllocFunctionLevelBy(1);
+        }
+
+        private void LeaveAllocFunction()
+        {
+            AdjustAllocFunctionLevelBy(-1);
+        }
+
+        private void AdjustAllocFunctionLevelBy(int val)
+        {
+            IntPtr curVal = TlsGetValue(levelTlsKey);
+            IntPtr newVal = new IntPtr(curVal.ToInt32() + val);
+            TlsSetValue(levelTlsKey, newVal);
+        }
+
+        private int GetAllocFunctionLevel()
+        {
+            return TlsGetValue(levelTlsKey).ToInt32();
         }
 
         public void Run(RemoteHooking.IContext context,
@@ -148,28 +184,37 @@ namespace oHeapAgent
             return SwapBuffers(hdc);
         }
 
-        private IntPtr OnMalloc(int size)
+        private UIntPtr OnMalloc(int size)
         {
-            IntPtr result = malloc(size);
+            EnterAllocFunction();
+            UIntPtr result = malloc(size);
+            LeaveAllocFunction();
+
             RegisterAllocation(size, result);
             return result;
         }
 
-        private IntPtr OnCalloc(int num, int size)
+        private UIntPtr OnCalloc(int num, int size)
         {
-            IntPtr result = calloc(num, size);
+            EnterAllocFunction();
+            UIntPtr result = calloc(num, size);
+            LeaveAllocFunction();
+
             RegisterAllocation(num * size, result);
             return result;
         }
 
-        private IntPtr OnRealloc(IntPtr memblock, int size)
+        private UIntPtr OnRealloc(UIntPtr memblock, int size)
         {
-            IntPtr result = realloc(memblock, size);
+            EnterAllocFunction();
+            UIntPtr result = realloc(memblock, size);
+            LeaveAllocFunction();
+
             RegisterReallocation(size, memblock, result);
             return result;
         }
 
-        private void OnFree(IntPtr memblock)
+        private void OnFree(UIntPtr memblock)
         {
             RegisterDeallocation(memblock);
             free(memblock);
@@ -188,12 +233,10 @@ namespace oHeapAgent
             }
         }
 
-        private void RegisterAllocation(int size, IntPtr address)
+        private void RegisterAllocation(int size, UIntPtr address)
         {
-            if (size == 1382528)
-            {
-                Console.WriteLine();
-            }
+            if (GetAllocFunctionLevel() > 0)
+                return;
 
             lock (this)
             {
@@ -204,13 +247,11 @@ namespace oHeapAgent
             }
         }
 
-        private void RegisterReallocation(int size, IntPtr oldAddress, IntPtr newAddress)
+        private void RegisterReallocation(int size, UIntPtr oldAddress, UIntPtr newAddress)
         {
-            if (size == 1382528)
-            {
-                Console.WriteLine();
-            } 
-            
+            if (GetAllocFunctionLevel() > 0)
+                return;
+
             lock (this)
             {
                 if (tmpEvents == null)
@@ -220,7 +261,7 @@ namespace oHeapAgent
             }
         }
 
-        private void RegisterDeallocation(IntPtr address)
+        private void RegisterDeallocation(UIntPtr address)
         {
             lock (this)
             {
@@ -241,36 +282,51 @@ namespace oHeapAgent
         private class AllocateEvent : HeapEvent
         {
             public int Size;
-            public IntPtr Address;
+            public UIntPtr Address;
 
-            public AllocateEvent(int size, IntPtr address)
+            public AllocateEvent(int size, UIntPtr address)
             {
                 Size = size;
                 Address = address;
+            }
+
+            public override string ToString()
+            {
+                return String.Format("malloc({0}) => 0x{1:x8}", Size, Address.ToUInt32());
             }
         }
         
         private class ReallocateEvent : HeapEvent
         {
             public int Size;
-            public IntPtr OldAddress;
-            public IntPtr NewAddress;
+            public UIntPtr OldAddress;
+            public UIntPtr NewAddress;
 
-            public ReallocateEvent(int size, IntPtr oldAddress, IntPtr newAddress)
+            public ReallocateEvent(int size, UIntPtr oldAddress, UIntPtr newAddress)
             {
                 Size = size;
                 OldAddress = oldAddress;
                 NewAddress = newAddress;
             }
+
+            public override string ToString()
+            {
+                return String.Format("realloc(0x{0:x8}, {1}) => 0x{2:x8}", OldAddress.ToUInt32(), Size, NewAddress.ToUInt32());
+            }
         }
 
         private class DeallocateEvent : HeapEvent
         {
-            public IntPtr Address;
+            public UIntPtr Address;
 
-            public DeallocateEvent(IntPtr address)
+            public DeallocateEvent(UIntPtr address)
             {
                 Address = address;
+            }
+
+            public override string ToString()
+            {
+                return String.Format("free(0x{0:x8})", Address.ToUInt32());
             }
         }
 
@@ -286,12 +342,19 @@ namespace oHeapAgent
                 lastFrameEvents = null;
             }
 
+            int allocCount = 0;
+            int allocSize = 0;
+            int deallocCount = 0;
+
             Dictionary<int, int> countForSize = new Dictionary<int, int>();
             foreach (HeapEvent ev in events)
             {
                 // for now
                 if (ev is DeallocateEvent)
+                {
+                    deallocCount++;
                     continue;
+                }
 
                 int size = 0;
                 if (ev is AllocateEvent)
@@ -310,9 +373,18 @@ namespace oHeapAgent
                 int oldCount = 0;
                 countForSize.TryGetValue(size, out oldCount);
                 countForSize[size] = oldCount + 1;
+
+                allocCount++;
+                allocSize += size;
             }
 
             StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine();
+            sb.AppendFormat("{0} allocations ({1} bytes), {2} deallocations\r\n",
+                allocCount, allocSize, deallocCount);
+            sb.AppendLine();
+
             sb.AppendLine("  Size  |  Count");
             sb.AppendLine("------------------");
             int[] sizes = countForSize.Keys.ToArray();
@@ -330,35 +402,114 @@ namespace oHeapAgent
             int count = 0;
             foreach (HeapEvent ev in events)
             {
+                sb.AppendLine(ev.ToString());
+
+                count++;
+
+                if (enableEntryLimit && count >= 100)
+                    break;
+            }
+
+            if (enableEntryLimit)
+            {
+                int remaining = events.Count - count;
+                if (remaining > 0)
+                    sb.AppendFormat("...and {0} more...\r\n", remaining);
+            }
+
+            List<HeapEvent> leakedEvents = new List<HeapEvent>();
+            foreach (HeapEvent ev in events)
+            {
+                UIntPtr removePtr = UIntPtr.Zero;
+
                 if (ev is AllocateEvent)
                 {
                     AllocateEvent allocEv = ev as AllocateEvent;
-                    sb.AppendFormat("malloc({0}) => 0x{1:x8}\r\n", allocEv.Size, allocEv.Address);
+                    if (allocEv.Address != UIntPtr.Zero)
+                        leakedEvents.Add(allocEv);
                 }
                 else if (ev is ReallocateEvent)
                 {
                     ReallocateEvent reallocEv = ev as ReallocateEvent;
-                    sb.AppendFormat("realloc(0x{0:x8}, {1}) => 0x{2:x8}\r\n", reallocEv.OldAddress, reallocEv.Size, reallocEv.NewAddress);
+                    if (reallocEv.NewAddress != UIntPtr.Zero)
+                    {
+                        if (reallocEv.OldAddress != UIntPtr.Zero)
+                        {
+                            if (reallocEv.NewAddress == reallocEv.OldAddress)
+                            {
+                                // no change
+                                // FIXME: in case we missed the original malloc we could get it here...
+                            }
+                            else
+                            {
+                                // relocated
+                                leakedEvents.Add(reallocEv);
+                                removePtr = reallocEv.OldAddress;
+                            }
+                        }
+                        else
+                        {
+                            // new event
+                            leakedEvents.Add(reallocEv);
+                        }
+                    }
+                    else if (reallocEv.OldAddress != UIntPtr.Zero && reallocEv.Size == 0)
+                    {
+                        // free
+                        removePtr = reallocEv.OldAddress;
+                    }
                 }
                 else if (ev is DeallocateEvent)
                 {
                     DeallocateEvent deallocEv = ev as DeallocateEvent;
-                    sb.AppendFormat("free(0x{0:x8})\r\n", deallocEv.Address);
+                    removePtr = deallocEv.Address;
                 }
                 else
                 {
                     throw new NotImplementedException();
                 }
 
-                count++;
+                if (removePtr != UIntPtr.Zero)
+                {
+                    bool again = false;
 
-                if (count >= 100)
-                    break;
+                    do
+                    {
+                        again = false;
+
+                        foreach (HeapEvent leakEv in leakedEvents)
+                        {
+                            UIntPtr address;
+
+                            if (leakEv is AllocateEvent)
+                                address = (leakEv as AllocateEvent).Address;
+                            else if (leakEv is ReallocateEvent)
+                                address = (leakEv as ReallocateEvent).NewAddress;
+                            else
+                                throw new NotImplementedException("Should not get here");
+
+                            if (address == removePtr)
+                            {
+                                leakedEvents.Remove(leakEv);
+                                again = true;
+                                break;
+                            }
+                        }
+                    }
+                    while (again);
+                }
             }
 
-            int remaining = events.Count - count;
-            if (remaining > 0)
-                sb.AppendFormat("...and {0} more...\r\n", remaining);
+            if (leakedEvents.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("Possible leaks:");
+                sb.AppendLine("---------------");
+                foreach (HeapEvent ev in leakedEvents)
+                {
+                    sb.AppendLine(ev.ToString());
+                }
+            }
 
             Event.InvocationOrigin origin = new Event.InvocationOrigin("HeapAgent", null, 42);
             PacketEvent pktEv = new PacketEvent(eventCoordinator, origin);
