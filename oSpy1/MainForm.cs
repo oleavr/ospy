@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2006-2009 Ole André Vadla Ravnås <oleavr@gmail.com>
+// Copyright (c) 2006-2009 Ole Andrï¿½ Vadla Ravnï¿½s <oleavr@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,7 +37,6 @@ namespace oSpy
     {
         private ConfigContext config;
         private Capture.Manager captureMgr;
-        private bool hasRegistered = false;
 
         private DataTable tblMessages;
         private PacketParser packetParser;
@@ -273,41 +272,6 @@ namespace oSpy
 
         private bool PrepareCapture()
         {
-            if (!hasRegistered)
-            {
-                try
-                {
-                    EasyHook.Config.Register("oSpy", "EasyHook.dll", "oSpy.exe", "oSpyAgent.dll");
-                    EasyHook.RemoteHooking.InstallServices();
-                }
-                catch (ApplicationException)
-                {
-                    MessageBox.Show("You need to run oSpy with administrative privileges in order to do this.",
-                                    "Permission Denied", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return false;
-                }
-                catch (BadImageFormatException)
-                {
-                    MessageBox.Show("oSpy has detected that a previous capture was likely interrupted by an unclean " +
-                        "system shutdown or power failure, resulting in left-over .NET assemblies in your " +
-                        "system-wide Global Assembly Cache.\r\n\r\n" +
-                        "Recovering from this will be automated in a future oSpy release, but for now you " +
-                        "will have to manually perform the following steps:\r\n" +
-                        "  1. Ensure that a .NET Framework Software Development Kit is\r\n" +
-                        "      installed (or Visual Studio).\r\n" +
-                        "  2. Run cmd.exe as Administrator and execute:\r\n" +
-                        "      gacutil /uf oSpy\r\n" +
-                        "      gacutil /uf oSpyAgent\r\n" +
-                        "      gacutil /uf EasyHook\r\n" +
-                        "\r\n" +
-                        "Sorry for the inconvenience!",
-                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return false;
-                }
-
-                hasRegistered = true;
-            }
-
             return true;
         }
 
@@ -1331,7 +1295,7 @@ namespace oSpy
                         break;
                 }
 
-                dump.AppendFormat("{0}.¸¸.· #{1}\n", linePrefix, packet.Index);
+                dump.AppendFormat("{0}.ï¿½ï¿½.ï¿½ #{1}\n", linePrefix, packet.Index);
                 lineNo++;
 
                 int nLines = 0;

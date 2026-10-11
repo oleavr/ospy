@@ -22,7 +22,6 @@ using System.Text;
 using System.IO;
 using System.Collections;
 using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
 
 namespace oSpy.Configuration
 {
@@ -53,8 +52,8 @@ namespace oSpy.Configuration
                 return;
 
             Stream stream = File.Open(path, FileMode.Open);
-            BinaryFormatter bFormatter = new BinaryFormatter();
-            contexts = (Dictionary<string, ConfigContext>)bFormatter.Deserialize(stream);
+            DataContractSerializer serializer = new DataContractSerializer(typeof(Dictionary<string, ConfigContext>));
+            contexts = (Dictionary<string, ConfigContext>) serializer.ReadObject(stream);
             stream.Close();
         }
 
@@ -63,8 +62,8 @@ namespace oSpy.Configuration
             List<ConfigContext> contextList = new List<ConfigContext>(contexts.Values);
 
             Stream stream = File.Open(GetConfigFilePath(), FileMode.Create);
-            BinaryFormatter bFormatter = new BinaryFormatter();
-            bFormatter.Serialize(stream, contexts);
+            DataContractSerializer serializer = new DataContractSerializer(typeof(Dictionary<string, ConfigContext>));
+            serializer.WriteObject(stream, contexts);
             stream.Close();
         }
 

@@ -24,7 +24,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
+using System.Runtime.Serialization;
 using oSpy.Parser;
 using oSpy.Net;
 using oSpy.Util;
@@ -69,8 +69,8 @@ namespace oSpy
                 multiStreamView.Visible = false;
 
                 Stream stream = File.Open(openFileDialog.FileName, FileMode.Open);
-                BinaryFormatter bFormatter = new BinaryFormatter();
-                multiStreamView.Sessions = (VisualSession[])bFormatter.Deserialize(stream);
+                DataContractSerializer serializer = new DataContractSerializer(typeof(VisualSession[]));
+                multiStreamView.Sessions = (VisualSession[]) serializer.ReadObject(stream);
                 stream.Close();
 
                 multiStreamView.Visible = true;
@@ -82,8 +82,8 @@ namespace oSpy
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
                 Stream stream = File.Open(saveFileDialog.FileName, FileMode.Create);
-                BinaryFormatter bFormatter = new BinaryFormatter();
-                bFormatter.Serialize(stream, multiStreamView.Sessions);
+                DataContractSerializer serializer = new DataContractSerializer(typeof(VisualSession[]));
+                serializer.WriteObject(stream, multiStreamView.Sessions);
                 stream.Close();
             }
         }

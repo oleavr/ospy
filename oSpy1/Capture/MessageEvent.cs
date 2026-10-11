@@ -42,6 +42,11 @@ namespace oSpy.Capture
         {
         }
 
+        public MessageEvent(EventCoordinator coordinator, ExecutionOrigin executionOrigin, InvocationOrigin invocationOrigin)
+            : base(coordinator, executionOrigin, invocationOrigin)
+        {
+        }
+
         public MessageEvent(EventCoordinator coordinator, InvocationOrigin invocationOrigin, string message)
             : base(coordinator, invocationOrigin)
         {

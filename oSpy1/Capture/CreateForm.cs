@@ -91,7 +91,7 @@ namespace oSpy.Capture
             pendingDirs.Push(new DirectoryInfo(allUsersStartMenu.ToString()));
             pendingDirs.Push(new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu)));
 
-            IWshRuntimeLibrary.IWshShell shell = new IWshRuntimeLibrary.WshShell();
+            dynamic shell = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell"));
 
             while (pendingDirs.Count > 0)
             {
@@ -101,7 +101,7 @@ namespace oSpy.Capture
                 {
                     foreach (FileInfo file in dir.GetFiles("*.lnk"))
                     {
-                        var shortcut = shell.CreateShortcut(file.FullName) as IWshRuntimeLibrary.IWshShortcut;
+                        dynamic shortcut = shell.CreateShortcut(file.FullName);
                         if (shortcut != null)
                         {
                             string name = Path.GetFileNameWithoutExtension(shortcut.FullName);

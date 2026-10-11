@@ -1,429 +1,62 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{32EB5641-50CC-4A6B-A913-E814EEE3B34D}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
     <RootNamespace>oSpy</RootNamespace>
     <AssemblyName>oSpy</AssemblyName>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <OldToolsVersion>2.0</OldToolsVersion>
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
     <ApplicationIcon>oSpy.ico</ApplicationIcon>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>oSpy.snk</AssemblyOriginatorKeyFile>
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <NoWarn>WFO1000</NoWarn>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="EasyHook, Version=2.5.0.0, Culture=neutral, PublicKeyToken=4b580fca19d0b0c5, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\EasyHook\Release\x86\EasyHook.dll</HintPath>
-    </Reference>
-    <Reference Include="ICSharpCode.SharpZipLib, Version=0.85.4.369, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\SharpZipLib\ICSharpCode.SharpZipLib.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Deployment" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.EnterpriseServices" />
-    <Reference Include="System.Management" />
-    <Reference Include="System.Runtime.Remoting" />
-    <Reference Include="System.Web.Services" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
+    <Compile Remove="Agent/**;ScoutAgent/**;udis86-1.7/**;HeapAgent/**;Tests/**;Tools/**" />
+    <EmbeddedResource Remove="Agent/**;ScoutAgent/**;udis86-1.7/**;HeapAgent/**;Tests/**;Tools/**" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="AboutBoxForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="AboutBoxForm.Designer.cs">
-      <DependentUpon>AboutBoxForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Capture\Event.cs" />
-    <Compile Include="Capture\EventCoordinator.cs" />
-    <Compile Include="Capture\MessageEvent.cs" />
-    <Compile Include="Capture\PacketEvent.cs" />
-    <Compile Include="SearchBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="BacktraceForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="BacktraceForm.Designer.cs">
-      <DependentUpon>BacktraceForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Capture\ProgressForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Capture\ProgressForm.Designer.cs">
-      <DependentUpon>ProgressForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Capture\AttachForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Capture\AttachForm.designer.cs">
-      <DependentUpon>AttachForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Capture\Manager.cs" />
-    <Compile Include="Capture\CreateForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Capture\CreateForm.Designer.cs">
-      <DependentUpon>CreateForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Configuration\ConfigManager.cs" />
-    <Compile Include="Configuration\ParserConfigDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Configuration\ParserConfigDialog.Designer.cs">
-      <DependentUpon>ParserConfigDialog.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Configuration\ParserConfiguration.cs" />
-    <Compile Include="Event\SocketEventType.cs" />
-    <Compile Include="Event\TCPEvent.cs" />
-    <Compile Include="ExtendedGraphics.cs" />
-    <Compile Include="GroovyRichTextBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="IDrawToBitmapFull.cs" />
-    <Compile Include="Net\IPPacket.cs" />
-    <Compile Include="Net\IPSession.cs" />
-    <Compile Include="Net\PacketStream.cs" />
-    <Compile Include="NewVisualizationForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="NewVisualizationForm.Designer.cs">
-      <DependentUpon>NewVisualizationForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Parser\ITransactionFactory.cs" />
-    <Compile Include="MultiSessionView.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Parser\Oracle.cs" />
-    <Compile Include="Net\PacketParser.cs" />
-    <Compile Include="Net\PacketSlice.cs" />
-    <Compile Include="Net\ProtocolError.cs" />
-    <Compile Include="Parser\TransactionFactory.cs" />
-    <Compile Include="Parser\TransactionNode.cs" />
-    <Compile Include="Parser\TransactionNodeConverter.cs" />
-    <Compile Include="Parser\TransactionNodeList.cs" />
-    <Compile Include="Parser\XMPP.cs" />
-    <Compile Include="ProgressForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ProgressForm.Designer.cs">
-      <DependentUpon>ProgressForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="ShareSuccessForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ShareSuccessForm.Designer.cs">
-      <DependentUpon>ShareSuccessForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="SoftwallForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="SoftwallForm.Designer.cs">
-      <DependentUpon>SoftwallForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="ShareVisualizationForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ShareVisualizationForm.Designer.cs">
-      <DependentUpon>ShareVisualizationForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Util\SoftwareRelease.cs" />
-    <Compile Include="TimelineNavigatorForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="TimelineNavigatorForm.Designer.cs">
-      <DependentUpon>TimelineNavigatorForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Util\Util.cs" />
-    <Compile Include="Util\Constants.cs" />
-    <Compile Include="Util\IDebugLogger.cs" />
-    <Compile Include="Util\XML.cs" />
-    <Compile Include="VisualSession.cs">
-    </Compile>
-    <Compile Include="ConversationsForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ConversationsForm.Designer.cs">
-      <DependentUpon>ConversationsForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="DebugForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="DebugForm.Designer.cs">
-      <DependentUpon>DebugForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Parser\HTTP.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="InjectForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="InjectForm.Designer.cs">
-      <DependentUpon>InjectForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MainForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="MainForm.Designer.cs">
-      <DependentUpon>MainForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Parser\MSN.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="AboutBoxForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>AboutBoxForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="BacktraceForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>BacktraceForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Capture\ProgressForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>ProgressForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Capture\AttachForm.resx">
-      <DependentUpon>AttachForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Capture\CreateForm.resx">
-      <DependentUpon>CreateForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Configuration\ParserConfigDialog.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>ParserConfigDialog.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ConversationsForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>ConversationsForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="DebugForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>DebugForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="InjectForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>InjectForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="MainForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>MainForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="NewVisualizationForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>NewVisualizationForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ProgressForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>ProgressForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ShareSuccessForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>ShareSuccessForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SoftwallForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>SoftwallForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ShareVisualizationForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>ShareVisualizationForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="TextView.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>TextView.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="TimelineNavigatorForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>TimelineNavigatorForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="VisualTransaction.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>VisualTransaction.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="WelcomeForm.resx">
-      <DependentUpon>WelcomeForm.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <None Include="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-    <Compile Include="Properties\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-    </Compile>
-    <Compile Include="PropertyBag.cs" />
-    <Compile Include="Parser\RAPI.cs" />
-    <Compile Include="Listener.cs" />
-    <Compile Include="Parser\RemSync.cs" />
-    <Compile Include="Parser\RRAC.cs" />
-    <Compile Include="VisualTransaction.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="WBXML.cs" />
-    <Compile Include="TextView.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="TextView.Designer.cs">
-      <DependentUpon>TextView.cs</DependentUpon>
-    </Compile>
-    <Compile Include="WelcomeForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="WelcomeForm.Designer.cs">
-      <DependentUpon>WelcomeForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="WinApi.cs" />
+    <PackageReference Include="SharpZipLib" Version="1.4.2" />
+    <PackageReference Include="System.Management" Version="9.0.0" />
   </ItemGroup>
+
   <ItemGroup>
-    <None Include="Images\incoming.png" />
+    <ProjectReference Include="..\..\frida-clr\src\Frida.NET\Frida.NET.csproj" />
+    <ProjectReference Include="Tools\AgentBuilder\AgentBuilder.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
+
   <ItemGroup>
-    <None Include="Images\outgoing.png" />
+    <AgentSource Include="Capture\agent\**\*.ts;Capture\agent\**\*.hexpat" Exclude="Capture\agent\**\*.d.ts" />
+    <EmbeddedResource Include="Capture\agent\dist\agent.js">
+      <LogicalName>oSpy.Capture.Agent.js</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Images\event.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Images\connected.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Images\disconnected.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Images\info.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Images\warning.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Images\error.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
-    <None Include="Images\activesync.png" />
-    <None Include="Images\listening.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Images\donate.gif" />
-    <None Include="oSpy.snk" />
-    <None Include="Images\search.png" />
-    <Content Include="oSpy.ico" />
-    <Content Include="README.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <WebReferences Include="Web References\" />
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework Client Profile</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <COMReference Include="IWshRuntimeLibrary">
-      <Guid>{F935DC20-1CF0-11D0-ADB9-00C04FD58A0B}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-    </COMReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
   <PropertyGroup>
-    <PostBuildEvent>copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x86\EasyHook32.dll" "$(TargetDir)"
-copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x86\EasyHook32.pdb" "$(TargetDir)"
-copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x86\EasyHook32Svc.exe" "$(TargetDir)"
-copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x86\EasyHookSvc.pdb" "$(TargetDir)EasyHook32Svc.pdb"
-copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x64\EasyHook64.dll" "$(TargetDir)"
-copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x64\EasyHook64.pdb" "$(TargetDir)"
-copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x64\EasyHook64Svc.exe" "$(TargetDir)"
-copy /B /Y "$(SolutionDir)..\EasyHook\$(ConfigurationName)\x64\EasyHookSvc.pdb" "$(TargetDir)EasyHook64Svc.pdb"
-</PostBuildEvent>
+    <DotnetHost Condition="'$(DOTNET_HOST_PATH)' != ''">$(DOTNET_HOST_PATH)</DotnetHost>
+    <DotnetHost Condition="'$(DOTNET_HOST_PATH)' == ''">dotnet</DotnetHost>
   </PropertyGroup>
+
+  <Target Name="BuildAgent" AfterTargets="ResolveProjectReferences" BeforeTargets="PrepareResources"
+          Inputs="@(AgentSource)" Outputs="Capture\agent\dist\agent.js">
+    <MSBuild Projects="Tools\AgentBuilder\AgentBuilder.csproj" Targets="GetTargetPath">
+      <Output TaskParameter="TargetOutputs" PropertyName="AgentBuilderPath" />
+    </MSBuild>
+    <Exec Command="&quot;$(DotnetHost)&quot; &quot;$(AgentBuilderPath)&quot; &quot;Capture\agent\index.ts&quot; &quot;Capture\agent\dist\agent.js&quot; &quot;Capture\agent&quot;" />
+  </Target>
+
+  <ItemGroup>
+    <None Include="..\..\frida-clr\build\win-x64\Frida.dll" Link="Frida.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

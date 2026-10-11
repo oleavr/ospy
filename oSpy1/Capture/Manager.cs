@@ -18,26 +18,19 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Net;
+using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Runtime.Remoting;
-using System.Runtime.Remoting.Channels;
-using System.Runtime.Remoting.Channels.Ipc;
-using System.Runtime.Serialization.Formatters;
-using System.Security.AccessControl;
-using System.Security.Cryptography;
-using System.Security.Principal;
-using System.Text;
+using System.Text.Json;
+using System.Linq;
 using System.Threading;
-using EasyHook;
+using Frida;
+using Frida.Events;
 
 namespace oSpy.Capture
 {
-    public interface IManager
-    {
-        void Submit(Event[] events);
-        void Ping(int pid);
-    }
-
     [Serializable]
     [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
     public class SoftwallRule
@@ -77,7 +70,6 @@ namespace oSpy.Capture
                 softwallRules = value;
             }
         }
-
     }
 
     public class CreateDetails : Details
@@ -127,7 +119,7 @@ namespace oSpy.Capture
         }
     }
 
-    public class Manager : MarshalByRefObject, IManager
+    public class Manager : IDisposable
     {
         public class EventStats
         {
@@ -181,11 +173,6 @@ namespace oSpy.Capture
             }
         }
 
-        private const string AGENT_DLL = "oSpyAgent.dll";
-
-        public const int PACKET_BUFSIZE = 65536;
-        public const int BACKTRACE_BUFSIZE = 384;
-
         public const int SOFTWALL_CONDITION_PROCESS_NAME = 1;
         public const int SOFTWALL_CONDITION_FUNCTION_NAME = 2;
         public const int SOFTWALL_CONDITION_RETURN_ADDRESS = 4;
@@ -197,68 +184,30 @@ namespace oSpy.Capture
         /* connect() errors */
         public const int WSAEHOSTUNREACH = 10065;
 
-        private Details details = null;
-        private IProgressFeedback progress = null;
+        private readonly FridaDeviceManager deviceManager;
+        private readonly FridaDevice localDevice;
+        private readonly EventCoordinator eventCoordinator;
+        private readonly List<FridaSession> sessions;
+        private readonly List<FridaScript> scripts;
 
+        private Details details;
+        private IProgressFeedback progress;
         private Thread startWorkerThread;
         private Thread stopWorkerThread;
-
-        private IpcServerChannel serverChannel;
-        private string serverChannelName;
-        private List<int> clients;
         private EventStats eventStats;
         private List<Event> eventQueue;
-        private AutoResetEvent clientAdded = new AutoResetEvent(false);
-        private ManualResetEvent stopRequest = new ManualResetEvent(false);
+        private ManualResetEvent stopRequest;
+
+        private static readonly string agentSource = LoadAgentSource();
 
         public Manager()
         {
-        }
-
-        public override object InitializeLifetimeService()
-        {
-            return null; // live forever
-        }
-
-        public void Submit(Event[] events)
-        {
-            lock (eventQueue)
-            {
-                eventQueue.AddRange(events);
-
-                foreach (Event ev in events)
-                {
-                    if (ev is MessageEvent)
-                    {
-                        eventStats.msgCount++;
-                        if (ev.Message != null)
-                            eventStats.msgBytes += (uint) (2 * ((ev as MessageEvent).Message.Length + 1));
-                        if (ev.Data != null)
-                            eventStats.msgBytes += (uint) ev.Data.Length;
-                    }
-                    else
-                    {
-                        eventStats.pktCount++;
-                        if (ev.Data != null)
-                            eventStats.pktBytes += (uint) ev.Data.Length;
-                    }
-                }
-
-                if (EventStatsChanged != null)
-                    EventStatsChanged(this, EventArgs.Empty);
-            }
-        }
-
-        public void Ping(int pid)
-        {
-            lock (clients)
-            {
-                if (!clients.Contains(pid))
-                {
-                    clients.Add(pid);
-                    clientAdded.Set();
-                }
-            }
+            deviceManager = new FridaDeviceManager();
+            localDevice = deviceManager.FindDeviceByType(DeviceType.Local, 5000).GetAwaiter().GetResult();
+            eventCoordinator = new EventCoordinator();
+            sessions = new List<FridaSession>();
+            scripts = new List<FridaScript>();
+            stopRequest = new ManualResetEvent(false);
         }
 
         public void StartCapture(Details details, IProgressFeedback progress)
@@ -282,7 +231,6 @@ namespace oSpy.Capture
 
             stopRequest.Set();
 
-            // Unlikely:
             while (startWorkerThread != null)
                 Thread.Sleep(20);
 
@@ -301,40 +249,28 @@ namespace oSpy.Capture
             return result;
         }
 
+        public void Dispose()
+        {
+            deviceManager.Dispose();
+        }
+
         private void DoStartCapture()
         {
             try
             {
                 PrepareCapture();
 
-                int[] processIds;
-
                 if (details is CreateDetails)
-                {
-                    CreateDetails createDetails = details as CreateDetails;
-                    int processId = DoCreation(createDetails);
-                    processIds = new int[1] { processId };
-                }
-                else if (details is AttachDetails)
-                {
-                    AttachDetails attachDetails = details as AttachDetails;
-                    DoInjection(attachDetails);
-                    processIds = attachDetails.ProcessIds;
-                }
+                    CaptureCreatedProcess((CreateDetails) details);
                 else
-                {
-                    throw new NotImplementedException();
-                }
+                    CaptureExistingProcesses((AttachDetails) details);
 
-                if (WaitForAllClientsToPingUs(processIds))
-                    progress.OperationComplete();
-                else
-                    progress.OperationFailed("Capture aborted.");
+                progress.OperationComplete();
             }
             catch (Exception e)
             {
                 progress.OperationFailed(e.Message);
-                UnprepareCapture(false);
+                TearDownCapture(false);
             }
 
             progress = null;
@@ -345,7 +281,7 @@ namespace oSpy.Capture
         {
             progress.ProgressUpdate("Stopping capture", 100);
 
-            UnprepareCapture(true);
+            TearDownCapture(true);
 
             stopRequest.Reset();
 
@@ -356,24 +292,88 @@ namespace oSpy.Capture
 
         private void PrepareCapture()
         {
-            serverChannelName = GenerateChannelName();
-            serverChannel = CreateServerChannel(serverChannelName);
-            clients = new List<int>();
             eventQueue = new List<Event>();
             eventStats = new EventStats();
-
-            ChannelServices.RegisterChannel(serverChannel, false);
-            RemotingServices.Marshal(this, serverChannelName, typeof(IManager));
         }
 
-        private void UnprepareCapture(bool captureStarted)
+        private void CaptureCreatedProcess(CreateDetails createDetails)
         {
-            RemotingServices.Disconnect(this);
-            ChannelServices.UnregisterChannel(serverChannel);
+            progress.ProgressUpdate("Creating process and injecting logging agent", 100);
 
-            serverChannelName = null;
-            serverChannel = null;
-            clients = null;
+            ProcessStartInfo info = createDetails.Info;
+
+            Frida.Data.SpawnOptions options = new Frida.Data.SpawnOptions();
+            if (info.Arguments != String.Empty)
+                options.Argv = BuildArgv(info.FileName, info.Arguments);
+            if (info.WorkingDirectory != String.Empty)
+                options.Cwd = info.WorkingDirectory;
+
+            uint pid = localDevice.Spawn(info.FileName, options).GetAwaiter().GetResult();
+            InstrumentProcess(pid);
+            localDevice.Resume(pid).GetAwaiter().GetResult();
+        }
+
+        private void CaptureExistingProcesses(AttachDetails attachDetails)
+        {
+            Process[] processes = attachDetails.Processes;
+            for (int i = 0; i < processes.Length; i++)
+            {
+                int percentComplete = (int) (((float) (i + 1) / (float) processes.Length) * 100.0f);
+                progress.ProgressUpdate("Injecting logging agent" + ((processes.Length == 1) ? "" : "s"), percentComplete);
+                InstrumentProcess((uint) processes[i].Id);
+            }
+        }
+
+        private void InstrumentProcess(uint pid)
+        {
+            string processName = Process.GetProcessById((int) pid).ProcessName;
+
+            FridaSession session = localDevice.Attach(pid).GetAwaiter().GetResult();
+            sessions.Add(session);
+
+            FridaScript script = session.CreateScript(agentSource).GetAwaiter().GetResult();
+            script.OnMessage += (sender, e) => OnScriptMessage(pid, processName, e);
+            script.Load().GetAwaiter().GetResult();
+            ConfigureSoftwall(script);
+            scripts.Add(script);
+        }
+
+        private void ConfigureSoftwall(FridaScript script)
+        {
+            SoftwallRule[] rules = details.SoftwallRules;
+            if (rules == null || rules.Length == 0)
+                return;
+
+            var mappedRules = rules.Select(rule => new
+            {
+                conditions = rule.conditions,
+                processName = rule.process_name,
+                functionName = rule.function_name,
+                returnAddress = rule.return_address,
+                localAddress = rule.local_address,
+                localPort = rule.local_port,
+                remoteAddress = rule.remote_address,
+                remotePort = rule.remote_port,
+                retval = rule.retval,
+                lastError = rule.last_error,
+            }).ToArray();
+
+            script.Exports.Configure(mappedRules).GetAwaiter().GetResult();
+        }
+
+        private void TearDownCapture(bool captureStarted)
+        {
+            foreach (FridaScript script in scripts)
+            {
+                if (captureStarted)
+                    script.Exports.Flush().GetAwaiter().GetResult();
+                script.Dispose();
+            }
+            foreach (FridaSession session in sessions)
+                session.Dispose();
+            scripts.Clear();
+            sessions.Clear();
+
             if (captureStarted)
                 eventQueue.Sort();
             else
@@ -383,106 +383,146 @@ namespace oSpy.Capture
             details = null;
         }
 
-        private int DoCreation(CreateDetails createDetails)
+        private void OnScriptMessage(uint pid, string processName, ScriptMessageEventArgs e)
         {
-            progress.ProgressUpdate("Creating process and injecting logging agent", 100);
+            using JsonDocument document = JsonDocument.Parse(e.Json);
+            JsonElement root = document.RootElement;
+            if (root.GetProperty("type").GetString() != "send")
+                return;
 
-            ProcessStartInfo psi = createDetails.Info;
-            int processId;
-            RemoteHooking.CreateAndInject(psi.FileName,
-                (psi.Arguments != String.Empty) ? psi.Arguments : null,
-                (psi.WorkingDirectory != String.Empty) ? psi.WorkingDirectory : null,
-                0, AGENT_DLL, AGENT_DLL, out processId,
-                serverChannelName, details.SoftwallRules);
+            JsonElement payload = root.GetProperty("payload");
+            if (payload.GetProperty("type").GetString() != "events")
+                return;
 
-            return processId;
-        }
-
-        private void DoInjection(AttachDetails attachDetails)
-        {
-            Process[] processes = attachDetails.Processes;
-            for (int i = 0; i < processes.Length; i++)
+            byte[] data = e.Data ?? System.Array.Empty<byte>();
+            int offset = 0;
+            foreach (JsonElement element in payload.GetProperty("events").EnumerateArray())
             {
-                int percentComplete = (int)(((float)(i + 1) / (float)processes.Length) * 100.0f);
-                progress.ProgressUpdate("Injecting logging agent" + ((processes.Length == 1) ? "" : "s"), percentComplete);
-                RemoteHooking.Inject(processes[i].Id, AGENT_DLL, AGENT_DLL,
-                    serverChannelName, details.SoftwallRules);
+                int dataSize = element.GetProperty("dataSize").GetInt32();
+                byte[] eventData = new byte[dataSize];
+                System.Array.Copy(data, offset, eventData, 0, dataSize);
+                offset += dataSize;
+
+                Submit(CreateEvent(pid, processName, element, eventData));
             }
         }
 
-        private bool WaitForAllClientsToPingUs(int[] clientProcessIds)
+        private Event CreateEvent(uint pid, string processName, JsonElement payload, byte[] data)
         {
-            WaitHandle[] waitHandles = { stopRequest, clientAdded };
+            Event.ExecutionOrigin executionOrigin = new Event.ExecutionOrigin(processName, pid,
+                (uint) payload.GetProperty("threadId").GetInt64());
+            Event.InvocationOrigin invocationOrigin = new Event.InvocationOrigin(payload.GetProperty("name").GetString(),
+                payload.GetProperty("backtrace").GetString(), (uint) payload.GetProperty("resourceId").GetInt64());
 
-            while (true)
+            Event ev;
+            if (payload.GetProperty("kind").GetString() == "packet")
             {
-                lock (clients)
+                PacketEvent packetEvent = new PacketEvent(eventCoordinator, executionOrigin, invocationOrigin);
+                packetEvent.Data = data;
+                ev = packetEvent;
+            }
+            else
+            {
+                MessageEvent messageEvent = new MessageEvent(eventCoordinator, executionOrigin, invocationOrigin);
+                messageEvent.Context = ParseContext(payload.GetProperty("context").GetString());
+                messageEvent.SetMessage(payload.GetProperty("text").GetString());
+                ev = messageEvent;
+            }
+
+            ev.Direction = ParseDirection(payload);
+            ev.LocalEndpoint = ParseEndpoint(payload.GetProperty("localAddress").GetString());
+            ev.PeerEndpoint = ParseEndpoint(payload.GetProperty("peerAddress").GetString());
+            return ev;
+        }
+
+        private void Submit(Event ev)
+        {
+            lock (eventQueue)
+            {
+                eventQueue.Add(ev);
+
+                if (ev is MessageEvent)
                 {
-                    progress.ProgressUpdate("Waiting for logging agent" + ((clientProcessIds.Length == 1) ? "" : "s"),
-                        (int) (((float) Math.Min(clients.Count + 1, clientProcessIds.Length) / (float) clientProcessIds.Length) * 100.0f));
-                    if (clients.Count == clientProcessIds.Length)
-                        return true;
+                    eventStats.msgCount++;
+                    if (ev.Message != null)
+                        eventStats.msgBytes += (uint) (2 * (ev.Message.Length + 1));
+                    if (ev.Data != null)
+                        eventStats.msgBytes += (uint) ev.Data.Length;
                 }
-
-                int index = WaitHandle.WaitAny(waitHandles, 1000, false);
-                if (index == 0)
-                    return false;
-
-                foreach (int clientPid in clientProcessIds)
-                    Process.GetProcessById(clientPid); // throws an ArgumentException if the process is no longer around
+                else
+                {
+                    eventStats.pktCount++;
+                    if (ev.Data != null)
+                        eventStats.pktBytes += (uint) ev.Data.Length;
+                }
             }
+
+            EventStatsChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        // These two are based on similar utility methods in EasyHook:
-        private static IpcServerChannel CreateServerChannel(string channelName)
+        private static PacketDirection ParseDirection(JsonElement payload)
         {
-            Dictionary<string, string> properties = new Dictionary<string, string>();
-            properties["name"] = channelName;
-            properties["portName"] = channelName;
+            if (!payload.TryGetProperty("direction", out JsonElement direction))
+                return PacketDirection.PACKET_DIRECTION_INVALID;
 
-            DiscretionaryAcl dacl = new DiscretionaryAcl(false, false, 1);
-            dacl.AddAccess(
-                AccessControlType.Allow,
-                new SecurityIdentifier(WellKnownSidType.WorldSid, null),
-                -1,
-                InheritanceFlags.None,
-                PropagationFlags.None);
-
-            CommonSecurityDescriptor secDesc = new CommonSecurityDescriptor(
-                false,
-                false,
-                ControlFlags.GroupDefaulted | ControlFlags.OwnerDefaulted | ControlFlags.DiscretionaryAclPresent,
-                null,
-                null,
-                null,
-                dacl);
-
-            BinaryServerFormatterSinkProvider sinkProv = new BinaryServerFormatterSinkProvider();
-            sinkProv.TypeFilterLevel = TypeFilterLevel.Full;
-
-            return new IpcServerChannel(properties, sinkProv, secDesc);
-        }
-
-        private static string GenerateChannelName()
-        {
-            byte[] data = new byte[30];
-            RNGCryptoServiceProvider rnd = new RNGCryptoServiceProvider();
-            rnd.GetBytes(data);
-
-            StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < 20 + data[0] % 10; i++)
+            switch (direction.GetString())
             {
-                byte b = (byte) (data[i] % 62);
-
-                if (b >= 0 && b <= 9)
-                    builder.Append((char) ('0' + b));
-                else if (b >= 10 && b <= 35)
-                    builder.Append((char) ('A' + (b - 10)));
-                else if (b >= 36 && b <= 61)
-                    builder.Append((char) ('a' + (b - 36)));
+                case "incoming":
+                    return PacketDirection.PACKET_DIRECTION_INCOMING;
+                case "outgoing":
+                    return PacketDirection.PACKET_DIRECTION_OUTGOING;
+                default:
+                    return PacketDirection.PACKET_DIRECTION_INVALID;
             }
+        }
 
-            return builder.ToString();
+        private static MessageContext ParseContext(string context)
+        {
+            switch (context)
+            {
+                case "warning":
+                    return MessageContext.MESSAGE_CTX_WARNING;
+                case "error":
+                    return MessageContext.MESSAGE_CTX_ERROR;
+                case "listening":
+                    return MessageContext.MESSAGE_CTX_SOCKET_LISTENING;
+                case "connecting":
+                    return MessageContext.MESSAGE_CTX_SOCKET_CONNECTING;
+                case "connected":
+                    return MessageContext.MESSAGE_CTX_SOCKET_CONNECTED;
+                case "disconnected":
+                    return MessageContext.MESSAGE_CTX_SOCKET_DISCONNECTED;
+                case "reset":
+                    return MessageContext.MESSAGE_CTX_SOCKET_RESET;
+                default:
+                    return MessageContext.MESSAGE_CTX_INFO;
+            }
+        }
+
+        private static IPEndPoint ParseEndpoint(string address)
+        {
+            if (address.Length == 0)
+                return null;
+
+            int separatorIndex = address.LastIndexOf(':');
+            IPAddress host = IPAddress.Parse(address.Substring(0, separatorIndex));
+            int port = int.Parse(address.Substring(separatorIndex + 1), CultureInfo.InvariantCulture);
+            return new IPEndPoint(host, port);
+        }
+
+        private static string[] BuildArgv(string fileName, string arguments)
+        {
+            List<string> argv = new List<string> { fileName };
+            argv.AddRange(arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+            return argv.ToArray();
+        }
+
+        private static string LoadAgentSource()
+        {
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            using Stream stream = assembly.GetManifestResourceStream("oSpy.Capture.Agent.js");
+            using StreamReader reader = new StreamReader(stream);
+            return reader.ReadToEnd();
         }
     }
 }
