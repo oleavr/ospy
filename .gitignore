@@ -1,0 +1,9 @@
+[Bb]in/
+[Oo]bj/
+EasyHook/Debug/
+EasyHook/Release/
+*.user
+*.suo
+.vs/
+oSpy1/Capture/agent/dist/
+*.hexpat.d.ts
