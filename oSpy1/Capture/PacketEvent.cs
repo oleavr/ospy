@@ -26,5 +26,10 @@ namespace oSpy.Capture
             : base(coordinator, invocationOrigin)
         {
         }
+
+        public PacketEvent(EventCoordinator coordinator, ExecutionOrigin executionOrigin, InvocationOrigin invocationOrigin)
+            : base(coordinator, executionOrigin, invocationOrigin)
+        {
+        }
     }
 }

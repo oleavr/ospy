@@ -196,6 +196,14 @@ namespace oSpy.Capture
             this.invocationOrigin = invocationOrigin;
         }
 
+        protected Event(EventCoordinator coordinator, ExecutionOrigin executionOrigin, InvocationOrigin invocationOrigin)
+        {
+            this.localId = coordinator.AllocateId();
+            this.timestamp = coordinator.TimeNow();
+            this.executionOrigin = executionOrigin;
+            this.invocationOrigin = invocationOrigin;
+        }
+
         public void SetMessage(string message)
         {
             this.message = message;
